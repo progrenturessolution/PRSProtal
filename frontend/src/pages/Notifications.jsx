@@ -75,7 +75,7 @@ function Notifications() {
       const response = await adminAPI.createNotification(formData);
       
       if (response.data.success) {
-        setSuccess('✅ Notification sent successfully!');
+        setSuccess('Notification sent successfully!');
         // Reset form
         setSubject('');
         setMessage('');

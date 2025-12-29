@@ -68,19 +68,22 @@ function Certificates() {
 
     try {
       const formData = new FormData();
-      formData.append('document', file);
+      // multer on backend expects field name 'file'
+      formData.append('file', file);
       formData.append('documentType', documentType);
-      formData.append('internId', selectedStudent);
 
-      // Note: This endpoint needs to be implemented in the backend
-      const response = await adminAPI.uploadStudentDocument(formData);
+      // Upload using studentId route param
+      const response = await adminAPI.uploadStudentDocument(selectedStudent, formData);
       
       if (response.data.success) {
         setMessage('✅ Certificate uploaded successfully!');
         setFile(null);
         setSelectedStudent('');
         // Reset file input
-        document.getElementById('fileInput').value = '';
+        const inp = document.getElementById('fileInput');
+        if (inp) inp.value = '';
+        // Refresh students list to reflect uploaded doc
+        fetchStudents();
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to upload certificate. Please try again.');

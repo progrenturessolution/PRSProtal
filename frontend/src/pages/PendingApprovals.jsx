@@ -36,7 +36,7 @@ function PendingApprovals({ onTaskApproved }) {
     try {
       await taskAPI.approveTask(taskId);
       setTasks(tasks.filter(task => task._id !== taskId));
-      alert('✓ Task approved successfully!');
+      alert('Task approved successfully!');
       if (onTaskApproved) onTaskApproved();
     } catch (err) {
       alert('Failed to approve task');
@@ -63,7 +63,7 @@ function PendingApprovals({ onTaskApproved }) {
       setShowFeedbackModal(false);
       setFeedbackMessage('');
       setSelectedTask(null);
-      alert('✓ Feedback sent successfully!\n\nThe task has been moved back to In Progress and the intern has been notified via email.');
+      alert('Feedback sent successfully!\n\nThe task has been moved back to In Progress and the intern has been notified via email.');
       if (onTaskApproved) onTaskApproved();
     } catch (err) {
       alert('Failed to send feedback. Please try again.');
@@ -106,7 +106,7 @@ function PendingApprovals({ onTaskApproved }) {
       {tasks.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>✓</div>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}></div>
             <h3 style={{ marginBottom: '10px', color: '#10b981' }}>All Caught Up!</h3>
             <p>No tasks are pending approval at the moment.</p>
           </div>
@@ -115,7 +115,7 @@ function PendingApprovals({ onTaskApproved }) {
         <>
           <div className="card" style={{ marginBottom: '20px', background: '#fef3c7', border: '2px solid #f59e0b' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '24px' }}>⏳</span>
+              <span style={{ fontSize: '24px' }}></span>
               <div>
                 <strong style={{ color: '#92400e' }}>{tasks.length} task{tasks.length > 1 ? 's' : ''} awaiting approval</strong>
                 <p style={{ margin: '5px 0 0', fontSize: '14px', color: '#78350f' }}>
@@ -182,7 +182,7 @@ function PendingApprovals({ onTaskApproved }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 600 }}>Progress</span>
                     <span style={{ fontSize: '14px', fontWeight: 600, color: '#10b981' }}>
-                      ✓ {task.progress}%
+                      {task.progress}%
                     </span>
                   </div>
                   <div className="progress-bar-container">
@@ -198,7 +198,7 @@ function PendingApprovals({ onTaskApproved }) {
                   className="approve-btn"
                   style={{ width: '100%', marginTop: '16px', padding: '12px' }}
                 >
-                  ✓ Approve Task
+                  Approve Task
                 </button>
 
                 <button
@@ -223,7 +223,7 @@ function PendingApprovals({ onTaskApproved }) {
                     e.target.style.backgroundColor = '#fff';
                   }}
                 >
-                  ✉ Request Changes
+                  Request Changes
                 </button>
               </div>
             ))}

@@ -115,28 +115,28 @@ function AdminDashboard() {
 
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-icon">👥</div>
+               
                 <div className="stat-info">
                   <h3>Total Interns</h3>
                   <p>{stats.totalInterns}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">✓</div>
+                
                 <div className="stat-info">
                   <h3>Active Interns</h3>
                   <p>{stats.activeInterns}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">🎓</div>
+                
                 <div className="stat-info">
                   <h3>Completed</h3>
                   <p>{stats.completedInterns}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">📅</div>
+                
                 <div className="stat-info">
                   <h3>This Month</h3>
                   <p>{stats.thisMonthInterns}</p>
@@ -150,35 +150,34 @@ function AdminDashboard() {
 
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-icon">📋</div>
+              
                 <div className="stat-info">
                   <h3>Total Tasks</h3>
                   <p>{taskStats.totalTasks}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">🔔</div>
+               
                 <div className="stat-info">
                   <h3>Assigned</h3>
                   <p>{taskStats.assignedTasks}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">⚡</div>
+             
                 <div className="stat-info">
                   <h3>In Progress</h3>
                   <p>{taskStats.inProgressTasks}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">⏳</div>
+               
                 <div className="stat-info">
                   <h3>Pending Approval</h3>
                   <p>{taskStats.pendingApprovalTasks}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">✅</div>
                 <div className="stat-info">
                   <h3>Completed</h3>
                   <p>{taskStats.completedTasks}</p>
@@ -265,7 +264,7 @@ function AdminDashboard() {
             className={activeMenu === 'dashboard' ? 'active' : ''}
             onClick={() => setActiveMenu('dashboard')}
           >
-            📊 Dashboard Overview
+           Dashboard Overview
           </li>
 
           {/* Student Management Section */}
@@ -274,13 +273,13 @@ function AdminDashboard() {
             className={activeMenu === 'add-intern' ? 'active' : ''}
             onClick={() => setActiveMenu('add-intern')}
           >
-            ➕ Add Student
+             Add Student
           </li>
           <li 
             className={activeMenu === 'view-interns' ? 'active' : ''}
             onClick={() => setActiveMenu('view-interns')}
           >
-            👥 View All Students
+            View All Students
           </li>
 
           {/* Internship Management */}
@@ -289,13 +288,13 @@ function AdminDashboard() {
             className={activeMenu === 'internship-management' ? 'active' : ''}
             onClick={() => setActiveMenu('internship-management')}
           >
-            💼 Internship Management
+           Internship Management
           </li>
           <li 
             className={activeMenu === 'sms-management' ? 'active' : ''}
             onClick={() => setActiveMenu('sms-management')}
           >
-            🎓 SMS Program Management
+             SMS Program Management
           </li>
 
           {/* Certificates */}
@@ -303,7 +302,7 @@ function AdminDashboard() {
             className={activeMenu === 'certificates' ? 'active' : ''}
             onClick={() => setActiveMenu('certificates')}
           >
-            📜 Certificates
+             Certificates
           </li>
 
           {/* Tasks & Projects */}
@@ -312,19 +311,19 @@ function AdminDashboard() {
             className={activeMenu === 'create-task' ? 'active' : ''}
             onClick={() => setActiveMenu('create-task')}
           >
-            ➕ Create Task
+             Create Task
           </li>
           <li 
             className={activeMenu === 'manage-tasks' ? 'active' : ''}
             onClick={() => setActiveMenu('manage-tasks')}
           >
-            📋 Manage Tasks
+            Manage Tasks
           </li>
           <li 
             className={activeMenu === 'pending-approvals' ? 'active' : ''}
             onClick={() => setActiveMenu('pending-approvals')}
           >
-            ⏳ Pending Approvals
+             Pending Approvals
             {taskStats.pendingApprovalTasks > 0 && (
               <span style={{
                 marginLeft: '8px',
@@ -343,7 +342,7 @@ function AdminDashboard() {
             className={activeMenu === 'completed-tasks' ? 'active' : ''}
             onClick={() => setActiveMenu('completed-tasks')}
           >
-            ✅ Completed Tasks
+             Completed Tasks
           </li>
 
           {/* Communication */}
@@ -352,13 +351,13 @@ function AdminDashboard() {
             className={activeMenu === 'notifications' ? 'active' : ''}
             onClick={() => setActiveMenu('notifications')}
           >
-            🔔 Notifications
+             Notifications
           </li>
           <li 
             className={activeMenu === 'jobs-internships' ? 'active' : ''}
             onClick={() => setActiveMenu('jobs-internships')}
           >
-            💼 Jobs & Internship Updates
+            Jobs & Internship Updates
           </li>
 
           {/* Access Management */}
@@ -366,7 +365,7 @@ function AdminDashboard() {
             className={activeMenu === 'access-management' ? 'active' : ''}
             onClick={() => setActiveMenu('access-management')}
           >
-            🔐 Access Management
+             Access Management
           </li>
 
           {/* Reports */}
@@ -374,7 +373,7 @@ function AdminDashboard() {
             className={activeMenu === 'reports' ? 'active' : ''}
             onClick={() => setActiveMenu('reports')}
           >
-            📊 Reports
+             Reports
           </li>
         </ul>
 

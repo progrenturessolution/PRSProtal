@@ -611,6 +611,7 @@ body {
 
   .stat-card {
     flex-direction: row;
+    
     padding: 16px;
   }
 
@@ -730,6 +731,8 @@ body {
 
 .stat-info {
   flex: 1;
+  text-align: center;
+  
 }
 
 .stat-card h3 {

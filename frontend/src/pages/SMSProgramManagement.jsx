@@ -51,28 +51,28 @@ function SMSProgramManagement() {
       {/* Statistics Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">🎓</div>
+         
           <div className="stat-info">
             <h3>Total SMS Students</h3>
             <p>{students.length}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">✓</div>
+        
           <div className="stat-info">
             <h3>Active</h3>
             <p>{students.filter(s => s.status?.toLowerCase() === 'active').length}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🎓</div>
+         
           <div className="stat-info">
             <h3>Completed</h3>
             <p>{students.filter(s => s.status?.toLowerCase() === 'completed').length}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">💳</div>
+          
           <div className="stat-info">
             <h3>Payment Done</h3>
             <p>{students.filter(s => s.transactionId).length}</p>
@@ -84,23 +84,52 @@ function SMSProgramManagement() {
       <div className="card">
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           <button
-            className={filter === 'all' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setFilter('all')}
-            style={{ padding: '8px 16px', borderRadius: '6px', cursor: 'pointer' }}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '14px',
+              background: filter === 'all' ? 'linear-gradient(90deg,#06b6d4,#3b82f6)' : '#f8fafc',
+              color: filter === 'all' ? 'white' : '#0f172a',
+              boxShadow: filter === 'all' ? '0 8px 20px rgba(59,130,246,0.12)' : 'none'
+            }}
           >
             All ({students.length})
           </button>
+
           <button
-            className={filter === 'active' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setFilter('active')}
-            style={{ padding: '8px 16px', borderRadius: '6px', cursor: 'pointer' }}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '14px',
+              background: filter === 'active' ? 'linear-gradient(90deg,#10b981,#059669)' : '#f8fafc',
+              color: filter === 'active' ? 'white' : '#0f172a',
+              boxShadow: filter === 'active' ? '0 8px 20px rgba(5,150,105,0.12)' : 'none'
+            }}
           >
             Active ({students.filter(s => s.status?.toLowerCase() === 'active').length})
           </button>
+
           <button
-            className={filter === 'completed' ? 'btn-primary' : 'btn-secondary'}
             onClick={() => setFilter('completed')}
-            style={{ padding: '8px 16px', borderRadius: '6px', cursor: 'pointer' }}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              border: 'none',
+              fontWeight: 700,
+              fontSize: '14px',
+              background: filter === 'completed' ? 'linear-gradient(90deg,#f59e0b,#f97316)' : '#f8fafc',
+              color: filter === 'completed' ? 'white' : '#0f172a',
+              boxShadow: filter === 'completed' ? '0 8px 20px rgba(249,115,22,0.12)' : 'none'
+            }}
           >
             Completed ({students.filter(s => s.status?.toLowerCase() === 'completed').length})
           </button>

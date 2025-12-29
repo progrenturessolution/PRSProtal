@@ -228,16 +228,20 @@ exports.updateInternStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!['active', 'completed'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status. Must be "active" or "completed"'
-      });
-    }
+      // Accept valid statuses (case-insensitive)
+      const allowed = ['active', 'completed', 'inactive'];
+      if (!status || !allowed.includes(String(status).toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid status. Allowed: active, completed, inactive'
+        });
+      }
+
+      const normalizedStatus = String(status).toLowerCase();
 
     const intern = await Intern.findByIdAndUpdate(
       id,
-      { status },
+      { status: normalizedStatus },
       { new: true }
     ).select('-password');
 
@@ -260,6 +264,51 @@ exports.updateInternStatus = async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+// Update intern details
+exports.updateIntern = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Only allow updating of specific fields
+    const allowed = [
+      'name',
+      'email',
+      'mobile',
+      'studentType',
+      'domain',
+      'joiningDate',
+      'endingDate',
+      'duration',
+      'gender',
+      'paymentDoneBy',
+      'dateOfPayment',
+      'transactionId',
+      'currentDesignation'
+    ];
+
+    const updates = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid fields to update' });
+    }
+
+    const intern = await Intern.findByIdAndUpdate(id, updates, { new: true }).select('-password');
+
+    if (!intern) {
+      return res.status(404).json({ success: false, message: 'Intern not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Intern updated successfully', intern });
+
+  } catch (error) {
+    console.error('Update intern error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -506,7 +555,9 @@ exports.getAllJobPostings = async (req, res) => {
 // Upload document for student
 exports.uploadStudentDocument = async (req, res) => {
   try {
-    const { studentId, documentType } = req.body;
+    // Support studentId from either body or route param
+    const studentId = req.body.studentId || req.params.studentId;
+    const { documentType } = req.body;
 
     if (!req.file) {
       return res.status(400).json({
@@ -531,13 +582,17 @@ exports.uploadStudentDocument = async (req, res) => {
 
     // Update specific document type
     if (documentType === 'offerLetter') {
+      student.documents = student.documents || {};
       student.documents.offerLetter = docData;
     } else if (documentType === 'welcomeLetter') {
+      student.documents = student.documents || {};
       student.documents.welcomeLetter = docData;
     } else if (documentType === 'paymentReceipt') {
+      student.documents = student.documents || {};
       student.documents.paymentReceipt = docData;
     } else {
       // Other certificates
+      student.documents = student.documents || {};
       if (!student.documents.otherCertificates) {
         student.documents.otherCertificates = [];
       }

@@ -2,6 +2,28 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Ensure uploads/students folder exists
+const studentsUploadDir = path.join(__dirname, '..', 'uploads', 'students');
+if (!fs.existsSync(studentsUploadDir)) {
+	fs.mkdirSync(studentsUploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, studentsUploadDir);
+	},
+	filename: function (req, file, cb) {
+		const ext = path.extname(file.originalname);
+		const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+		cb(null, name);
+	}
+});
+
+const upload = multer({ storage });
 
 // ========== INTERN/STUDENT MANAGEMENT ==========
 
@@ -19,6 +41,9 @@ router.delete('/intern/:id', verifyToken, verifyAdmin, adminController.deleteInt
 
 // Update intern status (Admin only)
 router.patch('/intern/:id/status', verifyToken, verifyAdmin, adminController.updateInternStatus);
+
+// Update intern details (Admin only)
+router.patch('/intern/:id', verifyToken, verifyAdmin, adminController.updateIntern);
 
 // Delete all interns (Admin only)
 router.delete('/delete-all-interns', verifyToken, verifyAdmin, adminController.deleteAllInterns);
@@ -52,8 +77,8 @@ router.get('/job-postings', verifyToken, verifyAdmin, adminController.getAllJobP
 
 // ========== CERTIFICATES & DOCUMENTS ==========
 
-// Upload student document
-router.post('/students/:studentId/documents', verifyToken, verifyAdmin, adminController.uploadStudentDocument);
+// Upload student document (accepts field name 'file')
+router.post('/students/:studentId/documents', verifyToken, verifyAdmin, upload.single('file'), adminController.uploadStudentDocument);
 
 // Get student documents
 router.get('/students/:studentId/documents', verifyToken, verifyAdmin, adminController.getStudentDocuments);

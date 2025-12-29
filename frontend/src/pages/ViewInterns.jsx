@@ -5,10 +5,12 @@ function ViewInterns({ onInternDeleted }) {
   const [interns, setInterns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
   const [openMenuId, setOpenMenuId] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState(null);
 
   useEffect(() => {
     fetchInterns();
@@ -57,17 +59,23 @@ function ViewInterns({ onInternDeleted }) {
   };
 
   const handleStatusToggle = async (student) => {
-    const newStatus = student.status === 'Active' ? 'Inactive' : 'Active';
-    
+    const current = (student.status || '').toLowerCase();
+    const newStatus = current === 'active' ? 'inactive' : 'active';
+
     try {
+      // Send normalized lower-case status to backend
       await adminAPI.updateInternStatus(student._id, newStatus);
+      // Update UI with capitalized label for readability
+      const label = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
       setInterns(interns.map(intern => 
-        intern._id === student._id ? { ...intern, status: newStatus } : intern
+        intern._id === student._id ? { ...intern, status: label } : intern
       ));
       setOpenMenuId(null);
-      alert(`Student ${newStatus === 'Active' ? 'activated' : 'deactivated'} successfully`);
+      // Show inline info message instead of alert
+      setInfoMessage(`Student ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`);
+      setTimeout(() => setInfoMessage(''), 4000);
     } catch (err) {
-      alert('Failed to update status');
+      setError('Failed to update status');
       console.error(err);
     }
   };
@@ -80,8 +88,46 @@ function ViewInterns({ onInternDeleted }) {
 
   const handleEdit = (student) => {
     setSelectedStudent(student);
+    // initialize edit form with allowed fields
+    setEditForm({
+      name: student.name || '',
+      email: student.email || '',
+      mobile: student.mobile || '',
+      studentType: student.studentType || '',
+      currentDesignation: student.currentDesignation || '',
+      domain: student.domain || '',
+      duration: student.duration || '',
+      joiningDate: student.joiningDate ? new Date(student.joiningDate).toISOString().slice(0,10) : '',
+      endingDate: student.endingDate ? new Date(student.endingDate).toISOString().slice(0,10) : '',
+      paymentDoneBy: student.paymentDoneBy || '',
+      transactionId: student.transactionId || ''
+    });
     setShowEditModal(true);
     setOpenMenuId(null);
+  };
+
+  const handleEditChange = (key, value) => {
+    setEditForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedStudent || !editForm) return;
+    try {
+      const response = await adminAPI.updateIntern(selectedStudent._id, editForm);
+      if (response.data && response.data.success) {
+        const updated = response.data.intern;
+        setInterns(interns.map(i => i._id === updated._id ? updated : i));
+        setSelectedStudent(updated);
+        setShowEditModal(false);
+        setInfoMessage('Student updated successfully');
+        setTimeout(() => setInfoMessage(''), 4000);
+      } else {
+        setError('Failed to update student');
+      }
+    } catch (err) {
+      console.error('Save edit error:', err);
+      setError(err.response?.data?.message || 'Failed to update student');
+    }
   };
 
   const toggleMenu = (id) => {
@@ -90,8 +136,12 @@ function ViewInterns({ onInternDeleted }) {
 
   // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => {
-      if (openMenuId) setOpenMenuId(null);
+    const handleClickOutside = (e) => {
+      // If no menu is open, nothing to do
+      if (!openMenuId) return;
+      // If click happened inside an open menu or its toggle button, ignore
+      if (e.target.closest('[data-menu]') || e.target.closest('[data-menu-toggle]')) return;
+      setOpenMenuId(null);
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -123,7 +173,22 @@ function ViewInterns({ onInternDeleted }) {
           fontSize: '14px',
           fontWeight: 500
         }}>
-          ❌ {error}
+           {error}
+        </div>
+      )}
+
+      {infoMessage && (
+        <div style={{
+          padding: '12px',
+          marginBottom: '20px',
+          backgroundColor: '#ecfccb',
+          border: '1px solid #bbf7d0',
+          borderRadius: '8px',
+          color: '#166534',
+          fontSize: '14px',
+          fontWeight: 500
+        }}>
+           {infoMessage}
         </div>
       )}
 
@@ -147,7 +212,7 @@ function ViewInterns({ onInternDeleted }) {
               </thead>
               <tbody>
                 {interns.map((student) => (
-                  <tr key={student._id}>
+                  <tr key={student._id} style={{ lineHeight: '1.8' }}>
                     <td>
                       <span style={{
                         padding: '4px 8px',
@@ -165,28 +230,36 @@ function ViewInterns({ onInternDeleted }) {
                     <td>{student.email}</td>
                     <td>{student.currentDesignation || student.domain || 'N/A'}</td>
                     <td style={{ textAlign: 'center', position: 'relative' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleMenu(student._id);
-                        }}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: '20px',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          transition: 'background 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
-                        onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                      >
-                        ⋮
-                      </button>
+                      {(() => {
+                        const statusNorm = (student.status || '').toString().toLowerCase();
+                        const dotColor = '#000000';
+                        return (
+                          <button
+                            data-menu-toggle
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMenu(student._id);
+                            }}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: '20px',
+                              padding: '4px 8px',
+                              borderRadius: '4px',
+                              transition: 'background 0.2s',
+                              color: dotColor
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
+                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                          >
+                            ⋮
+                          </button>
+                        );
+                      })()}
 
                       {openMenuId === student._id && (
-                        <div style={{
+                        <div data-menu style={{
                           position: 'absolute',
                           right: '10px',
                           top: '35px',
@@ -216,7 +289,7 @@ function ViewInterns({ onInternDeleted }) {
                             onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                             onMouseLeave={(e) => e.target.style.background = 'white'}
                           >
-                            <span>👤</span>
+                           
                             <span>View Profile</span>
                           </button>
 
@@ -238,7 +311,7 @@ function ViewInterns({ onInternDeleted }) {
                             onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                             onMouseLeave={(e) => e.target.style.background = 'white'}
                           >
-                            <span>✏️</span>
+                            
                             <span>Edit</span>
                           </button>
 
@@ -256,12 +329,12 @@ function ViewInterns({ onInternDeleted }) {
                               alignItems: 'center',
                               gap: '10px',
                               transition: 'background 0.2s',
-                              color: '#dc2626'
+                              color: 'black'
                             }}
                             onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
                             onMouseLeave={(e) => e.target.style.background = 'white'}
                           >
-                            <span>🗑️</span>
+                         
                             <span>Delete</span>
                           </button>
 
@@ -271,28 +344,34 @@ function ViewInterns({ onInternDeleted }) {
                             margin: '4px 0'
                           }} />
 
-                          <button
-                            onClick={() => handleStatusToggle(student)}
-                            style={{
-                              width: '100%',
-                              padding: '12px 16px',
-                              background: 'white',
-                              border: 'none',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              transition: 'background 0.2s',
-                              color: student.status === 'Active' ? '#f59e0b' : '#10b981'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                            onMouseLeave={(e) => e.target.style.background = 'white'}
-                          >
-                            <span>{student.status === 'Active' ? '⏸️' : '✓'}</span>
-                            <span>{student.status === 'Active' ? 'Deactivate' : 'Activate'}</span>
-                          </button>
+                          {(() => {
+                            const statusNorm = (student.status || '').toString().toLowerCase();
+                            const isActive = statusNorm === 'active';
+                            return (
+                              <button
+                                onClick={() => handleStatusToggle(student)}
+                                style={{
+                                  width: '100%',
+                                  padding: '12px 16px',
+                                  background: 'white',
+                                  border: 'none',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  transition: 'background 0.2s',
+                                  color: isActive ? '#dc2626' : '#10b981'
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                                onMouseLeave={(e) => e.target.style.background = 'white'}
+                              >
+                                
+                                <span>{isActive ? 'Deactivate' : 'Activate'}</span>
+                              </button>
+                            );
+                          })()}
                         </div>
                       )}
                     </td>
@@ -319,14 +398,14 @@ function ViewInterns({ onInternDeleted }) {
           zIndex: 2000
         }}>
           <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            padding: '30px',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '80vh',
-            overflowY: 'auto'
-          }}>
+              background: 'white',
+              borderRadius: '12px',
+              padding: '36px',
+              maxWidth: '900px',
+              width: '95%',
+              maxHeight: '92vh',
+              overflowY: 'auto'
+            }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0 }}>Student Profile</h2>
               <button
@@ -449,8 +528,8 @@ function ViewInterns({ onInternDeleted }) {
         </div>
       )}
 
-      {/* Edit Modal Placeholder */}
-      {showEditModal && selectedStudent && (
+      {/* Edit Modal */}
+      {showEditModal && selectedStudent && editForm && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -466,30 +545,75 @@ function ViewInterns({ onInternDeleted }) {
           <div style={{
             background: 'white',
             borderRadius: '12px',
-            padding: '30px',
-            maxWidth: '500px',
-            width: '90%'
+            padding: '20px',
+            maxWidth: '600px',
+            width: '95%'
           }}>
-            <h2>Edit Student</h2>
-            <p style={{ color: '#6b7280', marginTop: '10px' }}>
-              Edit functionality will be implemented here.
-            </p>
-            <button
-              onClick={() => setShowEditModal(false)}
-              style={{
-                marginTop: '20px',
-                padding: '10px 20px',
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 600
-              }}
-            >
-              Close
-            </button>
+            <h2 style={{ marginTop: 0 }}>Edit Student</h2>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Full Name</label>
+                <input value={editForm.name} onChange={(e) => handleEditChange('name', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Email</label>
+                <input value={editForm.email} onChange={(e) => handleEditChange('email', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Mobile</label>
+                <input value={editForm.mobile} onChange={(e) => handleEditChange('mobile', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Current Designation</label>
+                <input value={editForm.currentDesignation} onChange={(e) => handleEditChange('currentDesignation', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Student Type</label>
+                <input value={editForm.studentType} disabled style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb', background: '#f8fafc' }} />
+              </div>
+
+              {editForm.studentType === 'Internship' && (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Domain</label>
+                    <input value={editForm.domain} onChange={(e) => handleEditChange('domain', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Duration</label>
+                    <input value={editForm.duration} onChange={(e) => handleEditChange('duration', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Joining Date</label>
+                    <input type="date" value={editForm.joiningDate} onChange={(e) => handleEditChange('joiningDate', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Ending Date</label>
+                    <input type="date" value={editForm.endingDate} onChange={(e) => handleEditChange('endingDate', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                </>
+              )}
+
+              {editForm.studentType === 'SMS Program' && (
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Payment Done By</label>
+                    <input value={editForm.paymentDoneBy} onChange={(e) => handleEditChange('paymentDoneBy', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px' }}>Transaction ID</label>
+                    <input value={editForm.transactionId} onChange={(e) => handleEditChange('transactionId', e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }} />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
+              <button onClick={handleSaveEdit} style={{ flex: 1, padding: '10px 16px', background : '#10b981' , color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Save</button>
+              <button onClick={() => setShowEditModal(false)} style={{ flex: 1, padding: '10px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Cancel</button>
+            </div>
           </div>
         </div>
       )}

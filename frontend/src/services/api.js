@@ -38,6 +38,7 @@ export const adminAPI = {
   getStats: () => api.get('/admin/stats'),
   deleteIntern: (id) => api.delete(`/admin/intern/${id}`),
   updateInternStatus: (id, status) => api.patch(`/admin/intern/${id}/status`, { status }),
+  updateIntern: (id, data) => api.patch(`/admin/intern/${id}`, data),
   deleteAllInterns: () => api.delete('/admin/delete-all-interns'),
   
   // Trainer management

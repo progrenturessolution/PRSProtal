@@ -18,6 +18,7 @@ function AddIntern({ onInternAdded }) {
     transactionId: '',
     currentDesignation: ''
   });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,12 @@ function AddIntern({ onInternAdded }) {
       ...formData,
       [e.target.name]: e.target.value
     });
+    setError('');
+    setSuccess('');
+  };
+
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0] || null);
     setError('');
     setSuccess('');
   };
@@ -96,6 +103,24 @@ function AddIntern({ onInternAdded }) {
 
         if (onInternAdded) {
           onInternAdded();
+        }
+        // If offer letter file selected, upload it and sync
+        if (selectedFile) {
+          try {
+            const fd = new FormData();
+            fd.append('file', selectedFile);
+            fd.append('documentType', 'offerLetter');
+            // server uses route param studentId; pass file as multipart
+            const uploadResp = await adminAPI.uploadStudentDocument(intern.id, fd);
+            if (uploadResp.data && uploadResp.data.success) {
+              setSuccess((s) => s + '\n\n📎 Offer letter uploaded and synced.');
+            } else {
+              setError('Student added but failed to upload offer letter.');
+            }
+          } catch (uploadErr) {
+            console.error('Upload error:', uploadErr);
+            setError('Student added but offer letter upload failed.');
+          }
         }
       }
     } catch (err) {
@@ -243,6 +268,16 @@ function AddIntern({ onInternAdded }) {
                   placeholder="e.g., 3 months, 6 months"
                   required
                 />
+              </div>
+
+              <div className="form-group">
+                <label>Internship Offer Letter (PDF) *</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleFileChange}
+                />
+                <small>Upload the internship offer letter (PDF). This will sync with the student profile and certificates.</small>
               </div>
             </>
           )}

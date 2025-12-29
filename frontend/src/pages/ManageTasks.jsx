@@ -160,7 +160,7 @@ function ManageTasks({ onTaskApproved }) {
           fontSize: '14px',
           fontWeight: 500
         }}>
-          ❌ {error}
+          {error}
         </div>
       )}
 
@@ -212,7 +212,7 @@ function ManageTasks({ onTaskApproved }) {
                   alignItems: 'center',
                   gap: '10px'
                 }}>
-                  ✏️ Edit Task
+                  Edit Task
                 </h2>
                 <p style={{
                   margin: '5px 0 0',
@@ -241,7 +241,7 @@ function ManageTasks({ onTaskApproved }) {
                 onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
                 onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
               >
-                ✕
+                X
               </button>
             </div>
 
@@ -257,7 +257,7 @@ function ManageTasks({ onTaskApproved }) {
                   color: '#0f172a',
                   marginBottom: '8px'
                 }}>
-                  📝 Task Title
+                  Task Title
                 </label>
                 <input
                   type="text"
@@ -289,7 +289,7 @@ function ManageTasks({ onTaskApproved }) {
                   color: '#0f172a',
                   marginBottom: '8px'
                 }}>
-                  📄 Description
+                  Description
                 </label>
                 <textarea
                   value={editForm.description}
@@ -323,7 +323,7 @@ function ManageTasks({ onTaskApproved }) {
                   color: '#0f172a',
                   marginBottom: '8px'
                 }}>
-                  📅 Deadline
+                  Deadline
                 </label>
                 <input
                   type="datetime-local"
@@ -384,7 +384,7 @@ function ManageTasks({ onTaskApproved }) {
                     boxShadow: '0 4px 15px rgba(59, 130, 246, 0.4)'
                   }}
                 >
-                  💾 Update Task
+                  Update Task
                 </button>
               </div>
             </form>
