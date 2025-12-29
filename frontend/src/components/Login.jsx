@@ -40,13 +40,18 @@ function Login() {
           internId: formData.internId,
           password: formData.password
         });
+      } else if (activeTab === 'trainer') {
+        response = await authAPI.trainerLogin({
+          email: formData.email,
+          password: formData.password
+        });
       }
 
       if (response?.data.success) {
         // Store token and user info (clear and set atomically)
         const token = response.data.token;
         const user = JSON.stringify(response.data.user);
-        const role = activeTab; // 'admin' or 'intern'
+        const role = activeTab; // 'admin', 'intern', or 'trainer'
         
         localStorage.clear();
         localStorage.setItem('token', token);
@@ -59,6 +64,8 @@ function Login() {
             navigate('/admin-dashboard');
           } else if (activeTab === 'intern') {
             navigate('/intern-dashboard');
+          } else if (activeTab === 'trainer') {
+            navigate('/trainer-dashboard');
           }
         }, 100);
       }
@@ -102,10 +109,10 @@ function Login() {
               Intern
             </button>
             <button
-              className="tab-btn disabled"
-              disabled
+              className={`tab-btn ${activeTab === 'trainer' ? 'active' : ''}`}
+              onClick={() => setActiveTab('trainer')}
             >
-              SMS
+              Trainer / HR
             </button>
           </div>
 
@@ -150,6 +157,34 @@ function Login() {
                     value={formData.internId}
                     onChange={handleChange}
                     placeholder="Enter your intern ID"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Enter your password"
+                    required
+                  />
+                </div>
+              </>
+            )}
+
+            {activeTab === 'trainer' && (
+              <>
+                <div className="form-group">
+                  <label>Email Address</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Enter your email"
                     required
                   />
                 </div>

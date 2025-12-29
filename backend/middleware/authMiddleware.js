@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-// Verify JWT token
+// Verify JWT token (alias: protect)
 exports.verifyToken = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
@@ -23,6 +23,9 @@ exports.verifyToken = (req, res, next) => {
     });
   }
 };
+
+// Alias for verifyToken
+exports.protect = exports.verifyToken;
 
 // Verify admin role
 exports.verifyAdmin = (req, res, next) => {

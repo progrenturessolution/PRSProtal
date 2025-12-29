@@ -2,10 +2,21 @@ import { useState } from 'react';
 import { adminAPI } from '../services/api';
 
 function AddIntern({ onInternAdded }) {
+  const [studentType, setStudentType] = useState('Internship');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: ''
+    mobile: '',
+    password: '',
+    domain: '',
+    joiningDate: '',
+    endingDate: '',
+    duration: '',
+    gender: '',
+    paymentDoneBy: '',
+    dateOfPayment: '',
+    transactionId: '',
+    currentDesignation: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -27,13 +38,37 @@ function AddIntern({ onInternAdded }) {
     setSuccess('');
 
     try {
-      const response = await adminAPI.addIntern(formData);
+      const submitData = {
+        studentType,
+        name: formData.name,
+        email: formData.email,
+        mobile: formData.mobile,
+        password: formData.password
+      };
+
+      if (studentType === 'Internship') {
+        submitData.domain = formData.domain;
+        submitData.joiningDate = formData.joiningDate;
+        submitData.endingDate = formData.endingDate;
+        submitData.duration = formData.duration;
+      } else if (studentType === 'SMS Program') {
+        submitData.gender = formData.gender;
+        submitData.paymentDoneBy = formData.paymentDoneBy;
+        submitData.dateOfPayment = formData.dateOfPayment;
+        submitData.transactionId = formData.transactionId;
+        submitData.currentDesignation = formData.currentDesignation;
+      }
+
+      console.log('Submitting student data:', submitData);
+      console.log('Token:', localStorage.getItem('token'));
+      
+      const response = await adminAPI.addIntern(submitData);
       
       if (response.data.success) {
         const intern = response.data.intern;
         const emailSent = response.data.emailSent;
         
-        let successMsg = `✅ Intern added successfully!\n\nIntern ID: ${intern.internId}\nName: ${intern.name}\nEmail: ${intern.email}`;
+        let successMsg = `✅ Student added successfully!\n\nID: ${intern.internId}\nName: ${intern.name}\nEmail: ${intern.email}\nType: ${intern.studentType}`;
         
         if (emailSent) {
           successMsg += `\n\n📧 Login credentials have been sent to ${intern.email}`;
@@ -43,20 +78,31 @@ function AddIntern({ onInternAdded }) {
         
         setSuccess(successMsg);
         
-        // Reset form
         setFormData({
           name: '',
           email: '',
-          password: ''
+          mobile: '',
+          password: '',
+          domain: '',
+          joiningDate: '',
+          endingDate: '',
+          duration: '',
+          gender: '',
+          paymentDoneBy: '',
+          dateOfPayment: '',
+          transactionId: '',
+          currentDesignation: ''
         });
 
-        // Notify parent component to refresh stats
         if (onInternAdded) {
           onInternAdded();
         }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add intern. Please try again.');
+      console.error('Add student error:', err);
+      console.error('Error response:', err.response);
+      const errorMessage = err.response?.data?.message || 'Failed to add student. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -65,8 +111,8 @@ function AddIntern({ onInternAdded }) {
   return (
     <>
       <div className="content-header">
-        <h1>Add New Intern</h1>
-        <p>Register a new intern to the system</p>
+        <h1>Add New Student</h1>
+        <p>Register a new student to the system</p>
       </div>
 
       <div className="card">
@@ -75,13 +121,41 @@ function AddIntern({ onInternAdded }) {
           {success && <div className="success-message">{success}</div>}
 
           <div className="form-group">
+            <label>Student Type *</label>
+            <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="studentType"
+                  value="Internship"
+                  checked={studentType === 'Internship'}
+                  onChange={(e) => setStudentType(e.target.value)}
+                  style={{ marginRight: '8px' }}
+                />
+                Internship
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="studentType"
+                  value="SMS Program"
+                  checked={studentType === 'SMS Program'}
+                  onChange={(e) => setStudentType(e.target.value)}
+                  style={{ marginRight: '8px' }}
+                />
+                SMS Program
+              </label>
+            </div>
+          </div>
+
+          <div className="form-group">
             <label>Full Name *</label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Enter intern's full name"
+              placeholder="Enter student's full name"
               required
             />
           </div>
@@ -99,6 +173,18 @@ function AddIntern({ onInternAdded }) {
           </div>
 
           <div className="form-group">
+            <label>Mobile Number *</label>
+            <input
+              type="tel"
+              name="mobile"
+              value={formData.mobile}
+              onChange={handleChange}
+              placeholder="Enter mobile number"
+              required
+            />
+          </div>
+
+          <div className="form-group">
             <label>Password *</label>
             <input
               type="password"
@@ -111,12 +197,123 @@ function AddIntern({ onInternAdded }) {
             />
           </div>
 
+          {studentType === 'Internship' && (
+            <>
+              <div className="form-group">
+                <label>Internship Domain *</label>
+                <input
+                  type="text"
+                  name="domain"
+                  value={formData.domain}
+                  onChange={handleChange}
+                  placeholder="e.g., Web Development, Data Science"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Joining Date *</label>
+                <input
+                  type="date"
+                  name="joiningDate"
+                  value={formData.joiningDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Ending Date *</label>
+                <input
+                  type="date"
+                  name="endingDate"
+                  value={formData.endingDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Duration *</label>
+                <input
+                  type="text"
+                  name="duration"
+                  value={formData.duration}
+                  onChange={handleChange}
+                  placeholder="e.g., 3 months, 6 months"
+                  required
+                />
+              </div>
+            </>
+          )}
+
+          {studentType === 'SMS Program' && (
+            <>
+              <div className="form-group">
+                <label>Gender</label>
+                <select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Current Designation</label>
+                <input
+                  type="text"
+                  name="currentDesignation"
+                  value={formData.currentDesignation}
+                  onChange={handleChange}
+                  placeholder="e.g., Student, Graduate"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Payment Done By</label>
+                <input
+                  type="text"
+                  name="paymentDoneBy"
+                  value={formData.paymentDoneBy}
+                  onChange={handleChange}
+                  placeholder="Name of person who made payment"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Date of Payment</label>
+                <input
+                  type="date"
+                  name="dateOfPayment"
+                  value={formData.dateOfPayment}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Transaction ID</label>
+                <input
+                  type="text"
+                  name="transactionId"
+                  value={formData.transactionId}
+                  onChange={handleChange}
+                  placeholder="Enter transaction/payment ID"
+                />
+              </div>
+            </>
+          )}
+
           <button 
             type="submit" 
             className="submit-btn"
             disabled={loading}
           >
-            {loading ? 'Adding Intern...' : 'Add Intern'}
+            {loading ? 'Adding Student...' : 'Add Student'}
           </button>
         </form>
       </div>

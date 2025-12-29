@@ -6,6 +6,13 @@ import CreateTask from './CreateTask';
 import ManageTasks from './ManageTasks';
 import PendingApprovals from './PendingApprovals';
 import CompletedTasks from './CompletedTasks';
+import InternshipManagement from './InternshipManagement';
+import SMSProgramManagement from './SMSProgramManagement';
+import Certificates from './Certificates';
+import Notifications from './Notifications';
+import JobsInternships from './JobsInternships';
+import AccessManagement from './AccessManagement';
+import Reports from './Reports';
 import { adminAPI, taskAPI } from '../services/api';
 import logo from '../assets/logo.png';
 
@@ -206,6 +213,27 @@ function AdminDashboard() {
       case 'completed-tasks':
         return <CompletedTasks key="completed-tasks" />;
       
+      case 'internship-management':
+        return <InternshipManagement key="internship-management" />;
+      
+      case 'sms-management':
+        return <SMSProgramManagement key="sms-management" />;
+      
+      case 'certificates':
+        return <Certificates key="certificates" />;
+      
+      case 'notifications':
+        return <Notifications key="notifications" />;
+      
+      case 'jobs-internships':
+        return <JobsInternships key="jobs-internships" />;
+      
+      case 'access-management':
+        return <AccessManagement key="access-management" />;
+      
+      case 'reports':
+        return <Reports key="reports" />;
+      
       default:
         return (
           <div className="content-header">
@@ -232,24 +260,54 @@ function AdminDashboard() {
         </div>
 
         <ul className="sidebar-menu">
+          {/* Main Options */}
           <li 
             className={activeMenu === 'dashboard' ? 'active' : ''}
             onClick={() => setActiveMenu('dashboard')}
           >
-            📊 Dashboard
+            📊 Dashboard Overview
           </li>
+
+          {/* Student Management Section */}
+          <li className="menu-section-header">STUDENT MANAGEMENT</li>
           <li 
             className={activeMenu === 'add-intern' ? 'active' : ''}
             onClick={() => setActiveMenu('add-intern')}
           >
-            ➕ Add Intern
+            ➕ Add Student
           </li>
           <li 
             className={activeMenu === 'view-interns' ? 'active' : ''}
             onClick={() => setActiveMenu('view-interns')}
           >
-            � View Interns
+            👥 View All Students
           </li>
+
+          {/* Internship Management */}
+          <li className="menu-section-header">PROGRAM MANAGEMENT</li>
+          <li 
+            className={activeMenu === 'internship-management' ? 'active' : ''}
+            onClick={() => setActiveMenu('internship-management')}
+          >
+            💼 Internship Management
+          </li>
+          <li 
+            className={activeMenu === 'sms-management' ? 'active' : ''}
+            onClick={() => setActiveMenu('sms-management')}
+          >
+            🎓 SMS Program Management
+          </li>
+
+          {/* Certificates */}
+          <li 
+            className={activeMenu === 'certificates' ? 'active' : ''}
+            onClick={() => setActiveMenu('certificates')}
+          >
+            📜 Certificates
+          </li>
+
+          {/* Tasks & Projects */}
+          <li className="menu-section-header">TASKS & PROJECTS</li>
           <li 
             className={activeMenu === 'create-task' ? 'active' : ''}
             onClick={() => setActiveMenu('create-task')}
@@ -285,10 +343,38 @@ function AdminDashboard() {
             className={activeMenu === 'completed-tasks' ? 'active' : ''}
             onClick={() => setActiveMenu('completed-tasks')}
           >
-            ✓ Completed Tasks
+            ✅ Completed Tasks
           </li>
-          <li className="disabled">
-            ➕ Add SMS (Coming Soon)
+
+          {/* Communication */}
+          <li className="menu-section-header">COMMUNICATION</li>
+          <li 
+            className={activeMenu === 'notifications' ? 'active' : ''}
+            onClick={() => setActiveMenu('notifications')}
+          >
+            🔔 Notifications
+          </li>
+          <li 
+            className={activeMenu === 'jobs-internships' ? 'active' : ''}
+            onClick={() => setActiveMenu('jobs-internships')}
+          >
+            💼 Jobs & Internship Updates
+          </li>
+
+          {/* Access Management */}
+          <li 
+            className={activeMenu === 'access-management' ? 'active' : ''}
+            onClick={() => setActiveMenu('access-management')}
+          >
+            🔐 Access Management
+          </li>
+
+          {/* Reports */}
+          <li 
+            className={activeMenu === 'reports' ? 'active' : ''}
+            onClick={() => setActiveMenu('reports')}
+          >
+            📊 Reports
           </li>
         </ul>
 

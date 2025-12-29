@@ -26,11 +26,37 @@ const taskSchema = new mongoose.Schema({
     min: 0,
     max: 100
   },
+  progressUpdatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: 'progressUpdatedByModel'
+  },
+  progressUpdatedByModel: {
+    type: String,
+    enum: ['Admin', 'Trainer']
+  },
   status: {
     type: String,
-    enum: ['Assigned', 'In Progress', 'Pending Approval', 'Completed'],
+    enum: ['Assigned', 'In Progress', 'Pending Approval', 'Completed', 'Needs Improvement', 'Reviewed'],
     default: 'Assigned'
   },
+  trainerFeedback: {
+    type: String,
+    trim: true
+  },
+  trainerReviewStatus: {
+    type: String,
+    enum: ['Pending', 'Reviewed', 'Needs Improvement', 'Approved'],
+    default: 'Pending'
+  },
+  submissionLink: {
+    type: String,
+    trim: true
+  },
+  submissionFiles: [{
+    filename: String,
+    filepath: String,
+    uploadedAt: Date
+  }],
   completedAt: {
     type: Date,
     default: null

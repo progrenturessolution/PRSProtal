@@ -27,7 +27,8 @@ api.interceptors.request.use(
 // Authentication APIs
 export const authAPI = {
   adminLogin: (credentials) => api.post('/auth/admin-login', credentials),
-  internLogin: (credentials) => api.post('/auth/intern-login', credentials)
+  internLogin: (credentials) => api.post('/auth/intern-login', credentials),
+  trainerLogin: (credentials) => api.post('/auth/trainer-login', credentials)
 };
 
 // Admin APIs
@@ -37,7 +38,37 @@ export const adminAPI = {
   getStats: () => api.get('/admin/stats'),
   deleteIntern: (id) => api.delete(`/admin/intern/${id}`),
   updateInternStatus: (id, status) => api.patch(`/admin/intern/${id}/status`, { status }),
-  deleteAllInterns: () => api.delete('/admin/delete-all-interns')
+  deleteAllInterns: () => api.delete('/admin/delete-all-interns'),
+  
+  // Trainer management
+  addTrainer: (trainerData) => api.post('/admin/add-trainer', trainerData),
+  getAllTrainers: () => api.get('/admin/trainers'),
+  assignStudents: (trainerId, studentIds) => api.post('/admin/assign-students', { trainerId, studentIds }),
+  
+  // Notifications
+  createNotification: (notificationData) => api.post('/admin/notifications', notificationData),
+  getAllNotifications: () => api.get('/admin/notifications'),
+  
+  // Job postings
+  createJobPosting: (jobData) => api.post('/admin/job-postings', jobData),
+  getAllJobPostings: () => api.get('/admin/job-postings'),
+  
+  // Documents
+  uploadStudentDocument: (studentId, formData) => api.post(`/admin/students/${studentId}/documents`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  getStudentDocuments: (studentId) => api.get(`/admin/students/${studentId}/documents`)
+};
+
+// Trainer APIs
+export const trainerAPI = {
+  getAssignedStudents: () => api.get('/trainer/students'),
+  getStudentRecords: (studentId) => api.get(`/trainer/students/${studentId}/records`),
+  addInterview: (interviewData) => api.post('/trainer/interviews', interviewData),
+  addAptitude: (aptitudeData) => api.post('/trainer/aptitude', aptitudeData),
+  addAssessment: (assessmentData) => api.post('/trainer/assessments', assessmentData),
+  addTraining: (trainingData) => api.post('/trainer/training', trainingData),
+  updateTaskProgress: (taskId, data) => api.patch(`/trainer/tasks/${taskId}/progress`, data)
 };
 
 // Task APIs

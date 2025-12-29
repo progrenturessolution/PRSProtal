@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const trainerRoutes = require('./routes/trainerRoutes');
 
 // Load environment variables with explicit path
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -31,6 +32,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/task', taskRoutes);
+app.use('/api/trainer', trainerRoutes);
 
 // Health check route
 app.get('/', (req, res) => {
