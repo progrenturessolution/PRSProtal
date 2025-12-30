@@ -27,8 +27,18 @@ const upload = multer({ storage });
 
 // ========== INTERN/STUDENT MANAGEMENT ==========
 
-// Add new intern (Admin only)
-router.post('/add-intern', verifyToken, verifyAdmin, adminController.addIntern);
+// Add new intern (Admin only) - support uploading required SMS Program documents
+router.post(
+	'/add-intern',
+	verifyToken,
+	verifyAdmin,
+	upload.fields([
+		{ name: 'welcomeLetter', maxCount: 1 },
+		{ name: 'offerLetter', maxCount: 1 },
+		{ name: 'paymentReceipt', maxCount: 1 }
+	]),
+	adminController.addIntern
+);
 
 // Get all interns (Admin only)
 router.get('/interns', verifyToken, verifyAdmin, adminController.getAllInterns);

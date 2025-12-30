@@ -93,6 +93,36 @@ exports.addIntern = async (req, res) => {
       internData.currentDesignation = currentDesignation || 'Student';
     }
 
+    // If files were uploaded via multipart/form-data (welcomeLetter, offerLetter, paymentReceipt), attach to documents
+    const files = req.files || {};
+    if (Object.keys(files).length > 0) {
+      internData.documents = internData.documents || {};
+
+      if (files.welcomeLetter && files.welcomeLetter[0]) {
+        internData.documents.welcomeLetter = {
+          filename: files.welcomeLetter[0].filename,
+          filepath: files.welcomeLetter[0].path,
+          uploadedAt: new Date()
+        };
+      }
+
+      if (files.offerLetter && files.offerLetter[0]) {
+        internData.documents.offerLetter = {
+          filename: files.offerLetter[0].filename,
+          filepath: files.offerLetter[0].path,
+          uploadedAt: new Date()
+        };
+      }
+
+      if (files.paymentReceipt && files.paymentReceipt[0]) {
+        internData.documents.paymentReceipt = {
+          filename: files.paymentReceipt[0].filename,
+          filepath: files.paymentReceipt[0].path,
+          uploadedAt: new Date()
+        };
+      }
+    }
+
     const intern = new Intern(internData);
     await intern.save();
 

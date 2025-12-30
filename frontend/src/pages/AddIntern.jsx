@@ -18,7 +18,9 @@ function AddIntern({ onInternAdded }) {
     transactionId: '',
     currentDesignation: ''
   });
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [welcomeFile, setWelcomeFile] = useState(null);
+  const [offerFile, setOfferFile] = useState(null);
+  const [paymentFile, setPaymentFile] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,11 +34,9 @@ function AddIntern({ onInternAdded }) {
     setSuccess('');
   };
 
-  const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0] || null);
-    setError('');
-    setSuccess('');
-  };
+  const handleWelcomeFile = (e) => { setWelcomeFile(e.target.files[0] || null); setError(''); setSuccess(''); };
+  const handleOfferFile = (e) => { setOfferFile(e.target.files[0] || null); setError(''); setSuccess(''); };
+  const handlePaymentFile = (e) => { setPaymentFile(e.target.files[0] || null); setError(''); setSuccess(''); };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,7 +69,29 @@ function AddIntern({ onInternAdded }) {
       console.log('Submitting student data:', submitData);
       console.log('Token:', localStorage.getItem('token'));
       
-      const response = await adminAPI.addIntern(submitData);
+      let response;
+
+      // If SMS Program and files are selected, send multipart/form-data
+      if (studentType === 'SMS Program') {
+        // Require all three documents for SMS Program
+        if (!welcomeFile || !offerFile || !paymentFile) {
+          setError('Please upload Welcome Letter, Offer Letter and Payment Receipt (all required).');
+          setLoading(false);
+          return;
+        }
+
+        const fd = new FormData();
+        // Append json fields
+        Object.keys(submitData).forEach((k) => fd.append(k, submitData[k]));
+        // Append files with field names expected by the server
+        fd.append('welcomeLetter', welcomeFile);
+        fd.append('offerLetter', offerFile);
+        fd.append('paymentReceipt', paymentFile);
+
+        response = await adminAPI.addIntern(fd);
+      } else {
+        response = await adminAPI.addIntern(submitData);
+      }
       
       if (response.data.success) {
         const intern = response.data.intern;
@@ -104,24 +126,10 @@ function AddIntern({ onInternAdded }) {
         if (onInternAdded) {
           onInternAdded();
         }
-        // If offer letter file selected, upload it and sync
-        if (selectedFile) {
-          try {
-            const fd = new FormData();
-            fd.append('file', selectedFile);
-            fd.append('documentType', 'offerLetter');
-            // server uses route param studentId; pass file as multipart
-            const uploadResp = await adminAPI.uploadStudentDocument(intern.id, fd);
-            if (uploadResp.data && uploadResp.data.success) {
-              setSuccess((s) => s + '\n\n📎 Offer letter uploaded and synced.');
-            } else {
-              setError('Student added but failed to upload offer letter.');
-            }
-          } catch (uploadErr) {
-            console.error('Upload error:', uploadErr);
-            setError('Student added but offer letter upload failed.');
-          }
-        }
+        // clear files
+        setWelcomeFile(null);
+        setOfferFile(null);
+        setPaymentFile(null);
       }
     } catch (err) {
       console.error('Add student error:', err);
@@ -271,13 +279,9 @@ function AddIntern({ onInternAdded }) {
               </div>
 
               <div className="form-group">
-                <label>Internship Offer Letter (PDF) *</label>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleFileChange}
-                />
-                <small>Upload the internship offer letter (PDF). This will sync with the student profile and certificates.</small>
+                    <label>Internship Offer Letter (PDF) *</label>
+                    <input type="file" accept="application/pdf" onChange={handleOfferFile} />
+                    <small>Upload the internship offer letter (PDF). This will sync with the student profile and certificates.</small>
               </div>
             </>
           )}
@@ -311,13 +315,7 @@ function AddIntern({ onInternAdded }) {
 
               <div className="form-group">
                 <label>Payment Done By</label>
-                <input
-                  type="text"
-                  name="paymentDoneBy"
-                  value={formData.paymentDoneBy}
-                  onChange={handleChange}
-                  placeholder="Name of person who made payment"
-                />
+                <input type="text" name="paymentDoneBy" value={formData.paymentDoneBy} onChange={handleChange} placeholder="Name of person who made payment" />
               </div>
 
               <div className="form-group">
@@ -339,6 +337,20 @@ function AddIntern({ onInternAdded }) {
                   onChange={handleChange}
                   placeholder="Enter transaction/payment ID"
                 />
+              </div>
+              <div className="form-group">
+                <label>Upload Welcome Letter (PDF) *</label>
+                <input type="file" accept="application/pdf" onChange={handleWelcomeFile} />
+              </div>
+
+              <div className="form-group">
+                <label>Upload Internship Offer Letter (PDF) *</label>
+                <input type="file" accept="application/pdf" onChange={handleOfferFile} />
+              </div>
+
+              <div className="form-group">
+                <label>Upload Payment Receipt (PDF) *</label>
+                <input type="file" accept="application/pdf" onChange={handlePaymentFile} />
               </div>
             </>
           )}

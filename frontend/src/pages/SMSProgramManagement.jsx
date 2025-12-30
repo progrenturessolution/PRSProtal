@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 
 function SMSProgramManagement() {
   const [students, setStudents] = useState([]);
+  const [uploadState, setUploadState] = useState({}); // { [studentId]: { uploading, success, filenames: [] } }
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, active, completed
 
@@ -186,23 +187,129 @@ function SMSProgramManagement() {
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="action-btn"
-                        onClick={() => {
-                          // View details logic
-                          console.log('View details for:', student._id);
-                        }}
-                        style={{
-                          padding: '6px 12px',
-                          background: '#3b82f6',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        View Details
-                      </button>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <button
+                              className="action-btn"
+                              onClick={() => console.log('View details for:', student._id)}
+                              style={{
+                                padding: '6px 12px',
+                                background: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              View Details
+                            </button>
+
+                            {/* Hidden file input to pick three files */}
+                            <input
+                              id={`upload-${student._id}`}
+                              type="file"
+                              accept="application/pdf"
+                              multiple
+                              style={{ display: 'none' }}
+                              onChange={async (e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (files.length === 0) return;
+
+                                // Expecting three files: welcomeLetter, offerLetter, paymentReceipt
+                                // Allow uploaded files in any order by filename hints, otherwise require exactly 3
+                                const studentKey = student._id;
+                                setUploadState(s => ({ ...s, [studentKey]: { uploading: true, success: false, filenames: [] } }));
+
+                                try {
+                                  // Map files to documentType by checking common keywords in name
+                                  const mapFileToType = (file) => {
+                                    const name = file.name.toLowerCase();
+                                    if (name.includes('welcome')) return 'welcomeLetter';
+                                    if (name.includes('offer')) return 'offerLetter';
+                                    if (name.includes('receipt') || name.includes('payment')) return 'paymentReceipt';
+                                    return null;
+                                  };
+
+                                  const uploads = [];
+                                  for (const file of files) {
+                                    const docType = mapFileToType(file) || null;
+                                    // If unknown, skip (we upload only known types)
+                                    if (!docType) continue;
+
+                                    const fd = new FormData();
+                                    fd.append('file', file);
+                                    fd.append('documentType', docType);
+
+                                    uploads.push({ fd, file, docType });
+                                  }
+
+                                  // If nothing matched, try to upload up to first 3 files in order
+                                  if (uploads.length === 0) {
+                                    const types = ['welcomeLetter', 'offerLetter', 'paymentReceipt'];
+                                    for (let i = 0; i < Math.min(files.length, 3); i++) {
+                                      const fd = new FormData();
+                                      fd.append('file', files[i]);
+                                      fd.append('documentType', types[i]);
+                                      uploads.push({ fd, file: files[i], docType: types[i] });
+                                    }
+                                  }
+
+                                  // Perform uploads sequentially
+                                  const uploadedNames = [];
+                                  for (const up of uploads) {
+                                    const resp = await adminAPI.uploadStudentDocument(student._id, up.fd);
+                                    if (resp.data && resp.data.success) {
+                                      uploadedNames.push(up.file.name);
+                                    }
+                                  }
+
+                                  setUploadState(s => ({ ...s, [studentKey]: { uploading: false, success: uploadedNames.length > 0, filenames: uploadedNames } }));
+                                } catch (err) {
+                                  console.error('Upload error:', err);
+                                  setUploadState(s => ({ ...s, [student._id]: { uploading: false, success: false, filenames: [] } }));
+                                } finally {
+                                  // clear input
+                                  e.target.value = '';
+                                }
+                              }}
+                            />
+
+                            <label htmlFor={`upload-${student._id}`} style={{ margin: 0 }}>
+                              <button
+                                type="button"
+                                style={{
+                                  padding: '6px 12px',
+                                  background: uploadState[student._id]?.success ? '#10b981' : '#0ea5e9',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px'
+                                }}
+                              >
+                                {uploadState[student._id]?.uploading ? (
+                                  'Uploading...'
+                                ) : uploadState[student._id]?.success ? (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontWeight: 700 }}>✓</span>
+                                    <span style={{ fontSize: 13 }}>Uploaded</span>
+                                  </span>
+                                ) : (
+                                  'Upload Docs'
+                                )}
+                              </button>
+                            </label>
+
+                            {/* Show uploaded filenames when available */}
+                            {uploadState[student._id]?.filenames?.length > 0 && (
+                              <div style={{ fontSize: 12, color: '#0f172a' }}>
+                                {uploadState[student._id].filenames.map((n, i) => (
+                                  <div key={i} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>{n}</div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                     </td>
                   </tr>
                 ))}
