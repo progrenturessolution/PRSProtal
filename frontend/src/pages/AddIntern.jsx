@@ -97,12 +97,12 @@ function AddIntern({ onInternAdded }) {
         const intern = response.data.intern;
         const emailSent = response.data.emailSent;
         
-        let successMsg = `✅ Student added successfully!\n\nID: ${intern.internId}\nName: ${intern.name}\nEmail: ${intern.email}\nType: ${intern.studentType}`;
+          let successMsg = `Student added successfully!\n\nID: ${intern.internId}\nName: ${intern.name}\nEmail: ${intern.email}\nType: ${intern.studentType}`;
         
         if (emailSent) {
-          successMsg += `\n\n📧 Login credentials have been sent to ${intern.email}`;
+          successMsg += `\n\nLogin credentials have been sent to ${intern.email}`;
         } else {
-          successMsg += `\n\n⚠️ Warning: Email could not be sent. Please share credentials manually.`;
+            successMsg += `\n\nWarning: Email could not be sent. Please share credentials manually.`;
         }
         
         setSuccess(successMsg);

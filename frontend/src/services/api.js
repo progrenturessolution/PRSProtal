@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
+// Base URL for uploaded files (backend origin)
+export const UPLOADS_BASE = API_BASE_URL.replace('/api', '');
+
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -86,6 +89,11 @@ export const taskAPI = {
   // Intern task APIs
   getInternTasks: () => api.get('/task/intern/tasks'),
   updateTaskProgress: (taskId, progress) => api.put(`/task/intern/update-task/${taskId}`, { progress })
+};
+
+// Intern APIs
+export const internAPI = {
+  getMyDocuments: () => api.get('/task/intern/my-documents')
 };
 
 export default api;

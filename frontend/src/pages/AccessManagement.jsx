@@ -59,7 +59,7 @@ function AccessManagement() {
       const response = await adminAPI.addTrainer(trainerFormData);
       
       if (response.data.success) {
-        setSuccess('✅ Trainer added successfully!');
+        setSuccess('Trainer added successfully!');
         setTrainerFormData({
           name: '',
           email: '',
@@ -109,7 +109,7 @@ function AccessManagement() {
       });
       
       if (response.data.success) {
-        setSuccess(`✅ ${selectedStudents.length} student(s) assigned successfully!`);
+        setSuccess(`${selectedStudents.length} student(s) assigned successfully!`);
         setSelectedTrainer('');
         setSelectedStudents([]);
         setShowAssignForm(false);

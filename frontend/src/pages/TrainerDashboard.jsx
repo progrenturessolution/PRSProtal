@@ -58,7 +58,7 @@ function TrainerDashboard() {
             className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
-            📊 Dashboard Overview
+            Dashboard Overview
           </button>
           <button 
             className={`nav-item ${activeTab === 'students' ? 'active' : ''}`}
@@ -70,7 +70,7 @@ function TrainerDashboard() {
             className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`}
             onClick={() => setActiveTab('notifications')}
           >
-            🔔 Notifications
+            Notifications
           </button>
         </nav>
 

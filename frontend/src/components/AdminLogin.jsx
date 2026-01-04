@@ -76,7 +76,7 @@ function AdminLogin() {
               fontSize: '14px',
               fontWeight: 500
             }}>
-              ❌ {error}
+              Error: {error}
             </div>
           )}
 

@@ -5,6 +5,7 @@ function ManageTasks({ onTaskApproved }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [editingTask, setEditingTask] = useState(null);
   const [editForm, setEditForm] = useState({
     title: '',
@@ -38,25 +39,19 @@ function ManageTasks({ onTaskApproved }) {
     }
   };
 
-  const handleApproveTask = async (taskId, taskTitle) => {
-    if (!window.confirm(`Approve task: "${taskTitle}"?`)) {
-      return;
-    }
-
+  const handleApproveTask = async (taskId /*, taskTitle */) => {
     try {
       await taskAPI.approveTask(taskId);
       setTasks(tasks.map(task => 
         task._id === taskId ? { ...task, status: 'Completed', completedAt: new Date() } : task
       ));
-      
-      // Notify parent to refresh stats
-      if (onTaskApproved) {
-        onTaskApproved();
-      }
-      alert('Task approved successfully!');
+      if (onTaskApproved) onTaskApproved();
+      setSuccess('Task approved successfully');
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
-      alert('Failed to approve task');
+      setError('Failed to approve task');
       console.error(err);
+      setTimeout(() => setError(''), 4000);
     }
   };
 
@@ -82,33 +77,27 @@ function ManageTasks({ onTaskApproved }) {
       setEditingTask(null);
       
       // Notify parent to refresh stats
-      if (onTaskApproved) {
-        onTaskApproved();
-      }
-      alert('Task updated successfully!');
+      if (onTaskApproved) onTaskApproved();
+      setSuccess('Task updated successfully');
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
-      alert('Failed to update task');
+      setError('Failed to update task');
       console.error(err);
+      setTimeout(() => setError(''), 4000);
     }
   };
 
   const handleDeleteTask = async (taskId, taskTitle) => {
-    if (!window.confirm(`Are you sure you want to delete task: "${taskTitle}"?\n\nThis action cannot be undone.`)) {
-      return;
-    }
-
     try {
       await taskAPI.deleteTask(taskId);
       setTasks(tasks.filter(task => task._id !== taskId));
-      
-      // Notify parent to refresh stats
-      if (onTaskApproved) {
-        onTaskApproved();
-      }
-      alert('Task deleted successfully!');
+      if (onTaskApproved) onTaskApproved();
+      setSuccess('Task deleted successfully');
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
-      alert('Failed to delete task');
+      setError('Failed to delete task');
       console.error(err);
+      setTimeout(() => setError(''), 4000);
     }
   };
 
@@ -161,6 +150,21 @@ function ManageTasks({ onTaskApproved }) {
           fontWeight: 500
         }}>
           {error}
+        </div>
+      )}
+
+      {success && (
+        <div style={{
+          padding: '12px',
+          marginBottom: '20px',
+          backgroundColor: '#ecfccb',
+          border: '1px solid #bbf7d0',
+          borderRadius: '8px',
+          color: '#166534',
+          fontSize: '14px',
+          fontWeight: 500
+        }}>
+          {success}
         </div>
       )}
 
@@ -535,7 +539,7 @@ function ManageTasks({ onTaskApproved }) {
                                 boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
                               }}
                             >
-                              ✓ Approve
+                              Approve
                             </button>
                           )}
                           {task.status === 'Completed' && (
@@ -547,7 +551,7 @@ function ManageTasks({ onTaskApproved }) {
                               background: '#d1fae5',
                               borderRadius: '8px'
                             }}>
-                              ✓ Approved
+                              Approved
                             </span>
                           )}
                           {task.status !== 'Completed' && (
@@ -569,7 +573,7 @@ function ManageTasks({ onTaskApproved }) {
                                 onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
                                 onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                               >
-                                ✏️ Edit
+                                Edit
                               </button>
                               <button
                                 onClick={() => handleDeleteTask(task._id, task.title)}
@@ -588,7 +592,7 @@ function ManageTasks({ onTaskApproved }) {
                                 onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
                                 onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                               >
-                                🗑️ Delete
+                                Delete
                               </button>
                             </>
                           )}
@@ -660,7 +664,7 @@ function ManageTasks({ onTaskApproved }) {
                   borderRadius: '12px',
                   marginBottom: '12px'
                 }}>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>👤 Assigned To</div>
+                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>Assigned To</div>
                   <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '4px' }}>
                     {task.assignedTo?.name}
                   </div>
@@ -687,7 +691,7 @@ function ManageTasks({ onTaskApproved }) {
                   borderRadius: '10px',
                   marginBottom: '12px'
                 }}>
-                  <span style={{ fontSize: '12px', color: '#92400e', fontWeight: 600 }}>⏰ Deadline</span>
+                  <span style={{ fontSize: '12px', color: '#92400e', fontWeight: 600 }}>Deadline</span>
                   <span style={{ fontSize: '13px', fontWeight: 600, color: '#78350f' }}>
                     {formatDeadline(task.deadline)}
                   </span>
@@ -740,8 +744,8 @@ function ManageTasks({ onTaskApproved }) {
                         boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
                         transition: 'all 0.2s'
                       }}
-                    >
-                      ✓ Approve Task
+                      >
+                      Approve Task
                     </button>
                   )}
                   {task.status === 'Completed' && (
@@ -754,8 +758,8 @@ function ManageTasks({ onTaskApproved }) {
                       color: '#065f46',
                       borderRadius: '10px',
                       textAlign: 'center'
-                    }}>
-                      ✓ Approved
+                      }}>
+                      Approved
                     </div>
                   )}
                   {task.status !== 'Completed' && (
@@ -776,7 +780,7 @@ function ManageTasks({ onTaskApproved }) {
                           transition: 'all 0.2s'
                         }}
                       >
-                        ✏️ Edit
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDeleteTask(task._id, task.title)}
@@ -794,7 +798,7 @@ function ManageTasks({ onTaskApproved }) {
                           transition: 'all 0.2s'
                         }}
                       >
-                        🗑️ Delete
+                        Delete
                       </button>
                     </>
                   )}

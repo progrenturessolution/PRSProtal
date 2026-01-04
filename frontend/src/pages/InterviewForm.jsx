@@ -264,7 +264,7 @@ function InterviewForm() {
                       <td>{interview.confidenceLevel}</td>
                       <td>{interview.clarityLevel}</td>
                       <td>{interview.overallLevel}</td>
-                      <td>{interview.levelCrossed ? '✅ Yes' : '❌ No'}</td>
+                      <td>{interview.levelCrossed ? 'Yes' : 'No'}</td>
                     </tr>
                   ))}
                 </tbody>

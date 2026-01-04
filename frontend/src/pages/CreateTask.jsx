@@ -46,11 +46,11 @@ function CreateTask({ onTaskCreated }) {
       const response = await taskAPI.createTask(formData);
       
       if (response.data.success) {
-        const emailMsg = response.data.emailSent 
-          ? '📧 Email notification sent to intern' 
-          : '⚠️ Task created but email failed';
-        
-        setSuccess(`✅ Task created and assigned successfully!\n${emailMsg}`);
+        const emailMsg = response.data.emailSent
+          ? 'Email notification sent to intern'
+          : 'Task created but email failed';
+
+        setSuccess(`Task created and assigned successfully.\n${emailMsg}`);
         
         // Reset form
         setFormData({
@@ -158,7 +158,7 @@ function CreateTask({ onTaskCreated }) {
             className="submit-btn"
             disabled={loading}
           >
-            {loading ? 'Creating Task...' : '📋 Create & Assign Task'}
+            {loading ? 'Creating Task...' : 'Create & Assign Task'}
           </button>
         </form>
       </div>

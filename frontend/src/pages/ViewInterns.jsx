@@ -39,22 +39,16 @@ function ViewInterns({ onInternDeleted }) {
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete ${name}?`)) {
-      return;
-    }
-
     try {
       await adminAPI.deleteIntern(id);
       setInterns(interns.filter(intern => intern._id !== id));
-      alert('Intern deleted successfully');
-      
-      // Notify parent to refresh stats
-      if (onInternDeleted) {
-        onInternDeleted();
-      }
+      setInfoMessage('Intern deleted successfully');
+      setTimeout(() => setInfoMessage(''), 4000);
+      if (onInternDeleted) onInternDeleted();
     } catch (err) {
-      alert('Failed to delete intern');
+      setError('Failed to delete intern');
       console.error(err);
+      setTimeout(() => setError(''), 4000);
     }
   };
 

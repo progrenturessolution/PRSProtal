@@ -8,6 +8,8 @@ function PendingApprovals({ onTaskApproved }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchPendingTasks();
@@ -28,19 +30,17 @@ function PendingApprovals({ onTaskApproved }) {
     }
   };
 
-  const handleApproveTask = async (taskId, taskTitle) => {
-    if (!window.confirm(`Approve task: "${taskTitle}"?\n\nThis will mark the task as Completed.`)) {
-      return;
-    }
-
+  const handleApproveTask = async (taskId /*, taskTitle */) => {
     try {
       await taskAPI.approveTask(taskId);
       setTasks(tasks.filter(task => task._id !== taskId));
-      alert('Task approved successfully!');
+      setSuccess('Task approved successfully');
+      setTimeout(() => setSuccess(''), 4000);
       if (onTaskApproved) onTaskApproved();
     } catch (err) {
-      alert('Failed to approve task');
+      setError('Failed to approve task');
       console.error(err);
+      setTimeout(() => setError(''), 4000);
     }
   };
 
@@ -52,7 +52,8 @@ function PendingApprovals({ onTaskApproved }) {
 
   const handleSendFeedback = async () => {
     if (!feedbackMessage.trim()) {
-      alert('Please enter a feedback message');
+      setError('Please enter a feedback message');
+      setTimeout(() => setError(''), 3000);
       return;
     }
 
@@ -63,11 +64,13 @@ function PendingApprovals({ onTaskApproved }) {
       setShowFeedbackModal(false);
       setFeedbackMessage('');
       setSelectedTask(null);
-      alert('Feedback sent successfully!\n\nThe task has been moved back to In Progress and the intern has been notified via email.');
+      setSuccess('Feedback sent successfully. The task has been moved back to In Progress and the intern has been notified via email.');
+      setTimeout(() => setSuccess(''), 4000);
       if (onTaskApproved) onTaskApproved();
     } catch (err) {
-      alert('Failed to send feedback. Please try again.');
+      setError('Failed to send feedback. Please try again.');
       console.error(err);
+      setTimeout(() => setError(''), 4000);
     } finally {
       setSendingFeedback(false);
     }
@@ -102,6 +105,36 @@ function PendingApprovals({ onTaskApproved }) {
         <h1>Pending Task Approvals</h1>
         <p>Review and approve tasks submitted by interns</p>
       </div>
+
+      {error && (
+        <div style={{
+          padding: '12px',
+          marginBottom: '20px',
+          backgroundColor: '#fee2e2',
+          border: '1px solid #fecaca',
+          borderRadius: '8px',
+          color: '#dc2626',
+          fontSize: '14px',
+          fontWeight: 500
+        }}>
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div style={{
+          padding: '12px',
+          marginBottom: '20px',
+          backgroundColor: '#ecfccb',
+          border: '1px solid #bbf7d0',
+          borderRadius: '8px',
+          color: '#166534',
+          fontSize: '14px',
+          fontWeight: 500
+        }}>
+          {success}
+        </div>
+      )}
 
       {tasks.length === 0 ? (
         <div className="card">
