@@ -647,9 +647,16 @@ exports.uploadStudentDocument = async (req, res) => {
 };
 
 // Get student documents
+// Allows admin to fetch any student's documents via params
+// and allows an authenticated intern to fetch their own documents when no param provided
 exports.getStudentDocuments = async (req, res) => {
   try {
-    const { studentId } = req.params;
+    // Accept studentId from either params or fallback to the authenticated user id
+    const studentId = req.params.studentId || req.user?.id;
+
+    if (!studentId) {
+      return res.status(400).json({ success: false, message: 'Student ID not provided' });
+    }
 
     const student = await Intern.findById(studentId).select('documents name email internId studentType');
     if (!student) {

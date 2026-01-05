@@ -50,7 +50,7 @@ function CompletedTasks() {
       {tasks.length === 0 ? (
         <div className="card">
           <div className="empty-state">
-            <div style={{ fontSize: '48px', marginBottom: '20px' }}>📋</div>
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}></div>
             <p>No completed tasks yet. Approved tasks will appear here.</p>
           </div>
         </div>
@@ -77,7 +77,7 @@ function CompletedTasks() {
               justifyContent: 'center',
               fontSize: '28px'
             }}>
-              ✓
+              
             </div>
             <div>
               <div style={{ fontSize: '24px', fontWeight: 700, color: '#065f46' }}>
@@ -144,11 +144,11 @@ function CompletedTasks() {
                       </td>
                       <td>
                         <div style={{ fontSize: '13px', fontWeight: 600, color: '#10b981' }}>
-                          🎉 {formatDate(task.completedAt)}
-                        </div>
+                            {formatDate(task.completedAt)}
+                          </div>
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <span style={{
+                          <span style={{
                           padding: '8px 16px',
                           borderRadius: '20px',
                           fontSize: '13px',
@@ -157,7 +157,7 @@ function CompletedTasks() {
                           color: '#059669',
                           display: 'inline-block'
                         }}>
-                          ✓ Completed
+                          Completed
                         </span>
                       </td>
                     </tr>
@@ -195,7 +195,7 @@ function CompletedTasks() {
                   borderRadius: '12px',
                   marginBottom: '16px'
                 }}>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>👤 Intern</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Intern</div>
                   <div style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a', marginBottom: '4px' }}>
                     {task.assignedTo?.name || 'N/A'}
                   </div>
@@ -220,13 +220,13 @@ function CompletedTasks() {
                   marginBottom: '16px'
                 }}>
                   <div>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>📅 Assigned</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned</div>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>
                       {formatDate(task.createdAt)}
                     </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>⏰ Deadline</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Deadline</div>
                     <div style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>
                       {formatDate(task.deadline)}
                     </div>
@@ -243,7 +243,7 @@ function CompletedTasks() {
                   justifyContent: 'space-between'
                 }}>
                   <div>
-                    <div style={{ fontSize: '12px', color: '#047857', marginBottom: '4px' }}>🎉 Completed On</div>
+                    <div style={{ fontSize: '12px', color: '#047857', marginBottom: '4px' }}>Completed On</div>
                     <div style={{ fontSize: '14px', fontWeight: 600, color: '#065f46' }}>
                       {formatDate(task.completedAt)}
                     </div>
@@ -256,7 +256,7 @@ function CompletedTasks() {
                     backgroundColor: 'white',
                     color: '#059669'
                   }}>
-                    ✓ Done
+                    Done
                   </span>
                 </div>
               </div>

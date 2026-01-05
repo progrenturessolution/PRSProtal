@@ -56,7 +56,7 @@ function JobsInternships() {
       const response = await adminAPI.createJobPosting(formData);
       
       if (response.data.success) {
-        setSuccess('✅ Job/Internship posting created successfully!');
+        setSuccess('Job/Internship posting created successfully!');
         setFormData({
           opportunityType: 'Job',
           title: '',

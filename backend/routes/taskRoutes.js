@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
+const adminController = require('../controllers/adminController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 
 // Admin routes
@@ -15,5 +16,8 @@ router.delete('/admin/delete-task/:taskId', verifyToken, verifyAdmin, taskContro
 // Intern routes
 router.get('/intern/tasks', verifyToken, taskController.getInternTasks);
 router.put('/intern/update-task/:taskId', verifyToken, taskController.updateTaskProgress);
+
+// Intern: fetch own uploaded documents
+router.get('/intern/my-documents', verifyToken, adminController.getStudentDocuments);
 
 module.exports = router;

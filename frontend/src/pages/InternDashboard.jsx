@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { taskAPI } from '../services/api';
+import { taskAPI, internAPI, UPLOADS_BASE } from '../services/api';
 import logo from '../assets/logo.png';
 
 function InternDashboard() {
@@ -9,6 +9,8 @@ function InternDashboard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [documents, setDocuments] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -57,8 +59,9 @@ function InternDashboard() {
         return task;
       }));
     } catch (err) {
-      alert('Failed to update progress');
+      setError('Failed to update progress');
       console.error(err);
+      setTimeout(() => setError(''), 4000);
     }
   };
 
@@ -126,14 +129,33 @@ function InternDashboard() {
             onClick={() => setActiveSection('dashboard')}
             style={{ cursor: 'pointer' }}
           >
-            🏠 Dashboard
+            Dashboard
           </li>
           <li 
             className={activeSection === 'tasks' ? 'active' : ''}
             onClick={() => setActiveSection('tasks')}
             style={{ cursor: 'pointer' }}
           >
-            📋 My Tasks
+            My Tasks
+          </li>
+          <li
+            className={activeSection === 'certificates' ? 'active' : ''}
+            onClick={async () => {
+              setActiveSection('certificates');
+              // fetch documents when opening certificates
+              try {
+                const resp = await internAPI.getMyDocuments();
+                if (resp.data && resp.data.success) {
+                  setDocuments(resp.data.documents || null);
+                }
+              } catch (err) {
+                console.error('Failed to fetch documents:', err);
+                setDocuments(null);
+              }
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            Certificates
           </li>
         </ul>
 
@@ -184,7 +206,7 @@ function InternDashboard() {
                   borderRadius: '12px',
                   color: 'white'
                 }}>
-                  <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '5px' }}>📧 Email</div>
+                  <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '5px' }}>Email</div>
                   <div style={{ fontSize: '18px', fontWeight: 600, wordBreak: 'break-all' }}>{user.email}</div>
                 </div>
                 <div style={{ 
@@ -193,7 +215,7 @@ function InternDashboard() {
                   borderRadius: '12px',
                   color: 'white'
                 }}>
-                  <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '5px' }}>📊 Status</div>
+                  <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '5px' }}>Status</div>
                   <div style={{ fontSize: '18px', fontWeight: 600 }}>{user.status || 'Active'}</div>
                 </div>
               </div>
@@ -205,27 +227,27 @@ function InternDashboard() {
             </div>
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-icon">📋</div>
+                <div className="stat-icon"></div>
                 <div className="stat-value">{getTaskStats().total}</div>
                 <div className="stat-label">Total Tasks</div>
               </div>
               <div className="stat-card" style={{ borderLeft: '4px solid #94a3b8' }}>
-                <div className="stat-icon">📌</div>
+                <div className="stat-icon"></div>
                 <div className="stat-value">{getTaskStats().assigned}</div>
                 <div className="stat-label">Assigned</div>
               </div>
               <div className="stat-card" style={{ borderLeft: '4px solid #3b82f6' }}>
-                <div className="stat-icon">⚡</div>
+                <div className="stat-icon"></div>
                 <div className="stat-value">{getTaskStats().inProgress}</div>
                 <div className="stat-label">In Progress</div>
               </div>
               <div className="stat-card" style={{ borderLeft: '4px solid #f59e0b' }}>
-                <div className="stat-icon">⏳</div>
+                <div className="stat-icon"></div>
                 <div className="stat-value">{getTaskStats().pendingApproval}</div>
                 <div className="stat-label">Pending Approval</div>
               </div>
               <div className="stat-card" style={{ borderLeft: '4px solid #10b981' }}>
-                <div className="stat-icon">✅</div>
+                <div className="stat-icon"></div>
                 <div className="stat-value">{getTaskStats().completed}</div>
                 <div className="stat-label">Completed</div>
               </div>
@@ -239,18 +261,88 @@ function InternDashboard() {
                 className="btn-primary"
                 style={{ width: '100%', maxWidth: '300px' }}
               >
-                📋 View My Tasks
+                View My Tasks
               </button>
             </div>
           </>
         )}
+        {activeSection === 'certificates' && (
+          <>
+            <div className="content-header">
+              <h1>Certificates / Documents</h1>
+              <p>All documents uploaded by the admin will appear here.</p>
+            </div>
 
+            <div className="card">
+              <h3>My Documents</h3>
+              <div style={{ marginTop: '15px' }}>
+                {!documents ? (
+                  <p style={{ color: '#6b7280' }}>No documents available.</p>
+                ) : (
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    <div>
+                      <strong>Offer Letter:</strong>{' '}
+                      {documents.offerLetter ? (
+                        <a href={UPLOADS_BASE + '/uploads/students/' + documents.offerLetter.filename} target="_blank" rel="noreferrer">View</a>
+                      ) : (
+                        <span style={{ color: '#6b7280' }}>Not uploaded</span>
+                      )}
+                    </div>
+                    <div>
+                      <strong>Welcome Letter:</strong>{' '}
+                      {documents.welcomeLetter ? (
+                        <a href={UPLOADS_BASE + '/uploads/students/' + documents.welcomeLetter.filename} target="_blank" rel="noreferrer">View</a>
+                      ) : (
+                        <span style={{ color: '#6b7280' }}>Not uploaded</span>
+                      )}
+                    </div>
+                    <div>
+                      <strong>Payment Receipt:</strong>{' '}
+                      {documents.paymentReceipt ? (
+                        <a href={UPLOADS_BASE + '/uploads/students/' + documents.paymentReceipt.filename} target="_blank" rel="noreferrer">View</a>
+                      ) : (
+                        <span style={{ color: '#6b7280' }}>Not uploaded</span>
+                      )}
+                    </div>
+                    <div>
+                      <strong>Other Certificates:</strong>
+                      {documents.otherCertificates && documents.otherCertificates.length > 0 ? (
+                        <ul>
+                          {documents.otherCertificates.map((c, idx) => (
+                          <li key={idx}><a href={UPLOADS_BASE + '/uploads/students/' + c.filename} target="_blank" rel="noreferrer">{c.name || c.filename}</a></li>
+                        ))}
+                        </ul>
+                      ) : (
+                        <span style={{ color: '#6b7280', marginLeft: '8px' }}>None</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
         {activeSection === 'tasks' && (
           <>
             <div className="content-header">
               <h1>My Tasks</h1>
               <p>View and update your assigned tasks</p>
             </div>
+
+            {error && (
+              <div style={{
+                padding: '12px',
+                marginBottom: '20px',
+                backgroundColor: '#fee2e2',
+                border: '1px solid #fecaca',
+                borderRadius: '8px',
+                color: '#dc2626',
+                fontSize: '14px',
+                fontWeight: 500
+              }}>
+                {error}
+              </div>
+            )}
 
             {loading ? (
               <div className="card">
@@ -305,7 +397,7 @@ function InternDashboard() {
                                 color: isOverdue(task.deadline) && task.status !== 'Completed' ? '#dc2626' : '#0f172a',
                                 fontWeight: isOverdue(task.deadline) && task.status !== 'Completed' ? 600 : 400
                               }}>
-                                {isOverdue(task.deadline) && task.status !== 'Completed' && '⚠️ '}
+                                {isOverdue(task.deadline) && task.status !== 'Completed' && ''}
                                 {formatDeadline(task.deadline)}
                               </td>
                               <td>
@@ -353,7 +445,7 @@ function InternDashboard() {
                                   </select>
                                 ) : (
                                   <span style={{ color: '#10b981', fontWeight: 600, fontSize: '13px' }}>
-                                    ✓ Approved
+                                    Approved
                                   </span>
                                 )}
                               </td>
@@ -378,7 +470,6 @@ function InternDashboard() {
                                       fontWeight: 600,
                                       fontSize: '14px'
                                     }}>
-                                      <span>💬</span>
                                       <span>Admin Feedback - Changes Requested</span>
                                     </div>
                                     {task.comments
@@ -439,18 +530,17 @@ function InternDashboard() {
                             borderLeft: '4px solid #ef4444',
                             borderRadius: '8px'
                           }}>
-                            <div style={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
-                              gap: '8px', 
-                              marginBottom: '8px',
-                              color: '#991b1b',
-                              fontWeight: 600,
-                              fontSize: '14px'
-                            }}>
-                              <span>💬</span>
-                              <span>Admin Feedback - Changes Requested</span>
-                            </div>
+                                    <div style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      gap: '8px', 
+                                      marginBottom: '8px',
+                                      color: '#991b1b',
+                                      fontWeight: 600,
+                                      fontSize: '14px'
+                                    }}>
+                                      <span>Admin Feedback - Changes Requested</span>
+                                    </div>
                             {task.comments
                               .filter(comment => comment.sentBy === 'admin')
                               .map((comment, index) => (
@@ -473,12 +563,12 @@ function InternDashboard() {
                         )}
 
                         <div className="task-deadline">
-                          <span style={{ opacity: 0.7 }}>📅 Deadline:</span>
+                          <span style={{ opacity: 0.7 }}>Deadline:</span>
                           <span style={{ 
                             fontWeight: 600,
                             color: isOverdue(task.deadline) && task.status !== 'Completed' ? '#dc2626' : '#0f172a'
                           }}>
-                            {isOverdue(task.deadline) && task.status !== 'Completed' && '⚠️ '}
+                            {isOverdue(task.deadline) && task.status !== 'Completed' && ''}
                             {formatDeadline(task.deadline)}
                           </span>
                         </div>
@@ -524,7 +614,7 @@ function InternDashboard() {
                                 fontSize: '13px',
                                 color: '#92400e'
                               }}>
-                                ⏳ Waiting for admin approval
+                                Waiting for admin approval
                               </div>
                             )}
                           </div>
@@ -541,7 +631,7 @@ function InternDashboard() {
                             fontWeight: 600,
                             textAlign: 'center'
                           }}>
-                            ✓ Task Completed & Approved
+                            Task Completed & Approved
                           </div>
                         )}
                       </div>

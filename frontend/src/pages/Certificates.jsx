@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 
 function Certificates() {
   const [students, setStudents] = useState([]);
+  const [category, setCategory] = useState('All');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [documentType, setDocumentType] = useState('offerLetter');
   const [file, setFile] = useState(null);
@@ -76,7 +77,7 @@ function Certificates() {
       const response = await adminAPI.uploadStudentDocument(selectedStudent, formData);
       
       if (response.data.success) {
-        setMessage('✅ Certificate uploaded successfully!');
+        setMessage('Certificate uploaded successfully!');
         setFile(null);
         setSelectedStudent('');
         // Reset file input
@@ -116,6 +117,21 @@ function Certificates() {
         )}
 
         <form onSubmit={handleUpload} style={{ marginTop: '20px' }}>
+          {/* Category */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+            <div style={{ flex: '0 0 200px' }}>
+              <label>Category</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+              >
+                <option value="All">All</option>
+                <option value="Internship">Internship</option>
+                <option value="SMS Program">SMS Program</option>
+              </select>
+            </div>
+          </div>
           {/* Student Selection */}
           <div className="form-group">
             <label>Select Student *</label>
@@ -132,11 +148,13 @@ function Certificates() {
               }}
             >
               <option value="">Choose a student...</option>
-              {students.map((student) => (
-                <option key={student._id} value={student._id}>
-                  {student.internId} - {student.name} ({student.email})
-                </option>
-              ))}
+              {students
+                .filter(s => (category === 'All' || s.studentType === category))
+                .map((student) => (
+                  <option key={student._id} value={student._id}>
+                    {student.internId} - {student.name} ({student.email})
+                  </option>
+                ))}
             </select>
           </div>
 

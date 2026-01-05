@@ -22,6 +22,7 @@ function Reports() {
     startDate: '',
     endDate: ''
   });
+  const [infoMessage, setInfoMessage] = useState('');
 
   useEffect(() => {
     fetchReportsData();
@@ -56,7 +57,8 @@ function Reports() {
   };
 
   const handleExport = (format) => {
-    alert(`Export functionality for ${format} format will be implemented soon!`);
+    setInfoMessage(`Export functionality for ${format} format will be implemented soon.`);
+    setTimeout(() => setInfoMessage(''), 4000);
   };
 
   const renderOverviewReport = () => (
@@ -373,6 +375,21 @@ function Reports() {
         <p>View comprehensive reports and analytics</p>
       </div>
 
+      {infoMessage && (
+        <div style={{
+          padding: '12px',
+          marginBottom: '20px',
+          backgroundColor: '#ecfccb',
+          border: '1px solid #bbf7d0',
+          borderRadius: '8px',
+          color: '#166534',
+          fontSize: '14px',
+          fontWeight: 500
+        }}>
+          {infoMessage}
+        </div>
+      )}
+
       {/* Export Options */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
         <button
@@ -403,7 +420,7 @@ function Reports() {
             fontWeight: 600
           }}
         >
-          📊 Export as Excel
+          Export as Excel
         </button>
       </div>
 
