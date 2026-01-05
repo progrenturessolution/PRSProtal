@@ -9,10 +9,9 @@ function AddIntern({ onInternAdded }) {
     mobile: '',
     password: '',
     domain: '',
+    customDomain: '',
     joiningDate: '',
-    endingDate: '',
     duration: '',
-    gender: '',
     paymentDoneBy: '',
     dateOfPayment: '',
     transactionId: '',
@@ -54,12 +53,10 @@ function AddIntern({ onInternAdded }) {
       };
 
       if (studentType === 'Internship') {
-        submitData.domain = formData.domain;
+        submitData.domain = formData.domain === 'Other' ? formData.customDomain : formData.domain;
         submitData.joiningDate = formData.joiningDate;
-        submitData.endingDate = formData.endingDate;
         submitData.duration = formData.duration;
       } else if (studentType === 'SMS Program') {
-        submitData.gender = formData.gender;
         submitData.paymentDoneBy = formData.paymentDoneBy;
         submitData.dateOfPayment = formData.dateOfPayment;
         submitData.transactionId = formData.transactionId;
@@ -234,15 +231,54 @@ function AddIntern({ onInternAdded }) {
             <>
               <div className="form-group">
                 <label>Internship Domain *</label>
-                <input
-                  type="text"
+                <select
                   name="domain"
                   value={formData.domain}
                   onChange={handleChange}
-                  placeholder="e.g., Web Development, Data Science"
                   required
-                />
+                >
+                  <option value="">Select Domain</option>
+                  <option value="Web Development">Web Development</option>
+                  <option value="App Development">App Development</option>
+                  <option value="Data Science">Data Science</option>
+                  <option value="Machine Learning">Machine Learning</option>
+                  <option value="Artificial Intelligence">Artificial Intelligence</option>
+                  <option value="UI/UX Design">UI/UX Design</option>
+                  <option value="Graphic Design">Graphic Design</option>
+                  <option value="Digital Marketing">Digital Marketing</option>
+                  <option value="Content Writing">Content Writing</option>
+                  <option value="Business Development">Business Development</option>
+                  <option value="Human Resources">Human Resources</option>
+                  <option value="Sales & Marketing">Sales & Marketing</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Cybersecurity">Cybersecurity</option>
+                  <option value="Cloud Computing">Cloud Computing</option>
+                  <option value="DevOps">DevOps</option>
+                  <option value="Full Stack Development">Full Stack Development</option>
+                  <option value="Frontend Development">Frontend Development</option>
+                  <option value="Backend Development">Backend Development</option>
+                  <option value="Mobile App Development">Mobile App Development</option>
+                  <option value="Game Development">Game Development</option>
+                  <option value="Quality Assurance">Quality Assurance</option>
+                  <option value="Project Management">Project Management</option>
+                  <option value="Business Analytics">Business Analytics</option>
+                  <option value="Other">Other (Type Manually)</option>
+                </select>
               </div>
+
+              {formData.domain === 'Other' && (
+                <div className="form-group" style={{ animation: 'slideInForm 0.3s ease-out' }}>
+                  <label>Enter Custom Domain *</label>
+                  <input
+                    type="text"
+                    name="customDomain"
+                    value={formData.customDomain || ''}
+                    onChange={(e) => setFormData({...formData, customDomain: e.target.value})}
+                    placeholder="Enter your custom domain"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Joining Date *</label>
@@ -250,17 +286,6 @@ function AddIntern({ onInternAdded }) {
                   type="date"
                   name="joiningDate"
                   value={formData.joiningDate}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Ending Date *</label>
-                <input
-                  type="date"
-                  name="endingDate"
-                  value={formData.endingDate}
                   onChange={handleChange}
                   required
                 />
@@ -288,20 +313,6 @@ function AddIntern({ onInternAdded }) {
 
           {studentType === 'SMS Program' && (
             <>
-              <div className="form-group">
-                <label>Gender</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
               <div className="form-group">
                 <label>Current Designation</label>
                 <input

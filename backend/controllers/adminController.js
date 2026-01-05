@@ -30,7 +30,6 @@ exports.addIntern = async (req, res) => {
       endingDate,
       duration,
       // SMS Program fields
-      gender,
       paymentDoneBy,
       dateOfPayment,
       transactionId,
@@ -86,7 +85,6 @@ exports.addIntern = async (req, res) => {
       internData.endingDate = endingDate;
       internData.duration = duration;
     } else if (studentType === 'SMS Program') {
-      internData.gender = gender;
       internData.paymentDoneBy = paymentDoneBy;
       internData.dateOfPayment = dateOfPayment;
       internData.transactionId = transactionId;
@@ -312,7 +310,6 @@ exports.updateIntern = async (req, res) => {
       'joiningDate',
       'endingDate',
       'duration',
-      'gender',
       'paymentDoneBy',
       'dateOfPayment',
       'transactionId',

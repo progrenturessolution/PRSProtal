@@ -3,6 +3,7 @@ import { adminAPI } from '../services/api';
 
 function ViewInterns({ onInternDeleted }) {
   const [interns, setInterns] = useState([]);
+  const [filteredInterns, setFilteredInterns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
@@ -11,10 +12,17 @@ function ViewInterns({ onInternDeleted }) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('All');
+  const [filterStatus, setFilterStatus] = useState('All');
 
   useEffect(() => {
     fetchInterns();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [interns, searchQuery, filterType, filterStatus]);
 
   const fetchInterns = async () => {
     try {
@@ -36,6 +44,34 @@ function ViewInterns({ onInternDeleted }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...interns];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(intern =>
+        intern.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        intern.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        intern.internId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        intern.mobile?.includes(searchQuery)
+      );
+    }
+
+    // Type filter
+    if (filterType !== 'All') {
+      filtered = filtered.filter(intern => intern.studentType === filterType);
+    }
+
+    // Status filter
+    if (filterStatus !== 'All') {
+      filtered = filtered.filter(intern => 
+        (intern.status || '').toLowerCase() === filterStatus.toLowerCase()
+      );
+    }
+
+    setFilteredInterns(filtered);
   };
 
   const handleDelete = async (id, name) => {
@@ -150,7 +186,10 @@ function ViewInterns({ onInternDeleted }) {
   if (loading) {
     return (
       <div className="content-header">
-        <h1>Loading...</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="spinner"></div>
+          <h1>Loading Students...</h1>
+        </div>
       </div>
     );
   }
@@ -158,230 +197,369 @@ function ViewInterns({ onInternDeleted }) {
   return (
     <>
       <div className="content-header">
-        <h1>All Interns</h1>
-        <p>Manage and view all registered interns</p>
+        <div>
+          <h1>All Students</h1>
+          <p>Manage and view all registered students - {filteredInterns.length} of {interns.length} students</p>
+        </div>
       </div>
 
       {error && (
-        <div style={{
-          padding: '16px',
-          marginBottom: '20px',
-          backgroundColor: '#fee2e2',
-          border: '1px solid #fecaca',
-          borderRadius: '8px',
-          color: '#dc2626',
-          fontSize: '14px',
-          fontWeight: 500
-        }}>
-           {error}
+        <div className="error-message" style={{ marginBottom: '20px' }}>
+          {error}
         </div>
       )}
 
       {infoMessage && (
-        <div style={{
-          padding: '12px',
-          marginBottom: '20px',
-          backgroundColor: '#ecfccb',
-          border: '1px solid #bbf7d0',
-          borderRadius: '8px',
-          color: '#166534',
-          fontSize: '14px',
-          fontWeight: 500
-        }}>
-           {infoMessage}
+        <div className="success-message" style={{ marginBottom: '20px' }}>
+          {infoMessage}
         </div>
       )}
 
-      <div className="card">
-        {interns.length === 0 ? (
-          <div className="empty-state">
-            <p>No students found. Add your first student to get started.</p>
+      {/* Filters and Search Bar */}
+      <div style={{
+        background: 'white',
+        padding: '20px',
+        borderRadius: '12px',
+        marginBottom: '24px',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+        border: '1px solid #e2e8f0'
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '16px',
+          alignItems: 'end'
+        }}>
+          {/* Search */}
+          <div style={{ gridColumn: 'span 2' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#0f172a'
+            }}>
+              Search Students
+            </label>
+            <input
+              type="text"
+              placeholder="Search by name, email, ID, or mobile..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '10px',
+                fontSize: '15px',
+                transition: 'all 0.2s',
+                background: '#f8fafc'
+              }}
+            />
           </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Full Name</th>
-                  <th>Mobile Number</th>
-                  <th>Email</th>
-                  <th>Current Designation</th>
-                  <th style={{ textAlign: 'center' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {interns.map((student) => (
-                  <tr key={student._id} style={{ lineHeight: '1.8' }}>
-                    <td>
-                      <span style={{
-                        padding: '4px 8px',
-                        background: '#eff6ff',
-                        color: '#1e40af',
-                        borderRadius: '4px',
-                        fontSize: '13px',
-                        fontWeight: 600
-                      }}>
-                        {student.internId}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{student.name}</td>
-                    <td>{student.mobile || 'N/A'}</td>
-                    <td>{student.email}</td>
-                    <td>{student.currentDesignation || student.domain || 'N/A'}</td>
-                    <td style={{ textAlign: 'center', position: 'relative' }}>
-                      {(() => {
-                        const statusNorm = (student.status || '').toString().toLowerCase();
-                        const dotColor = '#000000';
-                        return (
-                          <button
-                            data-menu-toggle
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleMenu(student._id);
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              cursor: 'pointer',
-                              fontSize: '20px',
-                              padding: '4px 8px',
-                              borderRadius: '4px',
-                              transition: 'background 0.2s',
-                              color: dotColor
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#f3f4f6'}
-                            onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                          >
-                            ⋮
-                          </button>
-                        );
-                      })()}
 
-                      {openMenuId === student._id && (
-                        <div data-menu style={{
-                          position: 'absolute',
-                          right: '10px',
-                          top: '35px',
-                          background: 'white',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                          zIndex: 1000,
-                          minWidth: '180px',
-                          overflow: 'hidden'
-                        }}>
-                          <button
-                            onClick={() => handleViewProfile(student)}
-                            style={{
-                              width: '100%',
-                              padding: '12px 16px',
-                              background: 'white',
-                              border: 'none',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              transition: 'background 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                            onMouseLeave={(e) => e.target.style.background = 'white'}
-                          >
-                           
-                            <span>View Profile</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleEdit(student)}
-                            style={{
-                              width: '100%',
-                              padding: '12px 16px',
-                              background: 'white',
-                              border: 'none',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              transition: 'background 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                            onMouseLeave={(e) => e.target.style.background = 'white'}
-                          >
-                            
-                            <span>Edit</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleDelete(student._id, student.name)}
-                            style={{
-                              width: '100%',
-                              padding: '12px 16px',
-                              background: 'white',
-                              border: 'none',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '14px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '10px',
-                              transition: 'background 0.2s',
-                              color: 'black'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
-                            onMouseLeave={(e) => e.target.style.background = 'white'}
-                          >
-                         
-                            <span>Delete</span>
-                          </button>
-
-                          <div style={{
-                            height: '1px',
-                            background: '#e5e7eb',
-                            margin: '4px 0'
-                          }} />
-
-                          {(() => {
-                            const statusNorm = (student.status || '').toString().toLowerCase();
-                            const isActive = statusNorm === 'active';
-                            return (
-                              <button
-                                onClick={() => handleStatusToggle(student)}
-                                style={{
-                                  width: '100%',
-                                  padding: '12px 16px',
-                                  background: 'white',
-                                  border: 'none',
-                                  textAlign: 'left',
-                                  cursor: 'pointer',
-                                  fontSize: '14px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '10px',
-                                  transition: 'background 0.2s',
-                                  color: isActive ? '#dc2626' : '#10b981'
-                                }}
-                                onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                                onMouseLeave={(e) => e.target.style.background = 'white'}
-                              >
-                                
-                                <span>{isActive ? 'Deactivate' : 'Activate'}</span>
-                              </button>
-                            );
-                          })()}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Student Type Filter */}
+          <div>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#0f172a'
+            }}>
+              Student Type
+            </label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '10px',
+                fontSize: '15px',
+                background: '#f8fafc',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              <option value="All">All Types</option>
+              <option value="Internship">Internship</option>
+              <option value="SMS Program">SMS Program</option>
+            </select>
           </div>
-        )}
+
+          {/* Status Filter */}
+          <div>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#0f172a'
+            }}>
+              Status
+            </label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                border: '2px solid #e2e8f0',
+                borderRadius: '10px',
+                fontSize: '15px',
+                background: '#f8fafc',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              <option value="All">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
       </div>
+
+      {/* Students Display */}
+      {filteredInterns.length === 0 ? (
+        <div className="card">
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            color: '#64748b'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
+            <h3 style={{ color: '#0f172a', marginBottom: '8px' }}>No Students Found</h3>
+            <p>Try adjusting your filters or search query</p>
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+          gap: '20px'
+        }}>
+          {filteredInterns.map((student) => (
+            <div
+              key={student._id}
+              style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '20px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s',
+                position: 'relative'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.06)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              {/* Card Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
+                <div>
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '4px 12px',
+                    background: student.studentType === 'Internship' ? '#eff6ff' : '#f0fdf4',
+                    color: student.studentType === 'Internship' ? '#1e40af' : '#15803d',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    marginBottom: '8px'
+                  }}>
+                    {student.internId}
+                  </span>
+                  <span style={{
+                    display: 'inline-block',
+                    marginLeft: '8px',
+                    padding: '4px 10px',
+                    background: (student.status || '').toLowerCase() === 'active' ? '#d1fae5' : '#fee2e2',
+                    color: (student.status || '').toLowerCase() === 'active' ? '#065f46' : '#dc2626',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: '700'
+                  }}>
+                    {student.status || 'Active'}
+                  </span>
+                </div>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMenu(student._id);
+                  }}
+                  style={{
+                    background: '#f8fafc',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: '36px',
+                    height: '36px',
+                    cursor: 'pointer',
+                    fontSize: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
+                >
+                  ⋮
+                </button>
+              </div>
+
+              {/* Student Info */}
+              <h3 style={{
+                margin: '0 0 12px 0',
+                fontSize: '18px',
+                fontWeight: '700',
+                color: '#0f172a'
+              }}>
+                {student.name}
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
+                  <span>📧</span>
+                  <span style={{ wordBreak: 'break-all' }}>{student.email}</span>
+                </div>
+                
+                {student.mobile && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
+                    <span>📱</span>
+                    <span>{student.mobile}</span>
+                  </div>
+                )}
+
+                {(student.domain || student.currentDesignation) && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
+                    <span>💼</span>
+                    <span>{student.domain || student.currentDesignation}</span>
+                  </div>
+                )}
+
+                {student.duration && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
+                    <span>⏱️</span>
+                    <span>{student.duration}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Dropdown Menu */}
+              {openMenuId === student._id && (
+                <div
+                  data-menu
+                  style={{
+                    position: 'absolute',
+                    right: '20px',
+                    top: '60px',
+                    background: 'white',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                    zIndex: 1000,
+                    minWidth: '180px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <button
+                    onClick={() => handleViewProfile(student)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'white',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#0f172a',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                    onMouseLeave={(e) => e.target.style.background = 'white'}
+                  >
+                    👤 View Profile
+                  </button>
+
+                  <button
+                    onClick={() => handleEdit(student)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'white',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#0f172a',
+                      transition: 'background 0.2s',
+                      borderTop: '1px solid #f3f4f6'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                    onMouseLeave={(e) => e.target.style.background = 'white'}
+                  >
+                    ✏️ Edit Details
+                  </button>
+
+                  <button
+                    onClick={() => handleStatusToggle(student)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'white',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: (student.status || '').toLowerCase() === 'active' ? '#dc2626' : '#059669',
+                      transition: 'background 0.2s',
+                      borderTop: '1px solid #f3f4f6'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                    onMouseLeave={(e) => e.target.style.background = 'white'}
+                  >
+                    {(student.status || '').toLowerCase() === 'active' ? '🔴 Mark Inactive' : '🟢 Mark Active'}
+                  </button>
+
+                  <button
+                    onClick={() => handleDelete(student._id, student.name)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'white',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#dc2626',
+                      transition: 'background 0.2s',
+                      borderTop: '1px solid #f3f4f6'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
+                    onMouseLeave={(e) => e.target.style.background = 'white'}
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* View Profile Modal */}
       {showProfileModal && selectedStudent && (

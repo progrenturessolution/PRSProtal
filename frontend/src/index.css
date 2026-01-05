@@ -9,6 +9,20 @@ body {
   background-color: #f8f9fa;
   color: #212529;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile-friendly touch targets */
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* Login Page - Corporate Style */
@@ -283,11 +297,13 @@ body {
 @media (max-width: 768px) {
   .login-container {
     flex-direction: column;
+    min-height: 100vh;
   }
 
   .login-left {
-    min-height: 35vh;
-    padding: 40px 20px;
+    min-height: 30vh;
+    padding: 30px 20px;
+    box-shadow: 0 2px 15px rgba(15, 23, 42, 0.15);
   }
 
   .login-left::before,
@@ -295,10 +311,19 @@ body {
     display: none;
   }
 
+  .brand-section {
+    max-width: 100%;
+  }
+
+  .logo-container::before {
+    width: 120px;
+    height: 120px;
+  }
+
   .company-logo {
-    width: 100px;
-    height: 100px;
-    padding: 16px;
+    width: 90px;
+    height: 90px;
+    padding: 15px;
   }
 
   .logo-container::before {
@@ -307,23 +332,67 @@ body {
   }
 
   .company-name {
-    font-size: 32px;
+    font-size: 28px;
+    margin-bottom: 8px;
   }
 
   .company-subtitle {
-    font-size: 14px;
+    font-size: 13px;
+    padding: 0 10px;
   }
 
   .login-right {
     padding: 30px 20px;
+    min-height: 70vh;
   }
 
   .login-card {
-    padding: 32px 24px;
+    padding: 28px 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .login-header {
+    margin-bottom: 24px;
   }
 
   .login-header h2 {
-    font-size: 24px;
+    font-size: 22px;
+    margin-bottom: 6px;
+  }
+
+  .login-header p {
+    font-size: 14px;
+  }
+
+  .login-tabs {
+    gap: 6px;
+    padding: 3px;
+    margin-bottom: 24px;
+  }
+
+  .tab-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .form-group input {
+    padding: 11px 14px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .login-submit-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+    margin-top: 6px;
   }
 }
 
@@ -533,26 +602,30 @@ body {
   .sidebar {
     width: 100%;
     height: auto;
-    position: relative;
+    position: sticky;
+    top: 0;
     min-height: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   }
 
   .sidebar-header {
-    padding: 20px 15px;
+    padding: 16px 15px;
   }
 
   .sidebar-logo-container {
-    width: 60px;
-    height: 60px;
+    width: 55px;
+    height: 55px;
   }
 
   .sidebar-logo {
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
   }
 
   .sidebar-header h2 {
-    font-size: 18px;
+    font-size: 17px;
+    margin-bottom: 2px;
   }
 
   .sidebar-header p {
@@ -562,19 +635,28 @@ body {
   .sidebar-menu {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    padding: 10px;
+    gap: 6px;
+    padding: 12px 8px;
     overflow-y: visible;
+    max-height: none;
   }
 
   .sidebar-menu li {
-    padding: 14px 12px;
+    padding: 12px 10px;
     text-align: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 12px;
     margin-bottom: 0;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
+    border-radius: 10px;
+    min-height: 70px;
+  }
+
+  .sidebar-menu li svg,
+  .sidebar-menu li i {
+    font-size: 20px;
+    margin: 0;
   }
 
   .sidebar-menu li:hover {
@@ -582,22 +664,26 @@ body {
   }
 
   .logout-btn {
-    margin: 15px;
-    padding: 12px;
-    font-size: 14px;
+    margin: 10px 8px;
+    padding: 11px;
+    font-size: 13px;
+    border-radius: 8px;
   }
 
   .main-content {
     margin-left: 0;
-    padding: 20px 15px;
+    padding: 16px 12px;
+    padding-top: 0;
   }
 
   .content-header {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    padding: 16px 0 12px 0;
   }
 
   .content-header h1 {
-    font-size: 22px;
+    font-size: 20px;
+    margin-bottom: 4px;
   }
 
   .content-header p {
@@ -611,70 +697,141 @@ body {
 
   .stat-card {
     flex-direction: row;
-    
+    align-items: center;
     padding: 16px;
+    gap: 14px;
   }
 
   .stat-icon {
     width: 50px;
     height: 50px;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .stat-value {
     font-size: 24px;
   }
 
+  .stat-label {
+    font-size: 13px;
+  }
+
   .card {
-    padding: 20px 15px;
-    border-radius: 12px;
+    padding: 18px 14px;
+    border-radius: 10px;
+    margin-bottom: 16px;
   }
 
   .card h3 {
-    font-size: 18px;
+    font-size: 17px;
+    margin-bottom: 14px;
   }
 
   .table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    margin: -14px;
+    padding: 14px;
   }
 
   table {
     min-width: 600px;
+    font-size: 13px;
+  }
+
+  table th,
+  table td {
+    padding: 10px 8px;
+    white-space: nowrap;
   }
 
   .form-group input,
   .form-group select,
   .form-group textarea {
-    font-size: 16px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 14px;
   }
 
   .submit-btn {
-    padding: 12px;
-    font-size: 14px;
+    padding: 13px;
+    font-size: 15px;
+  }
+
+  /* Better button sizing for mobile */
+  button {
+    min-height: 44px; /* Apple's recommended touch target size */
+  }
+
+  /* Better spacing for form elements */
+  .form-row {
+    flex-direction: column;
+    gap: 0;
   }
 }
 
 /* Mobile Responsive - Small Phone */
 @media (max-width: 480px) {
+  .login-left {
+    min-height: 25vh;
+    padding: 25px 16px;
+  }
+
+  .company-logo {
+    width: 75px;
+    height: 75px;
+    padding: 12px;
+  }
+
+  .company-name {
+    font-size: 24px;
+  }
+
+  .company-subtitle {
+    font-size: 12px;
+  }
+
+  .login-right {
+    padding: 24px 16px;
+  }
+
+  .login-card {
+    padding: 24px 16px;
+  }
+
+  .login-header h2 {
+    font-size: 20px;
+  }
+
   .sidebar-menu {
     grid-template-columns: 1fr;
   }
 
   .content-header h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .main-content {
-    padding: 15px 10px;
+    padding: 12px 10px;
   }
 
   .card {
-    padding: 15px;
+    padding: 14px 12px;
   }
 
   .stat-card {
     padding: 14px;
+    gap: 12px;
   }
 
   .tasks-grid {
     grid-template-columns: 1fr;
+  }
+
+  table th,
+  table td {
+    padding: 8px 6px;
+    font-size: 12px;
   }
 }
 
@@ -801,6 +958,85 @@ table tr:hover {
 }
 
 .form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 20px;
+  padding-right: 45px;
+  font-weight: 500;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-group select:hover {
+  border-color: #94a3b8;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group select option {
+  padding: 12px;
+  background: white;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.form-group select option:hover {
+  background: #f1f5f9;
+}
+
+/* Custom Domain Field Animation */
+@keyframes slideInForm {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-group textarea:focus {
   outline: none;
   border-color: #3b82f6;
   background: white;
@@ -1173,43 +1409,97 @@ table tr:hover {
 
 /* Modal Mobile Responsive */
 @media (max-width: 768px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .modal-container {
+    max-width: 96%;
+    margin: 20px auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
   .modal-header {
-    padding: 20px !important;
+    padding: 18px 16px !important;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-bottom: 1px solid #e2e8f0;
   }
 
   .modal-header h2 {
-    font-size: 20px !important;
+    font-size: 19px !important;
   }
 
   .modal-body {
-    padding: 24px 20px !important;
+    padding: 20px 16px !important;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
   }
 
   .form-group label {
     font-size: 13px !important;
+    margin-bottom: 6px;
   }
 
   .form-group input,
   .form-group textarea,
   .form-group select {
-    font-size: 16px !important;
+    font-size: 16px !important; /* Prevents zoom on iOS */
     padding: 12px 14px !important;
+    border-radius: 8px;
+  }
+
+  .form-group textarea {
+    min-height: 100px;
   }
 
   .modal-footer {
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: 10px !important;
+    padding: 16px !important;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    border-top: 1px solid #e2e8f0;
   }
 
   .modal-footer button {
     width: 100%;
+    padding: 13px;
+    font-size: 15px;
+    border-radius: 8px;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
   }
 }
 
 @media (max-width: 480px) {
   .modal-container {
-    max-width: 95% !important;
-    margin: 10px !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 20px 20px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 85vh;
+  }
+
+  .modal-header h2 {
+    font-size: 17px !important;
+  }
+
+  .modal-body {
+    padding: 18px 14px !important;
   }
 }
 
@@ -1234,9 +1524,10 @@ table tr:hover {
   .task-card {
     background: white;
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 12px;
   }
 
   .task-header {
@@ -1244,6 +1535,255 @@ table tr:hover {
     justify-content: space-between;
     align-items: flex-start;
     gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .task-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.4;
+  }
+
+  .task-description {
+    font-size: 13px;
+    color: #64748b;
+    margin: 8px 0;
+    line-height: 1.5;
+  }
+
+  .task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .task-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Better button layouts */
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .action-buttons button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Improved stats cards for mobile */
+  .stat-info {
+    flex: 1;
+  }
+
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  /* Better navigation */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .pagination button {
+    min-width: 40px;
+    height: 40px;
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  /* Improved search and filter UI */
+  .search-filter-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-input {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px 14px;
+  }
+
+  /* Better notification styles */
+  .notification-item {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  /* Improved spacing for lists */
+  .list-item {
+    padding: 12px;
     margin-bottom: 8px;
+  }
+}
+/* Additional Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Better link styling for touch */
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Prevent text overflow */
+  .text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Better card hover states for mobile */
+  .card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* Optimize scrolling */
+  .scrollable {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+
+  /* Better focus states for mobile */
+  input:focus,
+  select:focus,
+  textarea:focus,
+  button:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+
+  /* Hide scrollbars on mobile for cleaner look */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Better spacing for sections */
+  section {
+    margin-bottom: 20px;
+  }
+
+  /* Improved header spacing */
+  h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 12px;
+  }
+
+  /* Better paragraph spacing */
+  p {
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+
+  /* Optimize button groups */
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+
+  /* Better alert messages */
+  .alert {
+    margin: 12px 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  /* Improved badge sizing */
+  .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  /* Better dropdown menus */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 20px;
+    padding-right: 40px;
+  }
+}
+
+/* Landscape mode optimizations for mobile */
+@media (max-width: 896px) and (orientation: landscape) {
+  .sidebar {
+    position: fixed;
+    height: 100vh;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .modal-container {
+    max-height: 95vh;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar,
+  .logout-btn,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .card {
+    break-inside: avoid;
   }
 }
