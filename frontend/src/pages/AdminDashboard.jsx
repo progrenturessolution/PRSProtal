@@ -12,6 +12,7 @@ import Certificates from './Certificates';
 import Notifications from './Notifications';
 import JobsInternships from './JobsInternships';
 import AccessManagement from './AccessManagement';
+import ViewTrainers from './ViewTrainers';
 import Reports from './Reports';
 import { adminAPI, taskAPI } from '../services/api';
 import logo from '../assets/logo.png';
@@ -230,6 +231,9 @@ function AdminDashboard() {
       case 'access-management':
         return <AccessManagement key="access-management" />;
       
+      case 'view-trainers':
+        return <ViewTrainers key="view-trainers" />;
+      
       case 'reports':
         return <Reports key="reports" />;
       
@@ -366,6 +370,13 @@ function AdminDashboard() {
             onClick={() => setActiveMenu('access-management')}
           >
              Access Management
+          </li>
+
+          <li 
+            className={activeMenu === 'view-trainers' ? 'active' : ''}
+            onClick={() => setActiveMenu('view-trainers')}
+          >
+             View All Trainers
           </li>
 
           {/* Reports */}

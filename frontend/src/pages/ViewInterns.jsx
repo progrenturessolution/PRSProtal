@@ -11,10 +11,14 @@ function ViewInterns({ onInternDeleted }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [editForm, setEditForm] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [certificateFile, setCertificateFile] = useState(null);
+  const [certificateType, setCertificateType] = useState('offerLetter');
+  const [uploadingCert, setUploadingCert] = useState(false);
 
   useEffect(() => {
     fetchInterns();
@@ -157,6 +161,75 @@ function ViewInterns({ onInternDeleted }) {
     } catch (err) {
       console.error('Save edit error:', err);
       setError(err.response?.data?.message || 'Failed to update student');
+    }
+  };
+
+  const handleViewCertificates = (student) => {
+    setSelectedStudent(student);
+    setShowCertificateModal(true);
+    setCertificateType('offerLetter');
+    setCertificateFile(null);
+    setOpenMenuId(null);
+  };
+
+  const handleCertificateUpload = async () => {
+    if (!certificateFile) {
+      setError('Please select a file to upload');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    if (certificateFile.type !== 'application/pdf') {
+      setError('Only PDF files are allowed');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+
+    setUploadingCert(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', certificateFile);
+      formData.append('documentType', certificateType);
+
+      const response = await adminAPI.uploadStudentDocument(selectedStudent._id, formData);
+      
+      if (response.data && response.data.success) {
+        // Update local state
+        setInterns(interns.map(intern => {
+          if (intern._id === selectedStudent._id) {
+            return {
+              ...intern,
+              documents: {
+                ...(intern.documents || {}),
+                [certificateType]: response.data.document
+              }
+            };
+          }
+          return intern;
+        }));
+
+        // Update selected student
+        setSelectedStudent(prev => ({
+          ...prev,
+          documents: {
+            ...(prev.documents || {}),
+            [certificateType]: response.data.document
+          }
+        }));
+
+        setInfoMessage('Certificate uploaded successfully');
+        setTimeout(() => setInfoMessage(''), 4000);
+        setCertificateFile(null);
+      } else {
+        setError('Failed to upload certificate');
+        setTimeout(() => setError(''), 4000);
+      }
+    } catch (err) {
+      console.error('Certificate upload error:', err);
+      setError(err.response?.data?.message || 'Failed to upload certificate');
+      setTimeout(() => setError(''), 4000);
+    } finally {
+      setUploadingCert(false);
     }
   };
 
@@ -325,7 +398,7 @@ function ViewInterns({ onInternDeleted }) {
             padding: '60px 20px',
             color: '#64748b'
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}></div>
             <h3 style={{ color: '#0f172a', marginBottom: '8px' }}>No Students Found</h3>
             <p>Try adjusting your filters or search query</p>
           </div>
@@ -423,27 +496,27 @@ function ViewInterns({ onInternDeleted }) {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
-                  <span>📧</span>
+                  <span>Email:</span>
                   <span style={{ wordBreak: 'break-all' }}>{student.email}</span>
                 </div>
                 
                 {student.mobile && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
-                    <span>📱</span>
+                    <span>Mobile:</span>
                     <span>{student.mobile}</span>
                   </div>
                 )}
 
                 {(student.domain || student.currentDesignation) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
-                    <span>💼</span>
+                    <span>Role:</span>
                     <span>{student.domain || student.currentDesignation}</span>
                   </div>
                 )}
 
                 {student.duration && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#64748b' }}>
-                    <span>⏱️</span>
+                    <span>Duration:</span>
                     <span>{student.duration}</span>
                   </div>
                 )}
@@ -483,7 +556,7 @@ function ViewInterns({ onInternDeleted }) {
                     onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                     onMouseLeave={(e) => e.target.style.background = 'white'}
                   >
-                    👤 View Profile
+                    View Profile
                   </button>
 
                   <button
@@ -504,7 +577,28 @@ function ViewInterns({ onInternDeleted }) {
                     onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                     onMouseLeave={(e) => e.target.style.background = 'white'}
                   >
-                    ✏️ Edit Details
+                    Edit Details
+                  </button>
+
+                  <button
+                    onClick={() => handleViewCertificates(student)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      background: 'white',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#0f172a',
+                      transition: 'background 0.2s',
+                      borderTop: '1px solid #f3f4f6'
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                    onMouseLeave={(e) => e.target.style.background = 'white'}
+                  >
+                    Certificates
                   </button>
 
                   <button
@@ -525,7 +619,7 @@ function ViewInterns({ onInternDeleted }) {
                     onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                     onMouseLeave={(e) => e.target.style.background = 'white'}
                   >
-                    {(student.status || '').toLowerCase() === 'active' ? '🔴 Mark Inactive' : '🟢 Mark Active'}
+                    {(student.status || '').toLowerCase() === 'active' ? 'Mark Inactive' : 'Mark Active'}
                   </button>
 
                   <button
@@ -546,7 +640,7 @@ function ViewInterns({ onInternDeleted }) {
                     onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
                     onMouseLeave={(e) => e.target.style.background = 'white'}
                   >
-                    🗑️ Delete
+                    Delete
                   </button>
                 </div>
               )}
@@ -555,7 +649,7 @@ function ViewInterns({ onInternDeleted }) {
         </div>
       )}
 
-      {/* View Profile Modal */}
+      {/* View Profile Modal - Enhanced */}
       {showProfileModal && selectedStudent && (
         <div style={{
           position: 'fixed',
@@ -563,139 +657,457 @@ function ViewInterns({ onInternDeleted }) {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
+          background: 'rgba(0, 0, 0, 0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 2000
+          zIndex: 2000,
+          backdropFilter: 'blur(4px)'
         }}>
           <div style={{
               background: 'white',
-              borderRadius: '12px',
-              padding: '36px',
-              maxWidth: '900px',
+              borderRadius: '16px',
+              maxWidth: '1000px',
               width: '95%',
               maxHeight: '92vh',
-              overflowY: 'auto'
+              overflowY: 'auto',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
             }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0 }}>Student Profile</h2>
+            
+            {/* Header with Gradient Background */}
+            <div style={{
+              background: selectedStudent.studentType === 'Internship' 
+                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              padding: '32px',
+              borderRadius: '16px 16px 0 0',
+              position: 'relative'
+            }}>
               <button
                 onClick={() => setShowProfileModal(false)}
                 style={{
-                  background: 'transparent',
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'rgba(255, 255, 255, 0.2)',
                   border: 'none',
-                  fontSize: '24px',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  fontSize: '20px',
                   cursor: 'pointer',
-                  padding: '0',
-                  width: '30px',
-                  height: '30px'
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
                 }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
               >
                 ×
               </button>
-            </div>
 
-            <div style={{ display: 'grid', gap: '15px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Student ID</label>
-                <p style={{ margin: 0, fontWeight: 600, color: '#1e40af' }}>{selectedStudent.internId}</p>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Full Name</label>
-                <p style={{ margin: 0 }}>{selectedStudent.name}</p>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Email</label>
-                <p style={{ margin: 0 }}>{selectedStudent.email}</p>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Mobile Number</label>
-                <p style={{ margin: 0 }}>{selectedStudent.mobile || 'N/A'}</p>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Student Type</label>
-                <p style={{ margin: 0 }}>{selectedStudent.studentType}</p>
-              </div>
-
-              {selectedStudent.studentType === 'Internship' && (
-                <>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Domain</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.domain || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Duration</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.duration || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Joining Date</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.joiningDate ? new Date(selectedStudent.joiningDate).toLocaleDateString() : 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Ending Date</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.endingDate ? new Date(selectedStudent.endingDate).toLocaleDateString() : 'N/A'}</p>
-                  </div>
-                </>
-              )}
-
-              {selectedStudent.studentType === 'SMS Program' && (
-                <>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Gender</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.gender || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Current Designation</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.currentDesignation || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Payment Done By</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.paymentDoneBy || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Transaction ID</label>
-                    <p style={{ margin: 0 }}>{selectedStudent.transactionId || 'N/A'}</p>
-                  </div>
-                </>
-              )}
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#6b7280', fontWeight: 600, display: 'block', marginBottom: '5px' }}>Status</label>
-                <span style={{
-                  padding: '4px 12px',
-                  background: selectedStudent.status === 'Active' ? '#d1fae5' : '#fee2e2',
-                  color: selectedStudent.status === 'Active' ? '#065f46' : '#dc2626',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  fontWeight: 600
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '20px',
+                color: 'white'
+              }}>
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  borderRadius: '50%',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '36px',
+                  fontWeight: 700,
+                  border: '3px solid rgba(255, 255, 255, 0.3)'
                 }}>
-                  {selectedStudent.status}
-                </span>
+                  {selectedStudent.name.charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ 
+                    margin: '0 0 8px 0', 
+                    fontSize: '28px',
+                    fontWeight: 700
+                  }}>
+                    {selectedStudent.name}
+                  </h2>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <span style={{
+                      padding: '6px 14px',
+                      background: 'rgba(255, 255, 255, 0.25)',
+                      borderRadius: '20px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      backdropFilter: 'blur(10px)'
+                    }}>
+                      {selectedStudent.internId}
+                    </span>
+                    <span style={{
+                      padding: '6px 14px',
+                      background: (selectedStudent.status || '').toLowerCase() === 'active' 
+                        ? 'rgba(16, 185, 129, 0.9)' 
+                        : 'rgba(239, 68, 68, 0.9)',
+                      borderRadius: '20px',
+                      fontSize: '13px',
+                      fontWeight: 700
+                    }}>
+                      {selectedStudent.status || 'Active'}
+                    </span>
+                    <span style={{
+                      padding: '6px 14px',
+                      background: 'rgba(255, 255, 255, 0.25)',
+                      borderRadius: '20px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      backdropFilter: 'blur(10px)'
+                    }}>
+                      {selectedStudent.studentType}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={() => setShowProfileModal(false)}
-              style={{
-                marginTop: '20px',
-                padding: '10px 20px',
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 600,
-                width: '100%'
-              }}
-            >
-              Close
-            </button>
+            {/* Content Body */}
+            <div style={{ padding: '32px' }}>
+              
+              {/* Contact Information Section */}
+              <div style={{ marginBottom: '28px' }}>
+                <h3 style={{ 
+                  fontSize: '18px', 
+                  fontWeight: 700, 
+                  color: '#0f172a',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    width: '4px',
+                    height: '20px',
+                    background: 'linear-gradient(to bottom, #667eea, #764ba2)',
+                    borderRadius: '2px'
+                  }}></span>
+                  Contact Information
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gap: '16px'
+                }}>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>
+                      Email Address
+                    </div>
+                    <div style={{ fontSize: '15px', color: '#0f172a', fontWeight: 500, wordBreak: 'break-all' }}>
+                      {selectedStudent.email}
+                    </div>
+                  </div>
+                  <div style={{
+                    padding: '16px',
+                    background: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>
+                      Mobile Number
+                    </div>
+                    <div style={{ fontSize: '15px', color: '#0f172a', fontWeight: 500 }}>
+                      {selectedStudent.mobile || 'Not provided'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Internship Details (if applicable) */}
+              {selectedStudent.studentType === 'Internship' && (
+                <div style={{ marginBottom: '28px' }}>
+                  <h3 style={{ 
+                    fontSize: '18px', 
+                    fontWeight: 700, 
+                    color: '#0f172a',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{
+                      width: '4px',
+                      height: '20px',
+                      background: 'linear-gradient(to bottom, #667eea, #764ba2)',
+                      borderRadius: '2px'
+                    }}></span>
+                    Internship Details
+                  </h3>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div style={{
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+                      borderRadius: '10px',
+                      border: '1px solid #667eea30'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#667eea', fontWeight: 700, marginBottom: '6px' }}>
+                        Domain
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                        {selectedStudent.domain || 'Not specified'}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+                      borderRadius: '10px',
+                      border: '1px solid #667eea30'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#667eea', fontWeight: 700, marginBottom: '6px' }}>
+                        Duration
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                        {selectedStudent.duration || 'Not specified'}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #10b98115 0%, #059e6915 100%)',
+                      borderRadius: '10px',
+                      border: '1px solid #10b98130'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#059669', fontWeight: 700, marginBottom: '6px' }}>
+                        Joining Date
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                        {selectedStudent.joiningDate ? new Date(selectedStudent.joiningDate).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        }) : 'Not set'}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #f59e0b15 0%, #d9770615 100%)',
+                      borderRadius: '10px',
+                      border: '1px solid #f59e0b30'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#d97706', fontWeight: 700, marginBottom: '6px' }}>
+                        Ending Date
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                        {selectedStudent.endingDate ? new Date(selectedStudent.endingDate).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        }) : 'Not set'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SMS Program Details (if applicable) */}
+              {selectedStudent.studentType === 'SMS Program' && (
+                <div style={{ marginBottom: '28px' }}>
+                  <h3 style={{ 
+                    fontSize: '18px', 
+                    fontWeight: 700, 
+                    color: '#0f172a',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{
+                      width: '4px',
+                      height: '20px',
+                      background: 'linear-gradient(to bottom, #f093fb, #f5576c)',
+                      borderRadius: '2px'
+                    }}></span>
+                    SMS Program Details
+                  </h3>
+                  <div style={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                    gap: '16px'
+                  }}>
+                    <div style={{
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)',
+                      borderRadius: '10px',
+                      border: '1px solid #f093fb30'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#ec4899', fontWeight: 700, marginBottom: '6px' }}>
+                        Gender
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                        {selectedStudent.gender || 'Not specified'}
+                      </div>
+                    </div>
+                    <div style={{
+                      padding: '16px',
+                      background: 'linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)',
+                      borderRadius: '10px',
+                      border: '1px solid #f093fb30'
+                    }}>
+                      <div style={{ fontSize: '12px', color: '#ec4899', fontWeight: 700, marginBottom: '6px' }}>
+                        Current Designation
+                      </div>
+                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                        {selectedStudent.currentDesignation || 'Not specified'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Payment Information */}
+                  {(selectedStudent.paymentDoneBy || selectedStudent.transactionId) && (
+                    <div style={{ marginTop: '16px' }}>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', marginBottom: '12px' }}>
+                        Payment Information
+                      </h4>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                        gap: '16px'
+                      }}>
+                        <div style={{
+                          padding: '14px',
+                          background: '#f8fafc',
+                          borderRadius: '8px',
+                          border: '1px solid #e2e8f0'
+                        }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>
+                            Payment Done By
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>
+                            {selectedStudent.paymentDoneBy || 'Not specified'}
+                          </div>
+                        </div>
+                        <div style={{
+                          padding: '14px',
+                          background: '#f8fafc',
+                          borderRadius: '8px',
+                          border: '1px solid #e2e8f0'
+                        }}>
+                          <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>
+                            Transaction ID
+                          </div>
+                          <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500, fontFamily: 'monospace' }}>
+                            {selectedStudent.transactionId || 'Not provided'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div style={{
+                display: 'flex',
+                gap: '12px',
+                marginTop: '32px',
+                paddingTop: '24px',
+                borderTop: '2px solid #f1f5f9'
+              }}>
+                <button
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    handleEdit(selectedStudent);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    transition: 'all 0.2s',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                  }}
+                >
+                  Edit Profile
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    handleViewCertificates(selectedStudent);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px 24px',
+                    background: 'white',
+                    color: '#667eea',
+                    border: '2px solid #667eea',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#667eea';
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'white';
+                    e.currentTarget.style.color = '#667eea';
+                  }}
+                >
+                  View Certificates
+                </button>
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  style={{
+                    padding: '12px 24px',
+                    background: '#f1f5f9',
+                    color: '#64748b',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9';
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -786,6 +1198,318 @@ function ViewInterns({ onInternDeleted }) {
               <button onClick={handleSaveEdit} style={{ flex: 1, padding: '10px 16px', background : '#10b981' , color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Save</button>
               <button onClick={() => setShowEditModal(false)} style={{ flex: 1, padding: '10px 16px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 700 }}>Cancel</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Certificate Management Modal */}
+      {showCertificateModal && selectedStudent && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            maxWidth: '700px',
+            width: '95%',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0 }}>Manage Certificates - {selectedStudent.name}</h2>
+              <button
+                onClick={() => setShowCertificateModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  padding: '0',
+                  width: '30px',
+                  height: '30px',
+                  color: '#64748b'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '24px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>Student Information</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>{selectedStudent.internId} • {selectedStudent.studentType}</div>
+            </div>
+
+            {/* Upload Section */}
+            <div style={{
+              padding: '20px',
+              background: '#eff6ff',
+              borderRadius: '10px',
+              marginBottom: '24px',
+              border: '2px dashed #3b82f6'
+            }}>
+              <h3 style={{ marginTop: 0, fontSize: '16px', color: '#1e40af' }}>Upload New Certificate</h3>
+              
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: '#0f172a' }}>
+                  Certificate Type
+                </label>
+                <select
+                  value={certificateType}
+                  onChange={(e) => setCertificateType(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '14px'
+                  }}
+                >
+                  <option value="offerLetter">Offer Letter</option>
+                  <option value="welcomeLetter">Welcome Letter</option>
+                  <option value="paymentReceipt">Payment Receipt</option>
+                  <option value="completionCertificate">Completion Certificate</option>
+                  <option value="experienceLetter">Experience Letter</option>
+                  <option value="other">Other Certificate</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: '#0f172a' }}>
+                  Select PDF File
+                </label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setCertificateFile(e.target.files[0])}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: 'white'
+                  }}
+                />
+                {certificateFile && (
+                  <div style={{ marginTop: '8px', fontSize: '13px', color: '#059669', fontWeight: 500 }}>
+                    Selected: {certificateFile.name}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={handleCertificateUpload}
+                disabled={uploadingCert || !certificateFile}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  background: uploadingCert || !certificateFile ? '#cbd5e1' : '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: uploadingCert || !certificateFile ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600
+                }}
+              >
+                {uploadingCert ? 'Uploading...' : 'Upload Certificate'}
+              </button>
+            </div>
+
+            {/* Existing Certificates */}
+            <div>
+              <h3 style={{ fontSize: '16px', marginBottom: '12px', color: '#0f172a' }}>Existing Certificates</h3>
+              
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {/* Offer Letter */}
+                <div style={{
+                  padding: '12px',
+                  background: '#f8fafc',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>Offer Letter</div>
+                    {selectedStudent.documents?.offerLetter && (
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                        Uploaded: {new Date(selectedStudent.documents.offerLetter.uploadedAt || Date.now()).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {selectedStudent.documents?.offerLetter ? (
+                      <a
+                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.offerLetter.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          textDecoration: 'none',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: 600
+                        }}
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: '13px', color: '#94a3b8' }}>Not uploaded</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Welcome Letter */}
+                <div style={{
+                  padding: '12px',
+                  background: '#f8fafc',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>Welcome Letter</div>
+                    {selectedStudent.documents?.welcomeLetter && (
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                        Uploaded: {new Date(selectedStudent.documents.welcomeLetter.uploadedAt || Date.now()).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {selectedStudent.documents?.welcomeLetter ? (
+                      <a
+                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.welcomeLetter.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          textDecoration: 'none',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: 600
+                        }}
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: '13px', color: '#94a3b8' }}>Not uploaded</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Payment Receipt */}
+                <div style={{
+                  padding: '12px',
+                  background: '#f8fafc',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>Payment Receipt</div>
+                    {selectedStudent.documents?.paymentReceipt && (
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                        Uploaded: {new Date(selectedStudent.documents.paymentReceipt.uploadedAt || Date.now()).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {selectedStudent.documents?.paymentReceipt ? (
+                      <a
+                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.paymentReceipt.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          textDecoration: 'none',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: 600
+                        }}
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: '13px', color: '#94a3b8' }}>Not uploaded</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Other Certificates */}
+                {selectedStudent.documents?.otherCertificates && selectedStudent.documents.otherCertificates.length > 0 && (
+                  <div style={{
+                    padding: '12px',
+                    background: '#f8fafc',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '8px' }}>Other Certificates</div>
+                    {selectedStudent.documents.otherCertificates.map((cert, index) => (
+                      <div key={index} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 0',
+                        borderTop: index > 0 ? '1px solid #e2e8f0' : 'none'
+                      }}>
+                        <span style={{ fontSize: '13px', color: '#475569' }}>{cert.name || cert.filename}</span>
+                        <a
+                          href={`http://localhost:5000/uploads/students/${cert.filename}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            padding: '6px 12px',
+                            background: '#10b981',
+                            color: 'white',
+                            textDecoration: 'none',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 600
+                          }}
+                        >
+                          View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowCertificateModal(false)}
+              style={{
+                marginTop: '20px',
+                padding: '10px 20px',
+                background: '#64748b',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 600,
+                width: '100%'
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

@@ -188,7 +188,7 @@ function InternDashboard() {
                   borderRadius: '12px',
                   color: 'white'
                 }}>
-                  <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '5px' }}>👤 Name</div>
+                  <div style={{ fontSize: '13px', opacity: 0.8, marginBottom: '5px' }}>Name</div>
                   <div style={{ fontSize: '18px', fontWeight: 600 }}>{user.name}</div>
                 </div>
                 <div style={{ 

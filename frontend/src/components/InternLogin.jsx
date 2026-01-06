@@ -91,7 +91,7 @@ function InternLogin() {
               fontSize: '14px',
               fontWeight: 500
             }}>
-              ✓ {success}
+              {success}
             </div>
           )}
 

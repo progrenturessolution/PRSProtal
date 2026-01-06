@@ -230,7 +230,7 @@ function Certificates() {
         </p>
         <div style={{ marginTop: '20px', padding: '20px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
           <p style={{ color: '#6b7280' }}>
-            📋 Document management features coming soon!
+            Document management features coming soon!
           </p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { adminAPI, UPLOADS_BASE } from '../services/api';
 
 function SMSProgramManagement() {
@@ -6,6 +6,9 @@ function SMSProgramManagement() {
   const [uploadState, setUploadState] = useState({}); // { [studentId]: { uploading, success, filenames: [] } }
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [openDocs, setOpenDocs] = useState({});
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [documentModalStudent, setDocumentModalStudent] = useState(null);
 
   const toggleDocs = (studentId) => {
     setOpenDocs(prev => ({ ...prev, [studentId]: !prev[studentId] }));
@@ -225,151 +228,140 @@ function SMSProgramManagement() {
               </thead>
               <tbody>
                 {filteredStudents.map((student) => (
-                  <tr key={student._id}>
-                    <td>{student.internId}</td>
-                    <td>{student.name}</td>
-                    <td>{student.email}</td>
-                    <td>{student.gender || 'N/A'}</td>
-                    <td>{student.currentDesignation || 'N/A'}</td>
-                    <td>{student.paymentDoneBy || 'N/A'}</td>
-                    <td>
-                      {student.dateOfPayment
-                        ? new Date(student.dateOfPayment).toLocaleDateString()
-                        : 'N/A'}
-                    </td>
-                    <td>{student.transactionId || 'N/A'}</td>
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          student.status?.toLowerCase() === 'active'
-                            ? 'status-active'
-                            : student.status?.toLowerCase() === 'completed'
-                            ? 'status-completed'
-                            : 'status-inactive'
-                        }`}
-                      >
-                        {student.status ? student.status.charAt(0).toUpperCase() + student.status.slice(1) : 'N/A'}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <Fragment key={student._id}>
+                    <tr>
+                      <td>{student.internId}</td>
+                      <td>{student.name}</td>
+                      <td>{student.email}</td>
+                      <td>{student.gender || 'N/A'}</td>
+                      <td>{student.currentDesignation || 'N/A'}</td>
+                      <td>{student.paymentDoneBy || 'N/A'}</td>
+                      <td>
+                        {student.dateOfPayment
+                          ? new Date(student.dateOfPayment).toLocaleDateString()
+                          : 'N/A'}
+                      </td>
+                      <td>{student.transactionId || 'N/A'}</td>
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            student.status?.toLowerCase() === 'active'
+                              ? 'status-active'
+                              : student.status?.toLowerCase() === 'completed'
+                              ? 'status-completed'
+                              : 'status-inactive'
+                          }`}
+                        >
+                          {student.status ? student.status.charAt(0).toUpperCase() + student.status.slice(1) : 'N/A'}
+                        </span>
+                      </td>
+                      <td style={{ position: 'relative' }}>
                         <button
-                          className="action-btn"
-                          onClick={() => setSelectedStudent(student)}
+                          onClick={() => setOpenMenuId(openMenuId === student._id ? null : student._id)}
                           style={{
-                            padding: '6px 12px',
-                            background: '#3b82f6',
-                            color: 'white',
+                            background: '#f8fafc',
                             border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
+                            borderRadius: '8px',
+                            width: '36px',
+                            height: '36px',
+                            cursor: 'pointer',
+                            fontSize: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s'
                           }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
                         >
-                          View Details
+                          ⋮
                         </button>
-
-                        <button
-                          className="action-btn"
-                          onClick={() => toggleDocs(student._id)}
-                          style={{
-                            padding: '6px 12px',
-                            background: openDocs[student._id] ? '#f3f4f6' : '#e2e8f0',
-                            color: '#0f172a',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          {openDocs[student._id] ? 'Hide Docs' : 'Docs'}
-                        </button>
-                      </div>
-
-                      {openDocs[student._id] && (
-                        <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
-                          {/* Offer Letter */}
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <strong style={{ minWidth: 100 }}>Offer Letter</strong>
-                            {student.documents?.offerLetter ? (
-                              <a href={UPLOADS_BASE + '/uploads/students/' + student.documents.offerLetter.filename} target="_blank" rel="noreferrer">View</a>
-                            ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                            <input id={`upload-${student._id}-offerLetter`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, student._id, 'offerLetter')} />
-                            <button onClick={() => document.getElementById(`upload-${student._id}-offerLetter`).click()} style={{ padding: '6px 10px', borderRadius: 6 }}>{student.documents?.offerLetter ? 'Replace' : 'Upload'}</button>
+                        
+                        {openMenuId === student._id && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              right: '42px',
+                              top: '0',
+                              background: 'white',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '10px',
+                              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+                              zIndex: 10000,
+                              minWidth: '180px',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <button
+                              onClick={() => {
+                                setSelectedStudent(student);
+                                setOpenMenuId(null);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                background: 'white',
+                                border: 'none',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#1f2937',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
+                                e.target.style.color = 'white';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = 'white';
+                                e.target.style.color = '#1f2937';
+                              }}
+                            >
+                              <span>View Details</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                setDocumentModalStudent(student);
+                                setShowDocumentModal(true);
+                                setOpenMenuId(null);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                background: 'white',
+                                border: 'none',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#1f2937',
+                                transition: 'all 0.2s',
+                                borderTop: '1px solid #f3f4f6',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                                e.target.style.color = 'white';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = 'white';
+                                e.target.style.color = '#1f2937';
+                              }}
+                            >
+                              <span>Manage Documents</span>
+                            </button>
                           </div>
-
-                          {/* Welcome Letter */}
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <strong style={{ minWidth: 100 }}>Welcome Letter</strong>
-                            {student.documents?.welcomeLetter ? (
-                              <a href={UPLOADS_BASE + '/uploads/students/' + student.documents.welcomeLetter.filename} target="_blank" rel="noreferrer">View</a>
-                            ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                            <input id={`upload-${student._id}-welcomeLetter`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, student._id, 'welcomeLetter')} />
-                            <button onClick={() => document.getElementById(`upload-${student._id}-welcomeLetter`).click()} style={{ padding: '6px 10px', borderRadius: 6 }}>{student.documents?.welcomeLetter ? 'Replace' : 'Upload'}</button>
-                          </div>
-
-                          {/* Payment Receipt */}
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <strong style={{ minWidth: 100 }}>Payment Receipt</strong>
-                            {student.documents?.paymentReceipt ? (
-                              <a href={UPLOADS_BASE + '/uploads/students/' + student.documents.paymentReceipt.filename} target="_blank" rel="noreferrer">View</a>
-                            ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                            <input id={`upload-${student._id}-paymentReceipt`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, student._id, 'paymentReceipt')} />
-                            <button onClick={() => document.getElementById(`upload-${student._id}-paymentReceipt`).click()} style={{ padding: '6px 10px', borderRadius: 6 }}>{student.documents?.paymentReceipt ? 'Replace' : 'Upload'}</button>
-                          </div>
-
-                          {/* Other Certificates (add new) */}
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <strong style={{ minWidth: 100 }}>Other Certificates</strong>
-                            {student.documents?.otherCertificates && student.documents.otherCertificates.length > 0 ? (
-                              <span style={{ color: '#0b172a' }}>{student.documents.otherCertificates.length} file(s)</span>
-                            ) : <span style={{ color: '#6b7280' }}>None</span>}
-                            <input id={`upload-${student._id}-otherCertificates`} type="file" accept="application/pdf" multiple style={{ display: 'none' }} onChange={async (e) => {
-                              const files = Array.from(e.target.files || []);
-                              if (files.length === 0) return;
-                              for (const f of files) {
-                                // use file name as documentType so backend stores name
-                                const fd = new FormData();
-                                fd.append('file', f);
-                                fd.append('documentType', f.name);
-                                try {
-                                  const resp = await adminAPI.uploadStudentDocument(student._id, fd);
-                                  if (resp.data && resp.data.success) {
-                                    setStudents(prev => prev.map(s => {
-                                      if (s._id === student._id) {
-                                        return {
-                                          ...s,
-                                          documents: {
-                                            ...(s.documents || {}),
-                                            otherCertificates: [ ...(s.documents?.otherCertificates || []), resp.data.document ]
-                                          }
-                                        };
-                                      }
-                                      return s;
-                                    }));
-                                    setSelectedStudent(prev => {
-                                      if (prev && prev._id === student._id) {
-                                        return {
-                                          ...prev,
-                                          documents: {
-                                            ...(prev.documents || {}),
-                                            otherCertificates: [ ...(prev.documents?.otherCertificates || []), resp.data.document ]
-                                          }
-                                        };
-                                      }
-                                      return prev;
-                                    });
-                                  }
-                                } catch (err) {
-                                  console.error('Other certificate upload error', err);
-                                }
-                              }
-                              e.target.value = '';
-                            }} />
-                            <button onClick={() => document.getElementById(`upload-${student._id}-otherCertificates`).click()} style={{ padding: '6px 10px', borderRadius: 6 }}>Add</button>
-                          </div>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                        )}
+                      </td>
+                    </tr>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -377,58 +369,547 @@ function SMSProgramManagement() {
         )}
       </div>
 
+      {/* Document Management Modal */}
+      {showDocumentModal && documentModalStudent && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000
+        }} onClick={() => setShowDocumentModal(false)}>
+          <div style={{ 
+            background: 'white', 
+            borderRadius: '16px', 
+            minWidth: '500px', 
+            maxWidth: '700px',
+            width: '90%',
+            maxHeight: '85vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Header with Gradient */}
+            <div style={{ 
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              padding: '24px',
+              color: 'white',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setShowDocumentModal(false)} 
+                style={{ 
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  border: 'none', 
+                  background: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  cursor: 'pointer', 
+                  fontSize: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+              >✕</button>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600' }}>Document Management</h2>
+              <div style={{ fontSize: '14px', opacity: 0.95 }}>
+                <span>{documentModalStudent.name} - {documentModalStudent.internId}</span>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: '24px', maxHeight: 'calc(85vh - 100px)', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gap: 16 }}>
+                {/* Offer Letter */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px',
+                  background: '#f9fafb',
+                  borderRadius: '10px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                    <strong style={{ color: '#374151', fontSize: '15px' }}>Offer Letter</strong>
+                    {documentModalStudent.documents?.offerLetter ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.offerLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          width: 'fit-content'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+                  <input id={`modal-upload-offerLetter`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, documentModalStudent._id, 'offerLetter')} />
+                  <button 
+                    onClick={() => document.getElementById(`modal-upload-offerLetter`).click()} 
+                    style={{ 
+                      padding: '10px 18px',
+                      background: documentModalStudent.documents?.offerLetter ? '#f59e0b' : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                    onMouseLeave={(e) => e.target.style.opacity = '1'}
+                  >{documentModalStudent.documents?.offerLetter ? 'Replace' : 'Upload'}</button>
+                </div>
+
+                {/* Welcome Letter */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px',
+                  background: '#f9fafb',
+                  borderRadius: '10px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                    <strong style={{ color: '#374151', fontSize: '15px' }}>Welcome Letter</strong>
+                    {documentModalStudent.documents?.welcomeLetter ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.welcomeLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          width: 'fit-content'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+                  <input id={`modal-upload-welcomeLetter`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, documentModalStudent._id, 'welcomeLetter')} />
+                  <button 
+                    onClick={() => document.getElementById(`modal-upload-welcomeLetter`).click()} 
+                    style={{ 
+                      padding: '10px 18px',
+                      background: documentModalStudent.documents?.welcomeLetter ? '#f59e0b' : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                    onMouseLeave={(e) => e.target.style.opacity = '1'}
+                  >{documentModalStudent.documents?.welcomeLetter ? 'Replace' : 'Upload'}</button>
+                </div>
+
+                {/* Payment Receipt */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '16px',
+                  background: '#f9fafb',
+                  borderRadius: '10px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                    <strong style={{ color: '#374151', fontSize: '15px' }}>Payment Receipt</strong>
+                    {documentModalStudent.documents?.paymentReceipt ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.paymentReceipt.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          width: 'fit-content'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+                  <input id={`modal-upload-paymentReceipt`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, documentModalStudent._id, 'paymentReceipt')} />
+                  <button 
+                    onClick={() => document.getElementById(`modal-upload-paymentReceipt`).click()} 
+                    style={{ 
+                      padding: '10px 18px',
+                      background: documentModalStudent.documents?.paymentReceipt ? '#f59e0b' : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                    onMouseLeave={(e) => e.target.style.opacity = '1'}
+                  >{documentModalStudent.documents?.paymentReceipt ? 'Replace' : 'Upload'}</button>
+                </div>
+
+                {/* Other Certificates */}
+                <div style={{ 
+                  padding: '16px',
+                  background: '#f9fafb',
+                  borderRadius: '10px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <strong style={{ color: '#374151', fontSize: '15px' }}>Other Certificates</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      {documentModalStudent.documents?.otherCertificates && documentModalStudent.documents.otherCertificates.length > 0 && (
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>{documentModalStudent.documents.otherCertificates.length} file(s)</span>
+                      )}
+                      <input id={`modal-upload-otherCertificates`} type="file" accept="application/pdf" multiple style={{ display: 'none' }} onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        if (files.length === 0) return;
+                        for (const f of files) {
+                          const fd = new FormData();
+                          fd.append('file', f);
+                          fd.append('documentType', f.name);
+                          try {
+                            const resp = await adminAPI.uploadStudentDocument(documentModalStudent._id, fd);
+                            if (resp.data && resp.data.success) {
+                              setStudents(prev => prev.map(s => {
+                                if (s._id === documentModalStudent._id) {
+                                  return {
+                                    ...s,
+                                    documents: {
+                                      ...(s.documents || {}),
+                                      otherCertificates: [ ...(s.documents?.otherCertificates || []), resp.data.document ]
+                                    }
+                                  };
+                                }
+                                return s;
+                              }));
+                              setDocumentModalStudent(prev => ({
+                                ...prev,
+                                documents: {
+                                  ...(prev.documents || {}),
+                                  otherCertificates: [ ...(prev.documents?.otherCertificates || []), resp.data.document ]
+                                }
+                              }));
+                            }
+                          } catch (err) {
+                            console.error('Other certificate upload error', err);
+                          }
+                        }
+                        e.target.value = '';
+                      }} />
+                      <button 
+                        onClick={() => document.getElementById(`modal-upload-otherCertificates`).click()} 
+                        style={{ 
+                          padding: '10px 18px',
+                          background: '#8b5cf6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                        onMouseLeave={(e) => e.target.style.opacity = '1'}
+                      >Add Certificate</button>
+                    </div>
+                  </div>
+                  {documentModalStudent.documents?.otherCertificates && documentModalStudent.documents.otherCertificates.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                      {documentModalStudent.documents.otherCertificates.map((c, idx) => (
+                        <a 
+                          key={idx}
+                          href={UPLOADS_BASE + '/uploads/students/' + c.filename} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          style={{
+                            padding: '10px 14px',
+                            background: 'white',
+                            borderRadius: '6px',
+                            textDecoration: 'none',
+                            color: '#4f46e5',
+                            fontSize: '13px',
+                            border: '1px solid #e5e7eb',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = '#e0e7ff'}
+                          onMouseLeave={(e) => e.target.style.background = 'white'}
+                        >
+                          {c.name || c.filename}
+                        </a>
+                      ))}
+                    </div>
+                  ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>No additional certificates</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Student Details Modal for SMS */}
       {selectedStudent && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+          background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
         }} onClick={() => setSelectedStudent(null)}>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '12px', minWidth: '320px', maxWidth: '720px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ margin: 0 }}>{selectedStudent.name} — {selectedStudent.internId}</h3>
-              <button onClick={() => setSelectedStudent(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px' }}>✕</button>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <div><strong>Email:</strong> {selectedStudent.email}</div>
-              <div><strong>Mobile:</strong> {selectedStudent.mobile}</div>
-              <div><strong>Payment By:</strong> {selectedStudent.paymentDoneBy || 'N/A'}</div>
-              <div><strong>Transaction ID:</strong> {selectedStudent.transactionId || 'N/A'}</div>
-            </div>
-            <div>
-              <h4>Documents</h4>
-              <div style={{ display: 'grid', gap: '8px' }}>
-                <div>
-                  <strong>Offer Letter:</strong>{' '}
-                  {selectedStudent.documents?.offerLetter ? (
-                    <a href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.offerLetter.filename} target="_blank" rel="noreferrer">View</a>
-                  ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                </div>
-                <div>
-                  <strong>Welcome Letter:</strong>{' '}
-                  {selectedStudent.documents?.welcomeLetter ? (
-                    <a href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.welcomeLetter.filename} target="_blank" rel="noreferrer">View</a>
-                  ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                </div>
-                <div>
-                  <strong>Payment Receipt:</strong>{' '}
-                  {selectedStudent.documents?.paymentReceipt ? (
-                    <a href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.paymentReceipt.filename} target="_blank" rel="noreferrer">View</a>
-                  ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                </div>
-                <div>
-                  <strong>Other Certificates:</strong>
-                  {selectedStudent.documents?.otherCertificates && selectedStudent.documents.otherCertificates.length > 0 ? (
-                    <ul>
-                      {selectedStudent.documents.otherCertificates.map((c, idx) => (
-                        <li key={idx}><a href={UPLOADS_BASE + '/uploads/students/' + c.filename} target="_blank" rel="noreferrer">{c.name || c.filename}</a></li>
-                      ))}
-                    </ul>
-                  ) : <span style={{ color: '#6b7280', marginLeft: '8px' }}>None</span>}
-                </div>
+          <div style={{ 
+            background: 'white', 
+            borderRadius: '16px', 
+            minWidth: '400px', 
+            maxWidth: '650px',
+            width: '90%',
+            maxHeight: '85vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Header with Gradient */}
+            <div style={{ 
+              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              padding: '24px',
+              color: 'white',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setSelectedStudent(null)} 
+                style={{ 
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  border: 'none', 
+                  background: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  cursor: 'pointer', 
+                  fontSize: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+              >✕</button>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600' }}>{selectedStudent.name}</h2>
+              <div style={{ display: 'flex', gap: '16px', fontSize: '14px', opacity: 0.95 }}>
+                <span>ID: {selectedStudent.internId}</span>
+                <span>•</span>
+                <span>SMS Program</span>
               </div>
             </div>
-            <div style={{ marginTop: '16px', textAlign: 'right' }}>
-              <button onClick={() => setSelectedStudent(null)} style={{ padding: '8px 12px', borderRadius: '8px' }}>Close</button>
+
+            {/* Content */}
+            <div style={{ padding: '24px', maxHeight: 'calc(85vh - 120px)', overflowY: 'auto' }}>
+              {/* Contact & Payment Information */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ 
+                  fontSize: '16px', 
+                  fontWeight: '600', 
+                  color: '#1f2937',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>📧 Contact & Payment Details</h3>
+                <div style={{ 
+                  background: '#f9fafb',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  display: 'grid',
+                  gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Email</span>
+                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.email}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Mobile</span>
+                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.mobile}</span>
+                  </div>
+                  <div style={{ height: '1px', background: '#e5e7eb', margin: '4px 0' }}></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment By</span>
+                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.paymentDoneBy || 'N/A'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Transaction ID</span>
+                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.transactionId || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents Section */}
+              <div>
+                <h3 style={{ 
+                  fontSize: '16px', 
+                  fontWeight: '600', 
+                  color: '#1f2937',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>📄 Documents</h3>
+                <div style={{ 
+                  background: '#f9fafb',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  display: 'grid',
+                  gap: '12px'
+                }}>
+                  {/* Offer Letter */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Offer Letter</span>
+                    {selectedStudent.documents?.offerLetter ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.offerLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '6px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+
+                  {/* Welcome Letter */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Welcome Letter</span>
+                    {selectedStudent.documents?.welcomeLetter ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.welcomeLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '6px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+
+                  {/* Payment Receipt */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Payment Receipt</span>
+                    {selectedStudent.documents?.paymentReceipt ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.paymentReceipt.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '6px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+
+                  {/* Other Certificates */}
+                  <div style={{ 
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <div style={{ fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Other Certificates</div>
+                    {selectedStudent.documents?.otherCertificates && selectedStudent.documents.otherCertificates.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                        {selectedStudent.documents.otherCertificates.map((c, idx) => (
+                          <a 
+                            key={idx}
+                            href={UPLOADS_BASE + '/uploads/students/' + c.filename} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            style={{
+                              padding: '8px 12px',
+                              background: '#f3f4f6',
+                              borderRadius: '4px',
+                              textDecoration: 'none',
+                              color: '#4f46e5',
+                              fontSize: '13px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#e0e7ff'}
+                            onMouseLeave={(e) => e.target.style.background = '#f3f4f6'}
+                          >
+                            📎 {c.name || c.filename}
+                          </a>
+                        ))}
+                      </div>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>None</span>}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

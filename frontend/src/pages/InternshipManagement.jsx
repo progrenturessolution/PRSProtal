@@ -8,6 +8,7 @@ function InternshipManagement() {
   const [infoMessage, setInfoMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
   
 
   useEffect(() => {
@@ -315,21 +316,67 @@ function InternshipManagement() {
                         {student.status ? student.status.charAt(0).toUpperCase() + student.status.slice(1) : 'N/A'}
                       </span>
                     </td>
-                    <td>
+                    <td style={{ position: 'relative' }}>
                       <button
-                        className="action-btn"
-                        onClick={() => setSelectedStudent(student)}
+                        onClick={() => setOpenMenuId(openMenuId === student._id ? null : student._id)}
                         style={{
-                          padding: '6px 12px',
-                          background: '#3b82f6',
-                          color: 'white',
+                          background: '#f8fafc',
                           border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
+                          borderRadius: '8px',
+                          width: '36px',
+                          height: '36px',
+                          cursor: 'pointer',
+                          fontSize: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s'
                         }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
                       >
-                        View Details
+                        ⋮
                       </button>
+                      
+                      {openMenuId === student._id && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            right: '40px',
+                            top: '0',
+                            background: 'white',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                            zIndex: 1000,
+                            minWidth: '160px',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              setOpenMenuId(null);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'white',
+                              border: 'none',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              color: '#0f172a',
+                              transition: 'background 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                            onMouseLeave={(e) => e.target.style.background = 'white'}
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -343,53 +390,233 @@ function InternshipManagement() {
       {selectedStudent && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
+          background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
         }} onClick={() => setSelectedStudent(null)}>
-          <div style={{ background: 'white', padding: '20px', borderRadius: '12px', minWidth: '320px', maxWidth: '720px' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <h3 style={{ margin: 0 }}>{selectedStudent.name} — {selectedStudent.internId}</h3>
-              <button onClick={() => setSelectedStudent(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px' }}>✕</button>
-            </div>
-            <div style={{ marginBottom: '10px' }}>
-              <div><strong>Email:</strong> {selectedStudent.email}</div>
-              <div><strong>Mobile:</strong> {selectedStudent.mobile}</div>
-              <div><strong>Type:</strong> {selectedStudent.studentType}</div>
-            </div>
-            <div>
-              <h4>Documents</h4>
-              <div style={{ display: 'grid', gap: '8px' }}>
-                <div>
-                  <strong>Offer Letter:</strong>{' '}
-                  {selectedStudent.documents?.offerLetter ? (
-                    <a href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.offerLetter.filename} target="_blank" rel="noreferrer">View</a>
-                  ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                </div>
-                <div>
-                  <strong>Welcome Letter:</strong>{' '}
-                  {selectedStudent.documents?.welcomeLetter ? (
-                    <a href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.welcomeLetter.filename} target="_blank" rel="noreferrer">View</a>
-                  ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                </div>
-                <div>
-                  <strong>Payment Receipt:</strong>{' '}
-                  {selectedStudent.documents?.paymentReceipt ? (
-                    <a href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.paymentReceipt.filename} target="_blank" rel="noreferrer">View</a>
-                  ) : <span style={{ color: '#6b7280' }}>Not uploaded</span>}
-                </div>
-                <div>
-                  <strong>Other Certificates:</strong>
-                  {selectedStudent.documents?.otherCertificates && selectedStudent.documents.otherCertificates.length > 0 ? (
-                    <ul>
-                      {selectedStudent.documents.otherCertificates.map((c, idx) => (
-                        <li key={idx}><a href={UPLOADS_BASE + '/uploads/students/' + c.filename} target="_blank" rel="noreferrer">{c.name || c.filename}</a></li>
-                      ))}
-                    </ul>
-                  ) : <span style={{ color: '#6b7280', marginLeft: '8px' }}>None</span>}
-                </div>
+          <div style={{ 
+            background: 'white', 
+            borderRadius: '16px', 
+            minWidth: '400px', 
+            maxWidth: '650px',
+            width: '90%',
+            maxHeight: '85vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }} onClick={(e) => e.stopPropagation()}>
+            {/* Header with Gradient */}
+            <div style={{ 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '24px',
+              color: 'white',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setSelectedStudent(null)} 
+                style={{ 
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  border: 'none', 
+                  background: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  cursor: 'pointer', 
+                  fontSize: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
+                onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+              >✕</button>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600' }}>{selectedStudent.name}</h2>
+              <div style={{ display: 'flex', gap: '16px', fontSize: '14px', opacity: 0.95 }}>
+                <span>ID: {selectedStudent.internId}</span>
+                <span>•</span>
+                <span>Type: {selectedStudent.studentType}</span>
               </div>
             </div>
-            <div style={{ marginTop: '16px', textAlign: 'right' }}>
-              <button onClick={() => setSelectedStudent(null)} style={{ padding: '8px 12px', borderRadius: '8px' }}>Close</button>
+
+            {/* Content */}
+            <div style={{ padding: '24px', maxHeight: 'calc(85vh - 120px)', overflowY: 'auto' }}>
+              {/* Contact Information */}
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ 
+                  fontSize: '16px', 
+                  fontWeight: '600', 
+                  color: '#1f2937',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>📧 Contact Information</h3>
+                <div style={{ 
+                  background: '#f9fafb',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  display: 'grid',
+                  gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Email</span>
+                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.email}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Mobile</span>
+                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.mobile}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents Section */}
+              <div>
+                <h3 style={{ 
+                  fontSize: '16px', 
+                  fontWeight: '600', 
+                  color: '#1f2937',
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>📄 Documents</h3>
+                <div style={{ 
+                  background: '#f9fafb',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  display: 'grid',
+                  gap: '12px'
+                }}>
+                  {/* Offer Letter */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Offer Letter</span>
+                    {selectedStudent.documents?.offerLetter ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.offerLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '6px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+
+                  {/* Welcome Letter */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Welcome Letter</span>
+                    {selectedStudent.documents?.welcomeLetter ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.welcomeLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '6px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+
+                  {/* Payment Receipt */}
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Payment Receipt</span>
+                    {selectedStudent.documents?.paymentReceipt ? (
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.paymentReceipt.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '6px 14px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
+                  </div>
+
+                  {/* Other Certificates */}
+                  <div style={{ 
+                    padding: '10px',
+                    background: 'white',
+                    borderRadius: '6px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <div style={{ fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Other Certificates</div>
+                    {selectedStudent.documents?.otherCertificates && selectedStudent.documents.otherCertificates.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
+                        {selectedStudent.documents.otherCertificates.map((c, idx) => (
+                          <a 
+                            key={idx}
+                            href={UPLOADS_BASE + '/uploads/students/' + c.filename} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            style={{
+                              padding: '8px 12px',
+                              background: '#f3f4f6',
+                              borderRadius: '4px',
+                              textDecoration: 'none',
+                              color: '#4f46e5',
+                              fontSize: '13px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#e0e7ff'}
+                            onMouseLeave={(e) => e.target.style.background = '#f3f4f6'}
+                          >
+                            📎 {c.name || c.filename}
+                          </a>
+                        ))}
+                      </div>
+                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>None</span>}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -401,7 +401,7 @@ function JobsInternships() {
         {postings.length === 0 ? (
           <div style={{ marginTop: '20px', padding: '20px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
             <p style={{ color: '#6b7280' }}>
-              💼 No job postings yet. Create your first posting above!
+              No job postings yet. Create your first posting above!
             </p>
           </div>
         ) : (
