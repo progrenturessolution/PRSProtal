@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { adminAPI } from '../services/api';
 
 function ViewInterns({ onInternDeleted }) {
@@ -650,36 +651,38 @@ function ViewInterns({ onInternDeleted }) {
       )}
 
       {/* View Profile Modal - Enhanced */}
-      {showProfileModal && selectedStudent && (
+      {showProfileModal && selectedStudent && createPortal(
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
+          background: 'rgba(0, 0, 0, 0.75)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 2000,
-          backdropFilter: 'blur(4px)'
+          zIndex: 9999,
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          padding: '20px'
         }}>
           <div style={{
               background: 'white',
               borderRadius: '16px',
-              maxWidth: '1000px',
-              width: '95%',
-              maxHeight: '92vh',
+              maxWidth: '900px',
+              width: '90%',
+              maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              margin: '0 auto',
+              transform: 'translateZ(0)'
             }}>
             
             {/* Header with Gradient Background */}
             <div style={{
-              background: selectedStudent.studentType === 'Internship' 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-              padding: '32px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '24px',
               borderRadius: '16px 16px 0 0',
               position: 'relative'
             }}>
@@ -715,14 +718,14 @@ function ViewInterns({ onInternDeleted }) {
                 color: 'white'
               }}>
                 <div style={{
-                  width: '80px',
-                  height: '80px',
+                  width: '70px',
+                  height: '70px',
                   borderRadius: '50%',
                   background: 'rgba(255, 255, 255, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '36px',
+                  fontSize: '32px',
                   fontWeight: 700,
                   border: '3px solid rgba(255, 255, 255, 0.3)'
                 }}>
@@ -779,15 +782,15 @@ function ViewInterns({ onInternDeleted }) {
             </div>
 
             {/* Content Body */}
-            <div style={{ padding: '32px' }}>
+            <div style={{ padding: '20px' }}>
               
               {/* Contact Information Section */}
-              <div style={{ marginBottom: '28px' }}>
+              <div style={{ marginBottom: '20px' }}>
                 <h3 style={{ 
-                  fontSize: '18px', 
+                  fontSize: '16px', 
                   fontWeight: 700, 
                   color: '#0f172a',
-                  marginBottom: '16px',
+                  marginBottom: '12px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
@@ -802,32 +805,32 @@ function ViewInterns({ onInternDeleted }) {
                 </h3>
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                  gap: '16px'
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '12px'
                 }}>
                   <div style={{
-                    padding: '16px',
+                    padding: '12px',
                     background: '#f8fafc',
-                    borderRadius: '10px',
+                    borderRadius: '8px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>
                       Email Address
                     </div>
-                    <div style={{ fontSize: '15px', color: '#0f172a', fontWeight: 500, wordBreak: 'break-all' }}>
+                    <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500, wordBreak: 'break-all' }}>
                       {selectedStudent.email}
                     </div>
                   </div>
                   <div style={{
-                    padding: '16px',
+                    padding: '12px',
                     background: '#f8fafc',
-                    borderRadius: '10px',
+                    borderRadius: '8px',
                     border: '1px solid #e2e8f0'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '6px' }}>
+                    <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, marginBottom: '4px' }}>
                       Mobile Number
                     </div>
-                    <div style={{ fontSize: '15px', color: '#0f172a', fontWeight: 500 }}>
+                    <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 500 }}>
                       {selectedStudent.mobile || 'Not provided'}
                     </div>
                   </div>
@@ -836,12 +839,12 @@ function ViewInterns({ onInternDeleted }) {
 
               {/* Internship Details (if applicable) */}
               {selectedStudent.studentType === 'Internship' && (
-                <div style={{ marginBottom: '28px' }}>
+                <div style={{ marginBottom: '20px' }}>
                   <h3 style={{ 
-                    fontSize: '18px', 
+                    fontSize: '16px', 
                     fontWeight: 700, 
                     color: '#0f172a',
-                    marginBottom: '16px',
+                    marginBottom: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px'
@@ -856,45 +859,45 @@ function ViewInterns({ onInternDeleted }) {
                   </h3>
                   <div style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                    gap: '16px'
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '12px'
                   }}>
                     <div style={{
-                      padding: '16px',
+                      padding: '12px',
                       background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: '1px solid #667eea30'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#667eea', fontWeight: 700, marginBottom: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#667eea', fontWeight: 700, marginBottom: '4px' }}>
                         Domain
                       </div>
-                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                      <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600 }}>
                         {selectedStudent.domain || 'Not specified'}
                       </div>
                     </div>
                     <div style={{
-                      padding: '16px',
+                      padding: '12px',
                       background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: '1px solid #667eea30'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#667eea', fontWeight: 700, marginBottom: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#667eea', fontWeight: 700, marginBottom: '4px' }}>
                         Duration
                       </div>
-                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                      <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600 }}>
                         {selectedStudent.duration || 'Not specified'}
                       </div>
                     </div>
                     <div style={{
-                      padding: '16px',
+                      padding: '12px',
                       background: 'linear-gradient(135deg, #10b98115 0%, #059e6915 100%)',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: '1px solid #10b98130'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#059669', fontWeight: 700, marginBottom: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#059669', fontWeight: 700, marginBottom: '4px' }}>
                         Joining Date
                       </div>
-                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                      <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600 }}>
                         {selectedStudent.joiningDate ? new Date(selectedStudent.joiningDate).toLocaleDateString('en-US', { 
                           year: 'numeric', 
                           month: 'short', 
@@ -903,15 +906,15 @@ function ViewInterns({ onInternDeleted }) {
                       </div>
                     </div>
                     <div style={{
-                      padding: '16px',
+                      padding: '12px',
                       background: 'linear-gradient(135deg, #f59e0b15 0%, #d9770615 100%)',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: '1px solid #f59e0b30'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#d97706', fontWeight: 700, marginBottom: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#d97706', fontWeight: 700, marginBottom: '4px' }}>
                         Ending Date
                       </div>
-                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                      <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600 }}>
                         {selectedStudent.endingDate ? new Date(selectedStudent.endingDate).toLocaleDateString('en-US', { 
                           year: 'numeric', 
                           month: 'short', 
@@ -925,12 +928,12 @@ function ViewInterns({ onInternDeleted }) {
 
               {/* SMS Program Details (if applicable) */}
               {selectedStudent.studentType === 'SMS Program' && (
-                <div style={{ marginBottom: '28px' }}>
+                <div style={{ marginBottom: '20px' }}>
                   <h3 style={{ 
-                    fontSize: '18px', 
+                    fontSize: '16px', 
                     fontWeight: 700, 
                     color: '#0f172a',
-                    marginBottom: '16px',
+                    marginBottom: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px'
@@ -945,32 +948,32 @@ function ViewInterns({ onInternDeleted }) {
                   </h3>
                   <div style={{ 
                     display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                    gap: '16px'
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '12px'
                   }}>
                     <div style={{
-                      padding: '16px',
+                      padding: '12px',
                       background: 'linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: '1px solid #f093fb30'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#ec4899', fontWeight: 700, marginBottom: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#ec4899', fontWeight: 700, marginBottom: '4px' }}>
                         Gender
                       </div>
-                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                      <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600 }}>
                         {selectedStudent.gender || 'Not specified'}
                       </div>
                     </div>
                     <div style={{
-                      padding: '16px',
+                      padding: '12px',
                       background: 'linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)',
-                      borderRadius: '10px',
+                      borderRadius: '8px',
                       border: '1px solid #f093fb30'
                     }}>
-                      <div style={{ fontSize: '12px', color: '#ec4899', fontWeight: 700, marginBottom: '6px' }}>
+                      <div style={{ fontSize: '11px', color: '#ec4899', fontWeight: 700, marginBottom: '4px' }}>
                         Current Designation
                       </div>
-                      <div style={{ fontSize: '16px', color: '#0f172a', fontWeight: 600 }}>
+                      <div style={{ fontSize: '14px', color: '#0f172a', fontWeight: 600 }}>
                         {selectedStudent.currentDesignation || 'Not specified'}
                       </div>
                     </div>
@@ -978,17 +981,17 @@ function ViewInterns({ onInternDeleted }) {
                   
                   {/* Payment Information */}
                   {(selectedStudent.paymentDoneBy || selectedStudent.transactionId) && (
-                    <div style={{ marginTop: '16px' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#64748b', marginBottom: '12px' }}>
+                    <div style={{ marginTop: '12px' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#64748b', marginBottom: '10px' }}>
                         Payment Information
                       </h4>
                       <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                        gap: '16px'
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: '12px'
                       }}>
                         <div style={{
-                          padding: '14px',
+                          padding: '12px',
                           background: '#f8fafc',
                           borderRadius: '8px',
                           border: '1px solid #e2e8f0'
@@ -1023,8 +1026,8 @@ function ViewInterns({ onInternDeleted }) {
               <div style={{
                 display: 'flex',
                 gap: '12px',
-                marginTop: '32px',
-                paddingTop: '24px',
+                marginTop: '20px',
+                paddingTop: '16px',
                 borderTop: '2px solid #f1f5f9'
               }}>
                 <button
@@ -1109,7 +1112,8 @@ function ViewInterns({ onInternDeleted }) {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Edit Modal */}
