@@ -47,14 +47,26 @@ function TrainerDashboard() {
 
   return (
     <div className="dashboard">
-      {/* Modern Sidebar */}
+      {/* Clean Enterprise Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo-container">
             <img src={logo} alt="Progrentures" className="sidebar-logo" />
           </div>
           <h2>PROGRENTURES</h2>
-          <p>Trainer Panel</p>
+          <p>Trainer Portal</p>
+        </div>
+
+        <div className="trainer-profile-mini">
+          <div className="profile-avatar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div className="profile-info">
+            <p className="profile-name">{user?.name}</p>
+            <p className="profile-role">Trainer</p>
+          </div>
         </div>
 
         <ul className="sidebar-menu">
@@ -64,21 +76,30 @@ function TrainerDashboard() {
             className={activeTab === 'overview' ? 'active' : ''}
             onClick={() => setActiveTab('overview')}
           >
-            Dashboard Overview
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+            </svg>
+            Dashboard
           </li>
           
           <li 
             className={activeTab === 'students' ? 'active' : ''}
             onClick={() => setActiveTab('students')}
           >
-            Assigned Students
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            My Students
           </li>
           
           <li 
             className={activeTab === 'analytics' ? 'active' : ''}
             onClick={() => setActiveTab('analytics')}
           >
-            Performance Analytics
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Analytics
           </li>
 
           <li className="menu-section-header">COMMUNICATION</li>
@@ -87,251 +108,166 @@ function TrainerDashboard() {
             className={activeTab === 'notifications' ? 'active' : ''}
             onClick={() => setActiveTab('notifications')}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
             Notifications
           </li>
 
-          <li className="menu-section-header">ACCOUNT</li>
+          <li className="menu-section-header">SETTINGS</li>
           
           <li 
             className={activeTab === 'profile' ? 'active' : ''}
             onClick={() => setActiveTab('profile')}
           >
-            Profile Settings
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            My Profile
           </li>
         </ul>
 
         <button className="logout-btn" onClick={handleLogout}>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
           Logout
         </button>
       </aside>
 
-      {/* Main Content */}
+      {/* Clean Enterprise Content */}
       <main className="main-content">
-        {/* Header */}
-        <div className="content-header" style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '32px',
-          borderRadius: '16px',
-          marginBottom: '24px',
-          boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '700' }}>
-                Welcome back, {user?.name}!
-              </h1>
-              <p style={{ margin: '8px 0 0 0', fontSize: '16px', opacity: 0.95 }}>
-                Manage your students and track their progress
-              </p>
-            </div>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.2)',
-              padding: '16px 24px',
-              borderRadius: '12px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '4px' }}>
-                Your Role
-              </div>
-              <div style={{ fontSize: '20px', fontWeight: '700', textTransform: 'capitalize' }}>
-                {user?.role || 'Trainer'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Content based on active tab */}
         <div className="dashboard-content">
           {activeTab === 'overview' && (
             <>
-              {/* Stats Cards */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '20px',
-                marginBottom: '24px'
-              }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  color: 'white',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
-                }}>
-                  <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-                    Assigned Students
-                  </div>
-                  <div style={{ fontSize: '40px', fontWeight: '700', marginBottom: '8px' }}>
-                    {students.length}
-                  </div>
-                  <div style={{ fontSize: '13px', opacity: 0.8 }}>
-                    Total students under your guidance
-                  </div>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>Dashboard</h1>
+                  <p className="header-subtitle">Welcome back, {user?.name}</p>
                 </div>
-
-                <div style={{
-                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  color: 'white',
-                  boxShadow: '0 4px 15px rgba(240, 147, 251, 0.3)'
-                }}>
-                  <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-                    Active Sessions
-                  </div>
-                  <div style={{ fontSize: '40px', fontWeight: '700', marginBottom: '8px' }}>
-                    {students.filter(s => s.status === 'Active').length}
-                  </div>
-                  <div style={{ fontSize: '13px', opacity: 0.8 }}>
-                    Currently active training sessions
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  color: 'white',
-                  boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)'
-                }}>
-                  <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-                    Completed Training
-                  </div>
-                  <div style={{ fontSize: '40px', fontWeight: '700', marginBottom: '8px' }}>
-                    {students.filter(s => s.status === 'Completed').length}
-                  </div>
-                  <div style={{ fontSize: '13px', opacity: 0.8 }}>
-                    Students who completed training
-                  </div>
-                </div>
-
-                <div style={{
-                  background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  color: 'white',
-                  boxShadow: '0 4px 15px rgba(67, 233, 123, 0.3)'
-                }}>
-                  <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '8px' }}>
-                    Pending Reviews
-                  </div>
-                  <div style={{ fontSize: '40px', fontWeight: '700', marginBottom: '8px' }}>
-                    0
-                  </div>
-                  <div style={{ fontSize: '13px', opacity: 0.8 }}>
-                    Assessments awaiting review
+                <div className="header-right">
+                  <div className="date-badge">
+                    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="card" style={{ marginBottom: '24px' }}>
-                <h3 style={{ marginBottom: '20px', fontSize: '20px', color: '#1f2937' }}>
-                  Quick Actions
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: '16px'
-                }}>
-                  <button
-                    onClick={() => setActiveTab('students')}
-                    style={{
-                      padding: '16px',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-                    }}
-                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-                  >
-                    View All Students
-                  </button>
+              {/* Premium Stats Cards */}
+              <div className="premium-stats-grid">
+                <div className="premium-stat-card accent-blue">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Total Students</div>
+                    <div className="stat-value">{students.length}</div>
+                    <div className="stat-meta">Assigned to you</div>
+                  </div>
+                </div>
 
-                  <button
-                    style={{
-                      padding: '16px',
-                      background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                      boxShadow: '0 4px 12px rgba(240, 147, 251, 0.3)'
-                    }}
-                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-                  >
-                    Add Assessment
-                  </button>
+                <div className="premium-stat-card accent-teal">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Active Training</div>
+                    <div className="stat-value">{students.filter(s => s.status === 'Active').length}</div>
+                    <div className="stat-meta">Currently enrolled</div>
+                  </div>
+                </div>
 
-                  <button
-                    style={{
-                      padding: '16px',
-                      background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                      boxShadow: '0 4px 12px rgba(79, 172, 254, 0.3)'
-                    }}
-                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-                  >
-                    Schedule Training
-                  </button>
+                <div className="premium-stat-card accent-indigo">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Completed</div>
+                    <div className="stat-value">{students.filter(s => s.status === 'Completed').length}</div>
+                    <div className="stat-meta">Training finished</div>
+                  </div>
+                </div>
 
-                  <button
-                    onClick={() => setActiveTab('analytics')}
-                    style={{
-                      padding: '16px',
-                      background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                      boxShadow: '0 4px 12px rgba(67, 233, 123, 0.3)'
-                    }}
-                    onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
-                  >
-                    View Analytics
-                  </button>
+                <div className="premium-stat-card accent-slate">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Pending Reviews</div>
+                    <div className="stat-value">0</div>
+                    <div className="stat-meta">Awaiting feedback</div>
+                  </div>
                 </div>
               </div>
 
-              {/* Recent Activity */}
-              <div className="card">
-                <h3 style={{ marginBottom: '20px', fontSize: '20px', color: '#1f2937' }}>
-                  Recent Activity
-                </h3>
-                <div style={{
-                  background: '#f9fafb',
-                  padding: '40px',
-                  borderRadius: '12px',
-                  textAlign: 'center'
-                }}>
-                  <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>
-                    No recent activity to display
-                  </p>
-                  <p style={{ color: '#9ca3af', fontSize: '14px', marginTop: '8px' }}>
-                    Your recent activities will appear here
-                  </p>
+              {/* Premium Action Cards */}
+              <div className="premium-action-grid">
+                <div className="premium-action-card">
+                  <div className="action-card-icon blue">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                  <div className="action-card-content">
+                    <h3>Manage Students</h3>
+                    <p>View and track student progress</p>
+                  </div>
+                  <button className="action-card-btn" onClick={() => setActiveTab('students')}>View</button>
+                </div>
+
+                <div className="premium-action-card">
+                  <div className="action-card-icon teal">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div className="action-card-content">
+                    <h3>Schedule Training</h3>
+                    <p>Plan and organize training sessions</p>
+                  </div>
+                  <button className="action-card-btn">Schedule</button>
+                </div>
+
+                <div className="premium-action-card">
+                  <div className="action-card-icon indigo">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div className="action-card-content">
+                    <h3>View Analytics</h3>
+                    <p>Analyze performance metrics</p>
+                  </div>
+                  <button className="action-card-btn" onClick={() => setActiveTab('analytics')}>Analyze</button>
+                </div>
+              </div>
+
+              {/* Premium Activity Feed */}
+              <div className="premium-card">
+                <div className="premium-card-header">
+                  <h2>Recent Activity</h2>
+                  <button className="view-all-link">View All</button>
+                </div>
+                <div className="activity-feed">
+                  <div className="activity-item">
+                    <div className="activity-icon blue">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                    </div>
+                    <div className="activity-content">
+                      <p className="activity-title">System Initialized</p>
+                      <p className="activity-meta">Dashboard is ready to track activities</p>
+                    </div>
+                    <span className="activity-time">Now</span>
+                  </div>
                 </div>
               </div>
             </>
@@ -339,36 +275,42 @@ function TrainerDashboard() {
 
           {activeTab === 'students' && (
             <>
-              <div className="content-header">
-                <h1>Assigned Students</h1>
-                <p>Manage and evaluate your assigned students</p>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>My Students</h1>
+                  <p className="header-subtitle">Track and manage your assigned students</p>
+                </div>
+                <div className="header-right">
+                  <button className="premium-btn-primary">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: '18px', height: '18px' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Student
+                  </button>
+                </div>
               </div>
 
-              <div className="card">
+              <div className="premium-card">
                 {students.length === 0 ? (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '60px 20px',
-                    background: '#f9fafb',
-                    borderRadius: '12px'
-                  }}>
-                    <h3 style={{ color: '#6b7280', marginBottom: '8px', fontSize: '20px' }}>
-                      No Students Assigned Yet
-                    </h3>
-                    <p style={{ color: '#9ca3af', fontSize: '15px' }}>
-                      Students assigned to you will appear here
-                    </p>
+                  <div className="premium-empty-state">
+                    <div className="empty-icon">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    </div>
+                    <p className="empty-title">No students assigned</p>
+                    <p className="empty-subtitle">Students assigned to you will appear here</p>
                   </div>
                 ) : (
                   <div style={{ overflowX: 'auto' }}>
-                    <table className="data-table">
+                    <table className="premium-table">
                       <thead>
                         <tr>
                           <th>#</th>
                           <th>Student ID</th>
-                          <th>Student Name</th>
+                          <th>Name</th>
                           <th>Email</th>
-                          <th>Program Type</th>
+                          <th>Program</th>
                           <th>Status</th>
                           <th>Actions</th>
                         </tr>
@@ -376,42 +318,12 @@ function TrainerDashboard() {
                       <tbody>
                         {students.map((student, index) => (
                           <tr key={student._id}>
-                            <td style={{ fontWeight: '600', color: '#6b7280' }}>
-                              {index + 1}
-                            </td>
+                            <td>{index + 1}</td>
+                            <td className="mono-text">{student.internId}</td>
+                            <td className="font-medium">{student.name}</td>
+                            <td className="text-secondary">{student.email}</td>
                             <td>
-                              <span style={{
-                                fontFamily: 'monospace',
-                                fontSize: '13px',
-                                fontWeight: '600',
-                                color: '#3b82f6'
-                              }}>
-                                {student.internId}
-                              </span>
-                            </td>
-                            <td>
-                              <div style={{ fontWeight: '600', color: '#0f172a' }}>
-                                {student.name}
-                              </div>
-                            </td>
-                            <td>
-                              <div style={{
-                                fontSize: '13px',
-                                color: '#6b7280'
-                              }}>
-                                {student.email}
-                              </div>
-                            </td>
-                            <td>
-                              <span style={{
-                                display: 'inline-block',
-                                padding: '4px 12px',
-                                borderRadius: '12px',
-                                fontSize: '12px',
-                                fontWeight: '600',
-                                background: student.studentType === 'SMS Program' ? '#fef3c7' : '#dbeafe',
-                                color: student.studentType === 'SMS Program' ? '#92400e' : '#1e40af'
-                              }}>
+                              <span className="badge-neutral">
                                 {student.studentType || 'Internship'}
                               </span>
                             </td>
@@ -428,73 +340,25 @@ function TrainerDashboard() {
                               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                 <button
                                   onClick={() => navigate(`/trainer/student/${student._id}/interviews`)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.2s'
-                                  }}
-                                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                  className="table-action-btn"
                                 >
                                   Interviews
                                 </button>
                                 <button
                                   onClick={() => navigate(`/trainer/student/${student._id}/aptitude`)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.2s'
-                                  }}
-                                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                  className="table-action-btn"
                                 >
                                   Aptitude
                                 </button>
                                 <button
                                   onClick={() => navigate(`/trainer/student/${student._id}/assessments`)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.2s'
-                                  }}
-                                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                  className="table-action-btn"
                                 >
                                   Assessments
                                 </button>
                                 <button
                                   onClick={() => navigate(`/trainer/student/${student._id}/training`)}
-                                  style={{
-                                    padding: '6px 12px',
-                                    background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '6px',
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.2s'
-                                  }}
-                                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                  className="table-action-btn"
                                 >
                                   Training
                                 </button>
@@ -512,24 +376,22 @@ function TrainerDashboard() {
 
           {activeTab === 'analytics' && (
             <>
-              <div className="content-header">
-                <h1>Performance Analytics</h1>
-                <p>Track student performance and training progress</p>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>Analytics</h1>
+                  <p className="header-subtitle">Performance insights and metrics</p>
+                </div>
               </div>
 
-              <div className="card">
-                <div style={{
-                  textAlign: 'center',
-                  padding: '60px 20px',
-                  background: '#f9fafb',
-                  borderRadius: '12px'
-                }}>
-                  <h3 style={{ color: '#6b7280', marginBottom: '8px', fontSize: '20px' }}>
-                    Analytics Dashboard Coming Soon
-                  </h3>
-                  <p style={{ color: '#9ca3af', fontSize: '15px' }}>
-                    Detailed performance metrics and insights will be available here
-                  </p>
+              <div className="premium-card">
+                <div className="premium-empty-state">
+                  <div className="empty-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <p className="empty-title">Analytics Dashboard</p>
+                  <p className="empty-subtitle">Performance metrics and insights will be available here</p>
                 </div>
               </div>
             </>
@@ -537,24 +399,22 @@ function TrainerDashboard() {
 
           {activeTab === 'notifications' && (
             <>
-              <div className="content-header">
-                <h1>Notifications</h1>
-                <p>Stay updated with important alerts and messages</p>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>Notifications</h1>
+                  <p className="header-subtitle">Stay updated with recent activities</p>
+                </div>
               </div>
 
-              <div className="card">
-                <div style={{
-                  textAlign: 'center',
-                  padding: '60px 20px',
-                  background: '#f9fafb',
-                  borderRadius: '12px'
-                }}>
-                  <h3 style={{ color: '#6b7280', marginBottom: '8px', fontSize: '20px' }}>
-                    No Notifications
-                  </h3>
-                  <p style={{ color: '#9ca3af', fontSize: '15px' }}>
-                    You're all caught up! No new notifications at this time
-                  </p>
+              <div className="premium-card">
+                <div className="premium-empty-state">
+                  <div className="empty-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                  </div>
+                  <p className="empty-title">No notifications</p>
+                  <p className="empty-subtitle">You're all caught up! New updates will appear here</p>
                 </div>
               </div>
             </>
@@ -562,83 +422,45 @@ function TrainerDashboard() {
 
           {activeTab === 'profile' && (
             <>
-              <div className="content-header">
-                <h1>Profile Settings</h1>
-                <p>Manage your account information and preferences</p>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>My Profile</h1>
+                  <p className="header-subtitle">Manage your personal information</p>
+                </div>
+                <div className="header-right">
+                  <button className="premium-btn-secondary">Edit Profile</button>
+                </div>
               </div>
 
-              <div className="card">
-                <h3 style={{ marginBottom: '24px', fontSize: '20px', color: '#1f2937' }}>
-                  Personal Information
-                </h3>
+              <div className="premium-card">
+                <div className="premium-card-header">
+                  <h2>Personal Information</h2>
+                </div>
                 
-                <div style={{
-                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                  borderRadius: '12px',
-                  padding: '24px',
-                  marginBottom: '24px'
-                }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#075985', marginBottom: '6px' }}>
-                        Full Name
-                      </label>
-                      <div style={{ fontSize: '16px', color: '#0c4a6e', fontWeight: '600' }}>
-                        {user?.name}
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#075985', marginBottom: '6px' }}>
-                        Email Address
-                      </label>
-                      <div style={{ fontSize: '15px', color: '#0369a1', fontFamily: 'monospace' }}>
-                        {user?.email}
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#075985', marginBottom: '6px' }}>
-                        Mobile Number
-                      </label>
-                      <div style={{ fontSize: '15px', color: '#0c4a6e', fontFamily: 'monospace' }}>
-                        {user?.mobile || 'Not available'}
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#075985', marginBottom: '6px' }}>
-                        Role
-                      </label>
-                      <div>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '6px 14px',
-                          borderRadius: '12px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          textTransform: 'capitalize',
-                          background: '#e0e7ff',
-                          color: '#3730a3'
-                        }}>
-                          {user?.role || 'Trainer'}
-                        </span>
-                      </div>
+                <div className="profile-info-grid">
+                  <div className="profile-field">
+                    <label>Full Name</label>
+                    <div className="field-value">{user?.name}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Email Address</label>
+                    <div className="field-value mono-text">{user?.email}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Mobile Number</label>
+                    <div className="field-value mono-text">{user?.mobile || 'Not available'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Role</label>
+                    <div className="field-value">
+                      <span className="badge-neutral">{user?.role || 'Trainer'}</span>
                     </div>
                   </div>
                 </div>
 
-                <div style={{
-                  background: '#fef3c7',
-                  border: '1px solid #fbbf24',
-                  borderRadius: '8px',
-                  padding: '16px'
-                }}>
-                  <div>
-                    <strong style={{ color: '#92400e', display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                      Need to Update Your Information?
-                    </strong>
-                    <p style={{ margin: 0, color: '#78350f', fontSize: '13px' }}>
-                      Please contact your administrator to update your profile information.
-                    </p>
-                  </div>
+                <div className="info-banner">
+                  <strong>Need to update your information?</strong>
+                  <p>Please contact your administrator to update your profile information.</p>
                 </div>
               </div>
             </>

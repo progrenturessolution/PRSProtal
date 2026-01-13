@@ -53,9 +53,23 @@ function AddIntern({ onInternAdded }) {
       };
 
       if (studentType === 'Internship') {
-        submitData.domain = formData.domain === 'Other' ? formData.customDomain : formData.domain;
+        const selectedDomain = formData.domain === 'Other' ? formData.customDomain : formData.domain;
+        
+        if (!selectedDomain || !formData.joiningDate || !formData.duration) {
+          setError('Please fill in all required fields: Domain, Joining Date, and Duration');
+          setLoading(false);
+          return;
+        }
+        
+        submitData.domain = selectedDomain;
         submitData.joiningDate = formData.joiningDate;
         submitData.duration = formData.duration;
+        
+        console.log('Internship data being sent:', {
+          domain: submitData.domain,
+          joiningDate: submitData.joiningDate,
+          duration: submitData.duration
+        });
       } else if (studentType === 'SMS Program') {
         submitData.paymentDoneBy = formData.paymentDoneBy;
         submitData.dateOfPayment = formData.dateOfPayment;

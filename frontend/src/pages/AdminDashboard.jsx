@@ -12,7 +12,6 @@ import Certificates from './Certificates';
 import Notifications from './Notifications';
 import JobsInternships from './JobsInternships';
 import AccessManagement from './AccessManagement';
-import ViewTrainers from './ViewTrainers';
 import Reports from './Reports';
 import { adminAPI, taskAPI } from '../services/api';
 import logo from '../assets/logo.png';
@@ -109,88 +108,187 @@ function AdminDashboard() {
       case 'dashboard':
         return (
           <>
-            <div className="content-header">
-              <h1>Admin Dashboard</h1>
-              <p>Welcome back, {user?.email}</p>
-            </div>
-
-            <div className="stats-grid">
-              <div className="stat-card">
-               
-                <div className="stat-info">
-                  <h3>Total Interns</h3>
-                  <p>{stats.totalInterns}</p>
-                </div>
+            <div className="premium-page-header">
+              <div className="header-left">
+                <h1>Admin Dashboard</h1>
+                <p className="header-subtitle">Welcome back, {user?.email}</p>
               </div>
-              <div className="stat-card">
-                
-                <div className="stat-info">
-                  <h3>Active Interns</h3>
-                  <p>{stats.activeInterns}</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                
-                <div className="stat-info">
-                  <h3>Completed</h3>
-                  <p>{stats.completedInterns}</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                
-                <div className="stat-info">
-                  <h3>This Month</h3>
-                  <p>{stats.thisMonthInterns}</p>
+              <div className="header-right">
+                <div className="date-badge">
+                  {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </div>
               </div>
             </div>
 
-            <div className="content-header" style={{ marginTop: '30px' }}>
-              <h2>Task Statistics</h2>
+            {/* Student Statistics */}
+            <div className="premium-stats-grid">
+              <div className="premium-stat-card accent-blue">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Total Students</div>
+                  <div className="stat-value">{stats.totalInterns}</div>
+                  <div className="stat-meta">All enrolled students</div>
+                </div>
+              </div>
+
+              <div className="premium-stat-card accent-teal">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Active Students</div>
+                  <div className="stat-value">{stats.activeInterns}</div>
+                  <div className="stat-meta">Currently enrolled</div>
+                </div>
+              </div>
+
+              <div className="premium-stat-card accent-indigo">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Completed</div>
+                  <div className="stat-value">{stats.completedInterns}</div>
+                  <div className="stat-meta">Program finished</div>
+                </div>
+              </div>
+
+              <div className="premium-stat-card accent-slate">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">This Month</div>
+                  <div className="stat-value">{stats.thisMonthInterns}</div>
+                  <div className="stat-meta">New enrollments</div>
+                </div>
+              </div>
             </div>
 
-            <div className="stats-grid">
-              <div className="stat-card">
+            {/* Task Statistics Section */}
+            <div className="premium-card" style={{ marginBottom: '24px' }}>
+              <div className="premium-card-header">
+                <h2>Task Statistics</h2>
+              </div>
               
-                <div className="stat-info">
-                  <h3>Total Tasks</h3>
-                  <p>{taskStats.totalTasks}</p>
+              <div className="premium-stats-grid" style={{ marginBottom: '0' }}>
+                <div className="premium-stat-card accent-blue">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Total Tasks</div>
+                    <div className="stat-value">{taskStats.totalTasks}</div>
+                    <div className="stat-meta">All tasks created</div>
+                  </div>
                 </div>
-              </div>
-              <div className="stat-card">
-               
-                <div className="stat-info">
-                  <h3>Assigned</h3>
-                  <p>{taskStats.assignedTasks}</p>
+
+                <div className="premium-stat-card accent-teal">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Assigned</div>
+                    <div className="stat-value">{taskStats.assignedTasks}</div>
+                    <div className="stat-meta">Assigned to students</div>
+                  </div>
                 </div>
-              </div>
-              <div className="stat-card">
-             
-                <div className="stat-info">
-                  <h3>In Progress</h3>
-                  <p>{taskStats.inProgressTasks}</p>
+
+                <div className="premium-stat-card accent-indigo">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">In Progress</div>
+                    <div className="stat-value">{taskStats.inProgressTasks}</div>
+                    <div className="stat-meta">Currently working</div>
+                  </div>
                 </div>
-              </div>
-              <div className="stat-card">
-               
-                <div className="stat-info">
-                  <h3>Pending Approval</h3>
-                  <p>{taskStats.pendingApprovalTasks}</p>
+
+                <div className="premium-stat-card accent-slate">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Pending Approval</div>
+                    <div className="stat-value">{taskStats.pendingApprovalTasks}</div>
+                    <div className="stat-meta">Awaiting review</div>
+                  </div>
                 </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-info">
-                  <h3>Completed</h3>
-                  <p>{taskStats.completedTasks}</p>
+
+                <div className="premium-stat-card accent-blue">
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Completed</div>
+                    <div className="stat-value">{taskStats.completedTasks}</div>
+                    <div className="stat-meta">Successfully finished</div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="card">
-              <h3>Quick Actions</h3>
-              <p className="mt-20">
-                Use the sidebar to navigate through different sections.
-              </p>
+            {/* Quick Actions */}
+            <div className="premium-action-grid">
+              <div className="premium-action-card">
+                <div className="action-card-icon blue">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </div>
+                <div className="action-card-content">
+                  <h3>Add New Student</h3>
+                  <p>Enroll new students into programs</p>
+                </div>
+                <button className="action-card-btn" onClick={() => setActiveMenu('add-intern')}>Add</button>
+              </div>
+
+              <div className="premium-action-card">
+                <div className="action-card-icon teal">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <div className="action-card-content">
+                  <h3>Create Task</h3>
+                  <p>Assign new tasks to students</p>
+                </div>
+                <button className="action-card-btn" onClick={() => setActiveMenu('create-task')}>Create</button>
+              </div>
+
+              <div className="premium-action-card">
+                <div className="action-card-icon indigo">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="action-card-content">
+                  <h3>View Reports</h3>
+                  <p>Access analytics and insights</p>
+                </div>
+                <button className="action-card-btn" onClick={() => setActiveMenu('reports')}>View</button>
+              </div>
             </div>
           </>
         );
@@ -231,9 +329,6 @@ function AdminDashboard() {
       case 'access-management':
         return <AccessManagement key="access-management" />;
       
-      case 'view-trainers':
-        return <ViewTrainers key="view-trainers" />;
-      
       case 'reports':
         return <Reports key="reports" />;
       
@@ -264,11 +359,15 @@ function AdminDashboard() {
 
         <ul className="sidebar-menu">
           {/* Main Options */}
+          <li className="menu-section-header">OVERVIEW</li>
           <li 
             className={activeMenu === 'dashboard' ? 'active' : ''}
             onClick={() => setActiveMenu('dashboard')}
           >
-           Dashboard Overview
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
+            </svg>
+            Dashboard Overview
           </li>
 
           {/* Student Management Section */}
@@ -277,12 +376,18 @@ function AdminDashboard() {
             className={activeMenu === 'add-intern' ? 'active' : ''}
             onClick={() => setActiveMenu('add-intern')}
           >
-             Add Student
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            Add Student
           </li>
           <li 
             className={activeMenu === 'view-interns' ? 'active' : ''}
             onClick={() => setActiveMenu('view-interns')}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
             View All Students
           </li>
 
@@ -292,13 +397,19 @@ function AdminDashboard() {
             className={activeMenu === 'internship-management' ? 'active' : ''}
             onClick={() => setActiveMenu('internship-management')}
           >
-           Internship Management
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Internship Management
           </li>
           <li 
             className={activeMenu === 'sms-management' ? 'active' : ''}
             onClick={() => setActiveMenu('sms-management')}
           >
-             SMS Program Management
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            SMS Program Management
           </li>
 
           {/* Certificates */}
@@ -306,7 +417,10 @@ function AdminDashboard() {
             className={activeMenu === 'certificates' ? 'active' : ''}
             onClick={() => setActiveMenu('certificates')}
           >
-             Certificates
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+            Certificates
           </li>
 
           {/* Tasks & Projects */}
@@ -315,19 +429,28 @@ function AdminDashboard() {
             className={activeMenu === 'create-task' ? 'active' : ''}
             onClick={() => setActiveMenu('create-task')}
           >
-             Create Task
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Create Task
           </li>
           <li 
             className={activeMenu === 'manage-tasks' ? 'active' : ''}
             onClick={() => setActiveMenu('manage-tasks')}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
             Manage Tasks
           </li>
           <li 
             className={activeMenu === 'pending-approvals' ? 'active' : ''}
             onClick={() => setActiveMenu('pending-approvals')}
           >
-             Pending Approvals
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Pending Approvals
             {taskStats.pendingApprovalTasks > 0 && (
               <span style={{
                 marginLeft: '8px',
@@ -346,7 +469,10 @@ function AdminDashboard() {
             className={activeMenu === 'completed-tasks' ? 'active' : ''}
             onClick={() => setActiveMenu('completed-tasks')}
           >
-             Completed Tasks
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Completed Tasks
           </li>
 
           {/* Communication */}
@@ -355,28 +481,31 @@ function AdminDashboard() {
             className={activeMenu === 'notifications' ? 'active' : ''}
             onClick={() => setActiveMenu('notifications')}
           >
-             Notifications
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            Notifications
           </li>
           <li 
             className={activeMenu === 'jobs-internships' ? 'active' : ''}
             onClick={() => setActiveMenu('jobs-internships')}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
             Jobs & Internship Updates
           </li>
 
           {/* Access Management */}
+          <li className="menu-section-header">SETTINGS</li>
           <li 
             className={activeMenu === 'access-management' ? 'active' : ''}
             onClick={() => setActiveMenu('access-management')}
           >
-             Access Management
-          </li>
-
-          <li 
-            className={activeMenu === 'view-trainers' ? 'active' : ''}
-            onClick={() => setActiveMenu('view-trainers')}
-          >
-             View All Trainers
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            Access Management
           </li>
 
           {/* Reports */}
@@ -384,11 +513,17 @@ function AdminDashboard() {
             className={activeMenu === 'reports' ? 'active' : ''}
             onClick={() => setActiveMenu('reports')}
           >
-             Reports
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Reports
           </li>
         </ul>
 
         <button className="logout-btn" onClick={handleLogout}>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
           Logout
         </button>
       </aside>

@@ -45,7 +45,7 @@ exports.addIntern = async (req, res) => {
     }
 
     // Type-specific validation
-    if (studentType === 'Internship' && (!domain || !joiningDate || !endingDate || !duration)) {
+    if (studentType === 'Internship' && (!domain || !joiningDate || !duration)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide all internship required fields'
@@ -82,8 +82,11 @@ exports.addIntern = async (req, res) => {
     if (studentType === 'Internship') {
       internData.domain = domain;
       internData.joiningDate = joiningDate;
-      internData.endingDate = endingDate;
       internData.duration = duration;
+      // endingDate is optional, can be calculated later if needed
+      if (endingDate) {
+        internData.endingDate = endingDate;
+      }
     } else if (studentType === 'SMS Program') {
       internData.paymentDoneBy = paymentDoneBy;
       internData.dateOfPayment = dateOfPayment;
