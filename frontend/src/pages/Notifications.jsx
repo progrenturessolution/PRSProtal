@@ -292,7 +292,7 @@ function Notifications() {
         <h3>Recent Notifications</h3>
         <div style={{ marginTop: '20px', padding: '20px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
           <p style={{ color: '#6b7280' }}>
-            📬 Notification history will be displayed here.
+             Notification history will be displayed here.
           </p>
         </div>
       </div>

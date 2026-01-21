@@ -103,7 +103,7 @@ function JobsInternships() {
             fontWeight: 600
           }}
         >
-          {showForm ? '✖ Cancel' : '➕ Post New Opportunity'}
+          {showForm ? '✖ Cancel' : ' Post New Opportunity'}
         </button>
       </div>
 

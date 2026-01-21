@@ -165,7 +165,7 @@ function AccessManagement() {
             fontWeight: 600
           }}
         >
-          {showAddForm ? '✖ Cancel' : '➕ Add Trainer'}
+          {showAddForm ? 'Cancel' : ' Add Trainer'}
         </button>
 
         <button
@@ -433,7 +433,7 @@ function AccessManagement() {
         {trainers.length === 0 ? (
           <div style={{ marginTop: '20px', padding: '20px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
             <p style={{ color: '#6b7280' }}>
-              👨‍🏫 No trainers added yet. Add your first trainer above!
+               No trainers added yet. Add your first trainer above!
             </p>
           </div>
         ) : (
@@ -578,7 +578,7 @@ function AccessManagement() {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
-                  ✅ Trainer Added Successfully!
+                   Trainer Added Successfully!
                 </h2>
                 <button
                   onClick={() => setShowCredentialsModal(false)}
@@ -621,7 +621,7 @@ function AccessManagement() {
                   gap: '12px'
                 }}
               >
-                <span style={{ fontSize: '20px' }}>⚠️</span>
+                <span style={{ fontSize: '20px' }}></span>
                 <div>
                   <strong style={{ color: '#92400e', display: 'block', marginBottom: '4px' }}>
                     Important: Save These Credentials
@@ -674,7 +674,7 @@ function AccessManagement() {
                 }}
               >
                 <h3 style={{ margin: '0 0 16px 0', color: '#78350f', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  🔑 Login Credentials
+                   Login Credentials
                 </h3>
                 <div style={{ display: 'grid', gap: '16px' }}>
                   <div>
@@ -730,7 +730,7 @@ function AccessManagement() {
                 }}
               >
                 <h4 style={{ margin: '0 0 12px 0', color: '#374151', fontSize: '14px', fontWeight: '600' }}>
-                  📝 How to Login:
+                   How to Login:
                 </h4>
                 <ol style={{ margin: 0, paddingLeft: '20px', color: '#6b7280', fontSize: '14px', lineHeight: '1.6' }}>
                   <li>Go to the login page</li>

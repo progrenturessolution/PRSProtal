@@ -1136,7 +1136,7 @@ table tr:hover {
 .submit-btn {
   width: 100%;
   padding: 12px;
-  background: var(--accent-color);
+  background: #2e7d32;
   color: white;
   border: none;
   border-radius: 8px;

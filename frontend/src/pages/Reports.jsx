@@ -65,28 +65,28 @@ function Reports() {
     <>
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          
           <div className="stat-info">
             <h3>Total Students</h3>
             <p>{stats.totalInterns}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          
           <div className="stat-info">
             <h3>Active</h3>
             <p>{stats.activeInterns}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon"></div>
+    
           <div className="stat-info">
             <h3>Completed</h3>
             <p>{stats.completedInterns}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon"></div>
+         
           <div className="stat-info">
             <h3>This Month</h3>
             <p>{stats.thisMonthInterns}</p>
@@ -96,28 +96,28 @@ function Reports() {
 
       <div className="stats-grid" style={{ marginTop: '20px' }}>
         <div className="stat-card">
-          <div className="stat-icon"></div>
+          
           <div className="stat-info">
             <h3>Internship Students</h3>
             <p>{students.filter(s => s.studentType === 'Internship').length}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon"></div>
+         
           <div className="stat-info">
             <h3>SMS Program</h3>
             <p>{students.filter(s => s.studentType === 'SMS Program').length}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon"></div>
+     
           <div className="stat-info">
             <h3>Total Tasks</h3>
             <p>{taskStats.totalTasks}</p>
           </div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon"></div>
+         
           <div className="stat-info">
             <h3>Completed Tasks</h3>
             <p>{taskStats.completedTasks}</p>

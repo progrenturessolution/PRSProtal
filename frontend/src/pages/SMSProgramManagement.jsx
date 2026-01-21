@@ -161,7 +161,7 @@ function SMSProgramManagement() {
               border: 'none',
               fontWeight: 700,
               fontSize: '14px',
-              background: filter === 'all' ? 'linear-gradient(90deg,#06b6d4,#3b82f6)' : '#f8fafc',
+              background: filter === 'all' ? 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)' : '#f8fafc',
               color: filter === 'all' ? 'white' : '#0f172a',
               boxShadow: filter === 'all' ? '0 8px 20px rgba(59,130,246,0.12)' : 'none'
             }}
