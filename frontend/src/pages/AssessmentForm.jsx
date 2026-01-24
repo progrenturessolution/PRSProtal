@@ -1,20 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { trainerAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { trainerAPI } from "../services/api";
+import TrainerSidebar from "../components/TrainerSidebar";
 
 function AssessmentForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    assessmentType: 'Domain',
-    score: '',
-    status: 'Pending',
-    feedback: ''
+    assessmentType: "Domain",
+    score: "",
+    status: "Pending",
+    feedback: "",
   });
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     fetchAssessments();
@@ -27,61 +28,52 @@ function AssessmentForm() {
         setAssessments(response.data.data.assessments);
       }
     } catch (error) {
-      console.error('Error fetching assessments:', error);
+      console.error("Error fetching assessments:", error);
     }
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await trainerAPI.addAssessment({
         studentId,
-        ...formData
+        ...formData,
       });
 
       if (response.data.success) {
-        setSuccess('Assessment record added successfully!');
+        setSuccess("Assessment record added successfully!");
         setFormData({
-          assessmentType: 'Domain',
-          score: '',
-          status: 'Pending',
-          feedback: ''
+          assessmentType: "Domain",
+          score: "",
+          status: "Pending",
+          feedback: "",
         });
         fetchAssessments();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add assessment record');
+      setError(
+        err.response?.data?.message || "Failed to add assessment record",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="dashboard-container">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>Progrentures</h2>
-          <p className="sidebar-role">Trainer Panel</p>
-        </div>
-        <nav className="sidebar-nav">
-          <button onClick={() => navigate('/trainer-dashboard')} className="nav-item">
-            ← Back to Dashboard
-          </button>
-        </nav>
-      </aside>
-
-      <main className="dashboard-main">
+    <div className="dashboard">
+      <TrainerSidebar />
+      <main className="main-content">
         <div className="content-header">
           <h1>Assessment Evaluation</h1>
           <p>Add assessment records for the student</p>
@@ -146,13 +138,13 @@ function AssessmentForm() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Assessment Record'}
+              {loading ? "Saving..." : "Save Assessment Record"}
             </button>
           </form>
         </div>
 
         {/* Assessment History */}
-        <div className="card" style={{ marginTop: '20px' }}>
+        <div className="card" style={{ marginTop: "20px" }}>
           <h2>Assessment History</h2>
           {assessments.length === 0 ? (
             <p>No assessment records yet</p>
@@ -172,18 +164,24 @@ function AssessmentForm() {
                   {assessments.map((assessment, index) => (
                     <tr key={index}>
                       <td>{assessment.assessmentType}</td>
-                      <td>{assessment.score || '-'}</td>
+                      <td>{assessment.score || "-"}</td>
                       <td>
-                        <span className={`status-badge ${
-                          assessment.status === 'Pass' ? 'status-completed' :
-                          assessment.status === 'Fail' ? 'status-rejected' :
-                          'status-pending'
-                        }`}>
+                        <span
+                          className={`status-badge ${
+                            assessment.status === "Pass"
+                              ? "status-completed"
+                              : assessment.status === "Fail"
+                                ? "status-rejected"
+                                : "status-pending"
+                          }`}
+                        >
                           {assessment.status}
                         </span>
                       </td>
-                      <td>{assessment.feedback || '-'}</td>
-                      <td>{new Date(assessment.createdAt).toLocaleDateString()}</td>
+                      <td>{assessment.feedback || "-"}</td>
+                      <td>
+                        {new Date(assessment.createdAt).toLocaleDateString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -632,6 +632,23 @@ function ViewInterns({ onInternDeleted }) {
                     <span>{student.duration}</span>
                   </div>
                 )}
+
+                {student.assignedTrainer && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "14px",
+                      color: "#64748b",
+                    }}
+                  >
+                    <span> Trainer:</span>
+                    <span style={{ fontWeight: "600", color: "#059669" }}>
+                      {student.assignedTrainer.name}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Dropdown Menu */}
@@ -810,7 +827,6 @@ function ViewInterns({ onInternDeleted }) {
                 transform: "translateZ(0)",
               }}
             >
-             
               <div
                 style={{
                   background:

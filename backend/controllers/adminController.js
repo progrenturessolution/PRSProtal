@@ -155,7 +155,7 @@ exports.addIntern = async (req, res) => {
 // Get all interns
 exports.getAllInterns = async (req, res) => {
   try {
-    const interns = await Intern.find().select('-password');
+    const interns = await Intern.find().select('-password').populate('assignedTrainer', 'name email');
     
     res.status(200).json({
       success: true,
@@ -399,15 +399,41 @@ exports.addTrainer = async (req, res) => {
 // Assign students to trainer
 exports.assignStudentsToTrainer = async (req, res) => {
   try {
+    console.log('Assign students request received:', req.body);
+    console.log('User from token:', req.user);
+
     const { trainerId, studentIds } = req.body;
 
+    // Validation
+    if (!trainerId || !studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+      console.log('Validation failed: missing required fields');
+      return res.status(400).json({
+        success: false,
+        message: 'Trainer ID and student IDs are required'
+      });
+    }
+
+    // Check if trainer exists
     const trainer = await Trainer.findById(trainerId);
     if (!trainer) {
+      console.log('Trainer not found:', trainerId);
       return res.status(404).json({
         success: false,
         message: 'Trainer not found'
       });
     }
+
+    // Check if all students exist
+    const students = await Intern.find({ _id: { $in: studentIds } });
+    if (students.length !== studentIds.length) {
+      console.log('Some students not found. Requested:', studentIds.length, 'Found:', students.length);
+      return res.status(404).json({
+        success: false,
+        message: 'One or more students not found'
+      });
+    }
+
+    console.log('Assigning students to trainer:', trainer.name);
 
     // Update trainer's assigned students
     trainer.assignedStudents = [...new Set([...trainer.assignedStudents, ...studentIds])];
@@ -419,13 +445,21 @@ exports.assignStudentsToTrainer = async (req, res) => {
       { assignedTrainer: trainerId }
     );
 
+    console.log('Assignment successful');
+
     res.status(200).json({
       success: true,
-      message: 'Students assigned successfully'
+      message: `${studentIds.length} student(s) assigned successfully to ${trainer.name}`
     });
 
   } catch (error) {
     console.error('Assign students error:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid trainer or student ID format'
+      });
+    }
     res.status(500).json({
       success: false,
       message: 'Server error'

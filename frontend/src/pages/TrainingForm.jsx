@@ -1,21 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { trainerAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { trainerAPI } from "../services/api";
+import TrainerSidebar from "../components/TrainerSidebar";
 
 function TrainingForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    attendance: 'Present',
-    skillImprovementNote: '',
-    engagementLevel: 'Medium',
-    trainerRemarks: ''
+    date: new Date().toISOString().split("T")[0],
+    attendance: "Present",
+    skillImprovementNote: "",
+    engagementLevel: "Medium",
+    trainerRemarks: "",
   });
   const [trainings, setTrainings] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     fetchTrainings();
@@ -28,62 +29,51 @@ function TrainingForm() {
         setTrainings(response.data.data.trainings);
       }
     } catch (error) {
-      console.error('Error fetching trainings:', error);
+      console.error("Error fetching trainings:", error);
     }
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await trainerAPI.addTraining({
         studentId,
-        ...formData
+        ...formData,
       });
 
       if (response.data.success) {
-        setSuccess('Training record added successfully!');
+        setSuccess("Training record added successfully!");
         setFormData({
-          date: new Date().toISOString().split('T')[0],
-          attendance: 'Present',
-          skillImprovementNote: '',
-          engagementLevel: 'Medium',
-          trainerRemarks: ''
+          date: new Date().toISOString().split("T")[0],
+          attendance: "Present",
+          skillImprovementNote: "",
+          engagementLevel: "Medium",
+          trainerRemarks: "",
         });
         fetchTrainings();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add training record');
+      setError(err.response?.data?.message || "Failed to add training record");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="dashboard-container">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>Progrentures</h2>
-          <p className="sidebar-role">Trainer Panel</p>
-        </div>
-        <nav className="sidebar-nav">
-          <button onClick={() => navigate('/trainer-dashboard')} className="nav-item">
-            ← Back to Dashboard
-          </button>
-        </nav>
-      </aside>
-
-      <main className="dashboard-main">
+    <div className="dashboard">
+      <TrainerSidebar />
+      <main className="main-content">
         <div className="content-header">
           <h1>Training Update</h1>
           <p>Add training and attendance records for the student</p>
@@ -158,13 +148,13 @@ function TrainingForm() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Training Record'}
+              {loading ? "Saving..." : "Save Training Record"}
             </button>
           </form>
         </div>
 
         {/* Training History */}
-        <div className="card" style={{ marginTop: '20px' }}>
+        <div className="card" style={{ marginTop: "20px" }}>
           <h2>Training History</h2>
           {trainings.length === 0 ? (
             <p>No training records yet</p>
@@ -185,17 +175,21 @@ function TrainingForm() {
                     <tr key={index}>
                       <td>{new Date(training.date).toLocaleDateString()}</td>
                       <td>
-                        <span className={`status-badge ${
-                          training.attendance === 'Present' ? 'status-completed' :
-                          training.attendance === 'Late' ? 'status-pending' :
-                          'status-rejected'
-                        }`}>
+                        <span
+                          className={`status-badge ${
+                            training.attendance === "Present"
+                              ? "status-completed"
+                              : training.attendance === "Late"
+                                ? "status-pending"
+                                : "status-rejected"
+                          }`}
+                        >
                           {training.attendance}
                         </span>
                       </td>
                       <td>{training.engagementLevel}</td>
-                      <td>{training.skillImprovementNote || '-'}</td>
-                      <td>{training.trainerRemarks || '-'}</td>
+                      <td>{training.skillImprovementNote || "-"}</td>
+                      <td>{training.trainerRemarks || "-"}</td>
                     </tr>
                   ))}
                 </tbody>

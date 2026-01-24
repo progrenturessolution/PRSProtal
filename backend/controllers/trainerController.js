@@ -368,4 +368,36 @@ exports.getStudentRecords = async (req, res) => {
   }
 };
 
+// Update student status
+exports.updateStudentStatus = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { status } = req.body;
+    const trainerId = req.user.id;
+
+    // Check if the student is assigned to this trainer
+    const student = await Intern.findOne({ _id: studentId, assignedTrainer: trainerId });
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found or not assigned to you'
+      });
+    }
+
+    student.status = status.toLowerCase();
+    await student.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Status updated successfully'
+    });
+  } catch (error) {
+    console.error('Update student status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 module.exports = exports;

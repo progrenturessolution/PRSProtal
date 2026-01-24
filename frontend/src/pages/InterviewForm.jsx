@@ -1,25 +1,26 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { trainerAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { trainerAPI } from "../services/api";
+import TrainerSidebar from "../components/TrainerSidebar";
 
 function InterviewForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    interviewType: 'HR',
-    date: '',
+    interviewType: "HR",
+    date: "",
     attemptNumber: 1,
-    communicationLevel: '',
-    confidenceLevel: '',
-    clarityLevel: '',
-    overallLevel: '',
+    communicationLevel: "",
+    confidenceLevel: "",
+    clarityLevel: "",
+    overallLevel: "",
     levelCrossed: false,
-    remarks: ''
+    remarks: "",
   });
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     fetchInterviews();
@@ -32,7 +33,7 @@ function InterviewForm() {
         setInterviews(response.data.data.interviews);
       }
     } catch (error) {
-      console.error('Error fetching interviews:', error);
+      console.error("Error fetching interviews:", error);
     }
   };
 
@@ -40,59 +41,48 @@ function InterviewForm() {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await trainerAPI.addInterview({
         studentId,
-        ...formData
+        ...formData,
       });
 
       if (response.data.success) {
-        setSuccess('Interview record added successfully!');
+        setSuccess("Interview record added successfully!");
         setFormData({
-          interviewType: 'HR',
-          date: '',
+          interviewType: "HR",
+          date: "",
           attemptNumber: 1,
-          communicationLevel: '',
-          confidenceLevel: '',
-          clarityLevel: '',
-          overallLevel: '',
+          communicationLevel: "",
+          confidenceLevel: "",
+          clarityLevel: "",
+          overallLevel: "",
           levelCrossed: false,
-          remarks: ''
+          remarks: "",
         });
         fetchInterviews();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add interview record');
+      setError(err.response?.data?.message || "Failed to add interview record");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="dashboard-container">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>Progrentures</h2>
-          <p className="sidebar-role">Trainer Panel</p>
-        </div>
-        <nav className="sidebar-nav">
-          <button onClick={() => navigate('/trainer-dashboard')} className="nav-item">
-            ← Back to Dashboard
-          </button>
-        </nav>
-      </aside>
-
-      <main className="dashboard-main">
+    <div className="dashboard">
+      <TrainerSidebar />
+      <main className="main-content">
         <div className="content-header">
           <h1>Interview Evaluation</h1>
           <p>Add interview records for the student</p>
@@ -204,14 +194,21 @@ function InterviewForm() {
               </select>
             </div>
 
-            <div className="form-group">
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <div className="form-group left-align">
+              <label className="checkbox-label"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
                 <input
                   type="checkbox"
                   name="levelCrossed"
                   checked={formData.levelCrossed}
                   onChange={handleChange}
-                  style={{ marginRight: '10px' }}
+                  style={{ marginRight: "10px" }}
                 />
                 Level Crossed?
               </label>
@@ -229,13 +226,13 @@ function InterviewForm() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Interview Record'}
+              {loading ? "Saving..." : "Save Interview Record"}
             </button>
           </form>
         </div>
 
         {/* Interview History */}
-        <div className="card" style={{ marginTop: '20px' }}>
+        <div className="card" style={{ marginTop: "20px" }}>
           <h2>Interview History</h2>
           {interviews.length === 0 ? (
             <p>No interview records yet</p>
@@ -264,7 +261,7 @@ function InterviewForm() {
                       <td>{interview.confidenceLevel}</td>
                       <td>{interview.clarityLevel}</td>
                       <td>{interview.overallLevel}</td>
-                      <td>{interview.levelCrossed ? 'Yes' : 'No'}</td>
+                      <td>{interview.levelCrossed ? "Yes" : "No"}</td>
                     </tr>
                   ))}
                 </tbody>

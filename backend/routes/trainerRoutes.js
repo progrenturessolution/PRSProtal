@@ -12,6 +12,7 @@ router.use(protect); // All routes below require authentication
 // Assigned students
 router.get('/students', trainerController.getAssignedStudents);
 router.get('/students/:studentId/records', trainerController.getStudentRecords);
+router.patch('/students/:studentId/status', trainerController.updateStudentStatus);
 
 // Add evaluation records
 router.post('/interviews', trainerController.addInterview);

@@ -1,20 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { trainerAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { trainerAPI } from "../services/api";
+import TrainerSidebar from "../components/TrainerSidebar";
 
 function AptitudeForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     roundNumber: 1,
-    score: '',
-    result: 'Pass',
-    remarks: ''
+    score: "",
+    result: "Pass",
+    remarks: "",
   });
   const [aptitudes, setAptitudes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     fetchAptitudes();
@@ -27,61 +28,50 @@ function AptitudeForm() {
         setAptitudes(response.data.data.aptitudes);
       }
     } catch (error) {
-      console.error('Error fetching aptitudes:', error);
+      console.error("Error fetching aptitudes:", error);
     }
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await trainerAPI.addAptitude({
         studentId,
-        ...formData
+        ...formData,
       });
 
       if (response.data.success) {
-        setSuccess('Aptitude record added successfully!');
+        setSuccess("Aptitude record added successfully!");
         setFormData({
           roundNumber: 1,
-          score: '',
-          result: 'Pass',
-          remarks: ''
+          score: "",
+          result: "Pass",
+          remarks: "",
         });
         fetchAptitudes();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add aptitude record');
+      setError(err.response?.data?.message || "Failed to add aptitude record");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="dashboard-container">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h2>Progrentures</h2>
-          <p className="sidebar-role">Trainer Panel</p>
-        </div>
-        <nav className="sidebar-nav">
-          <button onClick={() => navigate('/trainer-dashboard')} className="nav-item">
-            ← Back to Dashboard
-          </button>
-        </nav>
-      </aside>
-
-      <main className="dashboard-main">
+    <div className="dashboard">
+      <TrainerSidebar />
+      <main className="main-content">
         <div className="content-header">
           <h1>Aptitude Test</h1>
           <p>Add aptitude test records for the student</p>
@@ -144,13 +134,13 @@ function AptitudeForm() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? 'Saving...' : 'Save Aptitude Record'}
+              {loading ? "Saving..." : "Save Aptitude Record"}
             </button>
           </form>
         </div>
 
         {/* Aptitude History */}
-        <div className="card" style={{ marginTop: '20px' }}>
+        <div className="card" style={{ marginTop: "20px" }}>
           <h2>Aptitude Test History</h2>
           {aptitudes.length === 0 ? (
             <p>No aptitude records yet</p>
@@ -172,11 +162,13 @@ function AptitudeForm() {
                       <td>{apt.roundNumber}</td>
                       <td>{apt.score}</td>
                       <td>
-                        <span className={`status-badge ${apt.result === 'Pass' ? 'status-completed' : 'status-pending'}`}>
+                        <span
+                          className={`status-badge ${apt.result === "Pass" ? "status-completed" : "status-pending"}`}
+                        >
                           {apt.result}
                         </span>
                       </td>
-                      <td>{apt.remarks || '-'}</td>
+                      <td>{apt.remarks || "-"}</td>
                       <td>{new Date(apt.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}

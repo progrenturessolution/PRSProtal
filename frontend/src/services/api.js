@@ -47,7 +47,7 @@ export const adminAPI = {
   // Trainer management
   addTrainer: (trainerData) => api.post('/admin/add-trainer', trainerData),
   getAllTrainers: () => api.get('/admin/trainers'),
-  assignStudents: (trainerId, studentIds) => api.post('/admin/assign-students', { trainerId, studentIds }),
+  assignStudentsToTrainer: (data) => api.post('/admin/assign-students', data),
   
   // Notifications
   createNotification: (notificationData) => api.post('/admin/notifications', notificationData),
@@ -72,7 +72,8 @@ export const trainerAPI = {
   addAptitude: (aptitudeData) => api.post('/trainer/aptitude', aptitudeData),
   addAssessment: (assessmentData) => api.post('/trainer/assessments', assessmentData),
   addTraining: (trainingData) => api.post('/trainer/training', trainingData),
-  updateTaskProgress: (taskId, data) => api.patch(`/trainer/tasks/${taskId}/progress`, data)
+  updateTaskProgress: (taskId, data) => api.patch(`/trainer/tasks/${taskId}/progress`, data),
+  updateStudentStatus: (studentId, status) => api.patch(`/trainer/students/${studentId}/status`, { status })
 };
 
 // Task APIs

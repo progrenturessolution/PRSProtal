@@ -265,9 +265,10 @@ button, a, input, select, textarea {
   font-weight: 500;
 }
 
+
 .form-group input {
-  width: 100%;
-  padding: 12px 16px;
+  width: auto;
+  padding:  10px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 15px;
@@ -284,6 +285,10 @@ button, a, input, select, textarea {
 
 .form-group input::placeholder {
   color: #94a3b8;
+}
+
+.left-align {
+  text-align: left !important;
 }
 
 .login-submit-btn {
@@ -3203,4 +3208,27 @@ table tr:hover {
   .profile-info-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.dashboard-container{
+  padding: 10px;
+  max-width: 1200px;
+  margin: 0 auto;
+ 
+}
+.form-header{
+  font-size: 25px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 24px;
+  background-color: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  width: 100%;
+  
+}
+.nav-item{
+  font-size: 15px;
+  color: white;
+  padding: 7px 10px;
+  background-color: rgb(11, 95, 165);
+border-radius: 8px;
 }
