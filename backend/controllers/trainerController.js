@@ -400,4 +400,95 @@ exports.updateStudentStatus = async (req, res) => {
   }
 };
 
+// Update trainer/HR profile
+exports.updateProfile = async (req, res) => {
+  try {
+    const trainerId = req.user.id;
+    const { name, email, mobile, password } = req.body;
+
+    // Find the trainer
+    const trainer = await Trainer.findById(trainerId);
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Trainer not found'
+      });
+    }
+
+    // Update fields
+    if (name) trainer.name = name;
+    if (mobile) trainer.mobile = mobile;
+    
+    // Update email if provided
+    if (email) {
+      // Check if email already exists (and it's not the same trainer's current email)
+      const existingTrainer = await Trainer.findOne({ 
+        email: email.toLowerCase(),
+        _id: { $ne: trainerId }
+      });
+      
+      if (existingTrainer) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email already in use by another trainer'
+        });
+      }
+      
+      trainer.email = email.toLowerCase();
+    }
+    
+    // Update password if provided
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      trainer.password = await bcrypt.hash(password, salt);
+    }
+
+    await trainer.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: trainer._id,
+        name: trainer.name,
+        email: trainer.email,
+        mobile: trainer.mobile,
+        role: trainer.role
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get trainer profile
+exports.getProfile = async (req, res) => {
+  try {
+    const trainerId = req.user.id;
+
+    const trainer = await Trainer.findById(trainerId).select('-password');
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Trainer not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: trainer
+    });
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 module.exports = exports;

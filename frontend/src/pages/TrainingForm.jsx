@@ -74,9 +74,19 @@ function TrainingForm() {
     <div className="dashboard">
       <TrainerSidebar />
       <main className="main-content">
-        <div className="content-header">
-          <h1>Training Update</h1>
-          <p>Add training and attendance records for the student</p>
+        <div className="content-header-with-back">
+          <button
+            className="back-button"
+            onClick={() => navigate(-1)}
+            title="Go back to previous page"
+          >
+            <span className="back-arrow">←</span>
+            <span>Back</span>
+          </button>
+          <div>
+            <h1>Training Update</h1>
+            <p>Add training and attendance records for the student</p>
+          </div>
         </div>
 
         <div className="card">

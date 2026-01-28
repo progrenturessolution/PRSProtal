@@ -9,6 +9,10 @@ router.post('/login', trainerController.trainerLogin);
 // Protected routes (require authentication)
 router.use(protect); // All routes below require authentication
 
+// Profile routes
+router.get('/profile', trainerController.getProfile);
+router.patch('/profile', trainerController.updateProfile);
+
 // Assigned students
 router.get('/students', trainerController.getAssignedStudents);
 router.get('/students/:studentId/records', trainerController.getStudentRecords);

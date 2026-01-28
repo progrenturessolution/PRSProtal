@@ -66,6 +66,8 @@ export const adminAPI = {
 
 // Trainer APIs
 export const trainerAPI = {
+  getProfile: () => api.get('/trainer/profile'),
+  updateProfile: (data) => api.patch('/trainer/profile', data),
   getAssignedStudents: () => api.get('/trainer/students'),
   getStudentRecords: (studentId) => api.get(`/trainer/students/${studentId}/records`),
   addInterview: (interviewData) => api.post('/trainer/interviews', interviewData),
