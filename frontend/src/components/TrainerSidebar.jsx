@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-function TrainerSidebar({ activeTab, setActiveTab }) {
+function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
@@ -29,10 +29,13 @@ function TrainerSidebar({ activeTab, setActiveTab }) {
     } else {
       navigate(`/trainer-dashboard?tab=${tab}`);
     }
+    if (setSidebarOpen) {
+      setSidebarOpen(false);
+    }
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo-container">
           <img src={logo} alt="Progrentures" className="sidebar-logo" />

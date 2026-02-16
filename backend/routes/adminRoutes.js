@@ -46,8 +46,17 @@ router.get('/interns', verifyToken, verifyAdmin, adminController.getAllInterns);
 // Get dashboard statistics (Admin only)
 router.get('/stats', verifyToken, verifyAdmin, adminController.getStats);
 
-// Delete single intern (Admin only)
+// Delete single intern - soft delete (Admin only)
 router.delete('/intern/:id', verifyToken, verifyAdmin, adminController.deleteIntern);
+
+// Get deleted interns - recycle bin (Admin only)
+router.get('/deleted-interns', verifyToken, verifyAdmin, adminController.getDeletedInterns);
+
+// Restore intern from recycle bin (Admin only)
+router.patch('/intern/:id/restore', verifyToken, verifyAdmin, adminController.restoreIntern);
+
+// Permanently delete intern (Admin only)
+router.delete('/intern/:id/permanent', verifyToken, verifyAdmin, adminController.permanentlyDeleteIntern);
 
 // Update intern status (Admin only)
 router.patch('/intern/:id/status', verifyToken, verifyAdmin, adminController.updateInternStatus);

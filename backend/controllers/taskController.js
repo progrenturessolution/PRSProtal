@@ -5,7 +5,17 @@ const { sendTaskAssignmentEmail } = require('../config/emailService');
 // Admin: Create and assign task
 exports.createAndAssignTask = async (req, res) => {
   try {
-    const { title, description, deadline, assignedTo } = req.body;
+    let { title, description, deadline, assignedTo, isTeamTask, teamMembers } = req.body;
+
+    // Parse teamMembers if it's a JSON string (from FormData)
+    if (typeof teamMembers === 'string') {
+      try {
+        teamMembers = JSON.parse(teamMembers);
+      } catch (e) {
+        console.error('Failed to parse teamMembers:', e);
+        teamMembers = [];
+      }
+    }
 
     // Validation
     if (!title || !description || !deadline || !assignedTo) {
@@ -24,6 +34,16 @@ exports.createAndAssignTask = async (req, res) => {
       });
     }
 
+    // Handle file upload if present
+    let taskDocument = null;
+    if (req.file) {
+      taskDocument = {
+        filename: req.file.filename,
+        filepath: req.file.path,
+        uploadedAt: new Date()
+      };
+    }
+
     // Create task
     const task = new Task({
       title,
@@ -31,7 +51,10 @@ exports.createAndAssignTask = async (req, res) => {
       deadline,
       assignedTo,
       status: 'Assigned',
-      progress: 0
+      progress: 0,
+      isTeamTask: isTeamTask || false,
+      teamMembers: teamMembers || [],
+      taskDocument: taskDocument
     });
 
     await task.save();
@@ -366,6 +389,55 @@ exports.deleteTask = async (req, res) => {
 
   } catch (error) {
     console.error('Delete task error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Intern: Send team message
+exports.sendTeamMessage = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { message, sentBy, senderName } = req.body;
+    const internId = req.user.id;
+
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // Check if intern is part of the team
+    if (!task.teamMembers || !task.teamMembers.includes(internId)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not part of this team'
+      });
+    }
+
+    // Add message to team messages
+    task.teamMessages.push({
+      message,
+      sentBy,
+      senderName,
+      sentAt: new Date()
+    });
+
+    await task.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Message sent successfully',
+      task
+    });
+
+  } catch (error) {
+    console.error('Send team message error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

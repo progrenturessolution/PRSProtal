@@ -109,6 +109,15 @@ const internSchema = new mongoose.Schema({
     type: String,
     default: 'active',
     enum: ['active', 'completed', 'inactive']
+  },
+  // Soft delete fields
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

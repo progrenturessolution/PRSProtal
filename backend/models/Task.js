@@ -79,7 +79,39 @@ const taskSchema = new mongoose.Schema({
   hasUnreadFeedback: {
     type: Boolean,
     default: false
-  }
+  },
+  isTeamTask: {
+    type: Boolean,
+    default: false
+  },
+  teamMembers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Intern'
+  }],
+  taskDocument: {
+    filename: String,
+    filepath: String,
+    uploadedAt: Date
+  },
+  teamMessages: [{
+    message: {
+      type: String,
+      required: true
+    },
+    sentBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Intern',
+      required: true
+    },
+    senderName: {
+      type: String,
+      required: true
+    },
+    sentAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true
 });

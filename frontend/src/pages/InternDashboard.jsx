@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { taskAPI, internAPI, UPLOADS_BASE } from '../services/api';
+import TeamTasks from './TeamTasks';
 import logo from '../assets/logo.png';
 
 function InternDashboard() {
@@ -9,8 +10,11 @@ function InternDashboard() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [documents, setDocuments] = useState(null);
   const [error, setError] = useState('');
+  const [selectedTeamTask, setSelectedTeamTask] = useState(null);
+  const [teamMessage, setTeamMessage] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -36,6 +40,9 @@ function InternDashboard() {
     try {
       setLoading(true);
       const response = await taskAPI.getInternTasks();
+      console.log('Fetched tasks:', response.data.tasks);
+      console.log('Team tasks:', response.data.tasks.filter(t => t.isTeamTask));
+      console.log('Individual tasks:', response.data.tasks.filter(t => !t.isTeamTask));
       setTasks(response.data.tasks);
     } catch (err) {
       console.error('Failed to fetch tasks:', err);
@@ -93,8 +100,13 @@ function InternDashboard() {
   };
 
   const getTaskStats = () => {
+    const individualTasks = tasks.filter(t => !t.isTeamTask);
+    const teamTasks = tasks.filter(t => t.isTeamTask);
+    
     return {
       total: tasks.length,
+      individual: individualTasks.length,
+      team: teamTasks.length,
       assigned: tasks.filter(t => t.status === 'Assigned').length,
       inProgress: tasks.filter(t => t.status === 'In Progress').length,
       pendingApproval: tasks.filter(t => t.status === 'Pending Approval').length,
@@ -108,7 +120,26 @@ function InternDashboard() {
 
   return (
     <div className="dashboard">
-      <aside className="sidebar">
+      {/* Mobile Menu Button */}
+      <button 
+        className="mobile-menu-btn" 
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle Menu"
+      >
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo-container">
             <img src={logo} alt="Progrentures" className="sidebar-logo" />
@@ -126,22 +157,30 @@ function InternDashboard() {
         <ul className="sidebar-menu">
           <li 
             className={activeSection === 'dashboard' ? 'active' : ''}
-            onClick={() => setActiveSection('dashboard')}
+            onClick={() => { setActiveSection('dashboard'); setSidebarOpen(false); }}
             style={{ cursor: 'pointer' }}
           >
             Dashboard
           </li>
           <li 
             className={activeSection === 'tasks' ? 'active' : ''}
-            onClick={() => setActiveSection('tasks')}
+            onClick={() => { setActiveSection('tasks'); setSidebarOpen(false); }}
             style={{ cursor: 'pointer' }}
           >
             My Tasks
+          </li>
+          <li 
+            className={activeSection === 'team-tasks' ? 'active' : ''}
+            onClick={() => { setActiveSection('team-tasks'); setSidebarOpen(false); }}
+            style={{ cursor: 'pointer' }}
+          >
+            Team Tasks
           </li>
           <li
             className={activeSection === 'certificates' ? 'active' : ''}
             onClick={async () => {
               setActiveSection('certificates');
+              setSidebarOpen(false);
               // fetch documents when opening certificates
               try {
                 const resp = await internAPI.getMyDocuments();
@@ -274,59 +313,264 @@ function InternDashboard() {
             </div>
 
             <div className="card">
-              <h3>My Documents</h3>
-              <div style={{ marginTop: '15px' }}>
-                {!documents ? (
-                  <p style={{ color: '#6b7280' }}>No documents available.</p>
-                ) : (
-                  <div style={{ display: 'grid', gap: '12px' }}>
-                    <div>
-                      <strong>Offer Letter:</strong>{' '}
-                      {documents.offerLetter ? (
-                        <a href={UPLOADS_BASE + '/uploads/students/' + documents.offerLetter.filename} target="_blank" rel="noreferrer">View</a>
-                      ) : (
-                        <span style={{ color: '#6b7280' }}>Not uploaded</span>
-                      )}
+              <h3 style={{ marginBottom: '20px', fontSize: '18px', fontWeight: '600', color: '#0f172a' }}>My Documents</h3>
+              {!documents ? (
+                <p style={{ color: '#6b7280', fontSize: '14px' }}>No documents available yet.</p>
+              ) : (
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  {/* Offer Letter */}
+                  {documents.offerLetter && documents.offerLetter.filename && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#f9fafb',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <strong style={{ color: '#374151', fontSize: '15px' }}>📄 Offer Letter</strong>
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>Your official offer letter</span>
+                      </div>
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documents.offerLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
                     </div>
-                    <div>
-                      <strong>Welcome Letter:</strong>{' '}
-                      {documents.welcomeLetter ? (
-                        <a href={UPLOADS_BASE + '/uploads/students/' + documents.welcomeLetter.filename} target="_blank" rel="noreferrer">View</a>
-                      ) : (
-                        <span style={{ color: '#6b7280' }}>Not uploaded</span>
-                      )}
+                  )}
+
+                  {/* Welcome Letter */}
+                  {documents.welcomeLetter && documents.welcomeLetter.filename && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#f9fafb',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <strong style={{ color: '#374151', fontSize: '15px' }}>👋 Welcome Letter</strong>
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>Welcome to the organization</span>
+                      </div>
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documents.welcomeLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
                     </div>
-                    <div>
-                      <strong>Payment Receipt:</strong>{' '}
-                      {documents.paymentReceipt ? (
-                        <a href={UPLOADS_BASE + '/uploads/students/' + documents.paymentReceipt.filename} target="_blank" rel="noreferrer">View</a>
-                      ) : (
-                        <span style={{ color: '#6b7280' }}>Not uploaded</span>
-                      )}
+                  )}
+
+                  {/* Payment Receipt */}
+                  {documents.paymentReceipt && documents.paymentReceipt.filename && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#f9fafb',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <strong style={{ color: '#374151', fontSize: '15px' }}>💳 Payment Receipt</strong>
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>Payment confirmation document</span>
+                      </div>
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documents.paymentReceipt.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
                     </div>
-                    <div>
-                      <strong>Other Certificates:</strong>
-                      {documents.otherCertificates && documents.otherCertificates.length > 0 ? (
-                        <ul>
-                          {documents.otherCertificates.map((c, idx) => (
-                          <li key={idx}><a href={UPLOADS_BASE + '/uploads/students/' + c.filename} target="_blank" rel="noreferrer">{c.name || c.filename}</a></li>
+                  )}
+
+                  {/* Completion Certificate */}
+                  {documents.completionCertificate && documents.completionCertificate.filename && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#f9fafb',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <strong style={{ color: '#374151', fontSize: '15px' }}>🎓 Completion Certificate</strong>
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>Program completion certificate</span>
+                      </div>
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documents.completionCertificate.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    </div>
+                  )}
+
+                  {/* Experience Letter */}
+                  {documents.experienceLetter && documents.experienceLetter.filename && (
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '16px',
+                      background: '#f9fafb',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <strong style={{ color: '#374151', fontSize: '15px' }}>📜 Experience Letter</strong>
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>Work experience certificate</span>
+                      </div>
+                      <a 
+                        href={UPLOADS_BASE + '/uploads/students/' + documents.experienceLetter.filename} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{
+                          padding: '8px 16px',
+                          background: '#10b981',
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          fontWeight: '500',
+                          transition: 'all 0.2s'
+                        }}
+                      >View PDF</a>
+                    </div>
+                  )}
+
+                  {/* Other Certificates */}
+                  {documents.otherCertificates && documents.otherCertificates.length > 0 && (
+                    <div style={{ 
+                      padding: '16px',
+                      background: '#f9fafb',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{ marginBottom: '12px' }}>
+                        <strong style={{ color: '#374151', fontSize: '15px' }}>📎 Other Certificates</strong>
+                        <span style={{ color: '#6b7280', fontSize: '13px', marginLeft: '8px' }}>({documents.otherCertificates.length})</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {documents.otherCertificates.map((cert, idx) => (
+                          <a 
+                            key={idx}
+                            href={UPLOADS_BASE + '/uploads/students/' + cert.filename} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            style={{
+                              padding: '12px 14px',
+                              background: 'white',
+                              borderRadius: '6px',
+                              textDecoration: 'none',
+                              color: '#4f46e5',
+                              fontSize: '14px',
+                              border: '1px solid #e5e7eb',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px'
+                            }}
+                          >
+                            <span>📄</span>
+                            <span>{cert.name || cert.filename}</span>
+                          </a>
                         ))}
-                        </ul>
-                      ) : (
-                        <span style={{ color: '#6b7280', marginLeft: '8px' }}>None</span>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+
+                  {/* No certificates message */}
+                  {!documents.offerLetter?.filename && 
+                   !documents.welcomeLetter?.filename && 
+                   !documents.paymentReceipt?.filename && 
+                   !documents.completionCertificate?.filename && 
+                   !documents.experienceLetter?.filename && 
+                   (!documents.otherCertificates || documents.otherCertificates.length === 0) && (
+                    <div style={{ 
+                      padding: '32px',
+                      textAlign: 'center',
+                      color: '#6b7280',
+                      background: '#f9fafb',
+                      borderRadius: '10px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <p style={{ margin: 0, fontSize: '14px' }}>No certificates have been uploaded yet.</p>
+                      <p style={{ margin: '8px 0 0 0', fontSize: '13px' }}>Your certificates will appear here once uploaded by admin.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}
+        
+        {/* Team Tasks Section */}
+        {activeSection === 'team-tasks' && (
+          <>
+            <div className="content-header">
+              <h1>Team Tasks</h1>
+              <p>Collaborate with your team members on assigned tasks</p>
+            </div>
+            <TeamTasks 
+              user={user}
+              tasks={tasks}
+              loading={loading}
+              error={error}
+              onProgressUpdate={handleProgressUpdate}
+            />
+          </>
+        )}
+        
         {activeSection === 'tasks' && (
           <>
             <div className="content-header">
-              <h1>My Tasks</h1>
-              <p>View and update your assigned tasks</p>
+              <h1>My Tasks (Individual)</h1>
+              <p>View and update your individual assigned tasks</p>
             </div>
 
             {error && (
@@ -348,10 +592,10 @@ function InternDashboard() {
               <div className="card">
                 <p>Loading tasks...</p>
               </div>
-            ) : tasks.length === 0 ? (
+            ) : tasks.filter(t => !t.isTeamTask).length === 0 ? (
               <div className="card">
                 <div className="empty-state">
-                  <p>No tasks assigned yet. Your tasks will appear here once assigned by admin.</p>
+                  <p>No individual tasks assigned yet. Your tasks will appear here once assigned by admin.</p>
                 </div>
               </div>
             ) : (
@@ -367,11 +611,12 @@ function InternDashboard() {
                           <th>Deadline</th>
                           <th>Progress</th>
                           <th>Status</th>
+                          <th>Document</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {tasks.map((task) => (
+                        {tasks.filter(t => !t.isTeamTask).map((task) => (
                           <>
                             <tr key={task._id}>
                               <td style={{ fontWeight: 600, color: '#0f172a' }}>
@@ -423,6 +668,28 @@ function InternDashboard() {
                                 >
                                   {task.status}
                                 </span>
+                              </td>
+                              <td>
+                                {task.taskDocument ? (
+                                  <a 
+                                    href={`http://localhost:5000/${task.taskDocument.filepath.replace(/\\/g, '/')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      color: '#3b82f6',
+                                      textDecoration: 'none',
+                                      fontWeight: 600,
+                                      fontSize: '13px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px'
+                                    }}
+                                  >
+                                    📄 View PDF
+                                  </a>
+                                ) : (
+                                  <span style={{ color: '#94a3b8', fontSize: '13px' }}>No document</span>
+                                )}
                               </td>
                               <td>
                                 {task.status !== 'Completed' ? (
@@ -504,7 +771,7 @@ function InternDashboard() {
                 {/* Mobile Card View */}
                 <div className="mobile-only">
                   <div className="tasks-grid">
-                    {tasks.map((task) => (
+                    {tasks.filter(t => !t.isTeamTask).map((task) => (
                       <div key={task._id} className="task-card">
                         <div className="task-header">
                           <h3>{task.title}</h3>
@@ -588,6 +855,32 @@ function InternDashboard() {
                           </div>
                         </div>
 
+                        {task.taskDocument && (
+                          <div style={{
+                            marginTop: '15px',
+                            padding: '12px',
+                            background: '#dbeafe',
+                            borderRadius: '8px'
+                          }}>
+                            <a 
+                              href={`http://localhost:5000/${task.taskDocument.filepath.replace(/\\/g, '/')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: '#1e40af',
+                                textDecoration: 'none',
+                                fontWeight: 600,
+                                fontSize: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px'
+                              }}
+                            >
+                              📄 View Task Document (PDF)
+                            </a>
+                          </div>
+                        )}
+
                         {task.status !== 'Completed' && (
                           <div className="task-actions">
                             <label style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', display: 'block' }}>
@@ -648,3 +941,4 @@ function InternDashboard() {
 }
 
 export default InternDashboard;
+

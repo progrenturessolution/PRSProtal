@@ -9,6 +9,17 @@ function SMSProgramManagement() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentModalStudent, setDocumentModalStudent] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    mobile: '',
+    currentDesignation: '',
+    paymentDoneBy: '',
+    transactionId: '',
+    dateOfPayment: '',
+    status: ''
+  });
 
   const toggleDocs = (studentId) => {
     setOpenDocs(prev => ({ ...prev, [studentId]: !prev[studentId] }));
@@ -106,6 +117,56 @@ function SMSProgramManagement() {
       return students.filter(student => student.status?.toLowerCase() === 'completed');
     }
     return students;
+  };
+
+  const handleEditClick = () => {
+    setEditForm({
+      name: selectedStudent.name || '',
+      email: selectedStudent.email || '',
+      mobile: selectedStudent.mobile || '',
+      currentDesignation: selectedStudent.currentDesignation || '',
+      paymentDoneBy: selectedStudent.paymentDoneBy || '',
+      transactionId: selectedStudent.transactionId || '',
+      dateOfPayment: selectedStudent.dateOfPayment ? selectedStudent.dateOfPayment.split('T')[0] : '',
+      status: selectedStudent.status || 'active'
+    });
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditForm({
+      name: '',
+      email: '',
+      mobile: '',
+      currentDesignation: '',
+      paymentDoneBy: '',
+      transactionId: '',
+      dateOfPayment: '',
+      status: ''
+    });
+  };
+
+  const handleUpdateStudent = async () => {
+    try {
+      const response = await adminAPI.updateIntern(selectedStudent._id, editForm);
+      if (response.data.success) {
+        setStudents(prev => prev.map(s => 
+          s._id === selectedStudent._id ? { ...s, ...editForm } : s
+        ));
+        setSelectedStudent({ ...selectedStudent, ...editForm });
+        setIsEditing(false);
+        alert('Student updated successfully!');
+      }
+    } catch (err) {
+      console.error('Update error:', err);
+      alert('Failed to update student.');
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
   const filteredStudents = getFilteredStudents();
@@ -217,7 +278,6 @@ function SMSProgramManagement() {
                   <th>ID</th>
                   <th>Name</th>
                   <th>Email</th>
-                  <th>Gender</th>
                   <th>Current Designation</th>
                   <th>Payment By</th>
                   <th>Payment Date</th>
@@ -233,7 +293,6 @@ function SMSProgramManagement() {
                       <td>{student.internId}</td>
                       <td>{student.name}</td>
                       <td>{student.email}</td>
-                      <td>{student.gender || 'N/A'}</td>
                       <td>{student.currentDesignation || 'N/A'}</td>
                       <td>{student.paymentDoneBy || 'N/A'}</td>
                       <td>
@@ -281,14 +340,14 @@ function SMSProgramManagement() {
                           <div
                             style={{
                               position: 'absolute',
-                              right: '42px',
+                              right: '40px',
                               top: '0',
                               background: 'white',
                               border: '1px solid #e5e7eb',
-                              borderRadius: '10px',
-                              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-                              zIndex: 10000,
-                              minWidth: '180px',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                              zIndex: 1000,
+                              minWidth: '160px',
                               overflow: 'hidden'
                             }}
                           >
@@ -299,63 +358,20 @@ function SMSProgramManagement() {
                               }}
                               style={{
                                 width: '100%',
-                                padding: '12px 16px',
+                                padding: '10px 14px',
                                 background: 'white',
                                 border: 'none',
                                 textAlign: 'left',
                                 cursor: 'pointer',
                                 fontSize: '14px',
                                 fontWeight: '500',
-                                color: '#1f2937',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px'
+                                color: '#132a5d',
+                                transition: 'background 0.2s'
                               }}
-                              onMouseEnter={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
-                                e.target.style.color = 'white';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.background = 'white';
-                                e.target.style.color = '#1f2937';
-                              }}
+                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                              onMouseLeave={(e) => e.target.style.background = 'white'}
                             >
-                              <span>View Details</span>
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                setDocumentModalStudent(student);
-                                setShowDocumentModal(true);
-                                setOpenMenuId(null);
-                              }}
-                              style={{
-                                width: '100%',
-                                padding: '12px 16px',
-                                background: 'white',
-                                border: 'none',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#1f2937',
-                                transition: 'all 0.2s',
-                                borderTop: '1px solid #f3f4f6',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                                e.target.style.color = 'white';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.background = 'white';
-                                e.target.style.color = '#1f2937';
-                              }}
-                            >
-                              <span>Manage Documents</span>
+                              View Details
                             </button>
                           </div>
                         )}
@@ -688,7 +704,7 @@ function SMSProgramManagement() {
           }} onClick={(e) => e.stopPropagation()}>
             {/* Header with Gradient */}
             <div style={{ 
-              background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
               padding: '24px',
               color: 'white',
               position: 'relative'
@@ -725,7 +741,7 @@ function SMSProgramManagement() {
 
             {/* Content */}
             <div style={{ padding: '24px', maxHeight: 'calc(85vh - 120px)', overflowY: 'auto' }}>
-              {/* Contact & Payment Information */}
+              {/* Contact Information */}
               <div style={{ marginBottom: '24px' }}>
                 <h3 style={{ 
                   fontSize: '16px', 
@@ -735,7 +751,7 @@ function SMSProgramManagement() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
-                }}>📧 Contact & Payment Details</h3>
+                }}>📧 Contact Information</h3>
                 <div style={{ 
                   background: '#f9fafb',
                   padding: '16px',
@@ -743,28 +759,98 @@ function SMSProgramManagement() {
                   display: 'grid',
                   gap: '10px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Email</span>
-                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.email}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Mobile</span>
-                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.mobile}</span>
-                  </div>
-                  <div style={{ height: '1px', background: '#e5e7eb', margin: '4px 0' }}></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment By</span>
-                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.paymentDoneBy || 'N/A'}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Transaction ID</span>
-                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.transactionId || 'N/A'}</span>
-                  </div>
+                  {!isEditing ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Name</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Email</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.email}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Mobile</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.mobile}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Current Designation</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.currentDesignation || 'N/A'}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Name</label>
+                        <input 
+                          type="text" 
+                          name="name" 
+                          value={editForm.name} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Email</label>
+                        <input 
+                          type="email" 
+                          name="email" 
+                          value={editForm.email} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Mobile</label>
+                        <input 
+                          type="tel" 
+                          name="mobile" 
+                          value={editForm.mobile} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Current Designation</label>
+                        <input 
+                          type="text" 
+                          name="currentDesignation" 
+                          value={editForm.currentDesignation} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Documents Section */}
-              <div>
+              {/* Payment Information */}
+              <div style={{ marginBottom: '24px' }}>
                 <h3 style={{ 
                   fontSize: '16px', 
                   fontWeight: '600', 
@@ -773,142 +859,181 @@ function SMSProgramManagement() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
-                }}>📄 Documents</h3>
+                }}>💳 Payment Details</h3>
                 <div style={{ 
                   background: '#f9fafb',
                   padding: '16px',
                   borderRadius: '8px',
                   display: 'grid',
-                  gap: '12px'
+                  gap: '10px'
                 }}>
-                  {/* Offer Letter */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Offer Letter</span>
-                    {selectedStudent.documents?.offerLetter ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.offerLetter.filename} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          padding: '6px 14px',
-                          background: '#10b981',
-                          color: 'white',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                      >View PDF</a>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
-                  </div>
-
-                  {/* Welcome Letter */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Welcome Letter</span>
-                    {selectedStudent.documents?.welcomeLetter ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.welcomeLetter.filename} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          padding: '6px 14px',
-                          background: '#10b981',
-                          color: 'white',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                      >View PDF</a>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
-                  </div>
-
-                  {/* Payment Receipt */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Payment Receipt</span>
-                    {selectedStudent.documents?.paymentReceipt ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.paymentReceipt.filename} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          padding: '6px 14px',
-                          background: '#10b981',
-                          color: 'white',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                      >View PDF</a>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
-                  </div>
-
-                  {/* Other Certificates */}
-                  <div style={{ 
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <div style={{ fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Other Certificates</div>
-                    {selectedStudent.documents?.otherCertificates && selectedStudent.documents.otherCertificates.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-                        {selectedStudent.documents.otherCertificates.map((c, idx) => (
-                          <a 
-                            key={idx}
-                            href={UPLOADS_BASE + '/uploads/students/' + c.filename} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            style={{
-                              padding: '8px 12px',
-                              background: '#f3f4f6',
-                              borderRadius: '4px',
-                              textDecoration: 'none',
-                              color: '#4f46e5',
-                              fontSize: '13px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#e0e7ff'}
-                            onMouseLeave={(e) => e.target.style.background = '#f3f4f6'}
-                          >
-                            📎 {c.name || c.filename}
-                          </a>
-                        ))}
+                  {!isEditing ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment By</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.paymentDoneBy || 'N/A'}</span>
                       </div>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>None</span>}
-                  </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Transaction ID</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.transactionId || 'N/A'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment Date</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
+                          {selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString() : 'N/A'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Status</span>
+                        <span style={{ 
+                          fontWeight: '500', 
+                          fontSize: '14px', 
+                          color: selectedStudent.status?.toLowerCase() === 'active' ? '#059669' : '#d97706',
+                          background: selectedStudent.status?.toLowerCase() === 'active' ? '#d1fae5' : '#fef3c7',
+                          padding: '4px 12px',
+                          borderRadius: '12px'
+                        }}>
+                          {selectedStudent.status || 'Active'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Payment By</label>
+                        <input 
+                          type="text" 
+                          name="paymentDoneBy" 
+                          value={editForm.paymentDoneBy} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Transaction ID</label>
+                        <input 
+                          type="text" 
+                          name="transactionId" 
+                          value={editForm.transactionId} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Payment Date</label>
+                        <input 
+                          type="date" 
+                          name="dateOfPayment" 
+                          value={editForm.dateOfPayment} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Status</label>
+                        <select 
+                          name="status" 
+                          value={editForm.status} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        >
+                          <option value="active">Active</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '12px', 
+                justifyContent: 'flex-end',
+                borderTop: '1px solid #e5e7eb',
+                paddingTop: '16px'
+              }}>
+                {!isEditing ? (
+                  <button
+                    onClick={handleEditClick}
+                    style={{
+                      padding: '10px 24px',
+                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'transform 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  >
+                    ✏️ Edit Details
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleCancelEdit}
+                      style={{
+                        padding: '10px 24px',
+                        background: '#e5e7eb',
+                        color: '#374151',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateStudent}
+                      style={{
+                        padding: '10px 24px',
+                        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    >
+                      💾 Save Changes
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

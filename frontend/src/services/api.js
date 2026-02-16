@@ -44,6 +44,11 @@ export const adminAPI = {
   updateIntern: (id, data) => api.patch(`/admin/intern/${id}`, data),
   deleteAllInterns: () => api.delete('/admin/delete-all-interns'),
   
+  // Recycle Bin (Archived Students)
+  getDeletedInterns: () => api.get('/admin/deleted-interns'),
+  restoreIntern: (id) => api.patch(`/admin/intern/${id}/restore`),
+  permanentlyDeleteIntern: (id) => api.delete(`/admin/intern/${id}/permanent`),
+  
   // Trainer management
   addTrainer: (trainerData) => api.post('/admin/add-trainer', trainerData),
   getAllTrainers: () => api.get('/admin/trainers'),
@@ -91,7 +96,8 @@ export const taskAPI = {
   
   // Intern task APIs
   getInternTasks: () => api.get('/task/intern/tasks'),
-  updateTaskProgress: (taskId, progress) => api.put(`/task/intern/update-task/${taskId}`, { progress })
+  updateTaskProgress: (taskId, progress) => api.put(`/task/intern/update-task/${taskId}`, { progress }),
+  sendTeamMessage: (taskId, messageData) => api.post(`/task/intern/team-message/${taskId}`, messageData)
 };
 
 // Intern APIs

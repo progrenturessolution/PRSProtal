@@ -19,6 +19,7 @@ function ViewInterns({ onInternDeleted }) {
   const [filterStatus, setFilterStatus] = useState("All");
   const [certificateFile, setCertificateFile] = useState(null);
   const [certificateType, setCertificateType] = useState("offerLetter");
+  const [certificateName, setCertificateName] = useState("");
   const [uploadingCert, setUploadingCert] = useState(false);
 
   useEffect(() => {
@@ -85,14 +86,23 @@ function ViewInterns({ onInternDeleted }) {
   };
 
   const handleDelete = async (id, name) => {
+    // Add confirmation dialog to prevent accidental deletion
+    const confirmDelete = window.confirm(
+      `Are you sure you want to move "${name}" to archived students?\n\nThe student will be moved to the Recycle Bin where you can:\n- Restore them later if needed\n- Permanently delete them\n\nClick OK to archive this student.`
+    );
+    
+    if (!confirmDelete) {
+      return; // User cancelled, do nothing
+    }
+
     try {
       await adminAPI.deleteIntern(id);
       setInterns(interns.filter((intern) => intern._id !== id));
-      setInfoMessage("Intern deleted successfully");
-      setTimeout(() => setInfoMessage(""), 4000);
+      setInfoMessage(`"${name}" has been archived. You can restore them from Archived Students.`);
+      setTimeout(() => setInfoMessage(""), 5000);
       if (onInternDeleted) onInternDeleted();
     } catch (err) {
-      setError("Failed to delete intern");
+      setError("Failed to archive student");
       console.error(err);
       setTimeout(() => setError(""), 4000);
     }
@@ -186,12 +196,19 @@ function ViewInterns({ onInternDeleted }) {
     setShowCertificateModal(true);
     setCertificateType("offerLetter");
     setCertificateFile(null);
+    setCertificateName("");
     setOpenMenuId(null);
   };
 
   const handleCertificateUpload = async () => {
     if (!certificateFile) {
       setError("Please select a file to upload");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
+
+    if (certificateType === "other" && !certificateName.trim()) {
+      setError("Please provide a name for the certificate");
       setTimeout(() => setError(""), 3000);
       return;
     }
@@ -207,6 +224,9 @@ function ViewInterns({ onInternDeleted }) {
       const formData = new FormData();
       formData.append("file", certificateFile);
       formData.append("documentType", certificateType);
+      if (certificateType === "other") {
+        formData.append("certificateName", certificateName);
+      }
 
       const response = await adminAPI.uploadStudentDocument(
         selectedStudent._id,
@@ -218,12 +238,20 @@ function ViewInterns({ onInternDeleted }) {
         setInterns(
           interns.map((intern) => {
             if (intern._id === selectedStudent._id) {
+              let updatedDocuments = { ...(intern.documents || {}) };
+              
+              if (certificateType === "other") {
+                // Add to otherCertificates array
+                const existingOther = updatedDocuments.otherCertificates || [];
+                updatedDocuments.otherCertificates = [...existingOther, response.data.document];
+              } else {
+                // Single document types
+                updatedDocuments[certificateType] = response.data.document;
+              }
+              
               return {
                 ...intern,
-                documents: {
-                  ...(intern.documents || {}),
-                  [certificateType]: response.data.document,
-                },
+                documents: updatedDocuments,
               };
             }
             return intern;
@@ -231,17 +259,26 @@ function ViewInterns({ onInternDeleted }) {
         );
 
         // Update selected student
-        setSelectedStudent((prev) => ({
-          ...prev,
-          documents: {
-            ...(prev.documents || {}),
-            [certificateType]: response.data.document,
-          },
-        }));
+        setSelectedStudent((prev) => {
+          let updatedDocuments = { ...(prev.documents || {}) };
+          
+          if (certificateType === "other") {
+            const existingOther = updatedDocuments.otherCertificates || [];
+            updatedDocuments.otherCertificates = [...existingOther, response.data.document];
+          } else {
+            updatedDocuments[certificateType] = response.data.document;
+          }
+          
+          return {
+            ...prev,
+            documents: updatedDocuments,
+          };
+        });
 
         setInfoMessage("Certificate uploaded successfully");
         setTimeout(() => setInfoMessage(""), 4000);
         setCertificateFile(null);
+        setCertificateName("");
       } else {
         setError("Failed to upload certificate");
         setTimeout(() => setError(""), 4000);
@@ -798,252 +835,68 @@ function ViewInterns({ onInternDeleted }) {
         selectedStudent &&
         createPortal(
           <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0, 0, 0, 0.75)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 9999,
-              backdropFilter: "blur(8px)",
-              WebkitBackdropFilter: "blur(8px)",
-              padding: "20px",
-            }}
+            className="profile-modal-overlay"
           >
             <div
-              style={{
-                background: "white",
-                borderRadius: "16px",
-                maxWidth: "900px",
-                width: "90%",
-                maxHeight: "90vh",
-                overflowY: "auto",
-                boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-                margin: "0 auto",
-                transform: "translateZ(0)",
-              }}
+              className="profile-modal-container"
             >
               <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
-                  padding: "28px 32px",
-                  borderRadius: "16px 16px 0 0",
-                  position: "relative",
-                  boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
-                }}
+                className="profile-header"
               >
                 <button
+                  className="profile-close-btn"
                   onClick={() => setShowProfileModal(false)}
-                  style={{
-                    position: "absolute",
-                    top: "18px",
-                    right: "18px",
-                    background: "rgba(255, 255, 255, 0.15)",
-                    border: "1px solid rgba(255, 255, 255, 0.25)",
-                    borderRadius: "50%",
-                    width: "34px",
-                    height: "34px",
-                    fontSize: "18px",
-                    cursor: "pointer",
-                    color: "#f8fafc",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "background 0.2s ease, transform 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.25)";
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.15)";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
+                  aria-label="Close"
                 >
                   ×
                 </button>
 
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "20px",
-                    color: "white",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "70px",
-                      height: "70px",
-                      borderRadius: "50%",
-                      background: "rgba(255, 255, 255, 0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "32px",
-                      fontWeight: 700,
-                      border: "3px solid rgba(255, 255, 255, 0.3)",
-                    }}
-                  >
+                <div>
+                  <div className="profile-avatar">
                     {selectedStudent.name.charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <h2
-                      style={{
-                        margin: "0 0 8px 0",
-                        fontSize: "28px",
-                        fontWeight: 700,
-                      }}
+                  <h2 className="profile-name">
+                    {selectedStudent.name}
+                  </h2>
+                  <div className="profile-badges">
+                    <span className="profile-badge">
+                      {selectedStudent.internId}
+                    </span>
+                    <span
+                      className={`profile-badge ${
+                        (selectedStudent.status || "").toLowerCase() ===
+                        "active"
+                          ? "status-active"
+                          : "status-inactive"
+                      }`}
                     >
-                      {selectedStudent.name}
-                    </h2>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <span
-                        style={{
-                          padding: "6px 14px",
-                          background: "rgba(255, 255, 255, 0.25)",
-                          borderRadius: "20px",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          backdropFilter: "blur(10px)",
-                        }}
-                      >
-                        {selectedStudent.internId}
-                      </span>
-                      <span
-                        style={{
-                          padding: "6px 14px",
-                          background:
-                            (selectedStudent.status || "").toLowerCase() ===
-                            "active"
-                              ? "rgba(16, 185, 129, 0.9)"
-                              : "rgba(239, 68, 68, 0.9)",
-                          borderRadius: "20px",
-                          fontSize: "13px",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {selectedStudent.status || "Active"}
-                      </span>
-                      <span
-                        style={{
-                          padding: "6px 14px",
-                          background: "rgba(255, 255, 255, 0.25)",
-                          borderRadius: "20px",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          backdropFilter: "blur(10px)",
-                        }}
-                      >
-                        {selectedStudent.studentType}
-                      </span>
-                    </div>
+                      {selectedStudent.status || "Active"}
+                    </span>
+                    <span className="profile-badge">
+                      {selectedStudent.studentType}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Content Body */}
-              <div style={{ padding: "20px" }}>
+              <div className="profile-body">
                 {/* Contact Information Section */}
-                <div style={{ marginBottom: "20px" }}>
-                  <h3
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      color: "#0f172a",
-                      marginBottom: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: "4px",
-                        height: "20px",
-                        background:
-                          "linear-gradient(to bottom, #667eea, #754c9f)",
-                        borderRadius: "2px",
-                      }}
-                    ></span>
+                <div className="profile-section">
+                  <h3 className="profile-section-title">
+                    <span className="profile-section-bar"></span>
                     Contact Information
                   </h3>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(250px, 1fr))",
-                      gap: "12px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: "12px",
-                        background: "#f8fafc",
-                        borderRadius: "8px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "#64748b",
-                          fontWeight: 600,
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Email Address
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "14px",
-                          color: "#0f172a",
-                          fontWeight: 500,
-                          wordBreak: "break-all",
-                        }}
-                      >
+                  <div className="profile-info-grid">
+                    <div className="profile-info-card">
+                      <div className="profile-info-label">Email Address</div>
+                      <div className="profile-info-value">
                         {selectedStudent.email}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        padding: "12px",
-                        background: "#f8fafc",
-                        borderRadius: "8px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "11px",
-                          color: "#64748b",
-                          fontWeight: 600,
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Mobile Number
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "14px",
-                          color: "#0f172a",
-                          fontWeight: 500,
-                        }}
-                      >
+                    <div className="profile-info-card">
+                      <div className="profile-info-label">Mobile Number</div>
+                      <div className="profile-info-value">
                         {selectedStudent.mobile || "Not provided"}
                       </div>
                     </div>
@@ -1052,120 +905,33 @@ function ViewInterns({ onInternDeleted }) {
 
                 {/* Internship Details (if applicable) */}
                 {selectedStudent.studentType === "Internship" && (
-                  <div style={{ marginBottom: "20px" }}>
-                    <h3
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        marginBottom: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: "4px",
-                          height: "20px",
-                          background:
-                            "linear-gradient(to bottom, #667eea, #764ba2)",
-                          borderRadius: "2px",
-                        }}
-                      ></span>
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar"></span>
                       Internship Details
                     </h3>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(2, 1fr)",
-                        gap: "12px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: "12px",
-                          background:
-                            "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
-                          borderRadius: "8px",
-                          border: "1px solid #667eea30",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#667eea",
-                            fontWeight: 700,
-                            marginBottom: "4px",
-                          }}
-                        >
+                    <div className="profile-details-grid">
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
                           Domain
                         </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#0f172a",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <div className="profile-detail-value">
                           {selectedStudent.domain || "Not specified"}
                         </div>
                       </div>
-                      <div
-                        style={{
-                          padding: "12px",
-                          background:
-                            "linear-gradient(135deg, #667eea15 0%, #764ba215 100%)",
-                          borderRadius: "8px",
-                          border: "1px solid #667eea30",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#667eea",
-                            fontWeight: 700,
-                            marginBottom: "4px",
-                          }}
-                        >
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
                           Duration
                         </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#0f172a",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <div className="profile-detail-value">
                           {selectedStudent.duration || "Not specified"}
                         </div>
                       </div>
-                      <div
-                        style={{
-                          padding: "12px",
-                          background:
-                            "linear-gradient(135deg, #10b98115 0%, #059e6915 100%)",
-                          borderRadius: "8px",
-                          border: "1px solid #10b98130",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#059669",
-                            fontWeight: 700,
-                            marginBottom: "4px",
-                          }}
-                        >
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
                           Joining Date
                         </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#0f172a",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <div className="profile-detail-value">
                           {selectedStudent.joiningDate
                             ? new Date(
                                 selectedStudent.joiningDate,
@@ -1177,32 +943,11 @@ function ViewInterns({ onInternDeleted }) {
                             : "Not set"}
                         </div>
                       </div>
-                      <div
-                        style={{
-                          padding: "12px",
-                          background:
-                            "linear-gradient(135deg, #f59e0b15 0%, #d9770615 100%)",
-                          borderRadius: "8px",
-                          border: "1px solid #f59e0b30",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#d97706",
-                            fontWeight: 700,
-                            marginBottom: "4px",
-                          }}
-                        >
+                      <div className="profile-detail-card type-warning">
+                        <div className="profile-detail-label color-warning">
                           Ending Date
                         </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#0f172a",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <div className="profile-detail-value">
                           {selectedStudent.endingDate
                             ? new Date(
                                 selectedStudent.endingDate,
@@ -1220,91 +965,25 @@ function ViewInterns({ onInternDeleted }) {
 
                 {/* SMS Program Details (if applicable) */}
                 {selectedStudent.studentType === "SMS Program" && (
-                  <div style={{ marginBottom: "20px" }}>
-                    <h3
-                      style={{
-                        fontSize: "16px",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        marginBottom: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: "4px",
-                          height: "20px",
-                          background:
-                            "linear-gradient(to bottom, #f093fb, #f5576c)",
-                          borderRadius: "2px",
-                        }}
-                      ></span>
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar"></span>
                       SMS Program Details
                     </h3>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(2, 1fr)",
-                        gap: "12px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: "12px",
-                          background:
-                            "linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)",
-                          borderRadius: "8px",
-                          border: "1px solid #f093fb30",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#ec4899",
-                            fontWeight: 700,
-                            marginBottom: "4px",
-                          }}
-                        >
+                    <div className="profile-details-grid">
+                      <div className="profile-detail-card type-pink">
+                        <div className="profile-detail-label color-pink">
                           Gender
                         </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#0f172a",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <div className="profile-detail-value">
                           {selectedStudent.gender || "Not specified"}
                         </div>
                       </div>
-                      <div
-                        style={{
-                          padding: "12px",
-                          background:
-                            "linear-gradient(135deg, #f093fb15 0%, #f5576c15 100%)",
-                          borderRadius: "8px",
-                          border: "1px solid #f093fb30",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "11px",
-                            color: "#ec4899",
-                            fontWeight: 700,
-                            marginBottom: "4px",
-                          }}
-                        >
+                      <div className="profile-detail-card type-pink">
+                        <div className="profile-detail-label color-pink">
                           Current Designation
                         </div>
-                        <div
-                          style={{
-                            fontSize: "14px",
-                            color: "#0f172a",
-                            fontWeight: 600,
-                          }}
-                        >
+                        <div className="profile-detail-value">
                           {selectedStudent.currentDesignation ||
                             "Not specified"}
                         </div>
@@ -1314,77 +993,26 @@ function ViewInterns({ onInternDeleted }) {
                     {/* Payment Information */}
                     {(selectedStudent.paymentDoneBy ||
                       selectedStudent.transactionId) && (
-                      <div style={{ marginTop: "12px" }}>
-                        <h4
-                          style={{
-                            fontSize: "13px",
-                            fontWeight: 700,
-                            color: "#64748b",
-                            marginBottom: "10px",
-                          }}
-                        >
+                      <div className="profile-subsection">
+                        <h4 className="profile-subsection-title">
                           Payment Information
                         </h4>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(2, 1fr)",
-                            gap: "12px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              padding: "12px",
-                              background: "#f8fafc",
-                              borderRadius: "8px",
-                              border: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: "11px",
-                                color: "#64748b",
-                                fontWeight: 600,
-                                marginBottom: "4px",
-                              }}
-                            >
+                        <div className="profile-info-grid">
+                          <div className="profile-info-card">
+                            <div className="profile-info-label">
                               Payment Done By
                             </div>
-                            <div
-                              style={{
-                                fontSize: "14px",
-                                color: "#0f172a",
-                                fontWeight: 500,
-                              }}
-                            >
+                            <div className="profile-info-value">
                               {selectedStudent.paymentDoneBy || "Not specified"}
                             </div>
                           </div>
-                          <div
-                            style={{
-                              padding: "14px",
-                              background: "#f8fafc",
-                              borderRadius: "8px",
-                              border: "1px solid #e2e8f0",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: "11px",
-                                color: "#64748b",
-                                fontWeight: 600,
-                                marginBottom: "4px",
-                              }}
-                            >
+                          <div className="profile-info-card">
+                            <div className="profile-info-label">
                               Transaction ID
                             </div>
                             <div
-                              style={{
-                                fontSize: "14px",
-                                color: "#0f172a",
-                                fontWeight: 500,
-                                fontFamily: "monospace",
-                              }}
+                              className="profile-info-value"
+                              style={{ fontFamily: "monospace" }}
                             >
                               {selectedStudent.transactionId || "Not provided"}
                             </div>
@@ -1396,93 +1024,28 @@ function ViewInterns({ onInternDeleted }) {
                 )}
 
                 {/* Quick Actions */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "12px",
-                    marginTop: "20px",
-                    paddingTop: "16px",
-                    borderTop: "2px solid #f1f5f9",
-                  }}
-                >
+                <div className="profile-actions">
                   <button
+                    className="profile-btn profile-btn-primary"
                     onClick={() => {
                       setShowProfileModal(false);
                       handleEdit(selectedStudent);
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: "12px 24px",
-                      background: " #3b82f6",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      transition: "all 0.2s",
-                      boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 6px 20px rgba(102, 126, 234, 0.4)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(27, 39, 93, 0.3)";
                     }}
                   >
                     Edit Profile
                   </button>
                   <button
+                    className="profile-btn profile-btn-secondary"
                     onClick={() => {
                       setShowProfileModal(false);
                       handleViewCertificates(selectedStudent);
-                    }}
-                    style={{
-                      flex: 1,
-                      padding: "12px 24px",
-                      background: "white",
-                      color: "#667eea",
-                      border: "2px solid #667eea",
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#667eea";
-                      e.currentTarget.style.color = "white";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "white";
-                      e.currentTarget.style.color = "#667eea";
                     }}
                   >
                     View Certificates
                   </button>
                   <button
+                    className="profile-btn profile-btn-ghost"
                     onClick={() => setShowProfileModal(false)}
-                    style={{
-                      padding: "12px 24px",
-                      background: "#f1f5f9",
-                      color: "#64748b",
-                      border: "none",
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: 700,
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#e2e8f0";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#f1f5f9";
-                    }}
                   >
                     Close
                   </button>
@@ -1952,6 +1515,35 @@ function ViewInterns({ onInternDeleted }) {
                 </select>
               </div>
 
+              {certificateType === "other" && (
+                <div style={{ marginBottom: "12px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      marginBottom: "6px",
+                      color: "#0f172a",
+                    }}
+                  >
+                    Certificate Name
+                  </label>
+                  <input
+                    type="text"
+                    value={certificateName}
+                    onChange={(e) => setCertificateName(e.target.value)}
+                    placeholder="e.g., Participation Certificate, Workshop Certificate"
+                    style={{
+                      width: "100%",
+                      padding: "10px",
+                      borderRadius: "6px",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "14px",
+                    }}
+                  />
+                </div>
+              )}
+
               <div style={{ marginBottom: "12px" }}>
                 <label
                   style={{
@@ -2193,6 +1785,132 @@ function ViewInterns({ onInternDeleted }) {
                     {selectedStudent.documents?.paymentReceipt ? (
                       <a
                         href={`http://localhost:5000/uploads/students/${selectedStudent.documents.paymentReceipt.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "8px 16px",
+                          background: "#10b981",
+                          color: "white",
+                          textDecoration: "none",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: "13px", color: "#94a3b8" }}>
+                        Not uploaded
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Completion Certificate */}
+                <div
+                  style={{
+                    padding: "12px",
+                    background: "#f8fafc",
+                    borderRadius: "8px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#0f172a",
+                      }}
+                    >
+                      Completion Certificate
+                    </div>
+                    {selectedStudent.documents?.completionCertificate && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#64748b",
+                          marginTop: "4px",
+                        }}
+                      >
+                        Uploaded:{" "}
+                        {new Date(
+                          selectedStudent.documents.completionCertificate.uploadedAt ||
+                            Date.now(),
+                        ).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {selectedStudent.documents?.completionCertificate ? (
+                      <a
+                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.completionCertificate.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "8px 16px",
+                          background: "#10b981",
+                          color: "white",
+                          textDecoration: "none",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        View
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: "13px", color: "#94a3b8" }}>
+                        Not uploaded
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Experience Letter */}
+                <div
+                  style={{
+                    padding: "12px",
+                    background: "#f8fafc",
+                    borderRadius: "8px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#0f172a",
+                      }}
+                    >
+                      Experience Letter
+                    </div>
+                    {selectedStudent.documents?.experienceLetter && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#64748b",
+                          marginTop: "4px",
+                        }}
+                      >
+                        Uploaded:{" "}
+                        {new Date(
+                          selectedStudent.documents.experienceLetter.uploadedAt ||
+                            Date.now(),
+                        ).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    {selectedStudent.documents?.experienceLetter ? (
+                      <a
+                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.experienceLetter.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{

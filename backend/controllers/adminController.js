@@ -152,10 +152,10 @@ exports.addIntern = async (req, res) => {
   }
 };
 
-// Get all interns
+// Get all interns (exclude soft-deleted)
 exports.getAllInterns = async (req, res) => {
   try {
-    const interns = await Intern.find().select('-password').populate('assignedTrainer', 'name email');
+    const interns = await Intern.find({ isDeleted: { $ne: true } }).select('-password').populate('assignedTrainer', 'name email');
     
     res.status(200).json({
       success: true,
@@ -192,8 +192,99 @@ exports.deleteAllInterns = async (req, res) => {
   }
 };
 
-// Delete single intern
+// Soft delete single intern (move to recycle bin)
 exports.deleteIntern = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const intern = await Intern.findByIdAndUpdate(
+      id,
+      { 
+        isDeleted: true,
+        deletedAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!intern) {
+      return res.status(404).json({
+        success: false,
+        message: 'Intern not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Intern moved to recycle bin successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete intern error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get deleted interns (Recycle Bin)
+exports.getDeletedInterns = async (req, res) => {
+  try {
+    const deletedInterns = await Intern.find({ isDeleted: true })
+      .select('-password')
+      .sort({ deletedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: deletedInterns
+    });
+  } catch (error) {
+    console.error('Get deleted interns error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Restore intern from recycle bin
+exports.restoreIntern = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const intern = await Intern.findByIdAndUpdate(
+      id,
+      { 
+        isDeleted: false,
+        deletedAt: null
+      },
+      { new: true }
+    ).select('-password');
+
+    if (!intern) {
+      return res.status(404).json({
+        success: false,
+        message: 'Intern not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Intern restored successfully',
+      intern
+    });
+
+  } catch (error) {
+    console.error('Restore intern error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Permanently delete intern
+exports.permanentlyDeleteIntern = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -208,11 +299,11 @@ exports.deleteIntern = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Intern deleted successfully'
+      message: 'Intern permanently deleted'
     });
 
   } catch (error) {
-    console.error('Delete intern error:', error);
+    console.error('Permanent delete error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

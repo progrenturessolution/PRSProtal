@@ -9,6 +9,17 @@ function InternshipManagement() {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    mobile: '',
+    domain: '',
+    duration: '',
+    joiningDate: '',
+    status: ''
+  });
   
 
   useEffect(() => {
@@ -36,14 +47,28 @@ function InternshipManagement() {
   };
 
   const getFilteredStudents = () => {
-    if (filter === 'all') return students;
+    let filtered = students;
+    
+    // Apply status filter
     if (filter === 'active') {
-      return students.filter(student => student.status?.toLowerCase() === 'active');
+      filtered = filtered.filter(student => student.status?.toLowerCase() === 'active');
+    } else if (filter === 'completed') {
+      filtered = filtered.filter(student => student.status?.toLowerCase() === 'completed');
     }
-    if (filter === 'completed') {
-      return students.filter(student => student.status?.toLowerCase() === 'completed');
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(student => 
+        student.name?.toLowerCase().includes(query) ||
+        student.email?.toLowerCase().includes(query) ||
+        student.internId?.toLowerCase().includes(query) ||
+        student.mobile?.includes(query) ||
+        student.domain?.toLowerCase().includes(query)
+      );
     }
-    return students;
+    
+    return filtered;
   };
 
   const handleDocumentUpload = async (e, studentId) => {
@@ -99,6 +124,58 @@ function InternshipManagement() {
       setErrorMessage('Upload failed.');
       setTimeout(() => setErrorMessage(''), 4000);
     }
+  };
+
+  const handleEditClick = () => {
+    setEditForm({
+      name: selectedStudent.name || '',
+      email: selectedStudent.email || '',
+      mobile: selectedStudent.mobile || '',
+      domain: selectedStudent.domain || '',
+      duration: selectedStudent.duration || '',
+      joiningDate: selectedStudent.joiningDate ? selectedStudent.joiningDate.split('T')[0] : '',
+      status: selectedStudent.status || 'active'
+    });
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditForm({
+      name: '',
+      email: '',
+      mobile: '',
+      domain: '',
+      duration: '',
+      joiningDate: '',
+      status: ''
+    });
+  };
+
+  const handleUpdateStudent = async () => {
+    try {
+      const response = await adminAPI.updateIntern(selectedStudent._id, editForm);
+      if (response.data.success) {
+        // Update local students array
+        setStudents(prev => prev.map(s => 
+          s._id === selectedStudent._id ? { ...s, ...editForm } : s
+        ));
+        // Update selected student
+        setSelectedStudent({ ...selectedStudent, ...editForm });
+        setIsEditing(false);
+        setInfoMessage('Student updated successfully!');
+        setTimeout(() => setInfoMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Update error:', err);
+      setErrorMessage('Failed to update student.');
+      setTimeout(() => setErrorMessage(''), 3000);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
   const filteredStudents = getFilteredStudents();
@@ -165,6 +242,35 @@ function InternshipManagement() {
             {infoMessage}
           </div>
         )}
+
+        {/* Search Bar */}
+        <div style={{ marginBottom: '20px' }}>
+          <input
+            type="text"
+            placeholder="🔍 Search by name, email, ID, mobile, or domain..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              fontSize: '14px',
+              border: '2px solid #e2e8f0',
+              borderRadius: '10px',
+              outline: 'none',
+              transition: 'all 0.3s ease',
+              background: '#f8fafc'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#3b82f6';
+              e.target.style.background = 'white';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e2e8f0';
+              e.target.style.background = '#f8fafc';
+            }}
+          />
+        </div>
+
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
           {/** Helper inline styles for clearer active/inactive states */}
           <button
@@ -233,9 +339,7 @@ function InternshipManagement() {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Domain</th>
-                  <th>Documents</th>
                   <th>Joining Date</th>
-                  <th>End Date</th>
                   <th>Duration</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -249,57 +353,8 @@ function InternshipManagement() {
                     <td>{student.email}</td>
                     <td>{student.domain || 'N/A'}</td>
                     <td>
-                      {/* Offer letter view/upload */}
-                        {student.documents && student.documents.offerLetter ? (
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <a
-                              href={UPLOADS_BASE + '/uploads/students/' + student.documents.offerLetter.filename}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: '#0b5cff' }}
-                            >
-                              View
-                            </a>
-                            <button
-                              onClick={() => document.getElementById(`file-input-${student._id}`).click()}
-                              style={{ background: 'transparent', border: 'none', color: '#0b5cff', cursor: 'pointer' }}
-                            >
-                              Replace
-                            </button>
-                            <input
-                              id={`file-input-${student._id}`}
-                              type="file"
-                              accept="application/pdf"
-                              style={{ display: 'none' }}
-                              onChange={(e) => handleDocumentUpload(e, student._id)}
-                            />
-                          </div>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => document.getElementById(`file-input-${student._id}`).click()}
-                              style={{ background: 'transparent', border: 'none', color: '#0b5cff', cursor: 'pointer' }}
-                            >
-                              Upload
-                            </button>
-                            <input
-                              id={`file-input-${student._id}`}
-                              type="file"
-                              accept="application/pdf"
-                              style={{ display: 'none' }}
-                              onChange={(e) => handleDocumentUpload(e, student._id)}
-                            />
-                          </>
-                        )}
-                    </td>
-                    <td>
                       {student.joiningDate
                         ? new Date(student.joiningDate).toLocaleDateString()
-                        : 'N/A'}
-                    </td>
-                    <td>
-                      {student.endingDate
-                        ? new Date(student.endingDate).toLocaleDateString()
                         : 'N/A'}
                     </td>
                     <td>{student.duration || 'N/A'}</td>
@@ -404,7 +459,7 @@ function InternshipManagement() {
           }} onClick={(e) => e.stopPropagation()}>
             {/* Header with Gradient */}
             <div style={{ 
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
               padding: '24px',
               color: 'white',
               position: 'relative'
@@ -459,19 +514,78 @@ function InternshipManagement() {
                   display: 'grid',
                   gap: '10px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Email</span>
-                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.email}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>Mobile</span>
-                    <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.mobile}</span>
-                  </div>
+                  {!isEditing ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Name</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Email</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.email}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Mobile</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.mobile}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Name</label>
+                        <input 
+                          type="text" 
+                          name="name" 
+                          value={editForm.name} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Email</label>
+                        <input 
+                          type="email" 
+                          name="email" 
+                          value={editForm.email} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Mobile</label>
+                        <input 
+                          type="tel" 
+                          name="mobile" 
+                          value={editForm.mobile} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Documents Section */}
-              <div>
+              {/* Internship Details */}
+              <div style={{ marginBottom: '24px' }}>
                 <h3 style={{ 
                   fontSize: '16px', 
                   fontWeight: '600', 
@@ -480,142 +594,181 @@ function InternshipManagement() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
-                }}>📄 Documents</h3>
+                }}>💼 Internship Details</h3>
                 <div style={{ 
                   background: '#f9fafb',
                   padding: '16px',
                   borderRadius: '8px',
                   display: 'grid',
-                  gap: '12px'
+                  gap: '10px'
                 }}>
-                  {/* Offer Letter */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Offer Letter</span>
-                    {selectedStudent.documents?.offerLetter ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.offerLetter.filename} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          padding: '6px 14px',
-                          background: '#10b981',
-                          color: 'white',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                      >View PDF</a>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
-                  </div>
-
-                  {/* Welcome Letter */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Welcome Letter</span>
-                    {selectedStudent.documents?.welcomeLetter ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.welcomeLetter.filename} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          padding: '6px 14px',
-                          background: '#10b981',
-                          color: 'white',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                      >View PDF</a>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
-                  </div>
-
-                  {/* Payment Receipt */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>Payment Receipt</span>
-                    {selectedStudent.documents?.paymentReceipt ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + selectedStudent.documents.paymentReceipt.filename} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        style={{
-                          padding: '6px 14px',
-                          background: '#10b981',
-                          color: 'white',
-                          borderRadius: '6px',
-                          textDecoration: 'none',
-                          fontSize: '13px',
-                          fontWeight: '500',
-                          transition: 'all 0.2s'
-                        }}
-                      >View PDF</a>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
-                  </div>
-
-                  {/* Other Certificates */}
-                  <div style={{ 
-                    padding: '10px',
-                    background: 'white',
-                    borderRadius: '6px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <div style={{ fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Other Certificates</div>
-                    {selectedStudent.documents?.otherCertificates && selectedStudent.documents.otherCertificates.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-                        {selectedStudent.documents.otherCertificates.map((c, idx) => (
-                          <a 
-                            key={idx}
-                            href={UPLOADS_BASE + '/uploads/students/' + c.filename} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            style={{
-                              padding: '8px 12px',
-                              background: '#f3f4f6',
-                              borderRadius: '4px',
-                              textDecoration: 'none',
-                              color: '#4f46e5',
-                              fontSize: '13px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.target.style.background = '#e0e7ff'}
-                            onMouseLeave={(e) => e.target.style.background = '#f3f4f6'}
-                          >
-                            📎 {c.name || c.filename}
-                          </a>
-                        ))}
+                  {!isEditing ? (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Domain</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.domain || 'Not specified'}</span>
                       </div>
-                    ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>None</span>}
-                  </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Duration</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.duration || 'Not specified'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Joining Date</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
+                          {selectedStudent.joiningDate ? new Date(selectedStudent.joiningDate).toLocaleDateString() : 'Not specified'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Status</span>
+                        <span style={{ 
+                          fontWeight: '500', 
+                          fontSize: '14px', 
+                          color: selectedStudent.status?.toLowerCase() === 'active' ? '#059669' : '#d97706',
+                          background: selectedStudent.status?.toLowerCase() === 'active' ? '#d1fae5' : '#fef3c7',
+                          padding: '4px 12px',
+                          borderRadius: '12px'
+                        }}>
+                          {selectedStudent.status || 'Active'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Domain</label>
+                        <input 
+                          type="text" 
+                          name="domain" 
+                          value={editForm.domain} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Duration</label>
+                        <input 
+                          type="text" 
+                          name="duration" 
+                          value={editForm.duration} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Joining Date</label>
+                        <input 
+                          type="date" 
+                          name="joiningDate" 
+                          value={editForm.joiningDate} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Status</label>
+                        <select 
+                          name="status" 
+                          value={editForm.status} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        >
+                          <option value="active">Active</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ 
+                display: 'flex', 
+                gap: '12px', 
+                justifyContent: 'flex-end',
+                borderTop: '1px solid #e5e7eb',
+                paddingTop: '16px'
+              }}>
+                {!isEditing ? (
+                  <button
+                    onClick={handleEditClick}
+                    style={{
+                      padding: '10px 24px',
+                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      transition: 'transform 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  >
+                    ✏️ Edit Details
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleCancelEdit}
+                      style={{
+                        padding: '10px 24px',
+                        background: '#e5e7eb',
+                        color: '#374151',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateStudent}
+                      style={{
+                        padding: '10px 24px',
+                        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                    >
+                      💾 Save Changes
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

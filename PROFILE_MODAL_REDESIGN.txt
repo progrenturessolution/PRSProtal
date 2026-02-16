@@ -1,0 +1,223 @@
+STUDENT PROFILE MODAL REDESIGN - REPLACEMENT CODE
+=================================================
+
+Replace lines 796-1495 in ViewInterns.jsx with this code:
+
+      {/* View Profile Modal - Enhanced */}
+      {showProfileModal &&
+        selectedStudent &&
+        createPortal(
+          <div className="profile-modal-overlay">
+            <div className="profile-modal-container">
+              {/* Header */}
+              <div className="profile-header">
+                <button
+                  className="profile-close-btn"
+                  onClick={() => setShowProfileModal(false)}
+                  aria-label="Close"
+                >
+                  ×
+                </button>
+
+                <div>
+                  <div className="profile-avatar">
+                    {selectedStudent.name.charAt(0).toUpperCase()}
+                  </div>
+                  <h2 className="profile-name">{selectedStudent.name}</h2>
+                  <div className="profile-badges">
+                    <span className="profile-badge">
+                      {selectedStudent.internId}
+                    </span>
+                    <span
+                      className={`profile-badge ${
+                        (selectedStudent.status || "").toLowerCase() ===
+                        "active"
+                          ? "status-active"
+                          : "status-inactive"
+                      }`}
+                    >
+                      {selectedStudent.status || "Active"}
+                    </span>
+                    <span className="profile-badge">
+                      {selectedStudent.studentType}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content Body */}
+              <div className="profile-body">
+                {/* Contact Information Section */}
+                <div className="profile-section">
+                  <h3 className="profile-section-title">
+                    <span className="profile-section-bar"></span>
+                    Contact Information
+                  </h3>
+                  <div className="profile-info-grid">
+                    <div className="profile-info-card">
+                      <div className="profile-info-label">Email Address</div>
+                      <div className="profile-info-value">
+                        {selectedStudent.email}
+                      </div>
+                    </div>
+                    <div className="profile-info-card">
+                      <div className="profile-info-label">Mobile Number</div>
+                      <div className="profile-info-value">
+                        {selectedStudent.mobile || "Not provided"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Internship Details (if applicable) */}
+                {selectedStudent.studentType === "Internship" && (
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar"></span>
+                      Internship Details
+                    </h3>
+                    <div className="profile-details-grid">
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
+                          Domain
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.domain || "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
+                          Duration
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.duration || "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Joining Date
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.joiningDate
+                            ? new Date(
+                                selectedStudent.joiningDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "Not set"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-warning">
+                        <div className="profile-detail-label color-warning">
+                          Ending Date
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.endingDate
+                            ? new Date(
+                                selectedStudent.endingDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "Not set"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SMS Program Details (if applicable) */}
+                {selectedStudent.studentType === "SMS Program" && (
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar"></span>
+                      SMS Program Details
+                    </h3>
+                    <div className="profile-details-grid">
+                      <div className="profile-detail-card type-pink">
+                        <div className="profile-detail-label color-pink">
+                          Gender
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.gender || "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-pink">
+                        <div className="profile-detail-label color-pink">
+                          Current Designation
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.currentDesignation ||
+                            "Not specified"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment Information */}
+                    {(selectedStudent.paymentDoneBy ||
+                      selectedStudent.transactionId) && (
+                      <div className="profile-subsection">
+                        <h4 className="profile-subsection-title">
+                          Payment Information
+                        </h4>
+                        <div className="profile-info-grid">
+                          <div className="profile-info-card">
+                            <div className="profile-info-label">
+                              Payment Done By
+                            </div>
+                            <div className="profile-info-value">
+                              {selectedStudent.paymentDoneBy || "Not specified"}
+                            </div>
+                          </div>
+                          <div className="profile-info-card">
+                            <div className="profile-info-label">
+                              Transaction ID
+                            </div>
+                            <div
+                              className="profile-info-value"
+                              style={{ fontFamily: "monospace" }}
+                            >
+                              {selectedStudent.transactionId || "Not provided"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Quick Actions */}
+                <div className="profile-actions">
+                  <button
+                    className="profile-btn profile-btn-primary"
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      handleEdit(selectedStudent);
+                    }}
+                  >
+                    Edit Profile
+                  </button>
+                  <button
+                    className="profile-btn profile-btn-secondary"
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      handleViewCertificates(selectedStudent);
+                    }}
+                  >
+                    View Certificates
+                  </button>
+                  <button
+                    className="profile-btn profile-btn-ghost"
+                    onClick={() => setShowProfileModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
