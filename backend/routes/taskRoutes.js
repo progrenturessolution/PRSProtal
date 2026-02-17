@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const taskController = require('../controllers/taskController');
 const adminController = require('../controllers/adminController');
+const trainerController = require('../controllers/trainerController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -52,5 +53,14 @@ router.post('/intern/team-message/:taskId', verifyToken, taskController.sendTeam
 
 // Intern: fetch own uploaded documents
 router.get('/intern/my-documents', verifyToken, adminController.getStudentDocuments);
+
+// Intern: fetch own performance data
+router.get('/intern/my-interviews', verifyToken, trainerController.getMyInterviews);
+router.get('/intern/my-aptitude', verifyToken, trainerController.getMyAptitude);
+router.get('/intern/my-assessments', verifyToken, trainerController.getMyAssessments);
+router.get('/intern/my-training', verifyToken, trainerController.getMyTraining);
+router.get('/intern/my-profile', verifyToken, trainerController.getMyProfile);
+router.get('/intern/my-notifications', verifyToken, trainerController.getMyNotifications);
+router.get('/intern/my-job-postings', verifyToken, trainerController.getMyJobPostings);
 
 module.exports = router;

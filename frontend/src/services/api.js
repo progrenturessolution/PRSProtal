@@ -102,7 +102,14 @@ export const taskAPI = {
 
 // Intern APIs
 export const internAPI = {
-  getMyDocuments: () => api.get('/task/intern/my-documents')
+  getMyDocuments: () => api.get('/task/intern/my-documents'),
+  getMyProfile: () => api.get('/task/intern/my-profile'),
+  getMyInterviews: () => api.get('/task/intern/my-interviews'),
+  getMyAptitude: () => api.get('/task/intern/my-aptitude'),
+  getMyAssessments: () => api.get('/task/intern/my-assessments'),
+  getMyTraining: () => api.get('/task/intern/my-training'),
+  getMyNotifications: () => api.get('/task/intern/my-notifications'),
+  getMyJobPostings: () => api.get('/task/intern/my-job-postings')
 };
 
 export default api;

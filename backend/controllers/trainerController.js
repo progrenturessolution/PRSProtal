@@ -6,6 +6,8 @@ const Interview = require('../models/Interview');
 const Aptitude = require('../models/Aptitude');
 const Assessment = require('../models/Assessment');
 const Training = require('../models/Training');
+const Notification = require('../models/Notification');
+const JobPosting = require('../models/JobPosting');
 
 // Trainer Login
 exports.trainerLogin = async (req, res) => {
@@ -484,6 +486,192 @@ exports.getProfile = async (req, res) => {
     });
   } catch (error) {
     console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get Intern's Interview History (Intern portal view)
+exports.getMyInterviews = async (req, res) => {
+  try {
+    const studentId = req.user.id; // This will be the intern's ID
+
+    const interviews = await Interview.find({ studentId })
+      .populate('trainerId', 'name email')
+      .sort({ date: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: interviews.length,
+      interviews
+    });
+
+  } catch (error) {
+    console.error('Get interviews error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get Intern's Aptitude Records (Intern portal view)
+exports.getMyAptitude = async (req, res) => {
+  try {
+    const studentId = req.user.id; // This will be the intern's ID
+
+    const aptitudeRecords = await Aptitude.find({ studentId })
+      .populate('trainerId', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: aptitudeRecords.length,
+      aptitudeRecords
+    });
+
+  } catch (error) {
+    console.error('Get aptitude records error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get Intern's Assessment Records (Intern portal view)
+exports.getMyAssessments = async (req, res) => {
+  try {
+    const studentId = req.user.id; // This will be the intern's ID
+
+    const assessments = await Assessment.find({ studentId })
+      .populate('trainerId', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: assessments.length,
+      assessments
+    });
+
+  } catch (error) {
+    console.error('Get assessments error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get Intern's Training Records (Intern portal view)
+exports.getMyTraining = async (req, res) => {
+  try {
+    const studentId = req.user.id; // This will be the intern's ID
+
+    const trainings = await Training.find({ studentId })
+      .populate('trainerId', 'name email')
+      .sort({ date: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: trainings.length,
+      trainings
+    });
+
+  } catch (error) {
+    console.error('Get training records error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get Intern's Profile (for intern dashboard)
+exports.getMyProfile = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    const intern = await Intern.findById(studentId)
+      .select('-password')
+      .populate('assignedTrainer', 'name email mobile');
+
+    if (!intern) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: intern
+    });
+
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get Notifications for Intern
+exports.getMyNotifications = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    const notifications = await Notification.find({
+      $or: [
+        { sendTo: 'All' },
+        { 
+          sendTo: 'Group',
+          recipientModel: 'Intern',
+          recipientIds: studentId
+        },
+        {
+          sendTo: 'Individual',
+          recipientModel: 'Intern',
+          recipientIds: studentId
+        }
+      ]
+    })
+    .populate('createdBy', 'name email')
+    .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: notifications.length,
+      notifications
+    });
+
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Get Job & Internship Postings for Intern
+exports.getMyJobPostings = async (req, res) => {
+  try {
+    const postings = await JobPosting.find({ status: 'active' })
+      .populate('postedBy', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: postings.length,
+      postings
+    });
+
+  } catch (error) {
+    console.error('Get job postings error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
