@@ -66,6 +66,10 @@ const internSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  paymentAmount: {
+    type: String,
+    trim: true
+  },
   currentDesignation: {
     type: String,
     trim: true,

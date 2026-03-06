@@ -110,6 +110,15 @@ const taskSchema = new mongoose.Schema({
     sentAt: {
       type: Date,
       default: Date.now
+    },
+    // Reply-to fields (set when this message is a reply to another)
+    replyToSnippet: {
+      type: String,
+      default: null
+    },
+    replyToSenderName: {
+      type: String,
+      default: null
     }
   }]
 }, {

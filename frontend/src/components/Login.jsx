@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { authAPI, representativeAPI } from '../services/api';
 import logo from '../assets/logo.png';
 
 function Login() {
@@ -46,7 +46,7 @@ function Login() {
           password: formData.password
         });
       } else if (activeTab === 'representative') {
-        response = await authAPI.trainerLogin({
+        response = await representativeAPI.login({
           email: formData.email,
           password: formData.password
         });
@@ -56,7 +56,7 @@ function Login() {
         // Store token and user info (clear and set atomically)
         const token = response.data.token;
         const user = JSON.stringify(response.data.user);
-        const role = activeTab === 'representative' ? 'trainer' : activeTab;
+        const role = activeTab;
         
         localStorage.clear();
         localStorage.setItem('token', token);
@@ -69,8 +69,10 @@ function Login() {
             navigate('/admin-dashboard');
           } else if (activeTab === 'intern') {
             navigate('/intern-dashboard');
-          } else if (activeTab === 'trainer' || activeTab === 'representative') {
+          } else if (activeTab === 'trainer') {
             navigate('/trainer-dashboard');
+          } else if (activeTab === 'representative') {
+            navigate('/representative-dashboard');
           }
         }, 100);
       }
@@ -143,12 +145,12 @@ function Login() {
             <button
               className={`tab-btn ${activeTab === 'intern' ? 'active' : ''}`}
               onClick={() => setActiveTab('intern')}
-              title="Intern Access"
+              title="Student Access"
             >
               <svg className="tab-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
-              <span>Intern</span>
+              <span>Student</span>
             </button>
             <button
               className={`tab-btn ${activeTab === 'trainer' ? 'active' : ''}`}
@@ -206,13 +208,13 @@ function Login() {
             {activeTab === 'intern' && (
               <>
                 <div className="form-group">
-                  <label>Intern ID</label>
+                  <label>Student ID</label>
                   <input
                     type="text"
                     name="internId"
                     value={formData.internId}
                     onChange={handleChange}
-                    placeholder="Enter your intern ID"
+                    placeholder="Enter your student ID"
                     required
                   />
                 </div>

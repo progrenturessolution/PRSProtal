@@ -17,6 +17,8 @@ function InternDashboard() {
   const [assessments, setAssessments] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [jobPostings, setJobPostings] = useState([]);
+  const [assignedCerts, setAssignedCerts] = useState([]);
+  const [taskView, setTaskView] = useState('individual');
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -87,6 +89,12 @@ function InternDashboard() {
           if (docResp.data && docResp.data.success) {
             setDocuments(docResp.data.documents || null);
           }
+          try {
+            const certResp = await internAPI.getMyAssignedCertificates();
+            if (certResp.data && certResp.data.success) {
+              setAssignedCerts(certResp.data.certificates || []);
+            }
+          } catch (e) { console.error('Failed to fetch assigned certs:', e); }
           break;
         case "interviews":
           const intResp = await internAPI.getMyInterviews();
@@ -849,163 +857,222 @@ function InternDashboard() {
               </div>
             </div>
 
-            {loading ? (
-              <div className="card">
-                <p>Loading tasks...</p>
-              </div>
-            ) : tasks.filter((t) => !t.isTeamTask).length === 0 ? (
-              <div className="card">
-                <div className="empty-state">
-                  <p>No individual tasks assigned yet.</p>
+            {/* Sub-tabs */}
+            <div style={{ display: "flex", gap: "4px", marginBottom: "20px", background: "#f1f5f9", padding: "6px", borderRadius: "12px", width: "fit-content" }}>
+              {[
+                { id: "individual", label: "👤 Individual Tasks", count: tasks.filter(t => !t.isTeamTask).length },
+                { id: "squad", label: "🤝 Squad Tasks", count: tasks.filter(t => t.isTeamTask).length }
+              ].map(({ id, label, count }) => (
+                <button
+                  key={id}
+                  onClick={() => setTaskView(id)}
+                  style={{
+                    padding: "9px 18px", borderRadius: "8px", border: "none", cursor: "pointer",
+                    fontWeight: "700", fontSize: "13px",
+                    background: taskView === id ? "white" : "transparent",
+                    color: taskView === id ? "#0f172a" : "#64748b",
+                    boxShadow: taskView === id ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+                    transition: "all 0.2s", display: "flex", alignItems: "center", gap: "6px"
+                  }}
+                >
+                  {label}
+                  <span style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "11px", background: taskView === id ? "#eff6ff" : "#e2e8f0", color: taskView === id ? "#2563eb" : "#64748b" }}>{count}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Individual Tasks */}
+            {taskView === "individual" && (
+              loading ? (
+                <div className="card"><p>Loading tasks...</p></div>
+              ) : tasks.filter((t) => !t.isTeamTask).length === 0 ? (
+                <div className="card">
+                  <div className="empty-state">
+                    <p>No individual tasks assigned yet.</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <>
-                <div className="desktop-only">
-                  <div
-                    className="card"
-                    style={{ padding: 0, overflow: "hidden" }}
-                  >
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Task Title</th>
-                          <th>Description</th>
-                          <th>Deadline</th>
-                          <th>Progress</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tasks
-                          .filter((t) => !t.isTeamTask)
-                          .map((task) => (
-                            <tr key={task._id}>
-                              <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                                {task.title}
-                              </td>
-                              <td>{task.description.substring(0, 60)}</td>
-                              <td>{formatDeadline(task.deadline)}</td>
-                              <td>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "10px",
-                                  }}
-                                >
+              ) : (
+                <>
+                  <div className="desktop-only">
+                    <div
+                      className="card"
+                      style={{ padding: 0, overflow: "hidden" }}
+                    >
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>Task Title</th>
+                            <th>Description</th>
+                            <th>Deadline</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {tasks
+                            .filter((t) => !t.isTeamTask)
+                            .map((task) => (
+                              <tr key={task._id}>
+                                <td style={{ fontWeight: 600, color: "#0f172a" }}>
+                                  {task.title}
+                                  {task.taskDocument?.filename && (
+                                    <a
+                                      href={`${UPLOADS_BASE}/uploads/tasks/${task.taskDocument.filename}`}
+                                      target="_blank" rel="noopener noreferrer"
+                                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}
+                                    >
+                                      📄 View PDF
+                                    </a>
+                                  )}
+                                </td>
+                                <td>{task.description.substring(0, 60)}</td>
+                                <td>{formatDeadline(task.deadline)}</td>
+                                <td>
                                   <div
-                                    className="progress-bar-container"
-                                    style={{ flex: 1, minWidth: "100px" }}
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "10px",
+                                    }}
                                   >
                                     <div
-                                      className="progress-bar-fill"
-                                      style={{ width: `${task.progress}%` }}
-                                    ></div>
+                                      className="progress-bar-container"
+                                      style={{ flex: 1, minWidth: "100px" }}
+                                    >
+                                      <div
+                                        className="progress-bar-fill"
+                                        style={{ width: `${task.progress}%` }}
+                                      ></div>
+                                    </div>
+                                    <span
+                                      style={{
+                                        fontSize: "13px",
+                                        fontWeight: 600,
+                                        color: "#3b82f6",
+                                      }}
+                                    >
+                                      {task.progress}%
+                                    </span>
                                   </div>
+                                </td>
+                                <td>
                                   <span
+                                    className="status-badge"
                                     style={{
-                                      fontSize: "13px",
-                                      fontWeight: 600,
-                                      color: "#3b82f6",
+                                      backgroundColor: `${getStatusColor(task.status)}20`,
+                                      color: getStatusColor(task.status),
                                     }}
                                   >
-                                    {task.progress}%
+                                    {task.status}
                                   </span>
-                                </div>
-                              </td>
-                              <td>
-                                <span
-                                  className="status-badge"
-                                  style={{
-                                    backgroundColor: `${getStatusColor(task.status)}20`,
-                                    color: getStatusColor(task.status),
-                                  }}
-                                >
-                                  {task.status}
-                                </span>
-                              </td>
-                              <td>
-                                {task.status !== "Completed" && (
-                                  <select
-                                    value={task.progress}
-                                    onChange={(e) =>
-                                      handleProgressUpdate(
-                                        task._id,
-                                        parseInt(e.target.value),
-                                      )
-                                    }
-                                    className="progress-select"
-                                    style={{
-                                      padding: "6px 8px",
-                                      fontSize: "12px",
-                                    }}
-                                  >
-                                    <option value={0}>Not Started</option>
-                                    <option value={25}>25%</option>
-                                    <option value={50}>50%</option>
-                                    <option value={75}>75%</option>
-                                    <option value={100}>Submit</option>
-                                  </select>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
+                                </td>
+                                <td>
+                                  {task.status !== "Completed" && (
+                                    <select
+                                      value={task.progress}
+                                      onChange={(e) =>
+                                        handleProgressUpdate(
+                                          task._id,
+                                          parseInt(e.target.value),
+                                        )
+                                      }
+                                      className="progress-select"
+                                      style={{
+                                        padding: "6px 8px",
+                                        fontSize: "12px",
+                                      }}
+                                    >
+                                      <option value={0}>Not Started</option>
+                                      <option value={25}>25%</option>
+                                      <option value={50}>50%</option>
+                                      <option value={75}>75%</option>
+                                      <option value={100}>Submit</option>
+                                    </select>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mobile-only">
-                  <div className="tasks-grid">
-                    {tasks
-                      .filter((t) => !t.isTeamTask)
-                      .map((task) => (
-                        <div key={task._id} className="task-card">
-                          <div className="task-header">
-                            <h3>{task.title}</h3>
-                            <span
-                              className="task-status-badge"
-                              style={{
-                                backgroundColor: `${getStatusColor(task.status)}20`,
-                                color: getStatusColor(task.status),
-                              }}
-                            >
-                              {task.status}
-                            </span>
-                          </div>
-                          <p className="task-description">{task.description}</p>
-                          <div className="task-deadline">
-                            Deadline: {formatDeadline(task.deadline)}
-                          </div>
-                          <div className="task-progress">
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                marginBottom: "8px",
-                              }}
-                            >
-                              <span>Progress</span>
+                  <div className="mobile-only">
+                    <div className="tasks-grid">
+                      {tasks
+                        .filter((t) => !t.isTeamTask)
+                        .map((task) => (
+                          <div key={task._id} className="task-card">
+                            <div className="task-header">
+                              <h3>{task.title}</h3>
                               <span
-                                style={{ color: "#3b82f6", fontWeight: 600 }}
+                                className="task-status-badge"
+                                style={{
+                                  backgroundColor: `${getStatusColor(task.status)}20`,
+                                  color: getStatusColor(task.status),
+                                }}
                               >
-                                {task.progress}%
+                                {task.status}
                               </span>
                             </div>
-                            <div className="progress-bar-container">
+                            <p className="task-description">{task.description}</p>
+                            {task.taskDocument?.filename && (
+                              <a
+                                href={`${UPLOADS_BASE}/uploads/tasks/${task.taskDocument.filename}`}
+                                target="_blank" rel="noopener noreferrer"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: '8px 0', padding: '8px 14px', background: '#dbeafe', borderRadius: '8px', border: '1px solid #93c5fd', color: '#1e40af', textDecoration: 'none', fontWeight: '600', fontSize: '13px' }}
+                              >
+                                📄 View Task Document (PDF)
+                              </a>
+                            )}
+                            <div className="task-deadline">
+                              Deadline: {formatDeadline(task.deadline)}
+                            </div>
+                            <div className="task-progress">
                               <div
-                                className="progress-bar-fill"
-                                style={{ width: `${task.progress}%` }}
-                              ></div>
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  marginBottom: "8px",
+                                }}
+                              >
+                                <span>Progress</span>
+                                <span
+                                  style={{ color: "#3b82f6", fontWeight: 600 }}
+                                >
+                                  {task.progress}%
+                                </span>
+                              </div>
+                              <div className="progress-bar-container">
+                                <div
+                                  className="progress-bar-fill"
+                                  style={{ width: `${task.progress}%` }}
+                                ></div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                    </div>
                   </div>
-                </div>
-              </>
+                </>
+              )
+            )}
+
+            {/* Squad Tasks */}
+            {taskView === "squad" && (
+              <TeamTasks
+                user={user}
+                tasks={tasks}
+                loading={loading}
+                error={error}
+                onProgressUpdate={handleProgressUpdate}
+                onTasksRefresh={async () => {
+                  const res = await taskAPI.getInternTasks();
+                  if (res.data.success) { setTasks(res.data.tasks); return res.data.tasks; }
+                  return null;
+                }}
+              />
             )}
           </>
         )}
@@ -1516,11 +1583,19 @@ function InternDashboard() {
             </div>
 
             <div className="card">
-              {!documents ? (
-                <div className="empty-state">
-                  <p>No documents available yet.</p>
-                </div>
-              ) : (
+              {(() => {
+                const hasAny = documents && (
+                  documents.offerLetter?.filename ||
+                  documents.welcomeLetter?.filename ||
+                  documents.paymentReceipt?.filename ||
+                  (documents.otherCertificates?.length > 0)
+                );
+                if (!hasAny) return (
+                  <div className="empty-state">
+                    <p>No documents available yet.</p>
+                  </div>
+                );
+                return (
                 <div style={{ display: "grid", gap: "16px" }}>
                   {documents.offerLetter?.filename && (
                     <div
@@ -1707,6 +1782,46 @@ function InternDashboard() {
                       </div>
                     </div>
                   )}
+                </div>
+                );
+              })()}
+
+              {/* Assigned Certificates */}
+              {assignedCerts.length > 0 && (
+                <div style={{ padding: "16px", background: "#f0fdf4", borderRadius: "10px", border: "2px solid #86efac", marginTop: "20px" }}>
+                  <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                    <strong style={{ color: "#15803d", fontSize: "15px" }}>🏆 Assigned Certificates ({assignedCerts.length})</strong>
+                    <span style={{ fontSize: "12px", color: "#16a34a", background: "#dcfce7", padding: "2px 8px", borderRadius: "10px" }}>5-day download window</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {assignedCerts.map(cert => {
+                      const timeLeft = new Date(cert.expiresAt) - new Date();
+                      const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                      const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                      const expired = timeLeft <= 0;
+                      return (
+                        <div key={cert._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "white", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+                          <div>
+                            <div style={{ fontWeight: "600", color: "#0f172a" }}>{cert.name}</div>
+                            <div style={{ fontSize: "12px", color: expired ? "#dc2626" : days >= 2 ? "#16a34a" : "#d97706", marginTop: "2px" }}>
+                              {expired ? "Expired" : `${days}d ${hours}h remaining`}
+                            </div>
+                          </div>
+                          {!expired && (
+                            <a
+                              href={`${UPLOADS_BASE}/uploads/certificates/${cert.filename}`}
+                              download
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ padding: "8px 16px", background: "#22c55e", color: "white", borderRadius: "6px", textDecoration: "none", fontWeight: "600", fontSize: "13px" }}
+                            >
+                              Download
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

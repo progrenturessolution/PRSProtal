@@ -7,10 +7,7 @@ export const UPLOADS_BASE = API_BASE_URL.replace('/api', '');
 
 // Create axios instance
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: API_BASE_URL
 });
 
 // Add token to requests if available
@@ -19,6 +16,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Let axios auto-set Content-Type for FormData (multipart/form-data with boundary)
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
     }
     return config;
   },
@@ -63,10 +64,13 @@ export const adminAPI = {
   getAllJobPostings: () => api.get('/admin/job-postings'),
   
   // Documents
-  uploadStudentDocument: (studentId, formData) => api.post(`/admin/students/${studentId}/documents`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  getStudentDocuments: (studentId) => api.get(`/admin/students/${studentId}/documents`)
+  uploadStudentDocument: (studentId, formData) => api.post(`/admin/students/${studentId}/documents`, formData),
+  getStudentDocuments: (studentId) => api.get(`/admin/students/${studentId}/documents`),
+
+  // Assigned Certificates (5-day expiry)
+  assignCertificates: (formData) => api.post('/admin/certificates/assign', formData),
+  getCertificates: () => api.get('/admin/certificates'),
+  deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`)
 };
 
 // Trainer APIs
@@ -97,7 +101,8 @@ export const taskAPI = {
   // Intern task APIs
   getInternTasks: () => api.get('/task/intern/tasks'),
   updateTaskProgress: (taskId, progress) => api.put(`/task/intern/update-task/${taskId}`, { progress }),
-  sendTeamMessage: (taskId, messageData) => api.post(`/task/intern/team-message/${taskId}`, messageData)
+  sendTeamMessage: (taskId, messageData) => api.post(`/task/intern/team-message/${taskId}`, messageData),
+  sendAdminTeamMessage: (taskId, messageData) => api.post(`/task/admin/team-message/${taskId}`, messageData)
 };
 
 // Intern APIs
@@ -109,7 +114,25 @@ export const internAPI = {
   getMyAssessments: () => api.get('/task/intern/my-assessments'),
   getMyTraining: () => api.get('/task/intern/my-training'),
   getMyNotifications: () => api.get('/task/intern/my-notifications'),
-  getMyJobPostings: () => api.get('/task/intern/my-job-postings')
+  getMyJobPostings: () => api.get('/task/intern/my-job-postings'),
+  getMyAssignedCertificates: () => api.get('/task/intern/my-certificates')
+};
+
+// Representative APIs
+export const representativeAPI = {
+  login: (credentials) => api.post('/auth/representative-login', credentials),
+  getProfile: () => api.get('/representative/profile'),
+  updateProfile: (data) => api.patch('/representative/profile', data),
+  addStudent: (data) => api.post('/representative/students', data),
+  getMyStudents: (params) => api.get('/representative/students', { params }),
+  deleteStudent: (id) => api.delete(`/representative/students/${id}`)
+};
+
+// Admin representative management APIs (added to adminAPI)
+export const adminRepAPI = {
+  addRepresentative: (data) => api.post('/admin/add-representative', data),
+  getAllRepresentatives: () => api.get('/admin/representatives'),
+  deleteRepresentative: (id) => api.delete(`/admin/representative/${id}`)
 };
 
 export default api;

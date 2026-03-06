@@ -12,4 +12,8 @@ router.post('/intern-login', authController.internLogin);
 // Trainer Login
 router.post('/trainer-login', trainerController.trainerLogin);
 
+// Representative Login
+const repController = require('../controllers/representativeController');
+router.post('/representative-login', repController.representativeLogin);
+
 module.exports = router;

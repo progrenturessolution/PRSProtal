@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const Intern = require('../models/Intern');
 const Trainer = require('../models/Trainer');
+const Representative = require('../models/Representative');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const { sendInternCredentials } = require('../config/emailService');
@@ -33,6 +34,7 @@ exports.addIntern = async (req, res) => {
       paymentDoneBy,
       dateOfPayment,
       transactionId,
+      paymentAmount,
       currentDesignation
     } = req.body;
 
@@ -91,6 +93,7 @@ exports.addIntern = async (req, res) => {
       internData.paymentDoneBy = paymentDoneBy;
       internData.dateOfPayment = dateOfPayment;
       internData.transactionId = transactionId;
+      internData.paymentAmount = paymentAmount;
       internData.currentDesignation = currentDesignation || 'Student';
     }
 
@@ -407,6 +410,7 @@ exports.updateIntern = async (req, res) => {
       'paymentDoneBy',
       'dateOfPayment',
       'transactionId',
+      'paymentAmount',
       'currentDesignation'
     ];
 
@@ -812,5 +816,78 @@ exports.getStudentDocuments = async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+// ========== REPRESENTATIVE MANAGEMENT ==========
+
+// Add representative (Admin only)
+exports.addRepresentative = async (req, res) => {
+  try {
+    const { name, email, password, mobile, college, course, department, year, designation, sheetLinks, upiId } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Name, email and password are required' });
+    }
+
+    const existing = await Representative.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Representative with this email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const rep = await Representative.create({
+      name,
+      email,
+      password: hashedPassword,
+      mobile,
+      college,
+      course,
+      department,
+      year,
+      designation: designation || 'Campus Representative',
+      sheetLinks,
+      upiId,
+      role: 'representative'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Representative added successfully',
+      representative: {
+        id: rep._id,
+        name: rep.name,
+        email: rep.email,
+        college: rep.college,
+        designation: rep.designation
+      }
+    });
+  } catch (error) {
+    console.error('Add representative error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get all representatives
+exports.getAllRepresentatives = async (req, res) => {
+  try {
+    const reps = await Representative.find().select('-password').sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: reps.length, representatives: reps });
+  } catch (error) {
+    console.error('Get representatives error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Delete representative
+exports.deleteRepresentative = async (req, res) => {
+  try {
+    const rep = await Representative.findByIdAndDelete(req.params.id);
+    if (!rep) return res.status(404).json({ success: false, message: 'Representative not found' });
+    res.status(200).json({ success: true, message: 'Representative deleted successfully' });
+  } catch (error) {
+    console.error('Delete representative error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };

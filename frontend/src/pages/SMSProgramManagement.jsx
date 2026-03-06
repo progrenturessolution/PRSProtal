@@ -17,6 +17,7 @@ function SMSProgramManagement() {
     currentDesignation: '',
     paymentDoneBy: '',
     transactionId: '',
+    paymentAmount: '',
     dateOfPayment: '',
     status: ''
   });
@@ -127,6 +128,7 @@ function SMSProgramManagement() {
       currentDesignation: selectedStudent.currentDesignation || '',
       paymentDoneBy: selectedStudent.paymentDoneBy || '',
       transactionId: selectedStudent.transactionId || '',
+      paymentAmount: selectedStudent.paymentAmount || '',
       dateOfPayment: selectedStudent.dateOfPayment ? selectedStudent.dateOfPayment.split('T')[0] : '',
       status: selectedStudent.status || 'active'
     });
@@ -142,6 +144,7 @@ function SMSProgramManagement() {
       currentDesignation: '',
       paymentDoneBy: '',
       transactionId: '',
+      paymentAmount: '',
       dateOfPayment: '',
       status: ''
     });
@@ -281,7 +284,7 @@ function SMSProgramManagement() {
                   <th>Current Designation</th>
                   <th>Payment By</th>
                   <th>Payment Date</th>
-                  <th>Transaction ID</th>
+                  <th>Amount (₹)</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -300,7 +303,9 @@ function SMSProgramManagement() {
                           ? new Date(student.dateOfPayment).toLocaleDateString()
                           : 'N/A'}
                       </td>
-                      <td>{student.transactionId || 'N/A'}</td>
+                      <td style={{ fontWeight: '600', color: '#059669' }}>
+                        {student.paymentAmount ? `₹${student.paymentAmount}` : 'N/A'}
+                      </td>
                       <td>
                         <span
                           className={`status-badge ${
@@ -878,6 +883,10 @@ function SMSProgramManagement() {
                         <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.transactionId || 'N/A'}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment Amount</span>
+                        <span style={{ fontWeight: '700', fontSize: '14px', color: '#059669' }}>{selectedStudent.paymentAmount ? `₹${selectedStudent.paymentAmount}` : 'N/A'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment Date</span>
                         <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
                           {selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString() : 'N/A'}
@@ -922,6 +931,23 @@ function SMSProgramManagement() {
                           name="transactionId" 
                           value={editForm.transactionId} 
                           onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Payment Amount (₹)</label>
+                        <input 
+                          type="number" 
+                          name="paymentAmount" 
+                          value={editForm.paymentAmount} 
+                          onChange={handleInputChange}
+                          placeholder="e.g. 5000"
                           style={{ 
                             width: '100%', 
                             padding: '8px', 

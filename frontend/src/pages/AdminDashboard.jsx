@@ -14,6 +14,7 @@ import Notifications from './Notifications';
 import JobsInternships from './JobsInternships';
 import AccessManagement from './AccessManagement';
 import Reports from './Reports';
+import ManageRepresentatives from './ManageRepresentatives';
 import { adminAPI, taskAPI } from '../services/api';
 import logo from '../assets/logo.png';
 
@@ -337,6 +338,9 @@ function AdminDashboard() {
       case 'reports':
         return <Reports key="reports" />;
       
+      case 'representatives':
+        return <ManageRepresentatives key="representatives" />;
+      
       default:
         return (
           <div className="content-header">
@@ -527,6 +531,19 @@ function AdminDashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Jobs & Internship Updates
+          </li>
+
+          {/* Representatives */}
+          <li className="menu-section-header">REPRESENTATIVES</li>
+          <li 
+            className={activeMenu === 'representatives' ? 'active' : ''}
+            onClick={() => { setActiveMenu('representatives'); setSidebarOpen(false); }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            Representatives
           </li>
 
           {/* Access Management */}

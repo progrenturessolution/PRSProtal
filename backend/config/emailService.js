@@ -230,3 +230,20 @@ Progrentures Team
     return { success: false, error: error.message };
   }
 };
+
+// Generic email sender (used for feedback and other notifications)
+exports.sendEmail = async (to, subject, html) => {
+  try {
+    await transporter.sendMail({
+      from: `"Progrentures Team" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html
+    });
+    console.log(`✅ Email sent to ${to}`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Email send failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};

@@ -63,7 +63,7 @@ function InternLogin() {
 
       <div className="login-right">
         <form className="form-container" onSubmit={handleSubmit}>
-          <h2>Intern Login</h2>
+          <h2>Student Login</h2>
 
           {error && (
             <div style={{

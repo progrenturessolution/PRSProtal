@@ -1,6 +1,6 @@
 const Task = require('../models/Task');
 const Intern = require('../models/Intern');
-const { sendTaskAssignmentEmail } = require('../config/emailService');
+const { sendTaskAssignmentEmail, sendEmail } = require('../config/emailService');
 
 // Admin: Create and assign task
 exports.createAndAssignTask = async (req, res) => {
@@ -89,6 +89,7 @@ exports.getAllTasks = async (req, res) => {
   try {
     const tasks = await Task.find()
       .populate('assignedTo', 'name email internId')
+      .populate('teamMembers', 'name email internId mobile studentType')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -130,6 +131,20 @@ exports.approveTask = async (req, res) => {
     task.status = 'Completed';
     task.completedAt = new Date();
     task.hasUnreadFeedback = false;
+    // For team tasks: auto-post approval as a reply to the submission message
+    if (task.isTeamTask) {
+      const submissionMsg = [...task.teamMessages].reverse().find(m =>
+        m.message && m.message.includes('submitted this task for admin review')
+      );
+      task.teamMessages.push({
+        message: '✅ Task Approved! Great work team! 🎉',
+        sentBy: req.user.id,
+        senderName: 'Admin',
+        sentAt: new Date(),
+        replyToSnippet: submissionMsg ? submissionMsg.message : null,
+        replyToSenderName: submissionMsg ? submissionMsg.senderName : null
+      });
+    }
     await task.save();
 
     res.status(200).json({
@@ -176,36 +191,60 @@ exports.sendTaskFeedback = async (req, res) => {
       sentAt: new Date()
     });
 
+    // For team tasks: post feedback as a reply to the submission message
+    if (task.isTeamTask) {
+      const submissionMsg = [...task.teamMessages].reverse().find(m =>
+        m.message && m.message.includes('submitted this task for admin review')
+      );
+      task.teamMessages.push({
+        message: `🔄 Changes requested — ${message.trim()}`,
+        sentBy: req.user.id,
+        senderName: 'Admin',
+        sentAt: new Date(),
+        replyToSnippet: submissionMsg ? submissionMsg.message : null,
+        replyToSenderName: submissionMsg ? submissionMsg.senderName : null
+      });
+    }
+
     // Mark task back to In Progress and set unread flag
     task.status = 'In Progress';
     task.hasUnreadFeedback = true;
     await task.save();
 
-    // Send email notification to intern
-    const sendEmail = require('../utils/emailService');
-    const emailResult = await sendEmail(
-      task.assignedTo.email,
-      'Task Feedback - Changes Requested',
-      `
-        <h2>Changes Requested for Task</h2>
-        <p>Hi ${task.assignedTo.name},</p>
-        <p>The admin has reviewed your task and requested some changes:</p>
-        <div style="background: #f3f4f6; padding: 15px; border-left: 4px solid #f59e0b; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Task: ${task.title}</h3>
-          <p><strong>Admin's Feedback:</strong></p>
-          <p>${message}</p>
-        </div>
-        <p>Please review the feedback and make the necessary changes to your task.</p>
-        <p>You can view this task in your dashboard and update it accordingly.</p>
-        <br>
-        <p>Best regards,<br>Progrentures Team</p>
-      `
-    );
+    // Send email notification (non-blocking — don't fail the API if email fails)
+    let emailSent = false;
+    try {
+      const emailResult = await sendEmail(
+        task.assignedTo.email,
+        'Task Feedback - Changes Requested',
+        `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+              <h1 style="color: white; margin: 0; font-size: 26px;">⚠️ Changes Requested</h1>
+            </div>
+            <div style="padding: 30px; background-color: #ffffff; border-radius: 0 0 10px 10px;">
+              <p style="font-size: 16px; color: #333;">Hi <strong>${task.assignedTo.name}</strong>,</p>
+              <p style="font-size: 15px; color: #555;">The admin has reviewed your task and requested some changes:</p>
+              <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="margin-top: 0; color: #92400e;">Task: ${task.title}</h3>
+                <p style="font-weight: bold; color: #78350f;">Admin Feedback:</p>
+                <p style="color: #334155;">${message}</p>
+              </div>
+              <p style="font-size: 15px; color: #555;">Please review the feedback and make the necessary changes in your dashboard.</p>
+              <p style="margin-top: 30px; color: #666;">Best regards,<br><strong>Progrentures Team</strong></p>
+            </div>
+          </div>
+        `
+      );
+      emailSent = emailResult.success;
+    } catch (emailError) {
+      console.warn('Email notification failed (non-critical):', emailError.message);
+    }
 
     res.status(200).json({
       success: true,
       message: 'Feedback sent successfully',
-      emailSent: emailResult.success,
+      emailSent,
       task
     });
 
@@ -223,7 +262,13 @@ exports.getInternTasks = async (req, res) => {
   try {
     const internId = req.user.id;
 
-    const tasks = await Task.find({ assignedTo: internId })
+    const tasks = await Task.find({
+      $or: [
+        { assignedTo: internId },
+        { teamMembers: internId }
+      ]
+    })
+      .populate('teamMembers', 'name email internId mobile studentType')
       .sort({ deadline: 1 });
 
     res.status(200).json({
@@ -248,7 +293,11 @@ exports.updateTaskProgress = async (req, res) => {
     const { progress } = req.body;
     const internId = req.user.id;
 
-    const task = await Task.findOne({ _id: taskId, assignedTo: internId });
+    // Support both individually assigned tasks and team tasks
+    const task = await Task.findOne({
+      _id: taskId,
+      $or: [{ assignedTo: internId }, { teamMembers: internId }]
+    });
 
     if (!task) {
       return res.status(404).json({
@@ -281,6 +330,18 @@ exports.updateTaskProgress = async (req, res) => {
       task.status = 'In Progress';
     } else if (progress === 100) {
       task.status = 'Pending Approval';
+      // For team tasks: auto-post a submission message so the whole team sees it
+      if (task.isTeamTask) {
+        const submitter = await Intern.findById(internId).select('name');
+        task.teamMessages.push({
+          message: `📤 ${submitter?.name || 'Team Member'} submitted this task for admin review`,
+          sentBy: internId,
+          senderName: submitter?.name || 'Team Member',
+          sentAt: new Date(),
+          replyToSnippet: null,
+          replyToSenderName: null
+        });
+      }
     }
 
     await task.save();
@@ -412,8 +473,11 @@ exports.sendTeamMessage = async (req, res) => {
       });
     }
 
-    // Check if intern is part of the team
-    if (!task.teamMembers || !task.teamMembers.includes(internId)) {
+    // Allow both teamMembers AND assignedTo person to send messages
+    const isTeamMember = task.teamMembers && task.teamMembers.some(id => id.toString() === internId);
+    const isAssignedTo = task.assignedTo && task.assignedTo.toString() === internId;
+
+    if (!isTeamMember && !isAssignedTo) {
       return res.status(403).json({
         success: false,
         message: 'You are not part of this team'
@@ -423,17 +487,21 @@ exports.sendTeamMessage = async (req, res) => {
     // Add message to team messages
     task.teamMessages.push({
       message,
-      sentBy,
+      sentBy: req.user.id,
       senderName,
       sentAt: new Date()
     });
 
     await task.save();
 
+    // Return populated task so frontend can update in place
+    const updatedTask = await Task.findById(taskId)
+      .populate('teamMembers', 'name email internId mobile studentType');
+
     res.status(200).json({
       success: true,
       message: 'Message sent successfully',
-      task
+      task: updatedTask
     });
 
   } catch (error) {
@@ -442,5 +510,36 @@ exports.sendTeamMessage = async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+// Admin: Send broadcast message to team task
+exports.sendAdminTeamMessage = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { message, senderName } = req.body;
+
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    task.teamMessages.push({
+      message,
+      sentBy: req.user.id,
+      senderName: senderName || 'Admin',
+      sentAt: new Date()
+    });
+
+    await task.save();
+
+    const updatedTask = await Task.findById(taskId)
+      .populate('assignedTo', 'name email internId')
+      .populate('teamMembers', 'name email internId mobile studentType');
+
+    res.status(200).json({ success: true, message: 'Message sent', task: updatedTask });
+  } catch (error) {
+    console.error('Admin team message error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };

@@ -466,9 +466,9 @@ function ViewInterns({ onInternDeleted }) {
         </div>
       </div>
 
-      {/* Students Display */}
-      {filteredInterns.length === 0 ? (
-        <div className="card">
+      {/* Students Table */}
+      <div className="card">
+        {filteredInterns.length === 0 ? (
           <div
             style={{
               textAlign: "center",
@@ -476,359 +476,291 @@ function ViewInterns({ onInternDeleted }) {
               color: "#64748b",
             }}
           >
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}></div>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
             <h3 style={{ color: "#0f172a", marginBottom: "8px" }}>
               No Students Found
             </h3>
             <p>Try adjusting your filters or search query</p>
           </div>
-        </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {filteredInterns.map((student) => (
-            <div
-              key={student._id}
-              style={{
-                background: "white",
-                borderRadius: "12px",
-                padding: "20px",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
-                border: "1px solid #e2e8f0",
-                transition: "all 0.3s",
-                position: "relative",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 8px 24px rgba(0, 0, 0, 0.12)";
-                e.currentTarget.style.transform = "translateY(-4px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 2px 8px rgba(0, 0, 0, 0.06)";
-                e.currentTarget.style.transform = "translateY(0)";
-              }}
-            >
-              {/* Card Header */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "start",
-                  marginBottom: "16px",
-                }}
-              >
-                <div>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      padding: "4px 12px",
-                      background:
-                        student.studentType === "Internship"
-                          ? "#eff6ff"
-                          : "#f0fdf4",
-                      color:
-                        student.studentType === "Internship"
-                          ? "#1e40af"
-                          : "#15803d",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      fontWeight: "700",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {student.internId}
-                  </span>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      marginLeft: "8px",
-                      padding: "4px 10px",
-                      background:
-                        (student.status || "").toLowerCase() === "active"
-                          ? "#d1fae5"
-                          : "#fee2e2",
-                      color:
-                        (student.status || "").toLowerCase() === "active"
-                          ? "#065f46"
-                          : "#dc2626",
-                      borderRadius: "6px",
-                      fontSize: "11px",
-                      fontWeight: "700",
-                    }}
-                  >
-                    {student.status || "Active"}
-                  </span>
-                </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Mobile</th>
+                  <th>Type</th>
+                  <th>Domain / Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInterns.map((student, index) => (
+                  <tr key={student._id}>
+                    <td style={{ color: "#94a3b8", fontSize: "13px" }}>
+                      {index + 1}
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "3px 10px",
+                          background:
+                            student.studentType === "Internship"
+                              ? "#eff6ff"
+                              : "#f0fdf4",
+                          color:
+                            student.studentType === "Internship"
+                              ? "#1e40af"
+                              : "#15803d",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {student.internId}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: "600", color: "#0f172a" }}>
+                      {student.name}
+                    </td>
+                    <td style={{ color: "#475569", fontSize: "13px" }}>
+                      {student.email}
+                    </td>
+                    <td style={{ color: "#475569", fontSize: "13px" }}>
+                      {student.mobile || "—"}
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "3px 10px",
+                          background:
+                            student.studentType === "Internship"
+                              ? "#eff6ff"
+                              : "#fdf4ff",
+                          color:
+                            student.studentType === "Internship"
+                              ? "#2563eb"
+                              : "#7c3aed",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {student.studentType || "—"}
+                      </span>
+                    </td>
+                    <td style={{ color: "#475569", fontSize: "13px" }}>
+                      {student.domain || student.currentDesignation || "—"}
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          (student.status || "").toLowerCase() === "active"
+                            ? "status-active"
+                            : (student.status || "").toLowerCase() === "completed"
+                            ? "status-completed"
+                            : "status-inactive"
+                        }`}
+                      >
+                        {student.status
+                          ? student.status.charAt(0).toUpperCase() +
+                            student.status.slice(1)
+                          : "Active"}
+                      </span>
+                    </td>
+                    <td style={{ position: "relative" }}>
+                      <button
+                        data-menu-toggle
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMenu(student._id);
+                        }}
+                        style={{
+                          background: "#f8fafc",
+                          border: "none",
+                          borderRadius: "8px",
+                          width: "36px",
+                          height: "36px",
+                          cursor: "pointer",
+                          fontSize: "20px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#e2e8f0")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "#f8fafc")
+                        }
+                      >
+                        ⋮
+                      </button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleMenu(student._id);
-                  }}
-                  style={{
-                    background: "#f8fafc",
-                    border: "none",
-                    borderRadius: "8px",
-                    width: "36px",
-                    height: "36px",
-                    cursor: "pointer",
-                    fontSize: "20px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#e2e8f0")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "#f8fafc")
-                  }
-                >
-                  ⋮
-                </button>
-              </div>
+                      {openMenuId === student._id && (
+                        <div
+                          data-menu
+                          style={{
+                            position: "absolute",
+                            right: "40px",
+                            top: "0",
+                            background: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "12px",
+                            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                            zIndex: 1000,
+                            minWidth: "180px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <button
+                            onClick={() => handleViewProfile(student)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "white",
+                              border: "none",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              color: "#0f172a",
+                              transition: "background 0.2s",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.background = "#f9fafb")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.target.style.background = "white")
+                            }
+                          >
+                            View Profile
+                          </button>
 
-              {/* Student Info */}
-              <h3
-                style={{
-                  margin: "0 0 12px 0",
-                  fontSize: "18px",
-                  fontWeight: "700",
-                  color: "#0f172a",
-                }}
-              >
-                {student.name}
-              </h3>
+                          <button
+                            onClick={() => handleEdit(student)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "white",
+                              border: "none",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              color: "#0f172a",
+                              transition: "background 0.2s",
+                              borderTop: "1px solid #f3f4f6",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.background = "#f9fafb")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.target.style.background = "white")
+                            }
+                          >
+                            Edit Details
+                          </button>
 
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    fontSize: "14px",
-                    color: "#64748b",
-                  }}
-                >
-                  <span>Email:</span>
-                  <span style={{ wordBreak: "break-all" }}>
-                    {student.email}
-                  </span>
-                </div>
+                          <button
+                            onClick={() => handleViewCertificates(student)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "white",
+                              border: "none",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              color: "#0f172a",
+                              transition: "background 0.2s",
+                              borderTop: "1px solid #f3f4f6",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.background = "#f9fafb")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.target.style.background = "white")
+                            }
+                          >
+                            Certificates
+                          </button>
 
-                {student.mobile && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      color: "#64748b",
-                    }}
-                  >
-                    <span>Mobile:</span>
-                    <span>{student.mobile}</span>
-                  </div>
-                )}
+                          <button
+                            onClick={() => handleStatusToggle(student)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "white",
+                              border: "none",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              color:
+                                (student.status || "").toLowerCase() ===
+                                "active"
+                                  ? "#dc2626"
+                                  : "#059669",
+                              transition: "background 0.2s",
+                              borderTop: "1px solid #f3f4f6",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.background = "#f9fafb")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.target.style.background = "white")
+                            }
+                          >
+                            {(student.status || "").toLowerCase() === "active"
+                              ? "Mark Inactive"
+                              : "Mark Active"}
+                          </button>
 
-                {(student.domain || student.currentDesignation) && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      color: "#64748b",
-                    }}
-                  >
-                    <span>Role:</span>
-                    <span>{student.domain || student.currentDesignation}</span>
-                  </div>
-                )}
-
-                {student.duration && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      color: "#64748b",
-                    }}
-                  >
-                    <span>Duration:</span>
-                    <span>{student.duration}</span>
-                  </div>
-                )}
-
-                {student.assignedTrainer && (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      color: "#64748b",
-                    }}
-                  >
-                    <span> Trainer:</span>
-                    <span style={{ fontWeight: "600", color: "#059669" }}>
-                      {student.assignedTrainer.name}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Dropdown Menu */}
-              {openMenuId === student._id && (
-                <div
-                  data-menu
-                  style={{
-                    position: "absolute",
-                    right: "20px",
-                    top: "60px",
-                    background: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-                    zIndex: 1000,
-                    minWidth: "180px",
-                    overflow: "hidden",
-                  }}
-                >
-                  <button
-                    onClick={() => handleViewProfile(student)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "white",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      color: "#0f172a",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.background = "#f9fafb")
-                    }
-                    onMouseLeave={(e) => (e.target.style.background = "white")}
-                  >
-                    View Profile
-                  </button>
-
-                  <button
-                    onClick={() => handleEdit(student)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "white",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      color: "#0f172a",
-                      transition: "background 0.2s",
-                      borderTop: "1px solid #f3f4f6",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.background = "#f9fafb")
-                    }
-                    onMouseLeave={(e) => (e.target.style.background = "white")}
-                  >
-                    Edit Details
-                  </button>
-
-                  <button
-                    onClick={() => handleViewCertificates(student)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "white",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      color: "#0f172a",
-                      transition: "background 0.2s",
-                      borderTop: "1px solid #f3f4f6",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.background = "#f9fafb")
-                    }
-                    onMouseLeave={(e) => (e.target.style.background = "white")}
-                  >
-                    Certificates
-                  </button>
-
-                  <button
-                    onClick={() => handleStatusToggle(student)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "white",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      color:
-                        (student.status || "").toLowerCase() === "active"
-                          ? "#dc2626"
-                          : "#059669",
-                      transition: "background 0.2s",
-                      borderTop: "1px solid #f3f4f6",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.background = "#f9fafb")
-                    }
-                    onMouseLeave={(e) => (e.target.style.background = "white")}
-                  >
-                    {(student.status || "").toLowerCase() === "active"
-                      ? "Mark Inactive"
-                      : "Mark Active"}
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(student._id, student.name)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "white",
-                      border: "none",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      color: "#dc2626",
-                      transition: "background 0.2s",
-                      borderTop: "1px solid #f3f4f6",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.background = "#fef2f2")
-                    }
-                    onMouseLeave={(e) => (e.target.style.background = "white")}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                          <button
+                            onClick={() =>
+                              handleDelete(student._id, student.name)
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "white",
+                              border: "none",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              color: "#dc2626",
+                              transition: "background 0.2s",
+                              borderTop: "1px solid #f3f4f6",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.target.style.background = "#fef2f2")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.target.style.background = "white")
+                            }
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* View Profile Modal - Enhanced */}
       {showProfileModal &&
@@ -881,7 +813,8 @@ function ViewInterns({ onInternDeleted }) {
 
               {/* Content Body */}
               <div className="profile-body">
-                {/* Contact Information Section */}
+
+                {/* Contact Information */}
                 <div className="profile-section">
                   <h3 className="profile-section-title">
                     <span className="profile-section-bar"></span>
@@ -890,20 +823,52 @@ function ViewInterns({ onInternDeleted }) {
                   <div className="profile-info-grid">
                     <div className="profile-info-card">
                       <div className="profile-info-label">Email Address</div>
-                      <div className="profile-info-value">
-                        {selectedStudent.email}
-                      </div>
+                      <div className="profile-info-value">{selectedStudent.email}</div>
                     </div>
                     <div className="profile-info-card">
                       <div className="profile-info-label">Mobile Number</div>
+                      <div className="profile-info-value">{selectedStudent.mobile || "Not provided"}</div>
+                    </div>
+                    <div className="profile-info-card">
+                      <div className="profile-info-label">Student ID</div>
+                      <div className="profile-info-value">{selectedStudent.internId}</div>
+                    </div>
+                    <div className="profile-info-card">
+                      <div className="profile-info-label">Registered On</div>
                       <div className="profile-info-value">
-                        {selectedStudent.mobile || "Not provided"}
+                        {selectedStudent.createdAt
+                          ? new Date(selectedStudent.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                          : "—"}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Internship Details (if applicable) */}
+                {/* Assigned Trainer */}
+                {selectedStudent.assignedTrainer && (
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar"></span>
+                      Assigned Trainer
+                    </h3>
+                    <div className="profile-info-grid">
+                      <div className="profile-info-card">
+                        <div className="profile-info-label">Trainer Name</div>
+                        <div className="profile-info-value" style={{ color: "#059669", fontWeight: "700" }}>
+                          {selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}
+                        </div>
+                      </div>
+                      {selectedStudent.assignedTrainer.email && (
+                        <div className="profile-info-card">
+                          <div className="profile-info-label">Trainer Email</div>
+                          <div className="profile-info-value">{selectedStudent.assignedTrainer.email}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Internship Details */}
                 {selectedStudent.studentType === "Internship" && (
                   <div className="profile-section">
                     <h3 className="profile-section-title">
@@ -912,50 +877,26 @@ function ViewInterns({ onInternDeleted }) {
                     </h3>
                     <div className="profile-details-grid">
                       <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Domain
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.domain || "Not specified"}
-                        </div>
+                        <div className="profile-detail-label color-indigo">Domain</div>
+                        <div className="profile-detail-value">{selectedStudent.domain || "Not specified"}</div>
                       </div>
                       <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Duration
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.duration || "Not specified"}
-                        </div>
+                        <div className="profile-detail-label color-indigo">Duration</div>
+                        <div className="profile-detail-value">{selectedStudent.duration || "Not specified"}</div>
                       </div>
                       <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Joining Date
-                        </div>
+                        <div className="profile-detail-label color-success">Joining Date</div>
                         <div className="profile-detail-value">
                           {selectedStudent.joiningDate
-                            ? new Date(
-                                selectedStudent.joiningDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
+                            ? new Date(selectedStudent.joiningDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                             : "Not set"}
                         </div>
                       </div>
                       <div className="profile-detail-card type-warning">
-                        <div className="profile-detail-label color-warning">
-                          Ending Date
-                        </div>
+                        <div className="profile-detail-label color-warning">Ending Date</div>
                         <div className="profile-detail-value">
                           {selectedStudent.endingDate
-                            ? new Date(
-                                selectedStudent.endingDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
+                            ? new Date(selectedStudent.endingDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
                             : "Not set"}
                         </div>
                       </div>
@@ -963,7 +904,7 @@ function ViewInterns({ onInternDeleted }) {
                   </div>
                 )}
 
-                {/* SMS Program Details (if applicable) */}
+                {/* SMS Program Details */}
                 {selectedStudent.studentType === "SMS Program" && (
                   <div className="profile-section">
                     <h3 className="profile-section-title">
@@ -972,76 +913,116 @@ function ViewInterns({ onInternDeleted }) {
                     </h3>
                     <div className="profile-details-grid">
                       <div className="profile-detail-card type-pink">
-                        <div className="profile-detail-label color-pink">
-                          Gender
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.gender || "Not specified"}
-                        </div>
+                        <div className="profile-detail-label color-pink">Gender</div>
+                        <div className="profile-detail-value">{selectedStudent.gender || "Not specified"}</div>
                       </div>
                       <div className="profile-detail-card type-pink">
-                        <div className="profile-detail-label color-pink">
-                          Current Designation
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.currentDesignation ||
-                            "Not specified"}
+                        <div className="profile-detail-label color-pink">Current Designation</div>
+                        <div className="profile-detail-value">{selectedStudent.currentDesignation || "Not specified"}</div>
+                      </div>
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">Payment Done By</div>
+                        <div className="profile-detail-value">{selectedStudent.paymentDoneBy || "Not specified"}</div>
+                      </div>
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">Transaction ID</div>
+                        <div className="profile-detail-value" style={{ fontFamily: "monospace", fontSize: "13px" }}>
+                          {selectedStudent.transactionId || "Not provided"}
                         </div>
                       </div>
+                      {selectedStudent.dateOfPayment && (
+                        <div className="profile-detail-card type-success">
+                          <div className="profile-detail-label color-success">Date of Payment</div>
+                          <div className="profile-detail-value">
+                            {new Date(selectedStudent.dateOfPayment).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                          </div>
+                        </div>
+                      )}
+                      {selectedStudent.joiningDate && (
+                        <div className="profile-detail-card type-warning">
+                          <div className="profile-detail-label color-warning">Joining Date</div>
+                          <div className="profile-detail-value">
+                            {new Date(selectedStudent.joiningDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-
-                    {/* Payment Information */}
-                    {(selectedStudent.paymentDoneBy ||
-                      selectedStudent.transactionId) && (
-                      <div className="profile-subsection">
-                        <h4 className="profile-subsection-title">
-                          Payment Information
-                        </h4>
-                        <div className="profile-info-grid">
-                          <div className="profile-info-card">
-                            <div className="profile-info-label">
-                              Payment Done By
-                            </div>
-                            <div className="profile-info-value">
-                              {selectedStudent.paymentDoneBy || "Not specified"}
-                            </div>
-                          </div>
-                          <div className="profile-info-card">
-                            <div className="profile-info-label">
-                              Transaction ID
-                            </div>
-                            <div
-                              className="profile-info-value"
-                              style={{ fontFamily: "monospace" }}
-                            >
-                              {selectedStudent.transactionId || "Not provided"}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
+
+                {/* Documents / Certificates */}
+                <div className="profile-section">
+                  <h3 className="profile-section-title">
+                    <span className="profile-section-bar"></span>
+                    Documents &amp; Certificates
+                  </h3>
+                  <div style={{ display: "grid", gap: "10px" }}>
+                    {[
+                      { key: "offerLetter",             label: "Offer Letter" },
+                      { key: "welcomeLetter",           label: "Welcome Letter" },
+                      { key: "paymentReceipt",          label: "Payment Receipt" },
+                      { key: "completionCertificate",   label: "Completion Certificate" },
+                      { key: "experienceLetter",        label: "Experience Letter" },
+                    ].map(({ key, label }) => (
+                      <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>{label}</div>
+                          {selectedStudent.documents?.[key] && (
+                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                              Uploaded: {new Date(selectedStudent.documents[key].uploadedAt || Date.now()).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                        {selectedStudent.documents?.[key] ? (
+                          <a
+                            href={`http://localhost:5000/uploads/students/${selectedStudent.documents[key].filename}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ padding: "6px 14px", background: "#10b981", color: "white", textDecoration: "none", borderRadius: "6px", fontSize: "13px", fontWeight: "600" }}
+                          >
+                            View
+                          </a>
+                        ) : (
+                          <span style={{ fontSize: "12px", color: "#94a3b8" }}>Not uploaded</span>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Other Certificates */}
+                    {(selectedStudent.documents?.otherCertificates || []).map((cert, i) => (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>{cert.name || `Certificate ${i + 1}`}</div>
+                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                            Uploaded: {new Date(cert.uploadedAt || Date.now()).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <a
+                          href={`http://localhost:5000/uploads/students/${cert.filename}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ padding: "6px 14px", background: "#10b981", color: "white", textDecoration: "none", borderRadius: "6px", fontSize: "13px", fontWeight: "600" }}
+                        >
+                          View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Quick Actions */}
                 <div className="profile-actions">
                   <button
                     className="profile-btn profile-btn-primary"
-                    onClick={() => {
-                      setShowProfileModal(false);
-                      handleEdit(selectedStudent);
-                    }}
+                    onClick={() => { setShowProfileModal(false); handleEdit(selectedStudent); }}
                   >
                     Edit Profile
                   </button>
                   <button
                     className="profile-btn profile-btn-secondary"
-                    onClick={() => {
-                      setShowProfileModal(false);
-                      handleViewCertificates(selectedStudent);
-                    }}
+                    onClick={() => { setShowProfileModal(false); handleViewCertificates(selectedStudent); }}
                   >
-                    View Certificates
+                    Manage Certificates
                   </button>
                   <button
                     className="profile-btn profile-btn-ghost"

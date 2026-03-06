@@ -132,24 +132,18 @@ function CreateTask({ onTaskCreated }) {
         
         response = await taskAPI.createTask(taskFormData);
       } else {
-        // Team task - create task for each member with file
-        const taskPromises = selectedTeamMembers.map(internId => {
-          const taskFormData = new FormData();
-          taskFormData.append('title', formData.title);
-          taskFormData.append('description', formData.description);
-          taskFormData.append('deadline', formData.deadline);
-          taskFormData.append('assignedTo', internId);
-          taskFormData.append('isTeamTask', 'true');
-          taskFormData.append('teamMembers', JSON.stringify(selectedTeamMembers));
-          if (selectedFile) {
-            taskFormData.append('taskDocument', selectedFile);
-          }
-          
-          console.log('Creating team task for intern:', internId);
-          return taskAPI.createTask(taskFormData);
-        });
-        await Promise.all(taskPromises);
-        response = { data: { success: true } };
+        // Team task - create ONE shared task for the whole team
+        const taskFormData = new FormData();
+        taskFormData.append('title', formData.title);
+        taskFormData.append('description', formData.description);
+        taskFormData.append('deadline', formData.deadline);
+        taskFormData.append('assignedTo', selectedTeamMembers[0]); // primary member
+        taskFormData.append('isTeamTask', 'true');
+        taskFormData.append('teamMembers', JSON.stringify(selectedTeamMembers));
+        if (selectedFile) {
+          taskFormData.append('taskDocument', selectedFile);
+        }
+        response = await taskAPI.createTask(taskFormData);
       }
       
       if (response.data.success) {

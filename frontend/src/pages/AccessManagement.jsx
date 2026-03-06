@@ -4,8 +4,7 @@ import { adminAPI } from "../services/api";
 function AccessManagement() {
   const [trainers, setTrainers] = useState([]);
   const [students, setStudents] = useState([]);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showAssignForm, setShowAssignForm] = useState(false);
+  const [activeTab, setActiveTab] = useState("list");
   const [selectedTrainer, setSelectedTrainer] = useState("");
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -85,7 +84,7 @@ function AccessManagement() {
           password: "",
           role: "trainer",
         });
-        setShowAddForm(false);
+        setActiveTab("list");
         fetchData();
       }
     } catch (err) {
@@ -142,7 +141,7 @@ function AccessManagement() {
         );
         setSelectedTrainer("");
         setSelectedStudents([]);
-        setShowAssignForm(false);
+        setActiveTab("list");
         fetchData();
       }
     } catch (err) {
@@ -165,240 +164,402 @@ function AccessManagement() {
     }
   };
 
+  const totalAssigned = trainers.reduce(
+    (sum, t) => sum + (t.assignedStudents?.length || 0),
+    0,
+  );
+  const activeCount = trainers.filter(
+    (t) => (t.status || "").toLowerCase() === "active",
+  ).length;
+  const hrCount = trainers.filter((t) => t.role === "hr").length;
+
   return (
     <>
+      {/* Page Header */}
       <div className="content-header">
         <h1>Access Management</h1>
-        <p>Manage trainers and user access permissions</p>
+        <p>Manage trainers, HR staff, and student assignments</p>
       </div>
 
-      {/* Action Buttons */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-        <button
-          onClick={() => {
-            setShowAddForm(!showAddForm);
-            setShowAssignForm(false);
-          }}
+      {/* Stats Row */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+        }}
+      >
+        <div
+          className="card"
           style={{
-            padding: "12px 24px",
-            background: "#3b82f6",
-            color: "white",
+            padding: "20px",
+            background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
             border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: 600,
           }}
         >
-          {showAddForm ? "Cancel" : " Add Trainer"}
-        </button>
-
-        <button
-          onClick={() => {
-            setShowAssignForm(!showAssignForm);
-            setShowAddForm(false);
-          }}
+          <div style={{ fontSize: "13px", color: "#0369a1", marginBottom: "4px" }}>
+            Total Trainers
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0c4a6e" }}>
+            {trainers.length}
+          </div>
+        </div>
+        <div
+          className="card"
           style={{
-            padding: "12px 24px",
-            background: "#10b981",
-            color: "white",
+            padding: "20px",
+            background: "linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%)",
             border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: 600,
           }}
         >
-          {showAssignForm ? "Cancel" : "Assign Students to Trainer"}
-        </button>
+          <div style={{ fontSize: "13px", color: "#7e22ce", marginBottom: "4px" }}>
+            HR Staff
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#581c87" }}>
+            {hrCount}
+          </div>
+        </div>
+        <div
+          className="card"
+          style={{
+            padding: "20px",
+            background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+            border: "none",
+          }}
+        >
+          <div style={{ fontSize: "13px", color: "#15803d", marginBottom: "4px" }}>
+            Active
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#14532d" }}>
+            {activeCount}
+          </div>
+        </div>
+        <div
+          className="card"
+          style={{
+            padding: "20px",
+            background: "linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)",
+            border: "none",
+          }}
+        >
+          <div style={{ fontSize: "13px", color: "#a16207", marginBottom: "4px" }}>
+            Students Assigned
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#713f12" }}>
+            {totalAssigned}
+          </div>
+        </div>
       </div>
 
-      {/* Messages */}
+      {/* Alert Messages */}
       {error && (
-        <div className="error-message" style={{ marginBottom: "15px" }}>
+        <div
+          style={{
+            padding: "12px 16px",
+            marginBottom: "16px",
+            background: "#fee2e2",
+            border: "1px solid #fecaca",
+            borderRadius: "8px",
+            color: "#dc2626",
+            fontSize: "14px",
+            fontWeight: 500,
+          }}
+        >
           {error}
         </div>
       )}
-
       {success && (
-        <div className="success-message" style={{ marginBottom: "15px" }}>
+        <div
+          style={{
+            padding: "12px 16px",
+            marginBottom: "16px",
+            background: "#dcfce7",
+            border: "1px solid #bbf7d0",
+            borderRadius: "8px",
+            color: "#166534",
+            fontSize: "14px",
+            fontWeight: 500,
+          }}
+        >
           {success}
         </div>
       )}
 
-      {/* Add Trainer Form */}
-      {showAddForm && (
+      {/* Tab Navigation */}
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          marginBottom: "24px",
+          flexWrap: "wrap",
+        }}
+      >
+        {[
+          { key: "list", label: "👥 Trainers List" },
+          { key: "add", label: "➕ Add Trainer" },
+          { key: "assign", label: "🔗 Assign Students" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: 600,
+              transition: "all 0.2s",
+              background:
+                activeTab === tab.key
+                  ? "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
+                  : "#f1f5f9",
+              color: activeTab === tab.key ? "white" : "#64748b",
+              boxShadow:
+                activeTab === tab.key
+                  ? "0 2px 8px rgba(59,130,246,0.35)"
+                  : "none",
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── ADD TRAINER TAB ── */}
+      {activeTab === "add" && (
         <div className="card">
-          <h3>Add New Trainer</h3>
-
-          <form onSubmit={handleAddTrainer} style={{ marginTop: "20px" }}>
-            {/* Name */}
-            <div className="form-group">
-              <label>Full Name *</label>
-              <input
-                type="text"
-                name="name"
-                value={trainerFormData.name}
-                onChange={handleTrainerFormChange}
-                placeholder="Enter trainer's full name"
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                }}
-              />
-            </div>
-
-            {/* Email */}
-            <div className="form-group">
-              <label>Email Address *</label>
-              <input
-                type="email"
-                name="email"
-                value={trainerFormData.email}
-                onChange={handleTrainerFormChange}
-                placeholder="Enter email address"
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                }}
-              />
-            </div>
-
-            {/* Mobile */}
-            <div className="form-group">
-              <label>Mobile Number *</label>
-              <input
-                type="tel"
-                name="mobile"
-                value={trainerFormData.mobile}
-                onChange={handleTrainerFormChange}
-                placeholder="Enter mobile number"
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                }}
-              />
-            </div>
-
-            {/* Password */}
-            <div className="form-group">
-              <label>Password *</label>
-              <input
-                type="password"
-                name="password"
-                value={trainerFormData.password}
-                onChange={handleTrainerFormChange}
-                placeholder="Set a password"
-                required
-                minLength="6"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                }}
-              />
-            </div>
-
-            {/* Role */}
-            <div className="form-group">
-              <label>Role *</label>
-              <select
-                name="role"
-                value={trainerFormData.role}
-                onChange={handleTrainerFormChange}
-                required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                }}
-              >
-                <option value="trainer">Trainer</option>
-                <option value="hr">HR</option>
-              </select>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
+          {/* Card header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "24px",
+              paddingBottom: "16px",
+              borderBottom: "1px solid #f1f5f9",
+            }}
+          >
+            <div
               style={{
-                padding: "12px 24px",
-                background: loading ? "#ccc" : "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontSize: "14px",
-                fontWeight: 600,
+                width: "42px",
+                height: "42px",
+                borderRadius: "10px",
+                background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                flexShrink: 0,
               }}
             >
-              {loading ? "Adding..." : "Add Trainer"}
-            </button>
+              👤
+            </div>
+            <div>
+              <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>
+                Add New Trainer
+              </h3>
+              <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                Create login credentials for a new trainer or HR staff
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAddTrainer}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div className="form-group">
+                <label>Full Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={trainerFormData.name}
+                  onChange={handleTrainerFormChange}
+                  placeholder="Enter trainer's full name"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Email Address *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={trainerFormData.email}
+                  onChange={handleTrainerFormChange}
+                  placeholder="Enter email address"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Mobile Number *</label>
+                <input
+                  type="tel"
+                  name="mobile"
+                  value={trainerFormData.mobile}
+                  onChange={handleTrainerFormChange}
+                  placeholder="Enter mobile number"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={trainerFormData.password}
+                  onChange={handleTrainerFormChange}
+                  placeholder="Set a password"
+                  required
+                  minLength="6"
+                />
+              </div>
+              <div className="form-group">
+                <label>Role *</label>
+                <select
+                  name="role"
+                  value={trainerFormData.role}
+                  onChange={handleTrainerFormChange}
+                  required
+                >
+                  <option value="trainer">Trainer</option>
+                  <option value="hr">HR</option>
+                </select>
+              </div>
+            </div>
+
+            <div
+              style={{ marginTop: "24px", display: "flex", gap: "12px" }}
+            >
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "12px 28px",
+                  background: loading
+                    ? "#94a3b8"
+                    : "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  boxShadow: loading
+                    ? "none"
+                    : "0 2px 8px rgba(16,185,129,0.35)",
+                }}
+              >
+                {loading ? "Adding..." : "✓ Add Trainer"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("list")}
+                style={{
+                  padding: "12px 24px",
+                  background: "#f1f5f9",
+                  color: "#64748b",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
 
-      {/* Assign Students Form */}
-      {showAssignForm && (
+      {/* ── ASSIGN STUDENTS TAB ── */}
+      {activeTab === "assign" && (
         <div className="card">
-          <h3>Assign Students to Trainer</h3>
+          {/* Card header */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "24px",
+              paddingBottom: "16px",
+              borderBottom: "1px solid #f1f5f9",
+            }}
+          >
+            <div
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "10px",
+                background:
+                  "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "18px",
+                flexShrink: 0,
+              }}
+            >
+              🔗
+            </div>
+            <div>
+              <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>
+                Assign Students to Trainer
+              </h3>
+              <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                Connect students with their assigned trainer
+              </p>
+            </div>
+          </div>
 
-          <form onSubmit={handleAssignStudents} style={{ marginTop: "20px" }}>
-            {/* Select Trainer */}
-            <div className="form-group">
+          <form onSubmit={handleAssignStudents}>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
               <label>Select Trainer *</label>
               <select
                 value={selectedTrainer}
                 onChange={(e) => setSelectedTrainer(e.target.value)}
                 required
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "6px",
-                  border: "1px solid #ddd",
-                  fontSize: "14px",
-                }}
               >
                 <option value="">Choose a trainer...</option>
                 {trainers.map((trainer) => (
                   <option key={trainer._id} value={trainer._id}>
-                    {trainer.name}
+                    {trainer.name}{" "}
+                    ({trainer.role === "hr" ? "HR" : "Trainer"})
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Select Students */}
             <div className="form-group">
-              <label>Select Students *</label>
+              <label>
+                Select Students *{" "}
+                <span style={{ color: "#64748b", fontWeight: 400 }}>
+                  — {selectedStudents.length} selected
+                </span>
+              </label>
               <div
                 style={{
-                  maxHeight: "300px",
+                  maxHeight: "320px",
                   overflowY: "auto",
-                  border: "1px solid #ddd",
-                  borderRadius: "6px",
-                  padding: "10px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  padding: "8px",
                 }}
               >
                 {students.length === 0 ? (
-                  <p style={{ color: "#6b7280", textAlign: "center" }}>
+                  <p
+                    style={{
+                      textAlign: "center",
+                      color: "#64748b",
+                      padding: "24px 0",
+                    }}
+                  >
                     No students available
                   </p>
                 ) : (
@@ -408,194 +569,435 @@ function AccessManagement() {
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        padding: "8px",
+                        gap: "10px",
+                        padding: "10px 12px",
+                        borderRadius: "6px",
                         cursor: "pointer",
-                        borderRadius: "4px",
-                        marginBottom: "5px",
                         background: selectedStudents.includes(student._id)
                           ? "#eff6ff"
                           : "transparent",
+                        marginBottom: "2px",
+                        transition: "background 0.15s",
                       }}
                     >
                       <input
                         type="checkbox"
                         checked={selectedStudents.includes(student._id)}
-                        onChange={() => handleStudentSelection(student._id)}
-                        style={{ marginRight: "10px" }}
+                        onChange={() =>
+                          handleStudentSelection(student._id)
+                        }
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          accentColor: "#3b82f6",
+                          flexShrink: 0,
+                        }}
                       />
-                      <span>
-                        {student.internId} - {student.name} ({student.email})
-                      </span>
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "50%",
+                          background:
+                            "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "white",
+                          fontSize: "13px",
+                          fontWeight: 700,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {student.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            color: "#0f172a",
+                            fontSize: "14px",
+                          }}
+                        >
+                          {student.name}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#64748b" }}>
+                          {student.internId} · {student.email}
+                        </div>
+                      </div>
                     </label>
                   ))
                 )}
               </div>
-              <small
-                style={{
-                  color: "#666",
-                  fontSize: "12px",
-                  marginTop: "5px",
-                  display: "block",
-                }}
-              >
-                Selected: {selectedStudents.length} student(s)
-              </small>
             </div>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: "12px 24px",
-                background: loading ? "#ccc" : "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
+            <div
+              style={{ marginTop: "24px", display: "flex", gap: "12px" }}
             >
-              {loading ? "Assigning..." : "Assign Students"}
-            </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "12px 28px",
+                  background: loading
+                    ? "#94a3b8"
+                    : "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  boxShadow: loading
+                    ? "none"
+                    : "0 2px 8px rgba(16,185,129,0.35)",
+                }}
+              >
+                {loading ? "Assigning..." : "✓ Assign Students"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("list")}
+                style={{
+                  padding: "12px 24px",
+                  background: "#f1f5f9",
+                  color: "#64748b",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       )}
 
-      {/* Trainers List */}
-      <div className="card">
-        <h3>Current Trainers</h3>
-        {trainers.length === 0 ? (
+      {/* ── TRAINERS LIST TAB ── */}
+      {activeTab === "list" && (
+        <div className="card">
+          {/* Card header */}
           <div
             style={{
-              marginTop: "20px",
-              padding: "20px",
-              background: "#f9fafb",
-              borderRadius: "8px",
-              textAlign: "center",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "20px",
+              paddingBottom: "16px",
+              borderBottom: "1px solid #f1f5f9",
+              flexWrap: "wrap",
+              gap: "12px",
             }}
           >
-            <p style={{ color: "#6b7280" }}>
-              No trainers added yet. Add your first trainer above!
-            </p>
+            <div
+              style={{ display: "flex", alignItems: "center", gap: "10px" }}
+            >
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "8px",
+                  background:
+                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "16px",
+                }}
+              >
+                👥
+              </div>
+              <h3 style={{ margin: 0, color: "#0f172a", fontSize: "17px" }}>
+                Trainers & HR Staff
+              </h3>
+            </div>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <button
+                onClick={() => setActiveTab("add")}
+                style={{
+                  padding: "9px 18px",
+                  background:
+                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  boxShadow: "0 2px 6px rgba(59,130,246,0.3)",
+                }}
+              >
+                + Add Trainer
+              </button>
+              <button
+                onClick={() => setActiveTab("assign")}
+                style={{
+                  padding: "9px 18px",
+                  background:
+                    "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  boxShadow: "0 2px 6px rgba(16,185,129,0.3)",
+                }}
+              >
+                🔗 Assign Students
+              </button>
+            </div>
           </div>
-        ) : (
-          <div style={{ overflowX: "auto", marginTop: "20px" }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Mobile</th>
-                  <th>Role</th>
-                  <th>Assigned Students</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {trainers.map((trainer) => (
-                  <tr key={trainer._id}>
-                    <td>{trainer.name}</td>
-                    <td>{trainer.email}</td>
-                    <td>{trainer.mobile}</td>
-                    <td style={{ textTransform: "capitalize" }}>
-                      {trainer.role}
-                    </td>
-                    <td>{trainer.assignedStudents?.length || 0}</td>
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          trainer.status === "Active"
-                            ? "status-active"
-                            : "status-inactive"
-                        }`}
-                      >
-                        {trainer.status}
-                      </span>
-                    </td>
-                    <td style={{ position: "relative" }}>
-                      <button
-                        onClick={() =>
-                          setOpenMenuId(
-                            openMenuId === trainer._id ? null : trainer._id,
-                          )
-                        }
-                        style={{
-                          background: "#f8fafc",
-                          border: "none",
-                          borderRadius: "8px",
-                          width: "36px",
-                          height: "36px",
-                          cursor: "pointer",
-                          fontSize: "20px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          transition: "all 0.2s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = "#e2e8f0")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "#f8fafc")
-                        }
-                      >
-                        ⋮
-                      </button>
 
-                      {openMenuId === trainer._id && (
+          {trainers.length === 0 ? (
+            <div
+              style={{ textAlign: "center", padding: "48px 20px" }}
+            >
+              <div style={{ fontSize: "52px", marginBottom: "12px" }}>
+                👤
+              </div>
+              <h3
+                style={{
+                  color: "#64748b",
+                  margin: "0 0 8px 0",
+                  fontWeight: 600,
+                }}
+              >
+                No trainers yet
+              </h3>
+              <p
+                style={{
+                  color: "#94a3b8",
+                  margin: "0 0 20px 0",
+                  fontSize: "14px",
+                }}
+              >
+                Add your first trainer to get started
+              </p>
+              <button
+                onClick={() => setActiveTab("add")}
+                style={{
+                  padding: "10px 24px",
+                  background:
+                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                + Add Trainer
+              </button>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Trainer</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Role</th>
+                    <th>Assigned Students</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trainers.map((trainer) => (
+                    <tr key={trainer._id}>
+                      {/* Name + Avatar */}
+                      <td>
                         <div
                           style={{
-                            position: "absolute",
-                            right: "40px",
-                            top: "0",
-                            background: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "8px",
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                            zIndex: 1000,
-                            minWidth: "160px",
-                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
                           }}
                         >
-                          <button
-                            onClick={() => {
-                              setSelectedTrainerDetails(trainer);
-                              setOpenMenuId(null);
-                            }}
+                          <div
                             style={{
-                              width: "100%",
-                              padding: "10px 14px",
-                              background: "white",
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              background:
+                                trainer.role === "hr"
+                                  ? "linear-gradient(135deg, #a855f7, #7c3aed)"
+                                  : "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "white",
+                              fontWeight: 700,
                               fontSize: "14px",
-                              fontWeight: "500",
-                              color: "#0f172a",
-                              transition: "background 0.2s",
+                              flexShrink: 0,
                             }}
-                            onMouseEnter={(e) =>
-                              (e.target.style.background = "#f9fafb")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.target.style.background = "white")
-                            }
                           >
-                            View Details
-                          </button>
+                            {trainer.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: "#0f172a",
+                            }}
+                          >
+                            {trainer.name}
+                          </span>
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                      </td>
+                      <td style={{ color: "#64748b" }}>{trainer.email}</td>
+                      <td style={{ color: "#64748b" }}>{trainer.mobile}</td>
+                      <td>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            padding: "3px 10px",
+                            borderRadius: "12px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            background:
+                              trainer.role === "hr"
+                                ? "#fdf4ff"
+                                : "#eff6ff",
+                            color:
+                              trainer.role === "hr"
+                                ? "#7e22ce"
+                                : "#1d4ed8",
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {trainer.role === "hr" ? "HR" : "Trainer"}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "20px",
+                              height: "20px",
+                              borderRadius: "50%",
+                              background: "#dbeafe",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "11px",
+                            }}
+                          >
+                            👤
+                          </span>
+                          {trainer.assignedStudents?.length || 0}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            (trainer.status || "").toLowerCase() === "active"
+                              ? "status-active"
+                              : "status-inactive"
+                          }`}
+                        >
+                          {trainer.status}
+                        </span>
+                      </td>
+                      <td style={{ position: "relative" }}>
+                        <button
+                          onClick={() =>
+                            setOpenMenuId(
+                              openMenuId === trainer._id
+                                ? null
+                                : trainer._id,
+                            )
+                          }
+                          style={{
+                            background: "#f8fafc",
+                            border: "none",
+                            borderRadius: "8px",
+                            width: "36px",
+                            height: "36px",
+                            cursor: "pointer",
+                            fontSize: "20px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = "#e2e8f0")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "#f8fafc")
+                          }
+                        >
+                          ⋮
+                        </button>
+
+                        {openMenuId === trainer._id && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              right: "40px",
+                              top: "0",
+                              background: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                              zIndex: 1000,
+                              minWidth: "160px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <button
+                              onClick={() => {
+                                setSelectedTrainerDetails(trainer);
+                                setOpenMenuId(null);
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: "10px 14px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#0f172a",
+                                transition: "background 0.2s",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#f9fafb")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background = "white")
+                              }
+                            >
+                              👁 View Details
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Credentials Modal - Shows after adding trainer */}
       {showCredentialsModal && newTrainerCredentials && (

@@ -13,6 +13,7 @@ function TrainerDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [studentFilter, setStudentFilter] = useState("all");
+  const [studentSearch, setStudentSearch] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -370,32 +371,111 @@ function TrainerDashboard() {
             <>
               <div className="premium-page-header">
                 <div className="header-left">
-                  <h1>Assigned Students List</h1>
+                  <h1>Assigned Students</h1>
                   <p className="header-subtitle">
-                    Manage your assigned students
+                    Search and manage your assigned students
                   </p>
                 </div>
               </div>
 
+              {successMessage && (
+                <div className="success-message" style={{ marginBottom: "20px" }}>
+                  {successMessage}
+                </div>
+              )}
+
+              {/* Search + Filter Bar */}
               <div
-                className="filter-section"
                 style={{
-                  marginBottom: "20px",
                   display: "flex",
-                  justifyContent: "flex-end",
+                  gap: "12px",
+                  marginBottom: "20px",
+                  flexWrap: "wrap",
+                  alignItems: "center",
                 }}
               >
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label style={{ marginRight: "10px" }}>
-                    Filter Students:
-                  </label>
+                {/* Search Input */}
+                <div
+                  style={{
+                    flex: "1",
+                    minWidth: "220px",
+                    position: "relative",
+                  }}
+                >
+                  <svg
+                    fill="none"
+                    stroke="#9ca3af"
+                    viewBox="0 0 24 24"
+                    style={{
+                      position: "absolute",
+                      left: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "18px",
+                      height: "18px",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search by name or student ID..."
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px 10px 38px",
+                      borderRadius: "8px",
+                      border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                      background: "#fff",
+                      boxSizing: "border-box",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <div style={{ position: "relative" }}>
+                  <svg
+                    fill="none"
+                    stroke="#9ca3af"
+                    viewBox="0 0 24 24"
+                    style={{
+                      position: "absolute",
+                      left: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "16px",
+                      height: "16px",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
+                    />
+                  </svg>
                   <select
                     value={studentFilter}
                     onChange={(e) => setStudentFilter(e.target.value)}
                     style={{
-                      padding: "8px 12px",
-                      borderRadius: "6px",
+                      padding: "10px 12px 10px 32px",
+                      borderRadius: "8px",
                       border: "1px solid #d1d5db",
+                      fontSize: "14px",
+                      background: "#fff",
+                      cursor: "pointer",
+                      appearance: "none",
+                      minWidth: "160px",
                     }}
                   >
                     <option value="all">All Students</option>
@@ -403,138 +483,252 @@ function TrainerDashboard() {
                     <option value="completed">Completed</option>
                   </select>
                 </div>
-              </div>
 
-              {successMessage && (
-                <div
-                  className="success-message"
-                  style={{ marginBottom: "20px" }}
-                >
-                  {successMessage}
-                </div>
-              )}
+                {/* Clear search button */}
+                {studentSearch && (
+                  <button
+                    onClick={() => setStudentSearch("")}
+                    style={{
+                      padding: "10px 16px",
+                      borderRadius: "8px",
+                      border: "1px solid #e5e7eb",
+                      background: "#f3f4f6",
+                      color: "#6b7280",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    ✕ Clear
+                  </button>
+                )}
+              </div>
 
               <div className="premium-card">
                 {(() => {
+                  const q = studentSearch.trim().toLowerCase();
                   const filteredStudents = students.filter((student) => {
-                    if (studentFilter === "all") return true;
-                    return (
-                      student.status ===
-                      (studentFilter === "active" ? "active" : "completed")
-                    );
+                    const matchesFilter =
+                      studentFilter === "all" ||
+                      student.status === (studentFilter === "active" ? "active" : "completed");
+                    const matchesSearch =
+                      !q ||
+                      student.name?.toLowerCase().includes(q) ||
+                      student.internId?.toLowerCase().includes(q) ||
+                      student.email?.toLowerCase().includes(q);
+                    return matchesFilter && matchesSearch;
                   });
+
                   return filteredStudents.length === 0 ? (
                     <div className="premium-empty-state">
                       <div className="empty-icon">
-                        <svg
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
                           />
                         </svg>
                       </div>
-                      <p className="empty-title">No students assigned</p>
-                      <p className="empty-subtitle">
-                        Students assigned to you will appear here
+                      <p className="empty-title">
+                        {q ? `No students match "${studentSearch}"` : "No students assigned"}
                       </p>
+                      <p className="empty-subtitle">
+                        {q
+                          ? "Try a different name or student ID"
+                          : "Students assigned to you will appear here"}
+                      </p>
+                      {q && (
+                        <button
+                          onClick={() => setStudentSearch("")}
+                          style={{
+                            marginTop: "12px",
+                            padding: "8px 20px",
+                            borderRadius: "6px",
+                            border: "none",
+                            background: "linear-gradient(135deg, #667eea, #764ba2)",
+                            color: "#fff",
+                            cursor: "pointer",
+                            fontSize: "14px",
+                          }}
+                        >
+                          Clear Search
+                        </button>
+                      )}
                     </div>
                   ) : (
-                    <div style={{ overflowX: "auto" }}>
-                      <table className="premium-table">
-                        <thead>
-                          <tr>
-                            <th>Student ID</th>
-                            <th>Student Name</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredStudents.map((student) => (
-                            <tr key={student._id}>
-                              <td className="mono-text">{student.internId}</td>
-                              <td className="font-medium">{student.name}</td>
-                              <td>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    gap: "8px",
-                                    flexWrap: "wrap",
-                                  }}
-                                >
-                                  <button
-                                    onClick={() =>
-                                      navigate(
-                                        `/trainer/student/${student._id}/interviews`,
-                                      )
-                                    }
-                                    className="table-action-btn"
-                                  >
-                                    Interviews
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      navigate(
-                                        `/trainer/student/${student._id}/aptitude`,
-                                      )
-                                    }
-                                    className="table-action-btn"
-                                  >
-                                    Aptitude
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      navigate(
-                                        `/trainer/student/${student._id}/assessments`,
-                                      )
-                                    }
-                                    className="table-action-btn"
-                                  >
-                                    Assessments
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      navigate(
-                                        `/trainer/student/${student._id}/training`,
-                                      )
-                                    }
-                                    className="table-action-btn"
-                                  >
-                                    Training
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleUpdateStatus(student._id, "active")
-                                    }
-                                    className="table-action-btn"
-                                    style={{ backgroundColor: "#10b981" }}
-                                  >
-                                    Mark Active
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      handleUpdateStatus(
-                                        student._id,
-                                        "completed",
-                                      )
-                                    }
-                                    className="table-action-btn"
-                                    style={{ backgroundColor: "#3b82f6" }}
-                                  >
-                                    Mark Completed
-                                  </button>
-                                </div>
-                              </td>
+                    <>
+                      {/* Result count */}
+                      <div
+                        style={{
+                          padding: "12px 20px",
+                          borderBottom: "1px solid #f3f4f6",
+                          fontSize: "13px",
+                          color: "#6b7280",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: "15px", height: "15px" }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        Showing <strong style={{ color: "#374151" }}>{filteredStudents.length}</strong> of{" "}
+                        <strong style={{ color: "#374151" }}>{students.length}</strong> students
+                        {q && (
+                          <span style={{ marginLeft: "4px" }}>
+                            for <em>"{studentSearch}"</em>
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ overflowX: "auto" }}>
+                        <table className="premium-table">
+                          <thead>
+                            <tr>
+                              <th>Student</th>
+                              <th>Student ID</th>
+                              <th>Status</th>
+                              <th>Actions</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody>
+                            {filteredStudents.map((student) => {
+                              const initials = student.name
+                                ? student.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                                : "S";
+                              const isCompleted = student.status === "completed";
+                              return (
+                                <tr key={student._id}>
+                                  {/* Student with avatar */}
+                                  <td>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                      <div
+                                        style={{
+                                          width: "38px",
+                                          height: "38px",
+                                          borderRadius: "50%",
+                                          background: "linear-gradient(135deg, #667eea, #764ba2)",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          color: "#fff",
+                                          fontWeight: "700",
+                                          fontSize: "13px",
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        {initials}
+                                      </div>
+                                      <div>
+                                        <div
+                                          style={{ fontWeight: "600", color: "#1f2937", fontSize: "14px" }}
+                                          dangerouslySetInnerHTML={{
+                                            __html: q
+                                              ? student.name?.replace(
+                                                  new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"),
+                                                  '<mark style="background:#fef08a;padding:0 2px;border-radius:2px">$1</mark>'
+                                                )
+                                              : student.name,
+                                          }}
+                                        />
+                                        {student.email && (
+                                          <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+                                            {student.email}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+
+                                  {/* Student ID with highlight */}
+                                  <td>
+                                    <span
+                                      className="mono-text"
+                                      style={{ fontSize: "13px" }}
+                                      dangerouslySetInnerHTML={{
+                                        __html: q
+                                          ? student.internId?.replace(
+                                              new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"),
+                                              '<mark style="background:#fef08a;padding:0 2px;border-radius:2px">$1</mark>'
+                                            )
+                                          : student.internId,
+                                      }}
+                                    />
+                                  </td>
+
+                                  {/* Status badge */}
+                                  <td>
+                                    <span
+                                      style={{
+                                        display: "inline-block",
+                                        padding: "3px 10px",
+                                        borderRadius: "999px",
+                                        fontSize: "12px",
+                                        fontWeight: "600",
+                                        background: isCompleted ? "#d1fae5" : "#dbeafe",
+                                        color: isCompleted ? "#065f46" : "#1e40af",
+                                      }}
+                                    >
+                                      {isCompleted ? "Completed" : "Active"}
+                                    </span>
+                                  </td>
+
+                                  {/* Actions */}
+                                  <td>
+                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                      <button
+                                        onClick={() => navigate(`/trainer/student/${student._id}/interviews`)}
+                                        className="table-action-btn"
+                                      >
+                                        Interviews
+                                      </button>
+                                      <button
+                                        onClick={() => navigate(`/trainer/student/${student._id}/aptitude`)}
+                                        className="table-action-btn"
+                                      >
+                                        Aptitude
+                                      </button>
+                                      <button
+                                        onClick={() => navigate(`/trainer/student/${student._id}/assessments`)}
+                                        className="table-action-btn"
+                                      >
+                                        Assessments
+                                      </button>
+                                      <button
+                                        onClick={() => navigate(`/trainer/student/${student._id}/training`)}
+                                        className="table-action-btn"
+                                      >
+                                        Training
+                                      </button>
+                                      {!isCompleted ? (
+                                        <button
+                                          onClick={() => handleUpdateStatus(student._id, "completed")}
+                                          className="table-action-btn"
+                                          style={{ background: "#3b82f6" }}
+                                        >
+                                          Mark Completed
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => handleUpdateStatus(student._id, "active")}
+                                          className="table-action-btn"
+                                          style={{ background: "#10b981" }}
+                                        >
+                                          Mark Active
+                                        </button>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
                   );
                 })()}
               </div>

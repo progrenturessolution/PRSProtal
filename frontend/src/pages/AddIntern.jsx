@@ -15,6 +15,7 @@ function AddIntern({ onInternAdded }) {
     paymentDoneBy: '',
     dateOfPayment: '',
     transactionId: '',
+    paymentAmount: '',
     currentDesignation: ''
   });
   const [welcomeFile, setWelcomeFile] = useState(null);
@@ -74,6 +75,7 @@ function AddIntern({ onInternAdded }) {
         submitData.paymentDoneBy = formData.paymentDoneBy;
         submitData.dateOfPayment = formData.dateOfPayment;
         submitData.transactionId = formData.transactionId;
+        submitData.paymentAmount = formData.paymentAmount;
         submitData.currentDesignation = formData.currentDesignation;
       }
 
@@ -82,7 +84,10 @@ function AddIntern({ onInternAdded }) {
       
       let response;
 
-      // If SMS Program and files are selected, send multipart/form-data
+      // Always use FormData so files can be attached regardless of student type
+      const fd = new FormData();
+      Object.keys(submitData).forEach((k) => fd.append(k, submitData[k]));
+
       if (studentType === 'SMS Program') {
         // Require all three documents for SMS Program
         if (!welcomeFile || !offerFile || !paymentFile) {
@@ -90,19 +95,15 @@ function AddIntern({ onInternAdded }) {
           setLoading(false);
           return;
         }
-
-        const fd = new FormData();
-        // Append json fields
-        Object.keys(submitData).forEach((k) => fd.append(k, submitData[k]));
-        // Append files with field names expected by the server
         fd.append('welcomeLetter', welcomeFile);
         fd.append('offerLetter', offerFile);
         fd.append('paymentReceipt', paymentFile);
-
-        response = await adminAPI.addIntern(fd);
-      } else {
-        response = await adminAPI.addIntern(submitData);
+      } else if (studentType === 'Internship' && offerFile) {
+        // Offer letter is optional for Internship but attach if provided
+        fd.append('offerLetter', offerFile);
       }
+
+      response = await adminAPI.addIntern(fd);
       
       if (response.data.success) {
         const intern = response.data.intern;
@@ -131,6 +132,7 @@ function AddIntern({ onInternAdded }) {
           paymentDoneBy: '',
           dateOfPayment: '',
           transactionId: '',
+          paymentAmount: '',
           currentDesignation: ''
         });
 
@@ -361,6 +363,16 @@ function AddIntern({ onInternAdded }) {
                   value={formData.transactionId}
                   onChange={handleChange}
                   placeholder="Enter transaction/payment ID"
+                />
+              </div>
+              <div className="form-group">
+                <label>Payment Amount (₹)</label>
+                <input
+                  type="number"
+                  name="paymentAmount"
+                  value={formData.paymentAmount}
+                  onChange={handleChange}
+                  placeholder="e.g. 5000"
                 />
               </div>
               <div className="form-group">

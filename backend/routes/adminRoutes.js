@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
+const certificateController = require('../controllers/certificateController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -10,6 +11,12 @@ const fs = require('fs');
 const studentsUploadDir = path.join(__dirname, '..', 'uploads', 'students');
 if (!fs.existsSync(studentsUploadDir)) {
 	fs.mkdirSync(studentsUploadDir, { recursive: true });
+}
+
+// Ensure uploads/certificates folder exists
+const certsUploadDir = path.join(__dirname, '..', 'uploads', 'certificates');
+if (!fs.existsSync(certsUploadDir)) {
+	fs.mkdirSync(certsUploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
@@ -24,6 +31,20 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+// Separate multer config for assigned certificates
+const certStorage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, certsUploadDir);
+	},
+	filename: function (req, file, cb) {
+		const ext = path.extname(file.originalname);
+		const name = `cert-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+		cb(null, name);
+	}
+});
+
+const uploadCert = multer({ storage: certStorage });
 
 // ========== INTERN/STUDENT MANAGEMENT ==========
 
@@ -101,6 +122,28 @@ router.post('/students/:studentId/documents', verifyToken, verifyAdmin, upload.s
 
 // Get student documents
 router.get('/students/:studentId/documents', verifyToken, verifyAdmin, adminController.getStudentDocuments);
+
+// ========== ASSIGNED CERTIFICATES (5-day expiry) ==========
+
+// Assign multiple certificates to a student
+router.post('/certificates/assign', verifyToken, verifyAdmin, uploadCert.array('certificates', 10), certificateController.assignCertificates);
+
+// Get all active assigned certificates
+router.get('/certificates', verifyToken, verifyAdmin, certificateController.getCertificates);
+
+// Revoke / delete a specific certificate
+router.delete('/certificates/:id', verifyToken, verifyAdmin, certificateController.deleteCertificate);
+
+// ========== REPRESENTATIVE MANAGEMENT ==========
+
+// Add representative
+router.post('/add-representative', verifyToken, verifyAdmin, adminController.addRepresentative);
+
+// Get all representatives
+router.get('/representatives', verifyToken, verifyAdmin, adminController.getAllRepresentatives);
+
+// Delete representative
+router.delete('/representative/:id', verifyToken, verifyAdmin, adminController.deleteRepresentative);
 
 module.exports = router;
 

@@ -38,9 +38,10 @@ function PendingApprovals({ onTaskApproved }) {
       setTimeout(() => setSuccess(''), 4000);
       if (onTaskApproved) onTaskApproved();
     } catch (err) {
-      setError('Failed to approve task');
-      console.error(err);
-      setTimeout(() => setError(''), 4000);
+      const msg = err.response?.data?.message || 'Failed to approve task';
+      setError(msg);
+      console.error('Approve task error:', err);
+      setTimeout(() => setError(''), 5000);
     }
   };
 

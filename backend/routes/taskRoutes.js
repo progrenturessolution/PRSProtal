@@ -3,6 +3,7 @@ const router = express.Router();
 const taskController = require('../controllers/taskController');
 const adminController = require('../controllers/adminController');
 const trainerController = require('../controllers/trainerController');
+const certificateController = require('../controllers/certificateController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -45,6 +46,7 @@ router.put('/admin/approve-task/:taskId', verifyToken, verifyAdmin, taskControll
 router.post('/admin/task-feedback/:taskId', verifyToken, verifyAdmin, taskController.sendTaskFeedback);
 router.put('/admin/edit-task/:taskId', verifyToken, verifyAdmin, taskController.editTask);
 router.delete('/admin/delete-task/:taskId', verifyToken, verifyAdmin, taskController.deleteTask);
+router.post('/admin/team-message/:taskId', verifyToken, verifyAdmin, taskController.sendAdminTeamMessage);
 
 // Intern routes
 router.get('/intern/tasks', verifyToken, taskController.getInternTasks);
@@ -62,5 +64,6 @@ router.get('/intern/my-training', verifyToken, trainerController.getMyTraining);
 router.get('/intern/my-profile', verifyToken, trainerController.getMyProfile);
 router.get('/intern/my-notifications', verifyToken, trainerController.getMyNotifications);
 router.get('/intern/my-job-postings', verifyToken, trainerController.getMyJobPostings);
+router.get('/intern/my-certificates', verifyToken, certificateController.getStudentCertificates);
 
 module.exports = router;
