@@ -67,18 +67,7 @@ function CompletedTasks() {
             gap: '16px',
             boxShadow: '0 4px 6px rgba(16, 185, 129, 0.1)'
           }}>
-            <div style={{ 
-              background: 'white', 
-              borderRadius: '12px', 
-              width: '56px', 
-              height: '56px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '28px'
-            }}>
-              
-            </div>
+          
             <div>
               <div style={{ fontSize: '24px', fontWeight: 700, color: '#065f46' }}>
                 {tasks.length} Task{tasks.length > 1 ? 's' : ''} Completed

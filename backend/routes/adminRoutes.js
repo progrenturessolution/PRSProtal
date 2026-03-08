@@ -13,11 +13,24 @@ if (!fs.existsSync(studentsUploadDir)) {
 	fs.mkdirSync(studentsUploadDir, { recursive: true });
 }
 
-// Ensure uploads/certificates folder exists
-const certsUploadDir = path.join(__dirname, '..', 'uploads', 'certificates');
-if (!fs.existsSync(certsUploadDir)) {
-	fs.mkdirSync(certsUploadDir, { recursive: true });
+// Ensure uploads/notifications folder exists
+const notificationsUploadDir = path.join(__dirname, '..', 'uploads', 'notifications');
+if (!fs.existsSync(notificationsUploadDir)) {
+	fs.mkdirSync(notificationsUploadDir, { recursive: true });
 }
+
+const notificationStorage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, notificationsUploadDir);
+	},
+	filename: function (req, file, cb) {
+		const ext = path.extname(file.originalname);
+		const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+		cb(null, name);
+	}
+});
+
+const uploadNotification = multer({ storage: notificationStorage });
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -102,7 +115,7 @@ router.post('/assign-students', verifyToken, verifyAdmin, adminController.assign
 // ========== NOTIFICATIONS ==========
 
 // Create notification
-router.post('/notifications', verifyToken, verifyAdmin, adminController.createNotification);
+router.post('/notifications', verifyToken, verifyAdmin, uploadNotification.single('attachment'), adminController.createNotification);
 
 // Get all notifications
 router.get('/notifications', verifyToken, verifyAdmin, adminController.getAllNotifications);

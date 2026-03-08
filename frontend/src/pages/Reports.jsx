@@ -23,6 +23,18 @@ function Reports() {
     endDate: "",
   });
   const [infoMessage, setInfoMessage] = useState("");
+  const [filteredData, setFilteredData] = useState({
+    students: [],
+    tasks: [],
+    stats: {
+      totalStudents: 0,
+      activeStudents: 0,
+      completedStudents: 0,
+      totalTasks: 0,
+      completedTasks: 0,
+    },
+  });
+  const [customReportGenerated, setCustomReportGenerated] = useState(false);
 
   useEffect(() => {
     fetchReportsData();
@@ -68,6 +80,61 @@ function Reports() {
       setInfoMessage(`Failed to export as ${format}. Please try again.`);
       setTimeout(() => setInfoMessage(""), 4000);
     }
+  };
+
+  const generateCustomReport = () => {
+    if (!dateRange.startDate || !dateRange.endDate) {
+      setInfoMessage("Please select both start and end dates.");
+      setTimeout(() => setInfoMessage(""), 4000);
+      return;
+    }
+
+    const startDate = new Date(dateRange.startDate);
+    const endDate = new Date(dateRange.endDate);
+    endDate.setHours(23, 59, 59, 999); // Include the entire end date
+
+    if (startDate > endDate) {
+      setInfoMessage("Start date cannot be after end date.");
+      setTimeout(() => setInfoMessage(""), 4000);
+      return;
+    }
+
+    // Filter students by joining date
+    const filteredStudents = students.filter((student) => {
+      if (!student.joiningDate) return false;
+      const joinDate = new Date(student.joiningDate);
+      return joinDate >= startDate && joinDate <= endDate;
+    });
+
+    // For tasks, we'll filter based on creation date (assuming tasks have createdAt field)
+    // Since we don't have task creation dates in the current data, we'll show all tasks
+    // In a real implementation, you'd filter tasks by their creation/update dates
+    const filteredTasks = []; // Placeholder - would need task date data
+
+    // Calculate stats for filtered data
+    const filteredStats = {
+      totalStudents: filteredStudents.length,
+      activeStudents: filteredStudents.filter((s) => s.status === "Active")
+        .length,
+      completedStudents: filteredStudents.filter(
+        (s) => s.status === "Completed",
+      ).length,
+      totalTasks: filteredTasks.length,
+      completedTasks: filteredTasks.filter((t) => t.status === "Completed")
+        .length,
+    };
+
+    setFilteredData({
+      students: filteredStudents,
+      tasks: filteredTasks,
+      stats: filteredStats,
+    });
+
+    setCustomReportGenerated(true);
+    setInfoMessage(
+      `Custom report generated for ${filteredStudents.length} students from ${dateRange.startDate} to ${dateRange.endDate}.`,
+    );
+    setTimeout(() => setInfoMessage(""), 5000);
   };
 
   const exportToPDF = () => {
@@ -159,6 +226,9 @@ function Reports() {
           </div>
         `;
       } else if (reportType === "students") {
+        const sourceArray = customReportGenerated
+          ? filteredData.students
+          : students;
         htmlContent += `
           <div class="section">
             <div class="report-type">Student Performance Report</div>
@@ -176,7 +246,7 @@ function Reports() {
               <tbody>
         `;
 
-        students.slice(0, 100).forEach((student) => {
+        sourceArray.slice(0, 100).forEach((student) => {
           htmlContent += `
             <tr>
               <td>${student.internId}</td>
@@ -193,34 +263,37 @@ function Reports() {
               </tbody>
             </table>
             <p style="text-align: center; color: #999; font-size: 12px; margin-top: 15px;">
-              Showing ${Math.min(100, students.length)} of ${students.length} students
+              Showing ${Math.min(100, sourceArray.length)} of ${sourceArray.length} students
             </p>
           </div>
         `;
       } else if (reportType === "tasks") {
+        const sourceStats = customReportGenerated
+          ? filteredData.stats
+          : taskStats;
         htmlContent += `
           <div class="section">
             <div class="report-type">Task Completion Report</div>
             <table>
               <tr>
                 <td class="stat-label">Total Tasks Created</td>
-                <td class="stat-value">${taskStats.totalTasks}</td>
+                <td class="stat-value">${sourceStats.totalTasks}</td>
               </tr>
               <tr>
                 <td class="stat-label">Tasks Assigned</td>
-                <td class="stat-value">${taskStats.assignedTasks}</td>
+                <td class="stat-value">${sourceStats.assignedTasks || 0}</td>
               </tr>
               <tr>
                 <td class="stat-label">Tasks In Progress</td>
-                <td class="stat-value">${taskStats.inProgressTasks}</td>
+                <td class="stat-value">${sourceStats.inProgressTasks || 0}</td>
               </tr>
               <tr>
                 <td class="stat-label">Tasks Completed</td>
-                <td class="stat-value">${taskStats.completedTasks}</td>
+                <td class="stat-value">${sourceStats.completedTasks || 0}</td>
               </tr>
               <tr>
                 <td class="stat-label">Completion Rate</td>
-                <td class="stat-value">${taskStats.totalTasks > 0 ? ((taskStats.completedTasks / taskStats.totalTasks) * 100).toFixed(1) : 0}%</td>
+                <td class="stat-value">${sourceStats.totalTasks > 0 ? ((sourceStats.completedTasks / sourceStats.totalTasks) * 100).toFixed(1) : 0}%</td>
               </tr>
             </table>
           </div>
@@ -287,9 +360,12 @@ function Reports() {
         ];
       } else if (reportType === "students") {
         sheetName = "Students";
+        const sourceStudents = customReportGenerated
+          ? filteredData.students
+          : students;
         data = [
           ["ID", "Name", "Type", "Email", "Status", "Join Date"],
-          ...students
+          ...sourceStudents
             .slice(0, 100)
             .map((student) => [
               student.internId,
@@ -304,15 +380,18 @@ function Reports() {
         ];
       } else if (reportType === "tasks") {
         sheetName = "Tasks";
+        const sourceStats = customReportGenerated
+          ? filteredData.stats
+          : taskStats;
         data = [
           ["Task Statistics", "Value"],
-          ["Total Tasks Created", taskStats.totalTasks],
-          ["Tasks Assigned", taskStats.assignedTasks],
-          ["Tasks In Progress", taskStats.inProgressTasks],
-          ["Tasks Completed", taskStats.completedTasks],
+          ["Total Tasks Created", sourceStats.totalTasks],
+          ["Tasks Assigned", sourceStats.assignedTasks || 0],
+          ["Tasks In Progress", sourceStats.inProgressTasks || 0],
+          ["Tasks Completed", sourceStats.completedTasks || 0],
           [
             "Completion Rate",
-            `${taskStats.totalTasks > 0 ? ((taskStats.completedTasks / taskStats.totalTasks) * 100).toFixed(1) : 0}%`,
+            `${sourceStats.totalTasks > 0 ? ((sourceStats.completedTasks / sourceStats.totalTasks) * 100).toFixed(1) : 0}%`,
           ],
         ];
       }
@@ -338,60 +417,198 @@ function Reports() {
 
   const renderOverviewReport = () => (
     <>
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>Total Students</h3>
-            <p>{stats.totalInterns}</p>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+        }}
+      >
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            Total Students
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {stats.totalInterns}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>Active</h3>
-            <p>{stats.activeInterns}</p>
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            Active
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {stats.activeInterns}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>Completed</h3>
-            <p>{stats.completedInterns}</p>
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            Completed
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {stats.completedInterns}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>This Month</h3>
-            <p>{stats.thisMonthInterns}</p>
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            This Month
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {stats.thisMonthInterns}
           </div>
         </div>
       </div>
 
-      <div className="stats-grid" style={{ marginTop: "20px" }}>
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>Internship Students</h3>
-            <p>
-              {students.filter((s) => s.studentType === "Internship").length}
-            </p>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+        }}
+      >
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            Internship Students
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {students.filter((s) => s.studentType === "Internship").length}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>SMS Program</h3>
-            <p>
-              {students.filter((s) => s.studentType === "SMS Program").length}
-            </p>
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            SMS Program
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {students.filter((s) => s.studentType === "SMS Program").length}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>Total Tasks</h3>
-            <p>{taskStats.totalTasks}</p>
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            Total Tasks
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {taskStats.totalTasks}
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-info">
-            <h3>Completed Tasks</h3>
-            <p>{taskStats.completedTasks}</p>
+        <div
+          style={{
+            padding: "20px",
+            background: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "13px",
+              color: "#64748b",
+              marginBottom: "4px",
+              fontWeight: "500",
+            }}
+          >
+            Completed Tasks
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0f172a" }}>
+            {taskStats.completedTasks}
           </div>
         </div>
       </div>
@@ -408,19 +625,20 @@ function Reports() {
         >
           <div
             style={{
-              padding: "15px",
-              background: "#eff6ff",
+              padding: "20px",
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
               borderRadius: "8px",
             }}
           >
-            <p style={{ color: "#1e40af", fontWeight: 600, fontSize: "14px" }}>
+            <p style={{ color: "#64748b", fontWeight: 600, fontSize: "14px" }}>
               Assigned
             </p>
             <p
               style={{
                 fontSize: "24px",
                 fontWeight: 700,
-                color: "#1e40af",
+                color: "#0f172a",
                 marginTop: "5px",
               }}
             >
@@ -429,19 +647,20 @@ function Reports() {
           </div>
           <div
             style={{
-              padding: "15px",
-              background: "#fef3c7",
+              padding: "20px",
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
               borderRadius: "8px",
             }}
           >
-            <p style={{ color: "#92400e", fontWeight: 600, fontSize: "14px" }}>
+            <p style={{ color: "#64748b", fontWeight: 600, fontSize: "14px" }}>
               In Progress
             </p>
             <p
               style={{
                 fontSize: "24px",
                 fontWeight: 700,
-                color: "#92400e",
+                color: "#0f172a",
                 marginTop: "5px",
               }}
             >
@@ -450,19 +669,20 @@ function Reports() {
           </div>
           <div
             style={{
-              padding: "15px",
-              background: "#d1fae5",
+              padding: "20px",
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
               borderRadius: "8px",
             }}
           >
-            <p style={{ color: "#065f46", fontWeight: 600, fontSize: "14px" }}>
+            <p style={{ color: "#64748b", fontWeight: 600, fontSize: "14px" }}>
               Completed
             </p>
             <p
               style={{
                 fontSize: "24px",
                 fontWeight: 700,
-                color: "#065f46",
+                color: "#0f172a",
                 marginTop: "5px",
               }}
             >
@@ -543,24 +763,24 @@ function Reports() {
           <div
             style={{
               padding: "20px",
-              background: "#f9fafb",
+              background: "#f8fafc",
               borderRadius: "8px",
-              border: "1px solid #e5e7eb",
+              border: "1px solid #e2e8f0",
             }}
           >
             <p
               style={{
                 fontSize: "14px",
-                color: "#6b7280",
+                color: "#64748b",
                 marginBottom: "8px",
               }}
             >
               Total Tasks Created
             </p>
-            <p style={{ fontSize: "32px", fontWeight: 700, color: "#111827" }}>
+            <p style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a" }}>
               {taskStats.totalTasks}
             </p>
-            <p style={{ fontSize: "12px", color: "#9ca3af", marginTop: "5px" }}>
+            <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "5px" }}>
               All time
             </p>
           </div>
@@ -568,24 +788,24 @@ function Reports() {
           <div
             style={{
               padding: "20px",
-              background: "#eff6ff",
+              background: "#f8fafc",
               borderRadius: "8px",
-              border: "1px solid #bfdbfe",
+              border: "1px solid #e2e8f0",
             }}
           >
             <p
               style={{
                 fontSize: "14px",
-                color: "#1e40af",
+                color: "#64748b",
                 marginBottom: "8px",
               }}
             >
               Tasks Assigned
             </p>
-            <p style={{ fontSize: "32px", fontWeight: 700, color: "#1e3a8a" }}>
+            <p style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a" }}>
               {taskStats.assignedTasks}
             </p>
-            <p style={{ fontSize: "12px", color: "#60a5fa", marginTop: "5px" }}>
+            <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "5px" }}>
               Waiting to start
             </p>
           </div>
@@ -593,24 +813,24 @@ function Reports() {
           <div
             style={{
               padding: "20px",
-              background: "#fef3c7",
+              background: "#f8fafc",
               borderRadius: "8px",
-              border: "1px solid #fde68a",
+              border: "1px solid #e2e8f0",
             }}
           >
             <p
               style={{
                 fontSize: "14px",
-                color: "#92400e",
+                color: "#64748b",
                 marginBottom: "8px",
               }}
             >
               In Progress
             </p>
-            <p style={{ fontSize: "32px", fontWeight: 700, color: "#78350f" }}>
+            <p style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a" }}>
               {taskStats.inProgressTasks}
             </p>
-            <p style={{ fontSize: "12px", color: "#f59e0b", marginTop: "5px" }}>
+            <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "5px" }}>
               Currently working
             </p>
           </div>
@@ -618,24 +838,24 @@ function Reports() {
           <div
             style={{
               padding: "20px",
-              background: "#d1fae5",
+              background: "#f8fafc",
               borderRadius: "8px",
-              border: "1px solid #a7f3d0",
+              border: "1px solid #e2e8f0",
             }}
           >
             <p
               style={{
                 fontSize: "14px",
-                color: "#065f46",
+                color: "#64748b",
                 marginBottom: "8px",
               }}
             >
               Completed
             </p>
-            <p style={{ fontSize: "32px", fontWeight: 700, color: "#064e3b" }}>
+            <p style={{ fontSize: "32px", fontWeight: 700, color: "#0f172a" }}>
               {taskStats.completedTasks}
             </p>
-            <p style={{ fontSize: "12px", color: "#10b981", marginTop: "5px" }}>
+            <p style={{ fontSize: "12px", color: "#94a3b8", marginTop: "5px" }}>
               {taskStats.totalTasks > 0
                 ? (
                     (taskStats.completedTasks / taskStats.totalTasks) *
@@ -651,8 +871,9 @@ function Reports() {
           style={{
             marginTop: "30px",
             padding: "20px",
-            background: "#f9fafb",
+            background: "#f8fafc",
             borderRadius: "8px",
+            border: "1px solid #e2e8f0",
           }}
         >
           <h4 style={{ marginBottom: "15px" }}>Task Distribution</h4>
@@ -687,7 +908,7 @@ function Reports() {
                   style={{
                     width: `${taskStats.totalTasks > 0 ? (taskStats.completedTasks / taskStats.totalTasks) * 100 : 0}%`,
                     height: "100%",
-                    background: "#10b981",
+                    background: "#324158",
                     borderRadius: "4px",
                   }}
                 />
@@ -722,7 +943,7 @@ function Reports() {
                   style={{
                     width: `${taskStats.totalTasks > 0 ? (taskStats.inProgressTasks / taskStats.totalTasks) * 100 : 0}%`,
                     height: "100%",
-                    background: "#f59e0b",
+                    background: "#324158",
                     borderRadius: "4px",
                   }}
                 />
@@ -757,7 +978,7 @@ function Reports() {
                   style={{
                     width: `${taskStats.totalTasks > 0 ? (taskStats.assignedTasks / taskStats.totalTasks) * 100 : 0}%`,
                     height: "100%",
-                    background: "#3b82f6",
+                    background: "#324158",
                     borderRadius: "4px",
                   }}
                 />
@@ -796,8 +1017,9 @@ function Reports() {
                 width: "100%",
                 padding: "10px",
                 borderRadius: "6px",
-                border: "1px solid #ddd",
+                border: "1px solid #e2e8f0",
                 fontSize: "14px",
+                background: "#f8fafc",
               }}
             />
           </div>
@@ -814,18 +1036,20 @@ function Reports() {
                 width: "100%",
                 padding: "10px",
                 borderRadius: "6px",
-                border: "1px solid #ddd",
+                border: "1px solid #e2e8f0",
                 fontSize: "14px",
+                background: "#f8fafc",
               }}
             />
           </div>
         </div>
 
         <button
+          onClick={generateCustomReport}
           style={{
             marginTop: "15px",
             padding: "12px 24px",
-            background: "#3b82f6",
+            background: "#324158",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -838,19 +1062,58 @@ function Reports() {
         </button>
       </div>
 
-      <div
-        style={{
-          marginTop: "30px",
-          padding: "20px",
-          background: "#f9fafb",
-          borderRadius: "8px",
-          textAlign: "center",
-        }}
-      >
-        <p style={{ color: "#6b7280" }}>
-          Custom report generation features coming soon!
-        </p>
-      </div>
+      {customReportGenerated && (
+        <div style={{ marginTop: "30px" }}>
+          <h4>Filtered Students ({filteredData.stats.totalStudents})</h4>
+          <div style={{ overflowX: "auto", marginTop: "10px" }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Join Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.students.map((student) => (
+                  <tr key={student._id}>
+                    <td>{student.internId}</td>
+                    <td>{student.name}</td>
+                    <td>{student.studentType}</td>
+                    <td>{student.email}</td>
+                    <td>{student.status}</td>
+                    <td>
+                      {student.joiningDate
+                        ? new Date(student.joiningDate).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {!customReportGenerated && (
+        <div
+          style={{
+            marginTop: "30px",
+            padding: "20px",
+            background: "#f8fafc",
+            borderRadius: "8px",
+            border: "1px solid #e2e8f0",
+            textAlign: "center",
+          }}
+        >
+          <p style={{ color: "#6b7280" }}>
+            Set dates above and click generate to view results
+          </p>
+        </div>
+      )}
     </div>
   );
 
@@ -884,7 +1147,7 @@ function Reports() {
           onClick={() => handleExport("PDF")}
           style={{
             padding: "10px 20px",
-            background: "#ef4444",
+            background: "#324158",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -899,7 +1162,7 @@ function Reports() {
           onClick={() => handleExport("Excel")}
           style={{
             padding: "10px 20px",
-            background: "#10b981",
+            background: "#324158",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -913,26 +1176,33 @@ function Reports() {
       </div>
 
       {/* Report Type Tabs */}
-      <div className="card">
+      <div
+        style={{
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          borderRadius: "12px",
+          padding: "6px",
+          marginBottom: "24px",
+        }}
+      >
         <div
           style={{
             display: "flex",
-            gap: "10px",
-            borderBottom: "2px solid #e5e7eb",
-            paddingBottom: "10px",
+            gap: "4px",
           }}
         >
           <button
             onClick={() => setReportType("overview")}
             style={{
-              padding: "10px 20px",
-              background: reportType === "overview" ? "#3b82f6" : "transparent",
-              color: reportType === "overview" ? "white" : "#6b7280",
+              padding: "10px 22px",
+              borderRadius: "8px",
               border: "none",
-              borderRadius: "6px",
               cursor: "pointer",
               fontSize: "14px",
               fontWeight: 600,
+              transition: "all 0.2s",
+              background: reportType === "overview" ? "#324158" : "transparent",
+              color: reportType === "overview" ? "white" : "#64748b",
             }}
           >
             Overview
@@ -940,14 +1210,15 @@ function Reports() {
           <button
             onClick={() => setReportType("students")}
             style={{
-              padding: "10px 20px",
-              background: reportType === "students" ? "#3b82f6" : "transparent",
-              color: reportType === "students" ? "white" : "#6b7280",
+              padding: "10px 22px",
+              borderRadius: "8px",
               border: "none",
-              borderRadius: "6px",
               cursor: "pointer",
               fontSize: "14px",
               fontWeight: 600,
+              transition: "all 0.2s",
+              background: reportType === "students" ? "#324158" : "transparent",
+              color: reportType === "students" ? "white" : "#64748b",
             }}
           >
             Students
@@ -955,14 +1226,15 @@ function Reports() {
           <button
             onClick={() => setReportType("tasks")}
             style={{
-              padding: "10px 20px",
-              background: reportType === "tasks" ? "#3b82f6" : "transparent",
-              color: reportType === "tasks" ? "white" : "#6b7280",
+              padding: "10px 22px",
+              borderRadius: "8px",
               border: "none",
-              borderRadius: "6px",
               cursor: "pointer",
               fontSize: "14px",
               fontWeight: 600,
+              transition: "all 0.2s",
+              background: reportType === "tasks" ? "#324158" : "transparent",
+              color: reportType === "tasks" ? "white" : "#64748b",
             }}
           >
             Tasks
@@ -970,14 +1242,15 @@ function Reports() {
           <button
             onClick={() => setReportType("custom")}
             style={{
-              padding: "10px 20px",
-              background: reportType === "custom" ? "#3b82f6" : "transparent",
-              color: reportType === "custom" ? "white" : "#6b7280",
+              padding: "10px 22px",
+              borderRadius: "8px",
               border: "none",
-              borderRadius: "6px",
               cursor: "pointer",
               fontSize: "14px",
               fontWeight: 600,
+              transition: "all 0.2s",
+              background: reportType === "custom" ? "#324158" : "transparent",
+              color: reportType === "custom" ? "white" : "#64748b",
             }}
           >
             Custom

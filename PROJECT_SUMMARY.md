@@ -1,9 +1,10 @@
 # Progrentures Internship Management System
+
 ## Complete Project Summary
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Progrenstures/
@@ -62,9 +63,10 @@ Progrenstures/
 
 ---
 
-## ✅ Features Implemented
+## Features Implemented
 
 ### Backend Features:
+
 1. **MongoDB Database Connection**
    - Auto-creates `progrentures` database
    - Dummy admin created on first run
@@ -101,6 +103,7 @@ Progrenstures/
    - Admin role verification
 
 ### Frontend Features:
+
 1. **Login Page**
    - Left: Company logo & branding
    - Right: 3 login buttons (Admin, Intern, SMS)
@@ -137,17 +140,19 @@ Progrenstures/
 
 ---
 
-## 🔐 Default Credentials
+## Default Credentials
 
 ### Admin Login:
+
 - **Email**: admin@progrentures.com
 - **Password**: admin123
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 ### 1. Install Dependencies
+
 ```bash
 # Backend
 cd backend
@@ -159,7 +164,9 @@ npm install
 ```
 
 ### 2. Configure Environment
+
 Edit `backend/.env`:
+
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/progrentures
@@ -170,12 +177,14 @@ EMAIL_PASS=your-gmail-app-password
 ```
 
 ### 3. Start MongoDB
+
 ```bash
 mongod
 # or start MongoDB service
 ```
 
 ### 4. Run Backend
+
 ```bash
 cd backend
 npm start
@@ -183,6 +192,7 @@ npm start
 ```
 
 ### 5. Run Frontend
+
 ```bash
 cd frontend
 npm run dev
@@ -191,7 +201,7 @@ npm run dev
 
 ---
 
-## 📊 Application Flow
+## Application Flow
 
 ```
 1. User opens http://localhost:3000
@@ -232,7 +242,7 @@ npm run dev
 
 ---
 
-## 📧 Email Sample
+## Email Sample
 
 When an intern is added, they receive:
 
@@ -256,35 +266,36 @@ Progrentures Team
 
 ---
 
-## 🔧 Technologies Used
+## Technologies Used
 
-| Layer      | Technology      | Purpose                          |
-|------------|----------------|----------------------------------|
-| Frontend   | React 18       | UI Framework                     |
-| Frontend   | Vite           | Build tool & dev server         |
-| Frontend   | React Router   | Client-side routing             |
-| Frontend   | Axios          | HTTP requests                    |
-| Backend    | Node.js        | Runtime environment             |
-| Backend    | Express.js     | Web framework                   |
-| Backend    | MongoDB        | Database                        |
-| Backend    | Mongoose       | MongoDB ODM                     |
-| Backend    | JWT            | Authentication                  |
-| Backend    | bcryptjs       | Password hashing                |
-| Backend    | Nodemailer     | Email service                   |
-| Backend    | CORS           | Cross-origin requests           |
-| Backend    | dotenv         | Environment variables           |
+| Layer    | Technology   | Purpose                 |
+| -------- | ------------ | ----------------------- |
+| Frontend | React 18     | UI Framework            |
+| Frontend | Vite         | Build tool & dev server |
+| Frontend | React Router | Client-side routing     |
+| Frontend | Axios        | HTTP requests           |
+| Backend  | Node.js      | Runtime environment     |
+| Backend  | Express.js   | Web framework           |
+| Backend  | MongoDB      | Database                |
+| Backend  | Mongoose     | MongoDB ODM             |
+| Backend  | JWT          | Authentication          |
+| Backend  | bcryptjs     | Password hashing        |
+| Backend  | Nodemailer   | Email service           |
+| Backend  | CORS         | Cross-origin requests   |
+| Backend  | dotenv       | Environment variables   |
 
 ---
 
 ## 📝 Key Code Patterns
 
 ### 1. JWT Authentication
+
 ```javascript
 // Generate token
 const token = jwt.sign(
   { id: admin._id, email: admin.email, role: admin.role },
   process.env.JWT_SECRET,
-  { expiresIn: '24h' }
+  { expiresIn: "24h" },
 );
 
 // Verify token (middleware)
@@ -292,6 +303,7 @@ const decoded = jwt.verify(token, process.env.JWT_SECRET);
 ```
 
 ### 2. Password Hashing
+
 ```javascript
 // Hash password
 const hashedPassword = await bcrypt.hash(password, 10);
@@ -301,36 +313,38 @@ const isMatch = await bcrypt.compare(password, hashedPassword);
 ```
 
 ### 3. Intern ID Generation
+
 ```javascript
 const generateInternId = async () => {
   const year = new Date().getFullYear();
   const count = await Intern.countDocuments();
-  return `PRG${year}${String(count + 1).padStart(4, '0')}`;
+  return `PRG${year}${String(count + 1).padStart(4, "0")}`;
 };
 // Output: PRG20250001, PRG20250002, etc.
 ```
 
 ### 4. Protected Routes
+
 ```javascript
 // Frontend
-localStorage.setItem('token', response.data.token);
+localStorage.setItem("token", response.data.token);
 
 // Backend middleware
-const token = req.headers.authorization?.split(' ')[1];
+const token = req.headers.authorization?.split(" ")[1];
 const decoded = jwt.verify(token, process.env.JWT_SECRET);
 ```
 
 ---
 
-## 🎯 Project Highlights
+## Project Highlights
 
-✅ **Clean Architecture**: Separation of concerns (MVC pattern)  
-✅ **Secure**: Password hashing, JWT authentication, protected routes  
-✅ **User-Friendly**: Intuitive UI, clear error messages  
-✅ **Professional**: Email notifications, auto-generated IDs  
-✅ **Scalable**: Modular code structure, easy to extend  
-✅ **Interview-Ready**: Well-documented, follows best practices  
-✅ **Startup-Friendly**: Simple, no over-engineering  
+**Clean Architecture**: Separation of concerns (MVC pattern)  
+**Secure**: Password hashing, JWT authentication, protected routes  
+**User-Friendly**: Intuitive UI, clear error messages  
+**Professional**: Email notifications, auto-generated IDs  
+**Scalable**: Modular code structure, easy to extend  
+**Interview-Ready**: Well-documented, follows best practices  
+**Startup-Friendly**: Simple, no over-engineering
 
 ---
 
@@ -348,20 +362,21 @@ const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
 ---
 
-## 📞 API Endpoints Summary
+## API Endpoints Summary
 
-| Method | Endpoint               | Access  | Description           |
-|--------|------------------------|---------|----------------------|
-| POST   | /api/auth/admin-login  | Public  | Admin login          |
-| POST   | /api/auth/intern-login | Public  | Intern login         |
-| POST   | /api/admin/add-intern  | Admin   | Add new intern       |
-| GET    | /api/admin/interns     | Admin   | Get all interns      |
+| Method | Endpoint               | Access | Description     |
+| ------ | ---------------------- | ------ | --------------- |
+| POST   | /api/auth/admin-login  | Public | Admin login     |
+| POST   | /api/auth/intern-login | Public | Intern login    |
+| POST   | /api/admin/add-intern  | Admin  | Add new intern  |
+| GET    | /api/admin/interns     | Admin  | Get all interns |
 
 ---
 
-## ✨ Ready to Use!
+## Ready to Use!
 
 The system is fully functional and ready for:
+
 - Development
 - Testing
 - Demonstration
@@ -371,4 +386,4 @@ All files are created and organized.
 All features are implemented.  
 All documentation is complete.
 
-**Happy Coding!** 🚀
+**Happy Coding!**

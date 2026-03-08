@@ -88,9 +88,9 @@ function ViewInterns({ onInternDeleted }) {
   const handleDelete = async (id, name) => {
     // Add confirmation dialog to prevent accidental deletion
     const confirmDelete = window.confirm(
-      `Are you sure you want to move "${name}" to archived students?\n\nThe student will be moved to the Recycle Bin where you can:\n- Restore them later if needed\n- Permanently delete them\n\nClick OK to archive this student.`
+      `Are you sure you want to move "${name}" to archived students?\n\nThe student will be moved to the Recycle Bin where you can:\n- Restore them later if needed\n- Permanently delete them\n\nClick OK to archive this student.`,
     );
-    
+
     if (!confirmDelete) {
       return; // User cancelled, do nothing
     }
@@ -98,7 +98,9 @@ function ViewInterns({ onInternDeleted }) {
     try {
       await adminAPI.deleteIntern(id);
       setInterns(interns.filter((intern) => intern._id !== id));
-      setInfoMessage(`"${name}" has been archived. You can restore them from Archived Students.`);
+      setInfoMessage(
+        `"${name}" has been archived. You can restore them from Archived Students.`,
+      );
       setTimeout(() => setInfoMessage(""), 5000);
       if (onInternDeleted) onInternDeleted();
     } catch (err) {
@@ -239,16 +241,19 @@ function ViewInterns({ onInternDeleted }) {
           interns.map((intern) => {
             if (intern._id === selectedStudent._id) {
               let updatedDocuments = { ...(intern.documents || {}) };
-              
+
               if (certificateType === "other") {
                 // Add to otherCertificates array
                 const existingOther = updatedDocuments.otherCertificates || [];
-                updatedDocuments.otherCertificates = [...existingOther, response.data.document];
+                updatedDocuments.otherCertificates = [
+                  ...existingOther,
+                  response.data.document,
+                ];
               } else {
                 // Single document types
                 updatedDocuments[certificateType] = response.data.document;
               }
-              
+
               return {
                 ...intern,
                 documents: updatedDocuments,
@@ -261,14 +266,17 @@ function ViewInterns({ onInternDeleted }) {
         // Update selected student
         setSelectedStudent((prev) => {
           let updatedDocuments = { ...(prev.documents || {}) };
-          
+
           if (certificateType === "other") {
             const existingOther = updatedDocuments.otherCertificates || [];
-            updatedDocuments.otherCertificates = [...existingOther, response.data.document];
+            updatedDocuments.otherCertificates = [
+              ...existingOther,
+              response.data.document,
+            ];
           } else {
             updatedDocuments[certificateType] = response.data.document;
           }
-          
+
           return {
             ...prev,
             documents: updatedDocuments,
@@ -476,7 +484,7 @@ function ViewInterns({ onInternDeleted }) {
               color: "#64748b",
             }}
           >
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}></div>
             <h3 style={{ color: "#0f172a", marginBottom: "8px" }}>
               No Students Found
             </h3>
@@ -563,9 +571,10 @@ function ViewInterns({ onInternDeleted }) {
                         className={`status-badge ${
                           (student.status || "").toLowerCase() === "active"
                             ? "status-active"
-                            : (student.status || "").toLowerCase() === "completed"
-                            ? "status-completed"
-                            : "status-inactive"
+                            : (student.status || "").toLowerCase() ===
+                                "completed"
+                              ? "status-completed"
+                              : "status-inactive"
                         }`}
                       >
                         {student.status
@@ -766,15 +775,9 @@ function ViewInterns({ onInternDeleted }) {
       {showProfileModal &&
         selectedStudent &&
         createPortal(
-          <div
-            className="profile-modal-overlay"
-          >
-            <div
-              className="profile-modal-container"
-            >
-              <div
-                className="profile-header"
-              >
+          <div className="profile-modal-overlay">
+            <div className="profile-modal-container">
+              <div className="profile-header">
                 <button
                   className="profile-close-btn"
                   onClick={() => setShowProfileModal(false)}
@@ -787,9 +790,7 @@ function ViewInterns({ onInternDeleted }) {
                   <div className="profile-avatar">
                     {selectedStudent.name.charAt(0).toUpperCase()}
                   </div>
-                  <h2 className="profile-name">
-                    {selectedStudent.name}
-                  </h2>
+                  <h2 className="profile-name">{selectedStudent.name}</h2>
                   <div className="profile-badges">
                     <span className="profile-badge">
                       {selectedStudent.internId}
@@ -813,7 +814,6 @@ function ViewInterns({ onInternDeleted }) {
 
               {/* Content Body */}
               <div className="profile-body">
-
                 {/* Contact Information */}
                 <div className="profile-section">
                   <h3 className="profile-section-title">
@@ -823,21 +823,33 @@ function ViewInterns({ onInternDeleted }) {
                   <div className="profile-info-grid">
                     <div className="profile-info-card">
                       <div className="profile-info-label">Email Address</div>
-                      <div className="profile-info-value">{selectedStudent.email}</div>
+                      <div className="profile-info-value">
+                        {selectedStudent.email}
+                      </div>
                     </div>
                     <div className="profile-info-card">
                       <div className="profile-info-label">Mobile Number</div>
-                      <div className="profile-info-value">{selectedStudent.mobile || "Not provided"}</div>
+                      <div className="profile-info-value">
+                        {selectedStudent.mobile || "Not provided"}
+                      </div>
                     </div>
                     <div className="profile-info-card">
                       <div className="profile-info-label">Student ID</div>
-                      <div className="profile-info-value">{selectedStudent.internId}</div>
+                      <div className="profile-info-value">
+                        {selectedStudent.internId}
+                      </div>
                     </div>
                     <div className="profile-info-card">
                       <div className="profile-info-label">Registered On</div>
                       <div className="profile-info-value">
                         {selectedStudent.createdAt
-                          ? new Date(selectedStudent.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                          ? new Date(
+                              selectedStudent.createdAt,
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
                           : "—"}
                       </div>
                     </div>
@@ -854,14 +866,22 @@ function ViewInterns({ onInternDeleted }) {
                     <div className="profile-info-grid">
                       <div className="profile-info-card">
                         <div className="profile-info-label">Trainer Name</div>
-                        <div className="profile-info-value" style={{ color: "#059669", fontWeight: "700" }}>
-                          {selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}
+                        <div
+                          className="profile-info-value"
+                          style={{ color: "#059669", fontWeight: "700" }}
+                        >
+                          {selectedStudent.assignedTrainer.name ||
+                            selectedStudent.assignedTrainer}
                         </div>
                       </div>
                       {selectedStudent.assignedTrainer.email && (
                         <div className="profile-info-card">
-                          <div className="profile-info-label">Trainer Email</div>
-                          <div className="profile-info-value">{selectedStudent.assignedTrainer.email}</div>
+                          <div className="profile-info-label">
+                            Trainer Email
+                          </div>
+                          <div className="profile-info-value">
+                            {selectedStudent.assignedTrainer.email}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -877,26 +897,50 @@ function ViewInterns({ onInternDeleted }) {
                     </h3>
                     <div className="profile-details-grid">
                       <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">Domain</div>
-                        <div className="profile-detail-value">{selectedStudent.domain || "Not specified"}</div>
+                        <div className="profile-detail-label color-indigo">
+                          Domain
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.domain || "Not specified"}
+                        </div>
                       </div>
                       <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">Duration</div>
-                        <div className="profile-detail-value">{selectedStudent.duration || "Not specified"}</div>
+                        <div className="profile-detail-label color-indigo">
+                          Duration
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.duration || "Not specified"}
+                        </div>
                       </div>
                       <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">Joining Date</div>
+                        <div className="profile-detail-label color-success">
+                          Joining Date
+                        </div>
                         <div className="profile-detail-value">
                           {selectedStudent.joiningDate
-                            ? new Date(selectedStudent.joiningDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                            ? new Date(
+                                selectedStudent.joiningDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
                             : "Not set"}
                         </div>
                       </div>
                       <div className="profile-detail-card type-warning">
-                        <div className="profile-detail-label color-warning">Ending Date</div>
+                        <div className="profile-detail-label color-warning">
+                          Ending Date
+                        </div>
                         <div className="profile-detail-value">
                           {selectedStudent.endingDate
-                            ? new Date(selectedStudent.endingDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                            ? new Date(
+                                selectedStudent.endingDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
                             : "Not set"}
                         </div>
                       </div>
@@ -913,36 +957,70 @@ function ViewInterns({ onInternDeleted }) {
                     </h3>
                     <div className="profile-details-grid">
                       <div className="profile-detail-card type-pink">
-                        <div className="profile-detail-label color-pink">Gender</div>
-                        <div className="profile-detail-value">{selectedStudent.gender || "Not specified"}</div>
+                        <div className="profile-detail-label color-pink">
+                          Gender
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.gender || "Not specified"}
+                        </div>
                       </div>
                       <div className="profile-detail-card type-pink">
-                        <div className="profile-detail-label color-pink">Current Designation</div>
-                        <div className="profile-detail-value">{selectedStudent.currentDesignation || "Not specified"}</div>
+                        <div className="profile-detail-label color-pink">
+                          Current Designation
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.currentDesignation ||
+                            "Not specified"}
+                        </div>
                       </div>
                       <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">Payment Done By</div>
-                        <div className="profile-detail-value">{selectedStudent.paymentDoneBy || "Not specified"}</div>
+                        <div className="profile-detail-label color-indigo">
+                          Payment Done By
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.paymentDoneBy || "Not specified"}
+                        </div>
                       </div>
                       <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">Transaction ID</div>
-                        <div className="profile-detail-value" style={{ fontFamily: "monospace", fontSize: "13px" }}>
+                        <div className="profile-detail-label color-indigo">
+                          Transaction ID
+                        </div>
+                        <div
+                          className="profile-detail-value"
+                          style={{ fontFamily: "monospace", fontSize: "13px" }}
+                        >
                           {selectedStudent.transactionId || "Not provided"}
                         </div>
                       </div>
                       {selectedStudent.dateOfPayment && (
                         <div className="profile-detail-card type-success">
-                          <div className="profile-detail-label color-success">Date of Payment</div>
+                          <div className="profile-detail-label color-success">
+                            Date of Payment
+                          </div>
                           <div className="profile-detail-value">
-                            {new Date(selectedStudent.dateOfPayment).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                            {new Date(
+                              selectedStudent.dateOfPayment,
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </div>
                         </div>
                       )}
                       {selectedStudent.joiningDate && (
                         <div className="profile-detail-card type-warning">
-                          <div className="profile-detail-label color-warning">Joining Date</div>
+                          <div className="profile-detail-label color-warning">
+                            Joining Date
+                          </div>
                           <div className="profile-detail-value">
-                            {new Date(selectedStudent.joiningDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                            {new Date(
+                              selectedStudent.joiningDate,
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
                           </div>
                         </div>
                       )}
@@ -958,18 +1036,50 @@ function ViewInterns({ onInternDeleted }) {
                   </h3>
                   <div style={{ display: "grid", gap: "10px" }}>
                     {[
-                      { key: "offerLetter",             label: "Offer Letter" },
-                      { key: "welcomeLetter",           label: "Welcome Letter" },
-                      { key: "paymentReceipt",          label: "Payment Receipt" },
-                      { key: "completionCertificate",   label: "Completion Certificate" },
-                      { key: "experienceLetter",        label: "Experience Letter" },
+                      { key: "offerLetter", label: "Offer Letter" },
+                      { key: "welcomeLetter", label: "Welcome Letter" },
+                      { key: "paymentReceipt", label: "Payment Receipt" },
+                      {
+                        key: "completionCertificate",
+                        label: "Completion Certificate",
+                      },
+                      { key: "experienceLetter", label: "Experience Letter" },
                     ].map(({ key, label }) => (
-                      <div key={key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <div
+                        key={key}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "10px 14px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
                         <div>
-                          <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>{label}</div>
+                          <div
+                            style={{
+                              fontSize: "14px",
+                              fontWeight: "600",
+                              color: "#0f172a",
+                            }}
+                          >
+                            {label}
+                          </div>
                           {selectedStudent.documents?.[key] && (
-                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                              Uploaded: {new Date(selectedStudent.documents[key].uploadedAt || Date.now()).toLocaleDateString()}
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#64748b",
+                                marginTop: "2px",
+                              }}
+                            >
+                              Uploaded:{" "}
+                              {new Date(
+                                selectedStudent.documents[key].uploadedAt ||
+                                  Date.now(),
+                              ).toLocaleDateString()}
                             </div>
                           )}
                         </div>
@@ -978,35 +1088,83 @@ function ViewInterns({ onInternDeleted }) {
                             href={`http://localhost:5000/uploads/students/${selectedStudent.documents[key].filename}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ padding: "6px 14px", background: "#10b981", color: "white", textDecoration: "none", borderRadius: "6px", fontSize: "13px", fontWeight: "600" }}
+                            style={{
+                              padding: "6px 14px",
+                              background: "#0f172a",
+                              color: "white",
+                              textDecoration: "none",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                            }}
                           >
                             View
                           </a>
                         ) : (
-                          <span style={{ fontSize: "12px", color: "#94a3b8" }}>Not uploaded</span>
+                          <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                            Not uploaded
+                          </span>
                         )}
                       </div>
                     ))}
 
                     {/* Other Certificates */}
-                    {(selectedStudent.documents?.otherCertificates || []).map((cert, i) => (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                        <div>
-                          <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>{cert.name || `Certificate ${i + 1}`}</div>
-                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                            Uploaded: {new Date(cert.uploadedAt || Date.now()).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <a
-                          href={`http://localhost:5000/uploads/students/${cert.filename}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ padding: "6px 14px", background: "#10b981", color: "white", textDecoration: "none", borderRadius: "6px", fontSize: "13px", fontWeight: "600" }}
+                    {(selectedStudent.documents?.otherCertificates || []).map(
+                      (cert, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "10px 14px",
+                            background: "#f8fafc",
+                            borderRadius: "8px",
+                            border: "1px solid #e2e8f0",
+                          }}
                         >
-                          View
-                        </a>
-                      </div>
-                    ))}
+                          <div>
+                            <div
+                              style={{
+                                fontSize: "14px",
+                                fontWeight: "600",
+                                color: "#0f172a",
+                              }}
+                            >
+                              {cert.name || `Certificate ${i + 1}`}
+                            </div>
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#64748b",
+                                marginTop: "2px",
+                              }}
+                            >
+                              Uploaded:{" "}
+                              {new Date(
+                                cert.uploadedAt || Date.now(),
+                              ).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <a
+                            href={`http://localhost:5000/uploads/students/${cert.filename}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: "6px 14px",
+                              background: "#0f172a",
+                              color: "white",
+                              textDecoration: "none",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                            }}
+                          >
+                            View
+                          </a>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -1014,13 +1172,19 @@ function ViewInterns({ onInternDeleted }) {
                 <div className="profile-actions">
                   <button
                     className="profile-btn profile-btn-primary"
-                    onClick={() => { setShowProfileModal(false); handleEdit(selectedStudent); }}
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      handleEdit(selectedStudent);
+                    }}
                   >
                     Edit Profile
                   </button>
                   <button
                     className="profile-btn profile-btn-secondary"
-                    onClick={() => { setShowProfileModal(false); handleViewCertificates(selectedStudent); }}
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      handleViewCertificates(selectedStudent);
+                    }}
                   >
                     Manage Certificates
                   </button>
@@ -1339,7 +1503,7 @@ function ViewInterns({ onInternDeleted }) {
                 style={{
                   flex: 1,
                   padding: "10px 16px",
-                  background: "#10b981",
+                  background: "#0f172a",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1644,7 +1808,7 @@ function ViewInterns({ onInternDeleted }) {
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#10b981",
+                          background: "#0f172a",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -1707,7 +1871,7 @@ function ViewInterns({ onInternDeleted }) {
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#10b981",
+                          background: "#0f172a",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -1770,7 +1934,7 @@ function ViewInterns({ onInternDeleted }) {
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#10b981",
+                          background: "#0f172a",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -1819,8 +1983,8 @@ function ViewInterns({ onInternDeleted }) {
                       >
                         Uploaded:{" "}
                         {new Date(
-                          selectedStudent.documents.completionCertificate.uploadedAt ||
-                            Date.now(),
+                          selectedStudent.documents.completionCertificate
+                            .uploadedAt || Date.now(),
                         ).toLocaleDateString()}
                       </div>
                     )}
@@ -1833,7 +1997,7 @@ function ViewInterns({ onInternDeleted }) {
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#10b981",
+                          background: "#0f172a",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -1882,8 +2046,8 @@ function ViewInterns({ onInternDeleted }) {
                       >
                         Uploaded:{" "}
                         {new Date(
-                          selectedStudent.documents.experienceLetter.uploadedAt ||
-                            Date.now(),
+                          selectedStudent.documents.experienceLetter
+                            .uploadedAt || Date.now(),
                         ).toLocaleDateString()}
                       </div>
                     )}
@@ -1896,7 +2060,7 @@ function ViewInterns({ onInternDeleted }) {
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#10b981",
+                          background: "#0f172a",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -1958,7 +2122,7 @@ function ViewInterns({ onInternDeleted }) {
                               rel="noopener noreferrer"
                               style={{
                                 padding: "6px 12px",
-                                background: "#10b981",
+                                background: "#0f172a",
                                 color: "white",
                                 textDecoration: "none",
                                 borderRadius: "6px",

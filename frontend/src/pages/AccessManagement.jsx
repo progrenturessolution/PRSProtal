@@ -23,10 +23,50 @@ function AccessManagement() {
   const [selectedTrainerDetails, setSelectedTrainerDetails] = useState(null);
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
   const [newTrainerCredentials, setNewTrainerCredentials] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [filteredStudents, setFilteredStudents] = useState([]);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [students, searchQuery, filterType, filterStatus]);
+
+  const applyFilters = () => {
+    let filtered = [...students];
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (student) =>
+          student.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.internId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          student.mobile?.includes(searchQuery),
+      );
+    }
+
+    // Type filter
+    if (filterType !== "All") {
+      filtered = filtered.filter(
+        (student) => student.studentType === filterType,
+      );
+    }
+
+    // Status filter
+    if (filterStatus !== "All") {
+      filtered = filtered.filter(
+        (student) =>
+          (student.status || "").toLowerCase() === filterStatus.toLowerCase(),
+      );
+    }
+
+    setFilteredStudents(filtered);
+  };
 
   const fetchData = async () => {
     try {
@@ -176,78 +216,95 @@ function AccessManagement() {
   return (
     <>
       {/* Page Header */}
-      <div className="content-header">
-        <h1>Access Management</h1>
-        <p>Manage trainers, HR staff, and student assignments</p>
+      <div className="premium-page-header">
+        <div className="header-left">
+          <h1>Access Management</h1>
+          <p className="header-subtitle">
+            Manage trainers, HR staff, and student assignments
+          </p>
+        </div>
+        <div className="header-right">
+          <div className="date-badge">
+            {new Date().toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* Stats Row */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "16px",
-          marginBottom: "24px",
-        }}
-      >
-        <div
-          className="card"
-          style={{
-            padding: "20px",
-            background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
-            border: "none",
-          }}
-        >
-          <div style={{ fontSize: "13px", color: "#0369a1", marginBottom: "4px" }}>
-            Total Trainers
+      {/* Stats Grid */}
+      <div className="premium-stats-grid">
+        <div className="premium-stat-card accent-blue">
+          <div className="stat-icon-wrapper">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20h12a6 6 0 00-12 0z"
+              />
+            </svg>
           </div>
-          <div style={{ fontSize: "28px", fontWeight: 700, color: "#0c4a6e" }}>
-            {trainers.length}
+          <div className="stat-content">
+            <div className="stat-label">Total Trainers</div>
+            <div className="stat-value">{trainers.length}</div>
+            <div className="stat-meta">All trainers and staff</div>
           </div>
         </div>
-        <div
-          className="card"
-          style={{
-            padding: "20px",
-            background: "linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%)",
-            border: "none",
-          }}
-        >
-          <div style={{ fontSize: "13px", color: "#7e22ce", marginBottom: "4px" }}>
-            HR Staff
+
+        <div className="premium-stat-card accent-teal">
+          <div className="stat-icon-wrapper">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+              />
+            </svg>
           </div>
-          <div style={{ fontSize: "28px", fontWeight: 700, color: "#581c87" }}>
-            {hrCount}
-          </div>
-        </div>
-        <div
-          className="card"
-          style={{
-            padding: "20px",
-            background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
-            border: "none",
-          }}
-        >
-          <div style={{ fontSize: "13px", color: "#15803d", marginBottom: "4px" }}>
-            Active
-          </div>
-          <div style={{ fontSize: "28px", fontWeight: 700, color: "#14532d" }}>
-            {activeCount}
+          <div className="stat-content">
+            <div className="stat-label">HR Staff</div>
+            <div className="stat-value">{hrCount}</div>
+            <div className="stat-meta">HR administrators</div>
           </div>
         </div>
-        <div
-          className="card"
-          style={{
-            padding: "20px",
-            background: "linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)",
-            border: "none",
-          }}
-        >
-          <div style={{ fontSize: "13px", color: "#a16207", marginBottom: "4px" }}>
-            Students Assigned
+
+        <div className="premium-stat-card accent-indigo">
+          <div className="stat-icon-wrapper">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 6H5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-5m-4-6l4.586-4.586a2 2 0 112.828 2.828L12.414 12A2 2 0 0010 13.414l-4.586 4.586a2 2 0 11-2.828-2.828L7.586 10.414A2 2 0 1010 8.586l4.586-4.586a2 2 0 110 2.828L10 11.414"
+              />
+            </svg>
           </div>
-          <div style={{ fontSize: "28px", fontWeight: 700, color: "#713f12" }}>
-            {totalAssigned}
+          <div className="stat-content">
+            <div className="stat-label">Active</div>
+            <div className="stat-value">{activeCount}</div>
+            <div className="stat-meta">Active trainers</div>
+          </div>
+        </div>
+
+        <div className="premium-stat-card accent-orange">
+          <div className="stat-icon-wrapper">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+              />
+            </svg>
+          </div>
+          <div className="stat-content">
+            <div className="stat-label">Students Assigned</div>
+            <div className="stat-value">{totalAssigned}</div>
+            <div className="stat-meta">Currently assigned</div>
           </div>
         </div>
       </div>
@@ -290,36 +347,35 @@ function AccessManagement() {
       <div
         style={{
           display: "flex",
-          gap: "8px",
+          gap: "4px",
           marginBottom: "24px",
           flexWrap: "wrap",
+          background: "#f1f5f9",
+          padding: "6px",
+          borderRadius: "12px",
+          width: "fit-content",
         }}
       >
         {[
-          { key: "list", label: "👥 Trainers List" },
-          { key: "add", label: "➕ Add Trainer" },
-          { key: "assign", label: "🔗 Assign Students" },
+          { key: "list", label: "Trainers List" },
+          { key: "add", label: "Add Trainer" },
+          { key: "assign", label: "Assign Students" },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             style={{
-              padding: "10px 20px",
+              padding: "10px 22px",
               borderRadius: "8px",
               border: "none",
               cursor: "pointer",
               fontSize: "14px",
               fontWeight: 600,
               transition: "all 0.2s",
-              background:
-                activeTab === tab.key
-                  ? "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)"
-                  : "#f1f5f9",
-              color: activeTab === tab.key ? "white" : "#64748b",
+              background: activeTab === tab.key ? "white" : "transparent",
+              color: activeTab === tab.key ? "#0f172a" : "#64748b",
               boxShadow:
-                activeTab === tab.key
-                  ? "0 2px 8px rgba(59,130,246,0.35)"
-                  : "none",
+                activeTab === tab.key ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
             }}
           >
             {tab.label}
@@ -341,23 +397,8 @@ function AccessManagement() {
               borderBottom: "1px solid #f1f5f9",
             }}
           >
-            <div
-              style={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "10px",
-                background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "18px",
-                flexShrink: 0,
-              }}
-            >
-              👤
-            </div>
             <div>
-              <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>
+              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
                 Add New Trainer
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
@@ -433,29 +474,22 @@ function AccessManagement() {
               </div>
             </div>
 
-            <div
-              style={{ marginTop: "24px", display: "flex", gap: "12px" }}
-            >
+            <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
               <button
                 type="submit"
                 disabled={loading}
                 style={{
                   padding: "12px 28px",
-                  background: loading
-                    ? "#94a3b8"
-                    : "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  background: loading ? "#94a3b8" : "#324158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
                   cursor: loading ? "not-allowed" : "pointer",
                   fontSize: "14px",
                   fontWeight: 600,
-                  boxShadow: loading
-                    ? "none"
-                    : "0 2px 8px rgba(16,185,129,0.35)",
                 }}
               >
-                {loading ? "Adding..." : "✓ Add Trainer"}
+                {loading ? "Adding..." : "Add Trainer"}
               </button>
               <button
                 type="button"
@@ -492,24 +526,8 @@ function AccessManagement() {
               borderBottom: "1px solid #f1f5f9",
             }}
           >
-            <div
-              style={{
-                width: "42px",
-                height: "42px",
-                borderRadius: "10px",
-                background:
-                  "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "18px",
-                flexShrink: 0,
-              }}
-            >
-              🔗
-            </div>
             <div>
-              <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>
+              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
                 Assign Students to Trainer
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
@@ -529,8 +547,7 @@ function AccessManagement() {
                 <option value="">Choose a trainer...</option>
                 {trainers.map((trainer) => (
                   <option key={trainer._id} value={trainer._id}>
-                    {trainer.name}{" "}
-                    ({trainer.role === "hr" ? "HR" : "Trainer"})
+                    {trainer.name} ({trainer.role === "hr" ? "HR" : "Trainer"})
                   </option>
                 ))}
               </select>
@@ -540,9 +557,126 @@ function AccessManagement() {
               <label>
                 Select Students *{" "}
                 <span style={{ color: "#64748b", fontWeight: 400 }}>
-                  — {selectedStudents.length} selected
+                  — {selectedStudents.length} selected (
+                  {filteredStudents.length} shown)
                 </span>
               </label>
+
+              {/* Filters and Search Bar */}
+              <div
+                style={{
+                  background: "#f8fafc",
+                  padding: "16px",
+                  borderRadius: "10px",
+                  marginBottom: "16px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: "12px",
+                    alignItems: "end",
+                  }}
+                >
+                  {/* Search */}
+                  <div style={{ gridColumn: "span 2" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        color: "#0f172a",
+                      }}
+                    >
+                      Search Students
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Search by name, email, ID, or mobile..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        background: "white",
+                        transition: "all 0.2s",
+                      }}
+                    />
+                  </div>
+
+                  {/* Student Type Filter */}
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        color: "#0f172a",
+                      }}
+                    >
+                      Student Type
+                    </label>
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        background: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="All">All Types</option>
+                      <option value="Internship">Internship</option>
+                      <option value="SMS Program">SMS Program</option>
+                    </select>
+                  </div>
+
+                  {/* Status Filter */}
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "6px",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        color: "#0f172a",
+                      }}
+                    >
+                      Status
+                    </label>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        background: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <option value="All">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div
                 style={{
                   maxHeight: "320px",
@@ -552,7 +686,7 @@ function AccessManagement() {
                   padding: "8px",
                 }}
               >
-                {students.length === 0 ? (
+                {filteredStudents.length === 0 ? (
                   <p
                     style={{
                       textAlign: "center",
@@ -560,10 +694,14 @@ function AccessManagement() {
                       padding: "24px 0",
                     }}
                   >
-                    No students available
+                    {searchQuery ||
+                    filterType !== "All" ||
+                    filterStatus !== "All"
+                      ? "No students match your search or filters"
+                      : "No students available"}
                   </p>
                 ) : (
-                  students.map((student) => (
+                  filteredStudents.map((student) => (
                     <label
                       key={student._id}
                       style={{
@@ -583,13 +721,11 @@ function AccessManagement() {
                       <input
                         type="checkbox"
                         checked={selectedStudents.includes(student._id)}
-                        onChange={() =>
-                          handleStudentSelection(student._id)
-                        }
+                        onChange={() => handleStudentSelection(student._id)}
                         style={{
                           width: "16px",
                           height: "16px",
-                          accentColor: "#3b82f6",
+                          accentColor: "#0f172a",
                           flexShrink: 0,
                         }}
                       />
@@ -598,12 +734,11 @@ function AccessManagement() {
                           width: "32px",
                           height: "32px",
                           borderRadius: "50%",
-                          background:
-                            "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                          background: "#e2e8f0",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "white",
+                          color: "#475569",
                           fontSize: "13px",
                           fontWeight: 700,
                           flexShrink: 0,
@@ -631,17 +766,13 @@ function AccessManagement() {
               </div>
             </div>
 
-            <div
-              style={{ marginTop: "24px", display: "flex", gap: "12px" }}
-            >
+            <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
               <button
                 type="submit"
                 disabled={loading}
                 style={{
                   padding: "12px 28px",
-                  background: loading
-                    ? "#94a3b8"
-                    : "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  background: loading ? "#94a3b8" : "#324158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -653,7 +784,7 @@ function AccessManagement() {
                     : "0 2px 8px rgba(16,185,129,0.35)",
                 }}
               >
-                {loading ? "Assigning..." : "✓ Assign Students"}
+                {loading ? "Assigning..." : "Assign Students"}
               </button>
               <button
                 type="button"
@@ -692,24 +823,7 @@ function AccessManagement() {
               gap: "12px",
             }}
           >
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "10px" }}
-            >
-              <div
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "8px",
-                  background:
-                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "16px",
-                }}
-              >
-                👥
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <h3 style={{ margin: 0, color: "#0f172a", fontSize: "17px" }}>
                 Trainers & HR Staff
               </h3>
@@ -719,46 +833,38 @@ function AccessManagement() {
                 onClick={() => setActiveTab("add")}
                 style={{
                   padding: "9px 18px",
-                  background:
-                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  background: "#324158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
                   cursor: "pointer",
                   fontSize: "13px",
                   fontWeight: 600,
-                  boxShadow: "0 2px 6px rgba(59,130,246,0.3)",
                 }}
               >
-                + Add Trainer
+                Add Trainer
               </button>
               <button
                 onClick={() => setActiveTab("assign")}
                 style={{
                   padding: "9px 18px",
-                  background:
-                    "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  background: "#324158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
                   cursor: "pointer",
                   fontSize: "13px",
                   fontWeight: 600,
-                  boxShadow: "0 2px 6px rgba(16,185,129,0.3)",
                 }}
               >
-                🔗 Assign Students
+                Assign Students
               </button>
             </div>
           </div>
 
           {trainers.length === 0 ? (
-            <div
-              style={{ textAlign: "center", padding: "48px 20px" }}
-            >
-              <div style={{ fontSize: "52px", marginBottom: "12px" }}>
-                👤
-              </div>
+            <div style={{ textAlign: "center", padding: "48px 20px" }}>
+              <div style={{ fontSize: "52px", marginBottom: "12px" }}>−</div>
               <h3
                 style={{
                   color: "#64748b",
@@ -781,8 +887,7 @@ function AccessManagement() {
                 onClick={() => setActiveTab("add")}
                 style={{
                   padding: "10px 24px",
-                  background:
-                    "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                  background: "#324158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -810,44 +915,16 @@ function AccessManagement() {
                 <tbody>
                   {trainers.map((trainer) => (
                     <tr key={trainer._id}>
-                      {/* Name + Avatar */}
+                      {/* Name */}
                       <td>
-                        <div
+                        <span
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
+                            fontWeight: 600,
+                            color: "#0f172a",
                           }}
                         >
-                          <div
-                            style={{
-                              width: "36px",
-                              height: "36px",
-                              borderRadius: "50%",
-                              background:
-                                trainer.role === "hr"
-                                  ? "linear-gradient(135deg, #a855f7, #7c3aed)"
-                                  : "linear-gradient(135deg, #3b82f6, #1d4ed8)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              color: "white",
-                              fontWeight: 700,
-                              fontSize: "14px",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {trainer.name?.charAt(0).toUpperCase()}
-                          </div>
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              color: "#0f172a",
-                            }}
-                          >
-                            {trainer.name}
-                          </span>
-                        </div>
+                          {trainer.name}
+                        </span>
                       </td>
                       <td style={{ color: "#64748b" }}>{trainer.email}</td>
                       <td style={{ color: "#64748b" }}>{trainer.mobile}</td>
@@ -860,13 +937,9 @@ function AccessManagement() {
                             fontSize: "12px",
                             fontWeight: 600,
                             background:
-                              trainer.role === "hr"
-                                ? "#fdf4ff"
-                                : "#eff6ff",
+                              trainer.role === "hr" ? "#f1f5f9" : "#f1f5f9",
                             color:
-                              trainer.role === "hr"
-                                ? "#7e22ce"
-                                : "#1d4ed8",
+                              trainer.role === "hr" ? "#475569" : "#475569",
                             textTransform: "capitalize",
                           }}
                         >
@@ -878,25 +951,11 @@ function AccessManagement() {
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            gap: "5px",
+                            gap: "8px",
                             fontWeight: 600,
                             color: "#0f172a",
                           }}
                         >
-                          <span
-                            style={{
-                              width: "20px",
-                              height: "20px",
-                              borderRadius: "50%",
-                              background: "#dbeafe",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "11px",
-                            }}
-                          >
-                            👤
-                          </span>
                           {trainer.assignedStudents?.length || 0}
                         </span>
                       </td>
@@ -915,9 +974,7 @@ function AccessManagement() {
                         <button
                           onClick={() =>
                             setOpenMenuId(
-                              openMenuId === trainer._id
-                                ? null
-                                : trainer._id,
+                              openMenuId === trainer._id ? null : trainer._id,
                             )
                           }
                           style={{
@@ -985,7 +1042,7 @@ function AccessManagement() {
                                 (e.currentTarget.style.background = "white")
                               }
                             >
-                              👁 View Details
+                              View Details
                             </button>
                           </div>
                         )}
@@ -1031,7 +1088,7 @@ function AccessManagement() {
             {/* Header */}
             <div
               style={{
-                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                background: "#0f172a",
                 padding: "24px",
                 borderTopLeftRadius: "16px",
                 borderTopRightRadius: "16px",
@@ -1095,7 +1152,7 @@ function AccessManagement() {
                   gap: "12px",
                 }}
               >
-                <span style={{ fontSize: "20px" }}></span>
+                <span style={{ fontSize: "20px" }}>!</span>
                 <div>
                   <strong
                     style={{
@@ -1116,17 +1173,17 @@ function AccessManagement() {
               {/* Trainer Info Card */}
               <div
                 style={{
-                  background:
-                    "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
+                  background: "#f1f5f9",
                   borderRadius: "12px",
                   padding: "24px",
                   marginBottom: "24px",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <h3
                   style={{
                     margin: "0 0 16px 0",
-                    color: "#0c4a6e",
+                    color: "#0f172a",
                     fontSize: "18px",
                   }}
                 >
@@ -1184,17 +1241,16 @@ function AccessManagement() {
               {/* Login Credentials Card */}
               <div
                 style={{
-                  background:
-                    "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+                  background: "#f1f5f9",
                   borderRadius: "12px",
                   padding: "24px",
-                  border: "2px solid #fbbf24",
+                  border: "1px solid #e2e8f0",
                 }}
               >
                 <h3
                   style={{
                     margin: "0 0 16px 0",
-                    color: "#78350f",
+                    color: "#0f172a",
                     fontSize: "18px",
                     display: "flex",
                     alignItems: "center",
@@ -1210,7 +1266,7 @@ function AccessManagement() {
                         display: "block",
                         fontSize: "12px",
                         fontWeight: "600",
-                        color: "#92400e",
+                        color: "#64748b",
                         marginBottom: "6px",
                       }}
                     >
@@ -1224,7 +1280,7 @@ function AccessManagement() {
                         fontSize: "16px",
                         color: "#0f172a",
                         fontWeight: "600",
-                        border: "1px solid #fbbf24",
+                        border: "1px solid #e2e8f0",
                         fontFamily: "monospace",
                         letterSpacing: "0.5px",
                       }}
@@ -1238,7 +1294,7 @@ function AccessManagement() {
                         display: "block",
                         fontSize: "12px",
                         fontWeight: "600",
-                        color: "#92400e",
+                        color: "#64748b",
                         marginBottom: "6px",
                       }}
                     >
@@ -1252,7 +1308,7 @@ function AccessManagement() {
                         fontSize: "16px",
                         color: "#0f172a",
                         fontWeight: "600",
-                        border: "1px solid #fbbf24",
+                        border: "1px solid #e2e8f0",
                         fontFamily: "monospace",
                         letterSpacing: "0.5px",
                       }}
@@ -1305,8 +1361,7 @@ function AccessManagement() {
                   width: "100%",
                   marginTop: "24px",
                   padding: "14px",
-                  background:
-                    "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  background: "#0f172a",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1357,7 +1412,7 @@ function AccessManagement() {
             {/* Header */}
             <div
               style={{
-                background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                background: "#0f172a",
                 padding: "24px",
                 borderTopLeftRadius: "16px",
                 borderTopRightRadius: "16px",
@@ -1408,8 +1463,7 @@ function AccessManagement() {
               <div style={{ display: "grid", gap: "16px" }}>
                 <div
                   style={{
-                    background:
-                      "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)",
+                    background: "#f8fafc",
                     borderRadius: "12px",
                     padding: "20px",
                   }}
@@ -1499,8 +1553,7 @@ function AccessManagement() {
 
                 <div
                   style={{
-                    background:
-                      "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
+                    background: "#f8fafc",
                     borderRadius: "12px",
                     padding: "20px",
                   }}
@@ -1579,7 +1632,7 @@ function AccessManagement() {
                   }}
                 >
                   <div style={{ display: "flex", gap: "12px" }}>
-                    <span style={{ fontSize: "18px" }}>🔑</span>
+                   
                     <div>
                       <strong
                         style={{

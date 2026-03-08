@@ -85,6 +85,7 @@ npm run dev
 The backend server will run on `http://localhost:5000`
 
 **Important**: The system will automatically create a dummy admin on first run:
+
 - Email: `admin@progrentures.com`
 - Password: `admin123`
 
@@ -121,20 +122,23 @@ To enable email functionality:
 
 ## Features Implemented
 
-### ✅ Authentication
+### Authentication
+
 - Admin login with JWT
 - Intern login with JWT
 - Protected routes
 - Token-based authorization
 
-### ✅ Admin Features
+### Admin Features
+
 - Admin dashboard with sidebar navigation
 - Add new intern
 - Auto-generate unique Intern ID (format: PRG{YEAR}{NUMBER})
 - Send credentials via email
 - Password hashing with bcrypt
 
-### ✅ User Interface
+### User Interface
+
 - Clean, professional design
 - Responsive layout
 - Login page with company branding
@@ -144,6 +148,7 @@ To enable email functionality:
 ## API Endpoints
 
 ### Authentication Routes
+
 ```
 POST /api/auth/admin-login
 Body: { email, password }
@@ -153,6 +158,7 @@ Body: { internId, password }
 ```
 
 ### Admin Routes (Protected)
+
 ```
 POST /api/admin/add-intern
 Headers: Authorization: Bearer {token}
@@ -165,6 +171,7 @@ Headers: Authorization: Bearer {token}
 ## Database Schemas
 
 ### Admin Schema
+
 ```javascript
 {
   email: String (unique, required),
@@ -175,6 +182,7 @@ Headers: Authorization: Bearer {token}
 ```
 
 ### Intern Schema
+
 ```javascript
 {
   name: String (required),
@@ -189,6 +197,7 @@ Headers: Authorization: Bearer {token}
 ## Default Credentials
 
 ### Admin Login
+
 - **Email**: admin@progrentures.com
 - **Password**: admin123
 
@@ -227,15 +236,18 @@ Headers: Authorization: Bearer {token}
 ## Troubleshooting
 
 ### MongoDB Connection Error
+
 - Ensure MongoDB is running: `mongod` or start MongoDB service
 - Check if port 27017 is available
 
 ### Email Not Sending
+
 - Verify Gmail App Password is correct
 - Check if 2FA is enabled on Gmail account
 - Ensure EMAIL_USER and EMAIL_PASS are set in .env
 
 ### Frontend Can't Connect to Backend
+
 - Verify backend is running on port 5000
 - Check CORS is enabled in backend
 - Ensure API_BASE_URL in frontend is correct

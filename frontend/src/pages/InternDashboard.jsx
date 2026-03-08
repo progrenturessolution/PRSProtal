@@ -9,7 +9,7 @@ function InternDashboard() {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState("profile");
+  const [activeSection, setActiveSection] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [documents, setDocuments] = useState(null);
   const [interviews, setInterviews] = useState([]);
@@ -18,7 +18,7 @@ function InternDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [jobPostings, setJobPostings] = useState([]);
   const [assignedCerts, setAssignedCerts] = useState([]);
-  const [taskView, setTaskView] = useState('individual');
+  const [taskView, setTaskView] = useState("individual");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -38,8 +38,20 @@ function InternDashboard() {
     }
 
     setUser(parsedUser);
+    fetchProfile();
     fetchTasks();
   }, [navigate]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await internAPI.getMyProfile();
+      if (response.data.success) {
+        setUser((prevUser) => ({ ...prevUser, ...response.data.user }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -94,7 +106,9 @@ function InternDashboard() {
             if (certResp.data && certResp.data.success) {
               setAssignedCerts(certResp.data.certificates || []);
             }
-          } catch (e) { console.error('Failed to fetch assigned certs:', e); }
+          } catch (e) {
+            console.error("Failed to fetch assigned certs:", e);
+          }
           break;
         case "interviews":
           const intResp = await internAPI.getMyInterviews();
@@ -220,7 +234,7 @@ function InternDashboard() {
             <img src={logo} alt="Progrentures" className="sidebar-logo" />
           </div>
           <h2>PROGRENTURES</h2>
-          <p>Intern Portal</p>
+          <p>Student Portal</p>
         </div>
 
         <div
@@ -239,60 +253,141 @@ function InternDashboard() {
         </div>
 
         <ul className="sidebar-menu">
+          {/* Overview */}
+          <li className="menu-section-header">OVERVIEW</li>
+          <li
+            className={activeSection === "dashboard" ? "active" : ""}
+            onClick={() => handleSectionClick("dashboard")}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z"
+              />
+            </svg>
+            Dashboard Overview
+          </li>
+
+          {/* My Progress */}
+          <li className="menu-section-header">MY PROGRESS</li>
           <li
             className={activeSection === "profile" ? "active" : ""}
             onClick={() => handleSectionClick("profile")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
             My Profile
           </li>
           <li
             className={activeSection === "program" ? "active" : ""}
             onClick={() => handleSectionClick("program")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
+            </svg>
             My Program
           </li>
           <li
             className={activeSection === "tasks" ? "active" : ""}
             onClick={() => handleSectionClick("tasks")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
             Tasks/Projects
           </li>
+
+          {/* Assessments */}
+          <li className="menu-section-header">ASSESSMENTS</li>
           <li
             className={activeSection === "interviews" ? "active" : ""}
             onClick={() => handleSectionClick("interviews")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
             Interviews
           </li>
           <li
             className={activeSection === "assessments" ? "active" : ""}
             onClick={() => handleSectionClick("assessments")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+              />
+            </svg>
             Aptitude & Assessments
           </li>
+
+          {/* Resources */}
+          <li className="menu-section-header">RESOURCES</li>
           <li
             className={activeSection === "documents" ? "active" : ""}
             onClick={() => handleSectionClick("documents")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
             Certificates/Documents
           </li>
           <li
             className={activeSection === "notifications" ? "active" : ""}
             onClick={() => handleSectionClick("notifications")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-5 5v-5zM4.868 12.683A17.925 17.925 0 012 21h9a3 3 0 003-3v-8a3 3 0 00-.879-2.122l-3.54-3.54A3 3 0 008.12 3H5a3 3 0 00-3 3v11.586a1 1 0 00.293.707l3.414 3.414z"
+              />
+            </svg>
             Notifications
           </li>
           <li
             className={activeSection === "jobs" ? "active" : ""}
             onClick={() => handleSectionClick("jobs")}
-            style={{ cursor: "pointer" }}
           >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
             Job & Internship Updates
           </li>
         </ul>
@@ -303,6 +398,176 @@ function InternDashboard() {
       </aside>
 
       <main className="main-content">
+        {/* Dashboard Overview Section */}
+        {activeSection === "dashboard" && (
+          <>
+            <div className="premium-page-header">
+              <div className="header-left">
+                <h1>Student Dashboard</h1>
+                <p className="header-subtitle">Welcome back, {user?.name}</p>
+              </div>
+              <div className="header-right">
+                <div className="date-badge">
+                  {new Date().toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Task Statistics */}
+            <div className="premium-stats-grid">
+              <div className="premium-stat-card accent-blue">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Total Tasks</div>
+                  <div className="stat-value">{getTaskStats().total}</div>
+                  <div className="stat-meta">All assigned tasks</div>
+                </div>
+              </div>
+
+              <div className="premium-stat-card accent-teal">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">In Progress</div>
+                  <div className="stat-value">{getTaskStats().inProgress}</div>
+                  <div className="stat-meta">Currently working</div>
+                </div>
+              </div>
+
+              <div className="premium-stat-card accent-indigo">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Pending Approval</div>
+                  <div className="stat-value">
+                    {getTaskStats().pendingApproval}
+                  </div>
+                  <div className="stat-meta">Awaiting review</div>
+                </div>
+              </div>
+
+              <div className="premium-stat-card accent-slate">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Completed</div>
+                  <div className="stat-value">{getTaskStats().completed}</div>
+                  <div className="stat-meta">Successfully finished</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="premium-action-grid">
+              <div className="premium-action-card">
+                <div className="action-card-icon blue">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+                <div className="action-card-content">
+                  <h3>View Tasks</h3>
+                  <p>Check your assigned tasks and projects</p>
+                </div>
+                <button
+                  className="action-card-btn"
+                  onClick={() => setActiveSection("tasks")}
+                >
+                  View
+                </button>
+              </div>
+
+              <div className="premium-action-card">
+                <div className="action-card-icon teal">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                </div>
+                <div className="action-card-content">
+                  <h3>Notifications</h3>
+                  <p>View important announcements and updates</p>
+                </div>
+                <button
+                  className="action-card-btn"
+                  onClick={() => setActiveSection("notifications")}
+                >
+                  Check
+                </button>
+              </div>
+
+              <div className="premium-action-card">
+                <div className="action-card-icon indigo">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                </div>
+                <div className="action-card-content">
+                  <h3>Job Opportunities</h3>
+                  <p>Explore available job and internship positions</p>
+                </div>
+                <button
+                  className="action-card-btn"
+                  onClick={() => setActiveSection("jobs")}
+                >
+                  Explore
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* My Profile Section */}
         {activeSection === "profile" && (
           <>
@@ -311,216 +576,143 @@ function InternDashboard() {
               <p>Your personal and professional information</p>
             </div>
 
-            <div className="card" style={{ marginBottom: "30px" }}>
-              <h2
-                style={{
-                  marginBottom: "20px",
-                  fontSize: "20px",
-                  color: "#0f172a",
-                }}
-              >
-                Personal Details
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                  }}
-                >
+            <div className="card">
+              <h2>Personal Details</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Name</label>
                   <div
                     style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
-                    Name
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600 }}>
                     {user.name}
                   </div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                  }}
-                >
+                <div className="form-group">
+                  <label>Student ID</label>
                   <div
                     style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
-                    Intern ID
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600 }}>
                     {user.internId}
                   </div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                  }}
-                >
+                <div className="form-group">
+                  <label>Email</label>
                   <div
                     style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Email
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                       wordBreak: "break-all",
                     }}
                   >
                     {user.email}
                   </div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                  }}
-                >
+                <div className="form-group">
+                  <label>Mobile</label>
                   <div
                     style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
-                    Mobile
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600 }}>
-                    {user.mobile}
+                    {user.mobile || "Not provided"}
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="card">
-              <h2
-                style={{
-                  marginBottom: "20px",
-                  fontSize: "20px",
-                  color: "#0f172a",
-                }}
-              >
-                Current Designation & Program
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "15px",
-                    background: "#f3f4f6",
-                    borderRadius: "12px",
-                    borderLeft: "4px solid #6366f1",
-                  }}
-                >
+              <h2>Current Designation & Program</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Current Designation</label>
                   <div
                     style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                      color: "#6b7280",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
-                    Current Designation
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "#0f172a",
-                    }}
-                  >
-                    {user.currentDesignation || "Not Set"}
+                    {user.currentDesignation || "Not specified"}
                   </div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background: "#f3f4f6",
-                    borderRadius: "12px",
-                    borderLeft: "4px solid #8b5cf6",
-                  }}
-                >
+                <div className="form-group">
+                  <label>Program</label>
                   <div
                     style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                      color: "#6b7280",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
-                    Student Type
+                    {user.studentType || "Not specified"}
                   </div>
+                </div>
+                <div className="form-group">
+                  <label>Technology</label>
                   <div
                     style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "#0f172a",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    {user.domain || "Not specified"}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Start Date</label>
+                  <div
+                    style={{
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    {user.joiningDate
+                      ? new Date(user.joiningDate).toLocaleDateString()
+                      : "Not specified"}
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Student Type</label>
+                  <div
+                    style={{
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
                     {user.studentType}
                   </div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background: "#f3f4f6",
-                    borderRadius: "12px",
-                    borderLeft: "4px solid #ec4899",
-                  }}
-                >
+                <div className="form-group">
+                  <label>Status</label>
                   <div
                     style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    Status
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "#0f172a",
+                      padding: "12px",
+                      backgroundColor: "#f8fafc",
+                      borderRadius: "6px",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
                     {user.status || "Active"}
@@ -542,99 +734,42 @@ function InternDashboard() {
             <div className="card">
               {user.studentType === "Internship" ? (
                 <>
-                  <h3
-                    style={{
-                      marginBottom: "20px",
-                      fontSize: "18px",
-                      color: "#0f172a",
-                    }}
-                  >
-                    Internship Details
-                  </h3>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(250px, 1fr))",
-                      gap: "20px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#f0f9ff",
-                        borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
-                      }}
-                    >
+                  <h2>Internship Details</h2>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Domain</label>
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#0c4a6e",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Domain
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "12px",
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         {user.domain || "Not Specified"}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#f0f9ff",
-                        borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
-                      }}
-                    >
+                    <div className="form-group">
+                      <label>Duration</label>
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#0c4a6e",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Duration
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "12px",
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         {user.duration || "Not Specified"}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#f0f9ff",
-                        borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
-                      }}
-                    >
+                    <div className="form-group">
+                      <label>Start Date</label>
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#0c4a6e",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Start Date
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "12px",
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         {user.joiningDate
@@ -642,28 +777,14 @@ function InternDashboard() {
                           : "Not Set"}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#f0f9ff",
-                        borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
-                      }}
-                    >
+                    <div className="form-group">
+                      <label>End Date</label>
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#0c4a6e",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        End Date
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "12px",
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         {user.endingDate
@@ -675,72 +796,29 @@ function InternDashboard() {
                 </>
               ) : (
                 <>
-                  <h3
-                    style={{
-                      marginBottom: "20px",
-                      fontSize: "18px",
-                      color: "#0f172a",
-                    }}
-                  >
-                    SMS Program Details
-                  </h3>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(250px, 1fr))",
-                      gap: "20px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#f0fdf4",
-                        borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
-                      }}
-                    >
+                  <h2>SMS Program Details</h2>
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Payment Status</label>
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#166534",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Payment Status
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "12px",
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         {user.paymentDoneBy || "Not Specified"}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#f0fdf4",
-                        borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
-                      }}
-                    >
+                    <div className="form-group">
+                      <label>Payment Date</label>
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#166534",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Payment Date
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "12px",
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         {user.dateOfPayment
@@ -748,28 +826,14 @@ function InternDashboard() {
                           : "Not Set"}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#f0fdf4",
-                        borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
-                      }}
-                    >
+                    <div className="form-group">
+                      <label>Transaction ID</label>
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#166534",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Transaction ID
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "12px",
+                          backgroundColor: "#f8fafc",
+                          borderRadius: "6px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         {user.transactionId || "Not Available"}
@@ -785,9 +849,22 @@ function InternDashboard() {
         {/* Tasks/Projects Section */}
         {activeSection === "tasks" && (
           <>
-            <div className="content-header">
-              <h1>Tasks / Projects</h1>
-              <p>View and manage your assigned tasks</p>
+            <div className="premium-page-header">
+              <div className="header-left">
+                <h1>Tasks / Projects</h1>
+                <p className="header-subtitle">
+                  Manage your assigned tasks and projects
+                </p>
+              </div>
+              <div className="header-right">
+                <div className="date-badge">
+                  {new Date().toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
             </div>
 
             {error && (
@@ -806,85 +883,167 @@ function InternDashboard() {
               </div>
             )}
 
-            <div className="card" style={{ marginBottom: "20px" }}>
-              <h3
-                style={{
-                  marginBottom: "15px",
-                  fontSize: "16px",
-                  color: "#0f172a",
-                }}
-              >
-                Task Statistics
-              </h3>
-              <div className="stats-grid">
-                <div
-                  className="stat-card"
-                  style={{ borderLeft: "4px solid #0f172a" }}
-                >
-                  <div className="stat-value">{getTaskStats().total}</div>
+            {/* Task Statistics */}
+            <div className="premium-stats-grid">
+              <div className="premium-stat-card accent-blue">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
                   <div className="stat-label">Total Tasks</div>
+                  <div className="stat-value">{getTaskStats().total}</div>
+                  <div className="stat-meta">All assigned tasks</div>
                 </div>
-                <div
-                  className="stat-card"
-                  style={{ borderLeft: "4px solid #94a3b8" }}
-                >
-                  <div className="stat-value">{getTaskStats().assigned}</div>
+              </div>
+
+              <div className="premium-stat-card accent-teal">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 5v2m-4 0v2M5 5a2 2 0 012-2h6a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5z"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
                   <div className="stat-label">Assigned</div>
+                  <div className="stat-value">{getTaskStats().assigned}</div>
+                  <div className="stat-meta">Newly assigned</div>
                 </div>
-                <div
-                  className="stat-card"
-                  style={{ borderLeft: "4px solid #3b82f6" }}
-                >
-                  <div className="stat-value">{getTaskStats().inProgress}</div>
+              </div>
+
+              <div className="premium-stat-card accent-indigo">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
                   <div className="stat-label">In Progress</div>
+                  <div className="stat-value">{getTaskStats().inProgress}</div>
+                  <div className="stat-meta">Currently working</div>
                 </div>
-                <div
-                  className="stat-card"
-                  style={{ borderLeft: "4px solid #f59e0b" }}
-                >
+              </div>
+
+              <div className="premium-stat-card accent-orange">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
+                  <div className="stat-label">Pending Approval</div>
                   <div className="stat-value">
                     {getTaskStats().pendingApproval}
                   </div>
-                  <div className="stat-label">Pending Approval</div>
+                  <div className="stat-meta">Awaiting review</div>
                 </div>
-                <div
-                  className="stat-card"
-                  style={{ borderLeft: "4px solid #10b981" }}
-                >
-                  <div className="stat-value">{getTaskStats().completed}</div>
+              </div>
+
+              <div className="premium-stat-card accent-slate">
+                <div className="stat-icon-wrapper">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="stat-content">
                   <div className="stat-label">Completed</div>
+                  <div className="stat-value">{getTaskStats().completed}</div>
+                  <div className="stat-meta">Successfully finished</div>
                 </div>
               </div>
             </div>
 
             {/* Sub-tabs */}
-            <div style={{ display: "flex", gap: "4px", marginBottom: "20px", background: "#f1f5f9", padding: "6px", borderRadius: "12px", width: "fit-content" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "4px",
+                marginBottom: "20px",
+                background: "#f1f5f9",
+                padding: "6px",
+                borderRadius: "12px",
+                width: "fit-content",
+              }}
+            >
               {[
-                { id: "individual", label: "👤 Individual Tasks", count: tasks.filter(t => !t.isTeamTask).length },
-                { id: "squad", label: "🤝 Squad Tasks", count: tasks.filter(t => t.isTeamTask).length }
+                {
+                  id: "individual",
+                  label: "Individual Tasks",
+                  count: tasks.filter((t) => !t.isTeamTask).length,
+                },
+                {
+                  id: "squad",
+                  label: " Squad Tasks",
+                  count: tasks.filter((t) => t.isTeamTask).length,
+                },
               ].map(({ id, label, count }) => (
                 <button
                   key={id}
                   onClick={() => setTaskView(id)}
                   style={{
-                    padding: "9px 18px", borderRadius: "8px", border: "none", cursor: "pointer",
-                    fontWeight: "700", fontSize: "13px",
+                    padding: "9px 18px",
+                    borderRadius: "8px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: "700",
+                    fontSize: "13px",
                     background: taskView === id ? "white" : "transparent",
                     color: taskView === id ? "#0f172a" : "#64748b",
-                    boxShadow: taskView === id ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
-                    transition: "all 0.2s", display: "flex", alignItems: "center", gap: "6px"
+                    boxShadow:
+                      taskView === id ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
                   }}
                 >
                   {label}
-                  <span style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "11px", background: taskView === id ? "#eff6ff" : "#e2e8f0", color: taskView === id ? "#2563eb" : "#64748b" }}>{count}</span>
+                  <span
+                    style={{
+                      padding: "2px 7px",
+                      borderRadius: "10px",
+                      fontSize: "11px",
+                      background: taskView === id ? "#eff6ff" : "#e2e8f0",
+                      color: taskView === id ? "#2563eb" : "#64748b",
+                    }}
+                  >
+                    {count}
+                  </span>
                 </button>
               ))}
             </div>
 
             {/* Individual Tasks */}
-            {taskView === "individual" && (
-              loading ? (
-                <div className="card"><p>Loading tasks...</p></div>
+            {taskView === "individual" &&
+              (loading ? (
+                <div className="card">
+                  <p>Loading tasks...</p>
+                </div>
               ) : tasks.filter((t) => !t.isTeamTask).length === 0 ? (
                 <div className="card">
                   <div className="empty-state">
@@ -914,15 +1073,27 @@ function InternDashboard() {
                             .filter((t) => !t.isTeamTask)
                             .map((task) => (
                               <tr key={task._id}>
-                                <td style={{ fontWeight: 600, color: "#0f172a" }}>
+                                <td
+                                  style={{ fontWeight: 600, color: "#0f172a" }}
+                                >
                                   {task.title}
                                   {task.taskDocument?.filename && (
                                     <a
                                       href={`${UPLOADS_BASE}/uploads/tasks/${task.taskDocument.filename}`}
-                                      target="_blank" rel="noopener noreferrer"
-                                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                        marginTop: "4px",
+                                        fontSize: "11px",
+                                        color: "#2563eb",
+                                        textDecoration: "none",
+                                        fontWeight: "600",
+                                      }}
                                     >
-                                      📄 View PDF
+                                      View PDF
                                     </a>
                                   )}
                                 </td>
@@ -1016,14 +1187,30 @@ function InternDashboard() {
                                 {task.status}
                               </span>
                             </div>
-                            <p className="task-description">{task.description}</p>
+                            <p className="task-description">
+                              {task.description}
+                            </p>
                             {task.taskDocument?.filename && (
                               <a
                                 href={`${UPLOADS_BASE}/uploads/tasks/${task.taskDocument.filename}`}
-                                target="_blank" rel="noopener noreferrer"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: '8px 0', padding: '8px 14px', background: '#dbeafe', borderRadius: '8px', border: '1px solid #93c5fd', color: '#1e40af', textDecoration: 'none', fontWeight: '600', fontSize: '13px' }}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "6px",
+                                  margin: "8px 0",
+                                  padding: "8px 14px",
+                                  background: "#dbeafe",
+                                  borderRadius: "8px",
+                                  border: "1px solid #93c5fd",
+                                  color: "#1e40af",
+                                  textDecoration: "none",
+                                  fontWeight: "600",
+                                  fontSize: "13px",
+                                }}
                               >
-                                📄 View Task Document (PDF)
+                                View Task Document (PDF)
                               </a>
                             )}
                             <div className="task-deadline">
@@ -1056,8 +1243,7 @@ function InternDashboard() {
                     </div>
                   </div>
                 </>
-              )
-            )}
+              ))}
 
             {/* Squad Tasks */}
             {taskView === "squad" && (
@@ -1069,7 +1255,10 @@ function InternDashboard() {
                 onProgressUpdate={handleProgressUpdate}
                 onTasksRefresh={async () => {
                   const res = await taskAPI.getInternTasks();
-                  if (res.data.success) { setTasks(res.data.tasks); return res.data.tasks; }
+                  if (res.data.success) {
+                    setTasks(res.data.tasks);
+                    return res.data.tasks;
+                  }
                   return null;
                 }}
               />
@@ -1579,252 +1768,855 @@ function InternDashboard() {
           <>
             <div className="content-header">
               <h1>Certificates / Documents</h1>
-              <p>Your official documents and certificates</p>
+              <p>
+                Your official documents and certificates organized by category
+              </p>
             </div>
 
-            <div className="card">
-              {(() => {
-                const hasAny = documents && (
-                  documents.offerLetter?.filename ||
-                  documents.welcomeLetter?.filename ||
-                  documents.paymentReceipt?.filename ||
-                  (documents.otherCertificates?.length > 0)
-                );
-                if (!hasAny) return (
-                  <div className="empty-state">
-                    <p>No documents available yet.</p>
-                  </div>
-                );
-                return (
-                <div style={{ display: "grid", gap: "16px" }}>
-                  {documents.offerLetter?.filename && (
+            {!documents ? (
+              <div className="card">
+                <div className="empty-state">
+                  <p>Loading documents...</p>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: "24px" }}>
+                {/* Document Category Based on Student Type */}
+                {user?.studentType === "SMS Program" && (
+                  <div className="card">
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
                         alignItems: "center",
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
+                        gap: "8px",
+                        marginBottom: "16px",
                       }}
                     >
-                      <div>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Offer Letter
-                        </strong>
-                        <span
-                          style={{
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginLeft: "8px",
-                          }}
-                        >
-                          Your official offer letter
-                        </span>
-                      </div>
-                      <a
-                        href={
-                          UPLOADS_BASE +
-                          "/uploads/students/" +
-                          documents.offerLetter.filename
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: "8px 16px",
-                          background: "#10b981",
-                          color: "white",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        View
-                      </a>
+                      <h2 style={{ margin: "0" }}>SMS Program Documents</h2>
                     </div>
-                  )}
-                  {documents.welcomeLetter?.filename && (
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
+                        flexDirection: "column",
+                        gap: "12px",
                       }}
                     >
-                      <div>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Welcome Letter
-                        </strong>
-                        <span
-                          style={{
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginLeft: "8px",
-                          }}
-                        >
-                          Welcome to the organization
-                        </span>
-                      </div>
-                      <a
-                        href={
-                          UPLOADS_BASE +
-                          "/uploads/students/" +
-                          documents.welcomeLetter.filename
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: "8px 16px",
-                          background: "#10b981",
-                          color: "white",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        View
-                      </a>
-                    </div>
-                  )}
-                  {documents.paymentReceipt?.filename && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Payment Receipt
-                        </strong>
-                        <span
-                          style={{
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginLeft: "8px",
-                          }}
-                        >
-                          Payment confirmation document
-                        </span>
-                      </div>
-                      <a
-                        href={
-                          UPLOADS_BASE +
-                          "/uploads/students/" +
-                          documents.paymentReceipt.filename
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: "8px 16px",
-                          background: "#10b981",
-                          color: "white",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        View
-                      </a>
-                    </div>
-                  )}
-                  {documents.otherCertificates?.length > 0 && (
-                    <div
-                      style={{
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div style={{ marginBottom: "12px" }}>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Other Certificates (
-                          {documents.otherCertificates.length})
-                        </strong>
-                      </div>
+                      {/* Welcome Letter */}
                       <div
                         style={{
                           display: "flex",
-                          flexDirection: "column",
-                          gap: "8px",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "14px",
+                          background: "#ffffff",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
                         }}
                       >
-                        {documents.otherCertificates.map((cert, idx) => (
-                          <a
-                            key={idx}
-                            href={
-                              UPLOADS_BASE +
-                              "/uploads/students/" +
-                              cert.filename
-                            }
-                            target="_blank"
-                            rel="noreferrer"
+                        <div>
+                          <div
                             style={{
-                              padding: "10px",
-                              background: "white",
-                              borderRadius: "6px",
-                              textDecoration: "none",
-                              color: "#4f46e5",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: "#1f2937",
+                                fontSize: "20px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Welcome Letter
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "2px 6px",
+                                background: documents.welcomeLetter?.filename
+                                  ? "#f0fdf4"
+                                  : "#fef2f2",
+                                color: documents.welcomeLetter?.filename
+                                  ? "#166534"
+                                  : "#991b1b",
+                                borderRadius: "4px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {documents.welcomeLetter?.filename
+                                ? "Uploaded"
+                                : "Not Uploaded"}
+                            </span>
+                          </div>
+                          <p
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "13px",
+                              margin: "4px 0 0 0",
+                            }}
+                          >
+                            Welcome documentation from organization
+                          </p>
+                        </div>
+                        <div>
+                          {documents.welcomeLetter?.filename ? (
+                            <a
+                              href={
+                                UPLOADS_BASE +
+                                "/uploads/students/" +
+                                documents.welcomeLetter.filename
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                padding: "8px 16px",
+                                background: "#374151",
+                                color: "white",
+                                borderRadius: "6px",
+                                textDecoration: "none",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                                cursor: "pointer",
+                              }}
+                            >
+                              View Document
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                padding: "8px 16px",
+                                background: "#f3f4f6",
+                                color: "#6b7280",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              Not Uploaded Yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Internship Offer Letter */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "14px",
+                          background: "#ffffff",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: "#1f2937",
+                                fontSize: "20px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Internship Offer Letter
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "2px 6px",
+                                background: documents.offerLetter?.filename
+                                  ? "#f0fdf4"
+                                  : "#fef2f2",
+                                color: documents.offerLetter?.filename
+                                  ? "#166534"
+                                  : "#991b1b",
+                                borderRadius: "4px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {documents.offerLetter?.filename
+                                ? "Uploaded"
+                                : "Not Uploaded"}
+                            </span>
+                          </div>
+                          <p
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "13px",
+                              margin: "4px 0 0 0",
+                            }}
+                          >
+                            Formal offer letter from organization
+                          </p>
+                        </div>
+                        <div>
+                          {documents.offerLetter?.filename ? (
+                            <a
+                              href={
+                                UPLOADS_BASE +
+                                "/uploads/students/" +
+                                documents.offerLetter.filename
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                padding: "8px 16px",
+                                background: "#374151",
+                                color: "white",
+                                borderRadius: "6px",
+                                textDecoration: "none",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                                cursor: "pointer",
+                              }}
+                            >
+                              View Document
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                padding: "8px 16px",
+                                background: "#f3f4f6",
+                                color: "#6b7280",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              Not Uploaded Yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Payment Receipt */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "14px",
+                          background: "#ffffff",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: "#1f2937",
+                                fontSize: "20px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Payment Receipt
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "2px 6px",
+                                background: documents.paymentReceipt?.filename
+                                  ? "#f0fdf4"
+                                  : "#fef2f2",
+                                color: documents.paymentReceipt?.filename
+                                  ? "#166534"
+                                  : "#991b1b",
+                                borderRadius: "4px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {documents.paymentReceipt?.filename
+                                ? "Uploaded"
+                                : "Not Uploaded"}
+                            </span>
+                          </div>
+                          <p
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "13px",
+                              margin: "4px 0 0 0",
+                            }}
+                          >
+                            Payment confirmation document
+                          </p>
+                        </div>
+                        <div>
+                          {documents.paymentReceipt?.filename ? (
+                            <a
+                              href={
+                                UPLOADS_BASE +
+                                "/uploads/students/" +
+                                documents.paymentReceipt.filename
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                padding: "8px 16px",
+                                background: "#324158",
+                                color: "white",
+                                borderRadius: "6px",
+                                textDecoration: "none",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                                cursor: "pointer",
+                              }}
+                            >
+                              View Document
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                padding: "8px 16px",
+                                background: "#f3f4f6",
+                                color: "#6b7280",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              Not Uploaded Yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Internship Program Documents */}
+                {user?.studentType === "Internship" && (
+                  <div className="card">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <h2 style={{ margin: "0" }}>Internship Documents</h2>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      {/* Offer Letter */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "14px",
+                          background: "#ffffff",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: "#1f2937",
+                                fontSize: "20px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Offer Letter
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "2px 6px",
+                                background: documents.offerLetter?.filename
+                                  ? "#f0fdf4"
+                                  : "#fef2f2",
+                                color: documents.offerLetter?.filename
+                                  ? "#166534"
+                                  : "#991b1b",
+                                borderRadius: "4px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {documents.offerLetter?.filename
+                                ? "Uploaded"
+                                : "Not Uploaded"}
+                            </span>
+                          </div>
+                          <p
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "13px",
+                              margin: "4px 0 0 0",
+                            }}
+                          >
+                            Your formal offer letter from the organization
+                          </p>
+                        </div>
+                        <div>
+                          {documents.offerLetter?.filename ? (
+                            <a
+                              href={
+                                UPLOADS_BASE +
+                                "/uploads/students/" +
+                                documents.offerLetter.filename
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                padding: "8px 16px",
+                                background: "#374151",
+                                color: "white",
+                                borderRadius: "6px",
+                                textDecoration: "none",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                                cursor: "pointer",
+                              }}
+                            >
+                              View Document
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                padding: "8px 16px",
+                                background: "#f3f4f6",
+                                color: "#6b7280",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              Not Uploaded Yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Certificates Section (SMS program only) */}
+                {user?.studentType === "SMS Program" && (
+                  <div className="card">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <h2 style={{ margin: "0" }}>Additional Certificates</h2>
+                      {documents.otherCertificates?.length > 0 && (
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            padding: "4px 8px",
+                            background: "#f3f4f6",
+                            color: "#374151",
+                            borderRadius: "6px",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {documents.otherCertificates.length} uploaded
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Always show completion and experience letters with upload status */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
+                      {/* Completion Letter */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "14px",
+                          background: "#ffffff",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: "#1f2937",
+                                fontSize: "20px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Completion Letter
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "2px 6px",
+                                background: documents.completionLetter?.filename
+                                  ? "#f0fdf4"
+                                  : "#fef2f2",
+                                color: documents.completionLetter?.filename
+                                  ? "#166534"
+                                  : "#991b1b",
+                                borderRadius: "4px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {documents.completionLetter?.filename
+                                ? "Uploaded"
+                                : "Not Uploaded"}
+                            </span>
+                          </div>
+                          <p
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "13px",
+                              margin: "4px 0 0 0",
+                            }}
+                          >
+                            Official completion document
+                          </p>
+                        </div>
+                        <div>
+                          {documents.completionLetter?.filename ? (
+                            <a
+                              href={
+                                UPLOADS_BASE +
+                                "/uploads/students/" +
+                                documents.completionLetter.filename
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                padding: "8px 16px",
+                                background: "#374151",
+                                color: "white",
+                                borderRadius: "6px",
+                                textDecoration: "none",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                                cursor: "pointer",
+                              }}
+                            >
+                              View Document
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                padding: "8px 16px",
+                                background: "#f3f4f6",
+                                color: "#6b7280",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              Not Uploaded Yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Experience Letter */}
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "14px",
+                          background: "#ffffff",
+                          borderRadius: "8px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "8px",
+                            }}
+                          >
+                            <strong
+                              style={{
+                                color: "#1f2937",
+                                fontSize: "20px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Experience Letter
+                            </strong>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                padding: "2px 6px",
+                                background: documents.experienceLetter?.filename
+                                  ? "#f0fdf4"
+                                  : "#fef2f2",
+                                color: documents.experienceLetter?.filename
+                                  ? "#166534"
+                                  : "#991b1b",
+                                borderRadius: "4px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {documents.experienceLetter?.filename
+                                ? "Uploaded"
+                                : "Not Uploaded"}
+                            </span>
+                          </div>
+                          <p
+                            style={{
+                              color: "#6b7280",
+                              fontSize: "13px",
+                              margin: "4px 0 0 0",
+                            }}
+                          >
+                            Experience documentation
+                          </p>
+                        </div>
+                        <div>
+                          {documents.experienceLetter?.filename ? (
+                            <a
+                              href={
+                                UPLOADS_BASE +
+                                "/uploads/students/" +
+                                documents.experienceLetter.filename
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                padding: "8px 16px",
+                                background: "#374151",
+                                color: "white",
+                                borderRadius: "6px",
+                                textDecoration: "none",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                                cursor: "pointer",
+                              }}
+                            >
+                              View Document
+                            </a>
+                          ) : (
+                            <span
+                              style={{
+                                padding: "8px 16px",
+                                background: "#f3f4f6",
+                                color: "#6b7280",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "500",
+                              }}
+                            >
+                              Not Uploaded Yet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Other uploaded certificates */}
+                      {documents.otherCertificates?.length > 0 && (
+                        <>
+                          {documents.otherCertificates.map((cert, idx) => (
+                            <a
+                              key={idx}
+                              href={
+                                UPLOADS_BASE +
+                                "/uploads/students/" +
+                                cert.filename
+                              }
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "12px",
+                                background: "#ffffff",
+                                borderRadius: "8px",
+                                border: "1px solid #e5e7eb",
+                                textDecoration: "none",
+                                color: "#1f2937",
+                                transition: "all 0.2s ease",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <div>
+                                <strong style={{ fontSize: "14px" }}>
+                                  {cert.name || cert.filename}
+                                </strong>
+                                <p
+                                  style={{
+                                    color: "#6b7280",
+                                    fontSize: "12px",
+                                    margin: "4px 0 0 0",
+                                  }}
+                                >
+                                  Uploaded - Click to view
+                                </p>
+                              </div>
+                              <span
+                                style={{
+                                  color: "#374151",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                View →
+                              </span>
+                            </a>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assigned Certificates */}
+                {assignedCerts.length > 0 && (
+                  <div className="card">
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <h2 style={{ margin: "0" }}>Assigned Certificates</h2>
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          color: "#374151",
+                          background: "#f3f4f6",
+                          padding: "4px 8px",
+                          borderRadius: "6px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        5-day download window
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
+                      {assignedCerts.map((cert) => {
+                        const timeLeft = new Date(cert.expiresAt) - new Date();
+                        const days = Math.floor(
+                          timeLeft / (1000 * 60 * 60 * 24),
+                        );
+                        const hours = Math.floor(
+                          (timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+                        );
+                        const expired = timeLeft <= 0;
+                        return (
+                          <div
+                            key={cert._id}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "12px",
+                              background: "#ffffff",
+                              borderRadius: "8px",
                               border: "1px solid #e5e7eb",
                             }}
                           >
-                            {cert.name || cert.filename}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                );
-              })()}
-
-              {/* Assigned Certificates */}
-              {assignedCerts.length > 0 && (
-                <div style={{ padding: "16px", background: "#f0fdf4", borderRadius: "10px", border: "2px solid #86efac", marginTop: "20px" }}>
-                  <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    <strong style={{ color: "#15803d", fontSize: "15px" }}>🏆 Assigned Certificates ({assignedCerts.length})</strong>
-                    <span style={{ fontSize: "12px", color: "#16a34a", background: "#dcfce7", padding: "2px 8px", borderRadius: "10px" }}>5-day download window</span>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    {assignedCerts.map(cert => {
-                      const timeLeft = new Date(cert.expiresAt) - new Date();
-                      const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-                      const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                      const expired = timeLeft <= 0;
-                      return (
-                        <div key={cert._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "white", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
-                          <div>
-                            <div style={{ fontWeight: "600", color: "#0f172a" }}>{cert.name}</div>
-                            <div style={{ fontSize: "12px", color: expired ? "#dc2626" : days >= 2 ? "#16a34a" : "#d97706", marginTop: "2px" }}>
-                              {expired ? "Expired" : `${days}d ${hours}h remaining`}
+                            <div>
+                              <div
+                                style={{
+                                  fontWeight: "600",
+                                  color: "#1f2937",
+                                  fontSize: "20px",
+                                }}
+                              >
+                                {cert.name}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: "12px",
+                                  color: expired
+                                    ? "#dc2626"
+                                    : days >= 2
+                                      ? "#16a34a"
+                                      : "#d97706",
+                                  marginTop: "4px",
+                                  fontWeight: "500",
+                                }}
+                              >
+                                {expired
+                                  ? "Expired - No longer available"
+                                  : `${days}d ${hours}h remaining`}
+                              </div>
                             </div>
+                            {!expired && (
+                              <a
+                                href={`${UPLOADS_BASE}/uploads/certificates/${cert.filename}`}
+                                download
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  padding: "8px 16px",
+                                  background: "#374151",
+                                  color: "white",
+                                  borderRadius: "6px",
+                                  textDecoration: "none",
+                                  fontWeight: "600",
+                                  fontSize: "13px",
+                                }}
+                              >
+                                Download
+                              </a>
+                            )}
                           </div>
-                          {!expired && (
-                            <a
-                              href={`${UPLOADS_BASE}/uploads/certificates/${cert.filename}`}
-                              download
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{ padding: "8px 16px", background: "#22c55e", color: "white", borderRadius: "6px", textDecoration: "none", fontWeight: "600", fontSize: "13px" }}
-                            >
-                              Download
-                            </a>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -1865,7 +2657,7 @@ function InternDashboard() {
                             ? "#e5e7eb"
                             : "#bfdbfe"),
                         borderLeft:
-                          "4px solid " +
+                          "0.5px solid " +
                           (notif.notificationType === "Interview"
                             ? "#f59e0b"
                             : notif.notificationType === "Test/Assessment"
@@ -1880,7 +2672,7 @@ function InternDashboard() {
                           style={{
                             margin: "0 0 4px 0",
                             color: "#0f172a",
-                            fontSize: "15px",
+                            fontSize: "23px",
                             fontWeight: 600,
                           }}
                         >
@@ -1894,8 +2686,8 @@ function InternDashboard() {
                       <p
                         style={{
                           margin: "8px 0",
-                          color: "#374151",
-                          fontSize: "14px",
+                          color: "#374158",
+                          fontSize: "16px",
                           lineHeight: "1.5",
                         }}
                       >
@@ -1912,7 +2704,7 @@ function InternDashboard() {
                           rel="noreferrer"
                           style={{
                             fontSize: "13px",
-                            color: "#3b82f6",
+                            color: "#324158",
                             marginTop: "8px",
                             display: "inline-block",
                           }}
@@ -2075,7 +2867,7 @@ function InternDashboard() {
                           style={{
                             display: "inline-block",
                             padding: "10px 20px",
-                            background: "#3b82f6",
+                            background: "#0f172a",
                             color: "white",
                             borderRadius: "6px",
                             textDecoration: "none",

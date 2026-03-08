@@ -183,7 +183,7 @@ function ViewTrainers() {
               borderRadius: "12px",
             }}
           >
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>👨‍🏫</div>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}></div>
             <h3 style={{ color: "#6b7280", marginBottom: "8px" }}>
               {searchQuery ? "No trainers found" : "No trainers added yet"}
             </h3>
@@ -521,7 +521,7 @@ function ViewTrainers() {
                     gap: "8px",
                   }}
                 >
-                  <span>👤</span> Personal Information
+                  <span></span> Personal Information
                 </h3>
                 <div
                   style={{
@@ -654,7 +654,7 @@ function ViewTrainers() {
                     gap: "8px",
                   }}
                 >
-                  <span>📊</span> Status & Assignments
+                  <span></span> Status & Assignments
                 </h3>
                 <div
                   style={{

@@ -390,7 +390,7 @@ function RepresentativeDashboard() {
 
               {editMode ? (
                 <div className="premium-card">
-                  <div className="premium-card-header"><h2>Edit Profile</h2></div>
+                  <div className="premium-card-header"><h2 style ={{color : '#324158'}}>Edit Profile</h2></div>
                   <form onSubmit={handleEditSubmit} style={{ padding: '24px' }}>
                     {editError && <div className="error-message" style={{ marginBottom: '16px' }}>{editError}</div>}
                     {editSuccess && <div className="success-message" style={{ marginBottom: '16px' }}>{editSuccess}</div>}
@@ -514,7 +514,7 @@ function RepresentativeDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
                       width: '42px', height: '42px', borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      background: '#324158',  
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
                       <svg fill="none" stroke="#fff" viewBox="0 0 24 24" style={{ width: '22px', height: '22px' }}>
@@ -580,7 +580,7 @@ function RepresentativeDashboard() {
                     <button type="submit" disabled={studentFormLoading}
                       style={{
                         padding: '10px 28px', borderRadius: '8px', border: 'none',
-                        background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                        background: '#475569',
                         color: '#fff', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
                       }}
                     >
@@ -590,7 +590,7 @@ function RepresentativeDashboard() {
                       style={{
                         padding: '10px 24px', borderRadius: '8px',
                         border: '1px solid #d1d5db', background: '#fff',
-                        color: '#6b7280', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
+                        color: '#324158', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
                       }}
                     >
                       Cancel
@@ -614,7 +614,7 @@ function RepresentativeDashboard() {
                     onClick={() => setActiveTab('add-student')}
                     style={{
                       padding: '9px 20px', borderRadius: '8px', border: 'none',
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      background: "#324158",
                       color: '#fff', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
                     }}
                   >
@@ -663,12 +663,13 @@ function RepresentativeDashboard() {
                       style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid #d1d5db', width: '100%', fontSize: '14px' }}
                     />
                   </div>
+                 
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       onClick={applyFilters}
                       style={{
                         flex: 1, padding: '10px 0', borderRadius: '8px', border: 'none',
-                        background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                        background: "#324158",
                         color: '#fff', fontWeight: '600', fontSize: '13px', cursor: 'pointer'
                       }}
                     >
@@ -705,7 +706,7 @@ function RepresentativeDashboard() {
                       onClick={() => setActiveTab('add-student')}
                       style={{
                         marginTop: '12px', padding: '9px 22px', border: 'none', borderRadius: '8px',
-                        background: 'linear-gradient(135deg, #667eea, #764ba2)', color: '#fff',
+                        background: '#324158', color: '#fff',
                         cursor: 'pointer', fontWeight: '600', fontSize: '14px'
                       }}
                     >
@@ -725,8 +726,7 @@ function RepresentativeDashboard() {
                         <thead>
                           <tr>
                             <th>Student Name</th>
-                            <th>College</th>
-                            <th>Branch</th>
+                            
                             <th>Mobile</th>
                             <th>Email</th>
                             <th>Domain</th>
@@ -746,19 +746,11 @@ function RepresentativeDashboard() {
                               <tr key={student._id}>
                                 <td>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{
-                                      width: '34px', height: '34px', borderRadius: '50%',
-                                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                      color: '#fff', fontWeight: '700', fontSize: '12px', flexShrink: 0
-                                    }}>
-                                      {initials}
-                                    </div>
+                                    
                                     <span style={{ fontWeight: '600', color: '#1f2937' }}>{student.studentName}</span>
                                   </div>
                                 </td>
-                                <td>{student.college || '—'}</td>
-                                <td>{student.branch || '—'}</td>
+                               
                                 <td className="mono-text">{student.mobile || '—'}</td>
                                 <td style={{ fontSize: '13px' }}>{student.email || '—'}</td>
                                 <td>{student.domain || '—'}</td>
@@ -877,6 +869,7 @@ function RepresentativeDashboard() {
 
         </div>
       </main>
+      
 
       {/* Logout button in sidebar footer handled by sidebar */}
       <style>{`

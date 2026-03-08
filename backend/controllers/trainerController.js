@@ -622,25 +622,55 @@ exports.getMyProfile = async (req, res) => {
 // Get Notifications for Intern
 exports.getMyNotifications = async (req, res) => {
   try {
-    const studentId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role; // 'intern' or 'trainer'
 
-    const notifications = await Notification.find({
-      $or: [
-        { sendTo: 'All' },
-        { 
-          sendTo: 'Group',
-          recipientModel: 'Intern',
-          recipientIds: studentId
-        },
-        {
-          sendTo: 'Individual',
-          recipientModel: 'Intern',
-          recipientIds: studentId
-        }
-      ]
-    })
-    .populate('createdBy', 'name email')
-    .sort({ createdAt: -1 });
+    let notifications;
+
+    if (userRole === 'intern') {
+      // For interns
+      notifications = await Notification.find({
+        $or: [
+          { sendTo: 'All' },
+          { 
+            sendTo: 'Group',
+            recipientModel: 'Intern',
+            recipientIds: userId
+          },
+          {
+            sendTo: 'Individual',
+            recipientModel: 'Intern',
+            recipientIds: userId
+          }
+        ]
+      })
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 });
+    } else if (userRole === 'trainer') {
+      // For trainers
+      notifications = await Notification.find({
+        $or: [
+          { sendTo: 'All' },
+          { 
+            sendTo: 'Group',
+            recipientModel: 'Trainer',
+            recipientIds: userId
+          },
+          {
+            sendTo: 'Individual',
+            recipientModel: 'Trainer',
+            recipientIds: userId
+          }
+        ]
+      })
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user role'
+      });
+    }
 
     res.status(200).json({
       success: true,

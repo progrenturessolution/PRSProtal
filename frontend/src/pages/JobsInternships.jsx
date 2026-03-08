@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/api';
+import { useState, useEffect } from "react";
+import { adminAPI } from "../services/api";
 
 function JobsInternships() {
   const [postings, setPostings] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
-    opportunityType: 'Job',
-    title: '',
-    company: '',
-    location: '',
-    domain: '',
-    eligibility: '',
-    description: '',
-    requirements: '',
-    applicationLink: '',
-    applicationInstructions: '',
-    deadline: '',
-    salary: ''
+    opportunityType: "Job",
+    title: "",
+    company: "",
+    location: "",
+    domain: "",
+    eligibility: "",
+    description: "",
+    requirements: "",
+    applicationLink: "",
+    applicationInstructions: "",
+    deadline: "",
+    salary: "",
   });
 
   useEffect(() => {
@@ -35,47 +35,50 @@ function JobsInternships() {
         setPostings(response.data.postings);
       }
     } catch (error) {
-      console.error('Failed to fetch job postings:', error);
+      console.error("Failed to fetch job postings:", error);
     }
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await adminAPI.createJobPosting(formData);
-      
+
       if (response.data.success) {
-        setSuccess('Job/Internship posting created successfully!');
+        setSuccess("Job/Internship posting created successfully!");
         setFormData({
-          opportunityType: 'Job',
-          title: '',
-          company: '',
-          location: '',
-          domain: '',
-          eligibility: '',
-          description: '',
-          requirements: '',
-          applicationLink: '',
-          applicationInstructions: '',
-          deadline: '',
-          salary: ''
+          opportunityType: "Job",
+          title: "",
+          company: "",
+          location: "",
+          domain: "",
+          eligibility: "",
+          description: "",
+          requirements: "",
+          applicationLink: "",
+          applicationInstructions: "",
+          deadline: "",
+          salary: "",
         });
         setShowForm(false);
         fetchPostings();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create posting. Please try again.');
+      setError(
+        err.response?.data?.message ||
+          "Failed to create posting. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -89,21 +92,21 @@ function JobsInternships() {
       </div>
 
       {/* Action Buttons */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: "20px" }}>
         <button
           onClick={() => setShowForm(!showForm)}
           style={{
-            padding: '12px 24px',
-            background: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 600
+            padding: "12px 24px",
+            background: "#324158",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: 600,
           }}
         >
-          {showForm ? '✖ Cancel' : ' Post New Opportunity'}
+          {showForm ? "✖ Cancel" : " Post New Opportunity"}
         </button>
       </div>
 
@@ -111,43 +114,55 @@ function JobsInternships() {
       {showForm && (
         <div className="card">
           <h3>Post New Opportunity</h3>
-          
+
           {error && (
-            <div className="error-message" style={{ marginTop: '15px' }}>
+            <div className="error-message" style={{ marginTop: "15px" }}>
               {error}
             </div>
           )}
-          
+
           {success && (
-            <div className="success-message" style={{ marginTop: '15px' }}>
+            <div className="success-message" style={{ marginTop: "15px" }}>
               {success}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
+          <form onSubmit={handleSubmit} style={{ marginTop: "20px" }}>
             {/* Opportunity Type */}
             <div className="form-group">
               <label>Opportunity Type *</label>
-              <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <div style={{ display: "flex", gap: "20px", marginTop: "10px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                >
                   <input
                     type="radio"
                     name="opportunityType"
                     value="Job"
-                    checked={formData.opportunityType === 'Job'}
+                    checked={formData.opportunityType === "Job"}
                     onChange={handleChange}
-                    style={{ marginRight: '8px' }}
+                    style={{ marginRight: "8px" }}
                   />
                   Job Opening
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                >
                   <input
                     type="radio"
                     name="opportunityType"
                     value="Internship"
-                    checked={formData.opportunityType === 'Internship'}
+                    checked={formData.opportunityType === "Internship"}
                     onChange={handleChange}
-                    style={{ marginRight: '8px' }}
+                    style={{ marginRight: "8px" }}
                   />
                   Internship
                 </label>
@@ -165,11 +180,11 @@ function JobsInternships() {
                 placeholder="e.g., Full Stack Developer, Data Analyst Intern"
                 required
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px'
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
                 }}
               />
             </div>
@@ -185,17 +200,23 @@ function JobsInternships() {
                 placeholder="Enter company name"
                 required
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px'
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
                 }}
               />
             </div>
 
             {/* Location & Domain */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "15px",
+              }}
+            >
               <div className="form-group">
                 <label>Location *</label>
                 <input
@@ -206,11 +227,11 @@ function JobsInternships() {
                   placeholder="e.g., Remote, Bangalore, Hybrid"
                   required
                   style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: '1px solid #ddd',
-                    fontSize: '14px'
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    fontSize: "14px",
                   }}
                 />
               </div>
@@ -225,18 +246,24 @@ function JobsInternships() {
                   placeholder="e.g., Web Development, Data Science"
                   required
                   style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: '1px solid #ddd',
-                    fontSize: '14px'
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    fontSize: "14px",
                   }}
                 />
               </div>
             </div>
 
             {/* Salary & Deadline */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "15px",
+              }}
+            >
               <div className="form-group">
                 <label>Salary/Stipend</label>
                 <input
@@ -246,11 +273,11 @@ function JobsInternships() {
                   onChange={handleChange}
                   placeholder="e.g., ₹5,00,000 - ₹8,00,000 per annum"
                   style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: '1px solid #ddd',
-                    fontSize: '14px'
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    fontSize: "14px",
                   }}
                 />
               </div>
@@ -263,11 +290,11 @@ function JobsInternships() {
                   value={formData.deadline}
                   onChange={handleChange}
                   style={{
-                    width: '100%',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    border: '1px solid #ddd',
-                    fontSize: '14px'
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    fontSize: "14px",
                   }}
                 />
               </div>
@@ -284,11 +311,11 @@ function JobsInternships() {
                 placeholder="e.g., B.Tech/M.Tech, 2024 Graduates"
                 required
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px'
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
                 }}
               />
             </div>
@@ -304,12 +331,12 @@ function JobsInternships() {
                 required
                 rows={4}
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px',
-                  resize: 'vertical'
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  resize: "vertical",
                 }}
               />
             </div>
@@ -325,12 +352,12 @@ function JobsInternships() {
                 required
                 rows={4}
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px',
-                  resize: 'vertical'
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  resize: "vertical",
                 }}
               />
             </div>
@@ -345,11 +372,11 @@ function JobsInternships() {
                 onChange={handleChange}
                 placeholder="https://company.com/apply"
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px'
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
                 }}
               />
             </div>
@@ -364,12 +391,12 @@ function JobsInternships() {
                 placeholder="How to apply, contact details, etc."
                 rows={3}
                 style={{
-                  width: '100%',
-                  padding: '10px',
-                  borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  fontSize: '14px',
-                  resize: 'vertical'
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  border: "1px solid #ddd",
+                  fontSize: "14px",
+                  resize: "vertical",
                 }}
               />
             </div>
@@ -379,17 +406,17 @@ function JobsInternships() {
               type="submit"
               disabled={loading}
               style={{
-                padding: '12px 24px',
-                background: loading ? '#ccc' : '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                fontWeight: 600
+                padding: "12px 24px",
+                background: loading ? "#ccc" : "#0f172a",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                cursor: loading ? "not-allowed" : "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
               }}
             >
-              {loading ? 'Posting...' : 'Post Opportunity'}
+              {loading ? "Posting..." : "Post Opportunity"}
             </button>
           </form>
         </div>
@@ -399,25 +426,33 @@ function JobsInternships() {
       <div className="card">
         <h3>Recent Postings</h3>
         {postings.length === 0 ? (
-          <div style={{ marginTop: '20px', padding: '20px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
-            <p style={{ color: '#6b7280' }}>
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "20px",
+              background: "#f9fafb",
+              borderRadius: "8px",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ color: "#6b7280" }}>
               No job postings yet. Create your first posting above!
             </p>
           </div>
         ) : (
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: "20px" }}>
             {postings.map((posting) => (
               <div
                 key={posting._id}
                 style={{
-                  padding: '15px',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  marginBottom: '15px'
+                  padding: "15px",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                  marginBottom: "15px",
                 }}
               >
                 <h4>{posting.title}</h4>
-                <p style={{ color: '#6b7280', fontSize: '14px' }}>
+                <p style={{ color: "#6b7280", fontSize: "14px" }}>
                   {posting.company} • {posting.location} • {posting.domain}
                 </p>
               </div>

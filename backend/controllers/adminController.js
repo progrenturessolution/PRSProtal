@@ -590,33 +590,92 @@ exports.getAllTrainers = async (req, res) => {
 exports.createNotification = async (req, res) => {
   try {
     const adminId = req.user.id;
-    const { title, message, notificationType, sendTo, recipientIds, recipientModel } = req.body;
-
-    const notification = new Notification({
-      title,
-      message,
-      notificationType,
-      sendTo,
-      recipientIds: sendTo === 'Individual' || sendTo === 'Group' ? recipientIds : [],
-      recipientModel,
-      createdBy: adminId
-    });
-
-    // Handle file attachment if present
-    if (req.file) {
-      notification.attachment = {
-        filename: req.file.filename,
-        filepath: req.file.path,
-        mimetype: req.file.mimetype
-      };
+    
+    // Handle FormData fields
+    const { notificationType, recipientType, subject, message, recipientId, groupType } = req.body;
+    
+    // Map frontend fields to backend fields
+    const title = subject;
+    const sendTo = notificationType; // 'Individual', 'Group', or 'All'
+    let recipientIds = [];
+    let recipientModel = null;
+    
+    if (sendTo === 'Individual') {
+      // Handle multiple recipientIds (comma-separated or array)
+      if (Array.isArray(recipientId)) {
+        recipientIds = recipientId;
+      } else if (recipientId) {
+        recipientIds = recipientId.split(',');
+      }
+      recipientModel = recipientType === 'Student' ? 'Intern' : 'Trainer';
+    } else if (sendTo === 'Group') {
+      // For Group, we need to get all IDs of the specified type
+      if (recipientType === 'Student') {
+        const interns = await Intern.find({}, '_id');
+        recipientIds = interns.map(intern => intern._id);
+        recipientModel = 'Intern';
+      } else if (recipientType === 'Trainer') {
+        const trainers = await Trainer.find({}, '_id');
+        recipientIds = trainers.map(trainer => trainer._id);
+        recipientModel = 'Trainer';
+      }
+    } else if (sendTo === 'All') {
+      // For All, recipientIds remains empty, recipientModel can be null
+      recipientModel = null;
     }
 
-    await notification.save();
+    // Create notifications for each recipient (for Individual with multiple recipients)
+    if (sendTo === 'Individual' && recipientIds.length > 1) {
+      const notifications = [];
+      for (const id of recipientIds) {
+        const notification = new Notification({
+          title,
+          message,
+          notificationType: 'General/Announcement',
+          sendTo: 'Individual',
+          recipientIds: [id],
+          recipientModel,
+          createdBy: adminId
+        });
+
+        if (req.file) {
+          notification.attachment = {
+            filename: req.file.filename,
+            filepath: req.file.path,
+            mimetype: req.file.mimetype
+          };
+        }
+
+        notifications.push(notification.save());
+      }
+      
+      await Promise.all(notifications);
+    } else {
+      // Single notification for Group or All or single Individual
+      const notification = new Notification({
+        title,
+        message,
+        notificationType: 'General/Announcement',
+        sendTo,
+        recipientIds,
+        recipientModel,
+        createdBy: adminId
+      });
+
+      if (req.file) {
+        notification.attachment = {
+          filename: req.file.filename,
+          filepath: req.file.path,
+          mimetype: req.file.mimetype
+        };
+      }
+
+      await notification.save();
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Notification created successfully',
-      notification
+      message: 'Notification created successfully'
     });
 
   } catch (error) {

@@ -92,6 +92,16 @@ const internSchema = new mongoose.Schema({
       filepath: String,
       uploadedAt: Date
     },
+    completionLetter: {
+      filename: String,
+      filepath: String,
+      uploadedAt: Date
+    },
+    experienceLetter: {
+      filename: String,
+      filepath: String,
+      uploadedAt: Date
+    },
     otherCertificates: [{
       name: String,
       filename: String,

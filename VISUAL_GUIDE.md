@@ -1,6 +1,6 @@
-# 🎨 Visual Project Guide
+# Visual Project Guide
 
-## 📊 Project Architecture Diagram
+## Project Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -113,7 +113,7 @@
 
 ---
 
-## 🔄 Request Flow Diagrams
+## Request Flow Diagrams
 
 ### 1. Admin Login Flow
 
@@ -227,14 +227,14 @@ Intern              Frontend              Backend               Database
 
 ---
 
-## 🎨 UI Component Tree
+## UI Component Tree
 
 ```
 App
 │
 ├── Router
     │
-    ├── Route: "/" 
+    ├── Route: "/"
     │   └── Login
     │       ├── Left Panel (Logo + Branding)
     │       └── Right Panel
@@ -382,7 +382,7 @@ App
 
 ---
 
-## 📦 File Dependencies Map
+## File Dependencies Map
 
 ```
 backend/server.js
@@ -435,7 +435,7 @@ frontend/src/main.jsx
 
 ---
 
-## 🔐 Security Flow
+## Security Flow
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -449,10 +449,10 @@ frontend/src/main.jsx
    bcrypt.hash(password, 10)
    ↓
    $2a$10$N9qo8uLO...  ← Stored in MongoDB
-   
-   ✓ Uses bcrypt (industry standard)
-   ✓ Salt rounds: 10
-   ✓ One-way hashing (cannot be reversed)
+
+   Uses bcrypt (industry standard)
+   Salt rounds: 10
+   One-way hashing (cannot be reversed)
 
 2. PASSWORD VERIFICATION
    ────────────────────────────────────────
@@ -463,9 +463,9 @@ frontend/src/main.jsx
    bcrypt.compare(plainPassword, hashedPassword)
    ↓
    Returns true/false
-   
-   ✓ Constant-time comparison
-   ✓ Protected against timing attacks
+
+   Constant-time comparison
+   Protected against timing attacks
 
 3. JWT AUTHENTICATION
    ────────────────────────────────────────
@@ -487,10 +487,10 @@ frontend/src/main.jsx
    Decoded payload {id, email, role, iat, exp}
    ↓
    Request allowed if valid
-   
-   ✓ Stateless authentication
-   ✓ Expires after 24 hours
-   ✓ Secret key in environment variable
+
+   Stateless authentication
+   Expires after 24 hours
+   Secret key in environment variable
 
 4. ROLE-BASED ACCESS
    ────────────────────────────────────────
@@ -507,9 +507,9 @@ frontend/src/main.jsx
        Role === 'admin'?
        ├── No → 403 Forbidden
        └── Yes → Grant access
-   
-   ✓ Two-layer verification
-   ✓ Proper HTTP status codes
+
+   Two-layer verification
+   Proper HTTP status codes
 
 5. CORS PROTECTION
    ────────────────────────────────────────
@@ -520,14 +520,14 @@ frontend/src/main.jsx
    Allowed origin?
    ├── No → Block request
    └── Yes → Allow request
-   
-   ✓ Prevents unauthorized domains
-   ✓ Configured in server.js
+
+   Prevents unauthorized domains
+   Configured in server.js
 ```
 
 ---
 
-## 📊 Database Schema Visualization
+## Database Schema Visualization
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -600,4 +600,4 @@ frontend/src/main.jsx
 
 ---
 
-This visual guide provides a comprehensive overview of how all components interact in the Progrentures Internship Management System! 🚀
+This visual guide provides a comprehensive overview of how all components interact in the Progrentures Internship Management System!

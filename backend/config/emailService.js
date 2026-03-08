@@ -55,7 +55,7 @@ Progrentures Team
           
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 26px;">🎉 Welcome to Progrentures!</h1>
+            <h1 style="color: white; margin: 0; font-size: 26px;">Welcome to Progrentures!</h1>
           </div>
           
           <!-- Main Content -->
@@ -121,7 +121,7 @@ Progrentures Team
     console.error('❌ Email sending failed:', error.message);
     console.error('Error code:', error.code);
     if (error.code === 'EAUTH') {
-      console.error('💡 Authentication failed. Please check:');
+      console.error('Authentication failed. Please check:', 'line 124');
       console.error('   1. EMAIL_USER is correct in .env');
       console.error('   2. EMAIL_PASS is a valid Gmail App Password (not regular password)');
       console.error('   3. 2-Step Verification is enabled on your Google account');

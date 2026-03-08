@@ -107,7 +107,11 @@ exports.internLogin = async (req, res) => {
         id: intern._id,
         name: intern.name,
         email: intern.email,
+        mobile: intern.mobile,
         internId: intern.internId,
+        studentType: intern.studentType,
+        currentDesignation: intern.currentDesignation,
+        status: intern.status,
         role: intern.role
       }
     });

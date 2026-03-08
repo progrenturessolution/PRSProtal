@@ -137,7 +137,7 @@ exports.approveTask = async (req, res) => {
         m.message && m.message.includes('submitted this task for admin review')
       );
       task.teamMessages.push({
-        message: '✅ Task Approved! Great work team! 🎉',
+        message: 'Task Approved! Great work team!',
         sentBy: req.user.id,
         senderName: 'Admin',
         sentAt: new Date(),

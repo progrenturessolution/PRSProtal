@@ -1,10 +1,10 @@
-# 🎯 PROGRENTURES - START HERE
+# PROGRENTURES - START HERE
 
 Welcome to the **Progrentures Internship Management System**!
 
 ---
 
-## ⚡ Quick Start (5 Minutes)
+## Quick Start (5 Minutes)
 
 ```powershell
 # 1. Run automated setup
@@ -29,72 +29,80 @@ npm run dev
 # Password: admin123
 ```
 
-**Done! Your system is running.** 🎉
+**Done! Your system is running.**
 
 ---
 
-## 📚 Documentation Quick Links
+## Documentation Quick Links
 
-| What You Need | File to Read | Time |
-|---------------|--------------|------|
-| **Quick Setup** | [QUICKSTART.md](QUICKSTART.md) | 5 min |
-| **Windows Install Help** | [INSTALLATION_WINDOWS.md](INSTALLATION_WINDOWS.md) | 10 min |
-| **Project Overview** | [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md) | 15 min |
-| **Complete Documentation** | [README.md](README.md) | 20 min |
-| **API Reference** | [API_DOCUMENTATION.md](API_DOCUMENTATION.md) | 15 min |
-| **Architecture Details** | [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | 20 min |
-| **Visual Diagrams** | [VISUAL_GUIDE.md](VISUAL_GUIDE.md) | 10 min |
-| **All Docs Index** | [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) | 5 min |
+| What You Need              | File to Read                                       | Time   |
+| -------------------------- | -------------------------------------------------- | ------ |
+| **Quick Setup**            | [QUICKSTART.md](QUICKSTART.md)                     | 5 min  |
+| **Windows Install Help**   | [INSTALLATION_WINDOWS.md](INSTALLATION_WINDOWS.md) | 10 min |
+| **Project Overview**       | [PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)         | 15 min |
+| **Complete Documentation** | [README.md](README.md)                             | 20 min |
+| **API Reference**          | [API_DOCUMENTATION.md](API_DOCUMENTATION.md)       | 15 min |
+| **Architecture Details**   | [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)           | 20 min |
+| **Visual Diagrams**        | [VISUAL_GUIDE.md](VISUAL_GUIDE.md)                 | 10 min |
+| **All Docs Index**         | [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md)   | 5 min  |
 
 ---
 
-## 🎯 Choose Your Path
+## Choose Your Path
 
 ### I'm a User - Just Want to Run It
-1. **[QUICKSTART.md](QUICKSTART.md)** ← Start here
+
+1. **[QUICKSTART.md](QUICKSTART.md)** <- Start here
 2. Run the app
 3. Done!
 
 ### I'm a Developer - Want to Understand the Code
-1. **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** ← Overview
+
+1. **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** <- Overview
 2. **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** ← Architecture
 3. **[VISUAL_GUIDE.md](VISUAL_GUIDE.md)** ← Diagrams
 4. Explore the code
 
 ### I'm Setting Up for the First Time
-1. **[INSTALLATION_WINDOWS.md](INSTALLATION_WINDOWS.md)** ← Prerequisites
+
+1. **[INSTALLATION_WINDOWS.md](INSTALLATION_WINDOWS.md)** <- Prerequisites
 2. **[QUICKSTART.md](QUICKSTART.md)** ← Setup & Run
 3. Test the system
 
 ### I'm Building APIs / Testing
-1. **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** ← API Reference
+
+1. **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)** <- API Reference
 2. Test with Postman/cURL
 3. Integrate
 
 ### I'm Presenting in an Interview
-1. **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** ← Quick briefing
+
+1. **[PROJECT_OVERVIEW.md](PROJECT_OVERVIEW.md)** <- Quick briefing
 2. **[VISUAL_GUIDE.md](VISUAL_GUIDE.md)** ← Show diagrams
 3. Run live demo
 
 ---
 
-## 🚀 What's Included
+## What's Included
 
-✅ **Full MERN Stack Application**
+Full MERN Stack Application
+
 - React.js frontend with clean UI
 - Node.js + Express backend
 - MongoDB database
 - JWT authentication
 - Email notifications
 
-✅ **Complete Features**
+Complete Features
+
 - Admin login & dashboard
 - Intern login
 - Add intern functionality
 - Auto-generate intern IDs
 - Email credentials to interns
 
-✅ **Comprehensive Documentation**
+Comprehensive Documentation
+
 - 8 detailed documentation files
 - Setup scripts
 - Visual diagrams
@@ -102,9 +110,10 @@ npm run dev
 
 ---
 
-## 📞 Quick Reference
+## Quick Reference
 
 ### Default Credentials
+
 ```
 Admin Login:
 Email:    admin@progrentures.com
@@ -112,6 +121,7 @@ Password: admin123
 ```
 
 ### Ports
+
 ```
 Frontend:  http://localhost:3000
 Backend:   http://localhost:5000
@@ -119,6 +129,7 @@ MongoDB:   mongodb://localhost:27017
 ```
 
 ### Key Commands
+
 ```powershell
 # Automated setup
 .\setup.ps1
@@ -129,7 +140,7 @@ npm install
 npm start
 
 # Frontend
-cd frontend  
+cd frontend
 npm install
 npm run dev
 ```
@@ -141,9 +152,9 @@ npm run dev
 ```
 Progrenstures/
 │
-├── 📄 START_HERE.md (this file)
+├── START_HERE.md (this file)
 │
-├── 📚 Documentation/
+├── Documentation/
 │   ├── QUICKSTART.md
 │   ├── INSTALLATION_WINDOWS.md
 │   ├── README.md
@@ -153,11 +164,11 @@ Progrenstures/
 │   ├── VISUAL_GUIDE.md
 │   └── DOCUMENTATION_INDEX.md
 │
-├── 🔧 Setup Scripts/
+├── Setup Scripts/
 │   ├── setup.ps1
 │   └── setup.bat
 │
-├── 💻 Backend/
+├── Backend/
 │   ├── config/
 │   ├── models/
 │   ├── controllers/
@@ -165,7 +176,7 @@ Progrenstures/
 │   ├── middleware/
 │   └── server.js
 │
-└── 🎨 Frontend/
+└── Frontend/
     ├── src/
     │   ├── components/
     │   ├── pages/
@@ -175,57 +186,60 @@ Progrenstures/
 
 ---
 
-## ✨ Features at a Glance
+## Features at a Glance
 
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Admin Login | ✅ | JWT authentication |
-| Intern Login | ✅ | ID-based login |
-| Admin Dashboard | ✅ | Sidebar navigation |
-| Add Intern | ✅ | Auto-generate ID |
-| Email Service | ✅ | Send credentials |
-| Password Security | ✅ | Bcrypt hashing |
-| Protected Routes | ✅ | Middleware protection |
-| Clean UI | ✅ | Professional design |
+| Feature           | Status | Description           |
+| ----------------- | ------ | --------------------- |
+| Admin Login       |        | JWT authentication    |
+| Intern Login      |        | ID-based login        |
+| Admin Dashboard   |        | Sidebar navigation    |
+| Add Intern        |        | Auto-generate ID      |
+| Email Service     |        | Send credentials      |
+| Password Security |        | Bcrypt hashing        |
+| Protected Routes  |        | Middleware protection |
+| Clean UI          |        | Professional design   |
 
 ---
 
-## 🎓 Learning Path
+## Learning Path
 
 ### Beginner
+
 1. Run the app using QUICKSTART.md
 2. Test all features
 3. Read README.md for understanding
 
 ### Intermediate
+
 1. Study PROJECT_SUMMARY.md
 2. Review VISUAL_GUIDE.md
 3. Understand the code structure
 
 ### Advanced
+
 1. Read API_DOCUMENTATION.md
 2. Study the source code
 3. Extend with new features
 
 ---
 
-## 🔍 Find Specific Information
+## Find Specific Information
 
-| Looking for... | Check this file |
-|----------------|----------------|
+| Looking for...     | Check this file         |
+| ------------------ | ----------------------- |
 | Installation steps | INSTALLATION_WINDOWS.md |
-| How to run | QUICKSTART.md |
-| API endpoints | API_DOCUMENTATION.md |
-| Architecture | PROJECT_SUMMARY.md |
-| Flow diagrams | VISUAL_GUIDE.md |
-| Database schemas | README.md |
-| Email setup | INSTALLATION_WINDOWS.md |
-| Troubleshooting | QUICKSTART.md |
-| Complete overview | PROJECT_OVERVIEW.md |
+| How to run         | QUICKSTART.md           |
+| API endpoints      | API_DOCUMENTATION.md    |
+| Architecture       | PROJECT_SUMMARY.md      |
+| Flow diagrams      | VISUAL_GUIDE.md         |
+| Database schemas   | README.md               |
+| Email setup        | INSTALLATION_WINDOWS.md |
+| Troubleshooting    | QUICKSTART.md           |
+| Complete overview  | PROJECT_OVERVIEW.md     |
 
 ---
 
-## 💡 Pro Tips
+## Pro Tips
 
 1. **First time?** Use the automated setup script: `.\setup.ps1`
 2. **Need help?** Each documentation file has troubleshooting sections
@@ -235,7 +249,7 @@ Progrenstures/
 
 ---
 
-## ✅ Verification Checklist
+## Verification Checklist
 
 Before you start, ensure you have:
 
@@ -247,7 +261,7 @@ Before you start, ensure you have:
 
 ---
 
-## 🎯 Next Steps
+## Next Steps
 
 1. **Choose your path above** based on your goal
 2. **Follow the recommended documentation**
@@ -256,7 +270,7 @@ Before you start, ensure you have:
 
 ---
 
-## 📝 Notes
+## Notes
 
 - All features are **fully implemented** and **tested**
 - Code is **clean**, **documented**, and **interview-ready**
@@ -265,7 +279,7 @@ Before you start, ensure you have:
 
 ---
 
-## 🎉 Ready to Begin!
+## Ready to Begin!
 
 **Choose your path above and start your journey!**
 
@@ -275,10 +289,10 @@ For most users, we recommend starting with **[QUICKSTART.md](QUICKSTART.md)**.
 
 **Need Help?** All documentation files have detailed troubleshooting sections.
 
-**Happy Coding!** 🚀
+**Happy Coding!**
 
 ---
 
-*Last Updated: December 13, 2025*  
-*Status: Complete & Ready to Use*  
-*Version: 1.0.0*
+_Last Updated: December 13, 2025_  
+_Status: Complete & Ready to Use_  
+_Version: 1.0.0_

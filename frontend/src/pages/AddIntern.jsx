@@ -1,48 +1,60 @@
-import { useState } from 'react';
-import { adminAPI } from '../services/api';
+import { useState } from "react";
+import { adminAPI } from "../services/api";
 
 function AddIntern({ onInternAdded }) {
-  const [studentType, setStudentType] = useState('Internship');
+  const [studentType, setStudentType] = useState("Internship");
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    mobile: '',
-    password: '',
-    domain: '',
-    customDomain: '',
-    joiningDate: '',
-    duration: '',
-    paymentDoneBy: '',
-    dateOfPayment: '',
-    transactionId: '',
-    paymentAmount: '',
-    currentDesignation: ''
+    name: "",
+    email: "",
+    mobile: "",
+    password: "",
+    domain: "",
+    customDomain: "",
+    joiningDate: "",
+    duration: "",
+    paymentDoneBy: "",
+    dateOfPayment: "",
+    transactionId: "",
+    paymentAmount: "",
+    currentDesignation: "",
   });
   const [welcomeFile, setWelcomeFile] = useState(null);
   const [offerFile, setOfferFile] = useState(null);
   const [paymentFile, setPaymentFile] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
   };
 
-  const handleWelcomeFile = (e) => { setWelcomeFile(e.target.files[0] || null); setError(''); setSuccess(''); };
-  const handleOfferFile = (e) => { setOfferFile(e.target.files[0] || null); setError(''); setSuccess(''); };
-  const handlePaymentFile = (e) => { setPaymentFile(e.target.files[0] || null); setError(''); setSuccess(''); };
+  const handleWelcomeFile = (e) => {
+    setWelcomeFile(e.target.files[0] || null);
+    setError("");
+    setSuccess("");
+  };
+  const handleOfferFile = (e) => {
+    setOfferFile(e.target.files[0] || null);
+    setError("");
+    setSuccess("");
+  };
+  const handlePaymentFile = (e) => {
+    setPaymentFile(e.target.files[0] || null);
+    setError("");
+    setSuccess("");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const submitData = {
@@ -50,28 +62,31 @@ function AddIntern({ onInternAdded }) {
         name: formData.name,
         email: formData.email,
         mobile: formData.mobile,
-        password: formData.password
+        password: formData.password,
       };
 
-      if (studentType === 'Internship') {
-        const selectedDomain = formData.domain === 'Other' ? formData.customDomain : formData.domain;
-        
+      if (studentType === "Internship") {
+        const selectedDomain =
+          formData.domain === "Other" ? formData.customDomain : formData.domain;
+
         if (!selectedDomain || !formData.joiningDate || !formData.duration) {
-          setError('Please fill in all required fields: Domain, Joining Date, and Duration');
+          setError(
+            "Please fill in all required fields: Domain, Joining Date, and Duration",
+          );
           setLoading(false);
           return;
         }
-        
+
         submitData.domain = selectedDomain;
         submitData.joiningDate = formData.joiningDate;
         submitData.duration = formData.duration;
-        
-        console.log('Internship data being sent:', {
+
+        console.log("Internship data being sent:", {
           domain: submitData.domain,
           joiningDate: submitData.joiningDate,
-          duration: submitData.duration
+          duration: submitData.duration,
         });
-      } else if (studentType === 'SMS Program') {
+      } else if (studentType === "SMS Program") {
         submitData.paymentDoneBy = formData.paymentDoneBy;
         submitData.dateOfPayment = formData.dateOfPayment;
         submitData.transactionId = formData.transactionId;
@@ -79,61 +94,56 @@ function AddIntern({ onInternAdded }) {
         submitData.currentDesignation = formData.currentDesignation;
       }
 
-      console.log('Submitting student data:', submitData);
-      console.log('Token:', localStorage.getItem('token'));
-      
+      console.log("Submitting student data:", submitData);
+      console.log("Token:", localStorage.getItem("token"));
+
       let response;
 
       // Always use FormData so files can be attached regardless of student type
       const fd = new FormData();
       Object.keys(submitData).forEach((k) => fd.append(k, submitData[k]));
 
-      if (studentType === 'SMS Program') {
-        // Require all three documents for SMS Program
-        if (!welcomeFile || !offerFile || !paymentFile) {
-          setError('Please upload Welcome Letter, Offer Letter and Payment Receipt (all required).');
-          setLoading(false);
-          return;
-        }
-        fd.append('welcomeLetter', welcomeFile);
-        fd.append('offerLetter', offerFile);
-        fd.append('paymentReceipt', paymentFile);
-      } else if (studentType === 'Internship' && offerFile) {
+      if (studentType === "SMS Program") {
+        // Documents are optional for SMS Program - attach if provided
+        if (welcomeFile) fd.append("welcomeLetter", welcomeFile);
+        if (offerFile) fd.append("offerLetter", offerFile);
+        if (paymentFile) fd.append("paymentReceipt", paymentFile);
+      } else if (studentType === "Internship" && offerFile) {
         // Offer letter is optional for Internship but attach if provided
-        fd.append('offerLetter', offerFile);
+        fd.append("offerLetter", offerFile);
       }
 
       response = await adminAPI.addIntern(fd);
-      
+
       if (response.data.success) {
         const intern = response.data.intern;
         const emailSent = response.data.emailSent;
-        
-          let successMsg = `Student added successfully!\n\nID: ${intern.internId}\nName: ${intern.name}\nEmail: ${intern.email}\nType: ${intern.studentType}`;
-        
+
+        let successMsg = `Student added successfully!\n\nID: ${intern.internId}\nName: ${intern.name}\nEmail: ${intern.email}\nType: ${intern.studentType}`;
+
         if (emailSent) {
           successMsg += `\n\nLogin credentials have been sent to ${intern.email}`;
         } else {
-            successMsg += `\n\nWarning: Email could not be sent. Please share credentials manually.`;
+          successMsg += `\n\nWarning: Email could not be sent. Please share credentials manually.`;
         }
-        
+
         setSuccess(successMsg);
-        
+
         setFormData({
-          name: '',
-          email: '',
-          mobile: '',
-          password: '',
-          domain: '',
-          joiningDate: '',
-          endingDate: '',
-          duration: '',
-          gender: '',
-          paymentDoneBy: '',
-          dateOfPayment: '',
-          transactionId: '',
-          paymentAmount: '',
-          currentDesignation: ''
+          name: "",
+          email: "",
+          mobile: "",
+          password: "",
+          domain: "",
+          joiningDate: "",
+          endingDate: "",
+          duration: "",
+          gender: "",
+          paymentDoneBy: "",
+          dateOfPayment: "",
+          transactionId: "",
+          paymentAmount: "",
+          currentDesignation: "",
         });
 
         if (onInternAdded) {
@@ -145,9 +155,11 @@ function AddIntern({ onInternAdded }) {
         setPaymentFile(null);
       }
     } catch (err) {
-      console.error('Add student error:', err);
-      console.error('Error response:', err.response);
-      const errorMessage = err.response?.data?.message || 'Failed to add student. Please try again.';
+      console.error("Add student error:", err);
+      console.error("Error response:", err.response);
+      const errorMessage =
+        err.response?.data?.message ||
+        "Failed to add student. Please try again.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -168,26 +180,38 @@ function AddIntern({ onInternAdded }) {
 
           <div className="form-group">
             <label>Student Type *</label>
-            <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+            <div style={{ display: "flex", gap: "20px", marginTop: "10px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+              >
                 <input
                   type="radio"
                   name="studentType"
                   value="Internship"
-                  checked={studentType === 'Internship'}
+                  checked={studentType === "Internship"}
                   onChange={(e) => setStudentType(e.target.value)}
-                  style={{ marginRight: '8px' }}
+                  style={{ marginRight: "8px" }}
                 />
                 Internship
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+              >
                 <input
                   type="radio"
                   name="studentType"
                   value="SMS Program"
-                  checked={studentType === 'SMS Program'}
+                  checked={studentType === "SMS Program"}
                   onChange={(e) => setStudentType(e.target.value)}
-                  style={{ marginRight: '8px' }}
+                  style={{ marginRight: "8px" }}
                 />
                 SMS Program
               </label>
@@ -243,7 +267,7 @@ function AddIntern({ onInternAdded }) {
             />
           </div>
 
-          {studentType === 'Internship' && (
+          {studentType === "Internship" && (
             <>
               <div className="form-group">
                 <label>Internship Domain *</label>
@@ -258,22 +282,34 @@ function AddIntern({ onInternAdded }) {
                   <option value="App Development">App Development</option>
                   <option value="Data Science">Data Science</option>
                   <option value="Machine Learning">Machine Learning</option>
-                  <option value="Artificial Intelligence">Artificial Intelligence</option>
+                  <option value="Artificial Intelligence">
+                    Artificial Intelligence
+                  </option>
                   <option value="UI/UX Design">UI/UX Design</option>
                   <option value="Graphic Design">Graphic Design</option>
                   <option value="Digital Marketing">Digital Marketing</option>
                   <option value="Content Writing">Content Writing</option>
-                  <option value="Business Development">Business Development</option>
+                  <option value="Business Development">
+                    Business Development
+                  </option>
                   <option value="Human Resources">Human Resources</option>
                   <option value="Sales & Marketing">Sales & Marketing</option>
                   <option value="Finance">Finance</option>
                   <option value="Cybersecurity">Cybersecurity</option>
                   <option value="Cloud Computing">Cloud Computing</option>
                   <option value="DevOps">DevOps</option>
-                  <option value="Full Stack Development">Full Stack Development</option>
-                  <option value="Frontend Development">Frontend Development</option>
-                  <option value="Backend Development">Backend Development</option>
-                  <option value="Mobile App Development">Mobile App Development</option>
+                  <option value="Full Stack Development">
+                    Full Stack Development
+                  </option>
+                  <option value="Frontend Development">
+                    Frontend Development
+                  </option>
+                  <option value="Backend Development">
+                    Backend Development
+                  </option>
+                  <option value="Mobile App Development">
+                    Mobile App Development
+                  </option>
                   <option value="Game Development">Game Development</option>
                   <option value="Quality Assurance">Quality Assurance</option>
                   <option value="Project Management">Project Management</option>
@@ -282,14 +318,19 @@ function AddIntern({ onInternAdded }) {
                 </select>
               </div>
 
-              {formData.domain === 'Other' && (
-                <div className="form-group" style={{ animation: 'slideInForm 0.3s ease-out' }}>
+              {formData.domain === "Other" && (
+                <div
+                  className="form-group"
+                  style={{ animation: "slideInForm 0.3s ease-out" }}
+                >
                   <label>Enter Custom Domain *</label>
                   <input
                     type="text"
                     name="customDomain"
-                    value={formData.customDomain || ''}
-                    onChange={(e) => setFormData({...formData, customDomain: e.target.value})}
+                    value={formData.customDomain || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customDomain: e.target.value })
+                    }
                     placeholder="Enter your custom domain"
                     required
                   />
@@ -320,14 +361,21 @@ function AddIntern({ onInternAdded }) {
               </div>
 
               <div className="form-group">
-                    <label>Internship Offer Letter (PDF) *</label>
-                    <input type="file" accept="application/pdf" onChange={handleOfferFile} />
-                    <small>Upload the internship offer letter (PDF). This will sync with the student profile and certificates.</small>
+                <label>Internship Offer Letter (PDF)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleOfferFile}
+                />
+                <small>
+                  Upload the internship offer letter (PDF). This will sync with
+                  the student profile and certificates. (Optional)
+                </small>
               </div>
             </>
           )}
 
-          {studentType === 'SMS Program' && (
+          {studentType === "SMS Program" && (
             <>
               <div className="form-group">
                 <label>Current Designation</label>
@@ -342,7 +390,13 @@ function AddIntern({ onInternAdded }) {
 
               <div className="form-group">
                 <label>Payment Done By</label>
-                <input type="text" name="paymentDoneBy" value={formData.paymentDoneBy} onChange={handleChange} placeholder="Name of person who made payment" />
+                <input
+                  type="text"
+                  name="paymentDoneBy"
+                  value={formData.paymentDoneBy}
+                  onChange={handleChange}
+                  placeholder="Name of person who made payment"
+                />
               </div>
 
               <div className="form-group">
@@ -376,28 +430,39 @@ function AddIntern({ onInternAdded }) {
                 />
               </div>
               <div className="form-group">
-                <label>Upload Welcome Letter (PDF) *</label>
-                <input type="file" accept="application/pdf" onChange={handleWelcomeFile} />
+                <label>Upload Welcome Letter (PDF)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleWelcomeFile}
+                />
+                <small>(Optional)</small>
               </div>
 
               <div className="form-group">
-                <label>Upload Internship Offer Letter (PDF) *</label>
-                <input type="file" accept="application/pdf" onChange={handleOfferFile} />
+                <label>Upload Internship Offer Letter (PDF)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleOfferFile}
+                />
+                <small>(Optional)</small>
               </div>
 
               <div className="form-group">
-                <label>Upload Payment Receipt (PDF) *</label>
-                <input type="file" accept="application/pdf" onChange={handlePaymentFile} />
+                <label>Upload Payment Receipt (PDF)</label>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handlePaymentFile}
+                />
+                <small>(Optional)</small>
               </div>
             </>
           )}
 
-          <button 
-            type="submit" 
-            className="submit-btn"
-            disabled={loading}
-          >
-            {loading ? 'Adding Student...' : 'Add Student'}
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? "Adding Student..." : "Add Student"}
           </button>
         </form>
       </div>

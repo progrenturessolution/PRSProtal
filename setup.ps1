@@ -10,9 +10,9 @@ Write-Host ""
 Write-Host "Checking Node.js installation..." -ForegroundColor Yellow
 try {
     $nodeVersion = node --version
-    Write-Host "✓ Node.js is installed: $nodeVersion" -ForegroundColor Green
+    Write-Host "Node.js is installed: $nodeVersion" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Node.js is NOT installed!" -ForegroundColor Red
+    Write-Host "Node.js is NOT installed!" -ForegroundColor Red
     Write-Host "  Please install Node.js from: https://nodejs.org/" -ForegroundColor Red
     exit 1
 }
@@ -22,18 +22,18 @@ Write-Host "Checking MongoDB installation..." -ForegroundColor Yellow
 try {
     $mongoService = Get-Service -Name MongoDB -ErrorAction SilentlyContinue
     if ($mongoService) {
-        Write-Host "✓ MongoDB service found: $($mongoService.Status)" -ForegroundColor Green
+        Write-Host "MongoDB service found: $($mongoService.Status)" -ForegroundColor Green
         if ($mongoService.Status -ne 'Running') {
             Write-Host "  Starting MongoDB service..." -ForegroundColor Yellow
             Start-Service MongoDB
-            Write-Host "✓ MongoDB service started" -ForegroundColor Green
+            Write-Host "MongoDB service started" -ForegroundColor Green
         }
     } else {
-        Write-Host "⚠ MongoDB service not found" -ForegroundColor Yellow
+        Write-Host "MongoDB service not found" -ForegroundColor Yellow
         Write-Host "  Please ensure MongoDB is installed or running manually" -ForegroundColor Yellow
     }
 } catch {
-    Write-Host "⚠ Could not check MongoDB status" -ForegroundColor Yellow
+    Write-Host "Could not check MongoDB status" -ForegroundColor Yellow
 }
 
 Write-Host ""
@@ -47,9 +47,9 @@ Write-Host "Installing Backend dependencies..." -ForegroundColor Yellow
 Set-Location backend
 npm install
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✓ Backend dependencies installed successfully" -ForegroundColor Green
+    Write-Host "Backend dependencies installed successfully" -ForegroundColor Green
 } else {
-    Write-Host "✗ Backend installation failed" -ForegroundColor Red
+    Write-Host "Backend installation failed" -ForegroundColor Red
     exit 1
 }
 
@@ -62,9 +62,9 @@ Write-Host "Installing Frontend dependencies..." -ForegroundColor Yellow
 Set-Location frontend
 npm install
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "✓ Frontend dependencies installed successfully" -ForegroundColor Green
+    Write-Host "Frontend dependencies installed successfully" -ForegroundColor Green
 } else {
-    Write-Host "✗ Frontend installation failed" -ForegroundColor Red
+    Write-Host "Frontend installation failed" -ForegroundColor Red
     exit 1
 }
 

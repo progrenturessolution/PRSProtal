@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { trainerAPI } from "../services/api";
+import { trainerAPI, internAPI, UPLOADS_BASE } from "../services/api";
 import logo from "../assets/logo.png";
 import TrainerSidebar from "../components/TrainerSidebar";
 
@@ -9,6 +9,7 @@ function TrainerDashboard() {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [students, setStudents] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,6 +46,7 @@ function TrainerDashboard() {
 
     setUser(JSON.parse(storedUser));
     fetchAssignedStudents();
+    fetchNotifications();
   }, [navigate]);
 
   const fetchAssignedStudents = async () => {
@@ -57,6 +59,17 @@ function TrainerDashboard() {
       console.error("Error fetching students:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await internAPI.getMyNotifications();
+      if (response.data.success) {
+        setNotifications(response.data.notifications);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
     }
   };
 
@@ -83,6 +96,7 @@ function TrainerDashboard() {
     localStorage.clear();
     navigate("/");
   };
+  
 
   const handleEditClick = () => {
     setEditFormData({
@@ -193,27 +207,38 @@ function TrainerDashboard() {
   return (
     <div className="dashboard">
       {/* Mobile Menu Button */}
-      <button 
-        className="mobile-menu-btn" 
+      <button
+        className="mobile-menu-btn"
         onClick={() => setSidebarOpen(!sidebarOpen)}
         aria-label="Toggle Menu"
       >
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="24" height="24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+        <svg
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16M4 18h16"
+          />
         </svg>
       </button>
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
-        <div 
-          className="sidebar-overlay" 
+        <div
+          className="sidebar-overlay"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      <TrainerSidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
+      <TrainerSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
       />
@@ -379,7 +404,10 @@ function TrainerDashboard() {
               </div>
 
               {successMessage && (
-                <div className="success-message" style={{ marginBottom: "20px" }}>
+                <div
+                  className="success-message"
+                  style={{ marginBottom: "20px" }}
+                >
                   {successMessage}
                 </div>
               )}
@@ -499,7 +527,7 @@ function TrainerDashboard() {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    ✕ Clear
+                    Clear
                   </button>
                 )}
               </div>
@@ -510,7 +538,8 @@ function TrainerDashboard() {
                   const filteredStudents = students.filter((student) => {
                     const matchesFilter =
                       studentFilter === "all" ||
-                      student.status === (studentFilter === "active" ? "active" : "completed");
+                      student.status ===
+                        (studentFilter === "active" ? "active" : "completed");
                     const matchesSearch =
                       !q ||
                       student.name?.toLowerCase().includes(q) ||
@@ -522,7 +551,11 @@ function TrainerDashboard() {
                   return filteredStudents.length === 0 ? (
                     <div className="premium-empty-state">
                       <div className="empty-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -532,7 +565,9 @@ function TrainerDashboard() {
                         </svg>
                       </div>
                       <p className="empty-title">
-                        {q ? `No students match "${studentSearch}"` : "No students assigned"}
+                        {q
+                          ? `No students match "${studentSearch}"`
+                          : "No students assigned"}
                       </p>
                       <p className="empty-subtitle">
                         {q
@@ -547,7 +582,8 @@ function TrainerDashboard() {
                             padding: "8px 20px",
                             borderRadius: "6px",
                             border: "none",
-                            background: "linear-gradient(135deg, #667eea, #764ba2)",
+                            background:
+                              "linear-gradient(135deg, #667eea, #764ba2)",
                             color: "#fff",
                             cursor: "pointer",
                             fontSize: "14px",
@@ -571,12 +607,28 @@ function TrainerDashboard() {
                           gap: "6px",
                         }}
                       >
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: "15px", height: "15px" }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        <svg
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          style={{ width: "15px", height: "15px" }}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                          />
                         </svg>
-                        Showing <strong style={{ color: "#374151" }}>{filteredStudents.length}</strong> of{" "}
-                        <strong style={{ color: "#374151" }}>{students.length}</strong> students
+                        Showing{" "}
+                        <strong style={{ color: "#374151" }}>
+                          {filteredStudents.length}
+                        </strong>{" "}
+                        of{" "}
+                        <strong style={{ color: "#374151" }}>
+                          {students.length}
+                        </strong>{" "}
+                        students
                         {q && (
                           <span style={{ marginLeft: "4px" }}>
                             for <em>"{studentSearch}"</em>
@@ -597,20 +649,33 @@ function TrainerDashboard() {
                           <tbody>
                             {filteredStudents.map((student) => {
                               const initials = student.name
-                                ? student.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                                ? student.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .slice(0, 2)
+                                    .toUpperCase()
                                 : "S";
-                              const isCompleted = student.status === "completed";
+                              const isCompleted =
+                                student.status === "completed";
                               return (
                                 <tr key={student._id}>
                                   {/* Student with avatar */}
                                   <td>
-                                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "12px",
+                                      }}
+                                    >
                                       <div
                                         style={{
                                           width: "38px",
                                           height: "38px",
                                           borderRadius: "50%",
-                                          background: "linear-gradient(135deg, #667eea, #764ba2)",
+                                          background:
+                                            "#475569",
                                           display: "flex",
                                           alignItems: "center",
                                           justifyContent: "center",
@@ -624,18 +689,30 @@ function TrainerDashboard() {
                                       </div>
                                       <div>
                                         <div
-                                          style={{ fontWeight: "600", color: "#1f2937", fontSize: "14px" }}
+                                          style={{
+                                            fontWeight: "600",
+                                            color: "#1f2937",
+                                            fontSize: "14px",
+                                          }}
                                           dangerouslySetInnerHTML={{
                                             __html: q
                                               ? student.name?.replace(
-                                                  new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"),
-                                                  '<mark style="background:#fef08a;padding:0 2px;border-radius:2px">$1</mark>'
+                                                  new RegExp(
+                                                    `(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+                                                    "gi",
+                                                  ),
+                                                  '<mark style="background:#fef08a;padding:0 2px;border-radius:2px">$1</mark>',
                                                 )
                                               : student.name,
                                           }}
                                         />
                                         {student.email && (
-                                          <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+                                          <div
+                                            style={{
+                                              fontSize: "12px",
+                                              color: "#9ca3af",
+                                            }}
+                                          >
                                             {student.email}
                                           </div>
                                         )}
@@ -651,8 +728,11 @@ function TrainerDashboard() {
                                       dangerouslySetInnerHTML={{
                                         __html: q
                                           ? student.internId?.replace(
-                                              new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"),
-                                              '<mark style="background:#fef08a;padding:0 2px;border-radius:2px">$1</mark>'
+                                              new RegExp(
+                                                `(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+                                                "gi",
+                                              ),
+                                              '<mark style="background:#fef08a;padding:0 2px;border-radius:2px">$1</mark>',
                                             )
                                           : student.internId,
                                       }}
@@ -668,8 +748,12 @@ function TrainerDashboard() {
                                         borderRadius: "999px",
                                         fontSize: "12px",
                                         fontWeight: "600",
-                                        background: isCompleted ? "#d1fae5" : "#dbeafe",
-                                        color: isCompleted ? "#065f46" : "#1e40af",
+                                        background: isCompleted
+                                          ? "#d1fae5"
+                                          : "#dbeafe",
+                                        color: isCompleted
+                                          ? "#065f46"
+                                          : "#1e40af",
                                       }}
                                     >
                                       {isCompleted ? "Completed" : "Active"}
@@ -678,34 +762,61 @@ function TrainerDashboard() {
 
                                   {/* Actions */}
                                   <td>
-                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        gap: "6px",
+                                        flexWrap: "wrap",
+                                      }}
+                                    >
                                       <button
-                                        onClick={() => navigate(`/trainer/student/${student._id}/interviews`)}
+                                        onClick={() =>
+                                          navigate(
+                                            `/trainer/student/${student._id}/interviews`,
+                                          )
+                                        }
                                         className="table-action-btn"
                                       >
                                         Interviews
                                       </button>
                                       <button
-                                        onClick={() => navigate(`/trainer/student/${student._id}/aptitude`)}
+                                        onClick={() =>
+                                          navigate(
+                                            `/trainer/student/${student._id}/aptitude`,
+                                          )
+                                        }
                                         className="table-action-btn"
                                       >
                                         Aptitude
                                       </button>
                                       <button
-                                        onClick={() => navigate(`/trainer/student/${student._id}/assessments`)}
+                                        onClick={() =>
+                                          navigate(
+                                            `/trainer/student/${student._id}/assessments`,
+                                          )
+                                        }
                                         className="table-action-btn"
                                       >
                                         Assessments
                                       </button>
                                       <button
-                                        onClick={() => navigate(`/trainer/student/${student._id}/training`)}
+                                        onClick={() =>
+                                          navigate(
+                                            `/trainer/student/${student._id}/training`,
+                                          )
+                                        }
                                         className="table-action-btn"
                                       >
                                         Training
                                       </button>
                                       {!isCompleted ? (
                                         <button
-                                          onClick={() => handleUpdateStatus(student._id, "completed")}
+                                          onClick={() =>
+                                            handleUpdateStatus(
+                                              student._id,
+                                              "completed",
+                                            )
+                                          }
                                           className="table-action-btn"
                                           style={{ background: "#3b82f6" }}
                                         >
@@ -713,7 +824,12 @@ function TrainerDashboard() {
                                         </button>
                                       ) : (
                                         <button
-                                          onClick={() => handleUpdateStatus(student._id, "active")}
+                                          onClick={() =>
+                                            handleUpdateStatus(
+                                              student._id,
+                                              "active",
+                                            )
+                                          }
                                           className="table-action-btn"
                                           style={{ background: "#10b981" }}
                                         >
@@ -747,22 +863,58 @@ function TrainerDashboard() {
               </div>
 
               <div className="premium-card">
-                <div className="premium-empty-state">
-                  <div className="empty-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                      />
-                    </svg>
+                {notifications.length > 0 ? (
+                  <div className="notifications-list">
+                    {notifications.map((notification) => (
+                      <div key={notification._id} className="notification-item">
+                        <div className="notification-header">
+                          <h4>{notification.title}</h4>
+                          <span className="notification-date">
+                            {new Date(
+                              notification.createdAt,
+                            ).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="notification-message">
+                          {notification.message}
+                        </p>
+                        {notification.attachment && (
+                          <div className="notification-attachment">
+                            <a
+                              href={`${UPLOADS_BASE}/uploads/notifications/${notification.attachment.filename}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="attachment-link"
+                            >
+                              📎 {notification.attachment.filename}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <p className="empty-title">No notifications</p>
-                  <p className="empty-subtitle">
-                    You're all caught up! New updates will appear here
-                  </p>
-                </div>
+                ) : (
+                  <div className="premium-empty-state">
+                    <div className="empty-icon">
+                      <svg
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                        />
+                      </svg>
+                    </div>
+                    <p className="empty-title">No notifications</p>
+                    <p className="empty-subtitle">
+                      You're all caught up! New updates will appear here
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -846,9 +998,7 @@ function TrainerDashboard() {
                       <button
                         className="modal-close-btn"
                         onClick={handleCloseModal}
-                      >
-                        ✕
-                      </button>
+                      ></button>
                     </div>
 
                     <form onSubmit={handleEditSubmit}>
@@ -954,6 +1104,7 @@ function TrainerDashboard() {
             </>
           )}
         </div>
+        
       </main>
     </div>
   );
