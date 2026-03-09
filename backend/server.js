@@ -8,7 +8,6 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const trainerRoutes = require('./routes/trainerRoutes');
-const representativeRoutes = require('./routes/representativeRoutes');
 const { cleanupExpiredCertificates } = require('./controllers/certificateController');
 
 // Load environment variables with explicit path
@@ -49,7 +48,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/task', taskRoutes);
 app.use('/api/trainer', trainerRoutes);
-app.use('/api/representative', representativeRoutes);
 
 // Health check route
 app.get('/', (req, res) => {

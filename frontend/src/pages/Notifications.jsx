@@ -1,30 +1,24 @@
-import { useState, useEffect } from "react";
-import { adminAPI } from "../services/api";
+import { useState, useEffect } from 'react';
+import { adminAPI } from '../services/api';
 
 function Notifications() {
   const [students, setStudents] = useState([]);
   const [trainers, setTrainers] = useState([]);
-  const [filteredStudents, setFilteredStudents] = useState([]);
-  const [filteredTrainers, setFilteredTrainers] = useState([]);
-  const [notificationType, setNotificationType] = useState("Individual");
-  const [recipientType, setRecipientType] = useState("Student");
+  const [notificationType, setNotificationType] = useState('');
+  const [recipientType, setRecipientType] = useState('Student');
   const [selectedRecipients, setSelectedRecipients] = useState([]);
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
+  const [selectedGroups, setSelectedGroups] = useState([]);
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
   const [file, setFile] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectAll, setSelectAll] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    filterRecipients();
-  }, [searchTerm, students, trainers, recipientType]);
 
   const fetchData = async () => {
     try {
@@ -33,36 +27,24 @@ function Notifications() {
         setStudents(studentsResponse.data.interns);
       }
 
-      const trainersResponse = await adminAPI.getAllTrainers();
-      if (trainersResponse.data.success) {
-        setTrainers(trainersResponse.data.trainers);
-      }
+      // Fetch trainers when trainer API is available
+      // const trainersResponse = await adminAPI.getAllTrainers();
+      // if (trainersResponse.data.success) {
+      //   setTrainers(trainersResponse.data.trainers);
+      // }
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      console.error('Failed to fetch data:', error);
     }
   };
 
-  const filterRecipients = () => {
-    const term = searchTerm.toLowerCase();
-    if (recipientType === "Student") {
-      const filtered = students.filter(
-        (student) =>
-          student.internId.toLowerCase().includes(term) ||
-          student.name.toLowerCase().includes(term) ||
-          student.email.toLowerCase().includes(term),
-      );
-      setFilteredStudents(filtered);
-    } else {
-      const filtered = trainers.filter(
-        (trainer) =>
-          trainer.name.toLowerCase().includes(term) ||
-          trainer.email.toLowerCase().includes(term),
-      );
-      setFilteredTrainers(filtered);
-    }
+  const handleRecipientTypeChange = (e) => {
+    setRecipientType(e.target.value);
+    setSelectedRecipients([]);
+    setSelectedGroups([]);
+    setSearchQuery('');
   };
 
-  const handleRecipientSelection = (recipientId) => {
+  const handleIndividualRecipientChange = (recipientId) => {
     setSelectedRecipients((prev) => {
       if (prev.includes(recipientId)) {
         return prev.filter((id) => id !== recipientId);
@@ -72,19 +54,50 @@ function Notifications() {
     });
   };
 
-  const handleSelectAll = () => {
-    const currentList =
-      recipientType === "Student" ? filteredStudents : filteredTrainers;
-    const allIds = currentList.map((item) => item._id);
+  const handleGroupChange = (groupType) => {
+    setSelectedGroups((prev) => {
+      if (prev.includes(groupType)) {
+        return prev.filter((type) => type !== groupType);
+      } else {
+        return [...prev, groupType];
+      }
+    });
+  };
 
-    if (selectAll) {
-      setSelectedRecipients((prev) =>
-        prev.filter((id) => !allIds.includes(id)),
-      );
-    } else {
-      setSelectedRecipients((prev) => [...new Set([...prev, ...allIds])]);
+  const handleSelectAllIndividuals = () => {
+    if (recipientType === 'Student') {
+      const filteredList = getFilteredRecipients();
+      if (selectedRecipients.length === filteredList.length) {
+        setSelectedRecipients([]);
+      } else {
+        setSelectedRecipients(filteredList.map((s) => s._id));
+      }
     }
-    setSelectAll(!selectAll);
+  };
+
+  const getFilteredRecipients = () => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) {
+      return recipientType === 'Student' ? students : trainers;
+    }
+
+    const list = recipientType === 'Student' ? students : trainers;
+    return list.filter(item => {
+      if (recipientType === 'Student') {
+        return (
+          item.name.toLowerCase().includes(query) ||
+          item.email.toLowerCase().includes(query) ||
+          item.internId.toLowerCase().includes(query) ||
+          (item.domain && item.domain.toLowerCase().includes(query)) ||
+          (item.currentDesignation && item.currentDesignation.toLowerCase().includes(query))
+        );
+      } else {
+        return (
+          item.name.toLowerCase().includes(query) ||
+          item.email.toLowerCase().includes(query)
+        );
+      }
+    });
   };
 
   const handleFileChange = (e) => {
@@ -92,61 +105,86 @@ function Notifications() {
     if (selectedFile) {
       // Validate file size (max 10MB)
       if (selectedFile.size > 10 * 1024 * 1024) {
-        setError("File size should be less than 10MB.");
+        setError('File size should be less than 10MB.');
         return;
       }
       setFile(selectedFile);
-      setError("");
+      setError('');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     try {
-      const formData = new FormData();
-      formData.append("notificationType", notificationType);
-      formData.append("recipientType", recipientType);
-      formData.append("subject", subject);
-      formData.append("message", message);
+      const trimmedSubject = subject.trim();
+      const trimmedMessage = message.trim();
 
-      if (notificationType === "Individual") {
-        if (selectedRecipients.length === 0) {
-          setError("Please select at least one recipient.");
-          setLoading(false);
-          return;
-        }
-        // Send recipientIds as comma-separated string
-        formData.append("recipientId", selectedRecipients.join(","));
-      } else if (notificationType === "Group") {
-        formData.append("groupType", recipientType);
+      // Validation
+      if (!notificationType) {
+        setError('Notification type is required');
+        setLoading(false);
+        return;
+      }
+
+      if (!trimmedSubject) {
+        setError('Subject is required');
+        setLoading(false);
+        return;
+      }
+
+      if (!trimmedMessage) {
+        setError('Message is required');
+        setLoading(false);
+        return;
+      }
+
+      if (notificationType === 'Individual' && selectedRecipients.length === 0) {
+        setError('Please select at least one recipient');
+        setLoading(false);
+        return;
+      }
+
+      if (notificationType === 'Group' && selectedGroups.length === 0) {
+        setError('Please select at least one group');
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('notificationType', notificationType);
+      formData.append('recipientType', recipientType);
+      formData.append('subject', trimmedSubject);
+      formData.append('message', trimmedMessage);
+
+      if (notificationType === 'Individual') {
+        formData.append('recipientIds', JSON.stringify(selectedRecipients));
+      } else if (notificationType === 'Group') {
+        formData.append('selectedGroups', JSON.stringify(selectedGroups));
       }
 
       if (file) {
-        formData.append("attachment", file);
+        formData.append('attachment', file);
       }
 
       const response = await adminAPI.createNotification(formData);
-
+      
       if (response.data.success) {
-        setSuccess("Notification sent successfully!");
+        setSuccess('Notification sent successfully!');
         // Reset form
-        setSubject("");
-        setMessage("");
+        setNotificationType('');
+        setSubject('');
+        setMessage('');
         setFile(null);
         setSelectedRecipients([]);
-        setSelectAll(false);
-        setSearchTerm("");
-        document.getElementById("fileInput").value = "";
+        setSelectedGroups([]);
+        document.getElementById('fileInput').value = '';
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Failed to send notification. Please try again.",
-      );
+      setError(err.response?.data?.message || 'Failed to send notification. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -161,72 +199,57 @@ function Notifications() {
 
       <div className="card">
         <h3>Create New Notification</h3>
-
+        
         {error && (
-          <div className="error-message" style={{ marginTop: "15px" }}>
+          <div className="error-message" style={{ marginTop: '15px' }}>
             {error}
           </div>
         )}
-
+        
         {success && (
-          <div className="success-message" style={{ marginTop: "15px" }}>
+          <div className="success-message" style={{ marginTop: '15px' }}>
             {success}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ marginTop: "20px" }}>
+        <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
           {/* Notification Type */}
           <div className="form-group">
             <label>Notification Type *</label>
-            <div style={{ display: "flex", gap: "20px", marginTop: "10px" }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
-              >
+            <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input
                   type="radio"
                   name="notificationType"
                   value="Individual"
-                  checked={notificationType === "Individual"}
+                  checked={notificationType === 'Individual'}
                   onChange={(e) => setNotificationType(e.target.value)}
-                  style={{ marginRight: "8px" }}
+                  required
+                  style={{ marginRight: '8px' }}
                 />
                 Individual
               </label>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
-              >
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input
                   type="radio"
                   name="notificationType"
                   value="Group"
-                  checked={notificationType === "Group"}
+                  checked={notificationType === 'Group'}
                   onChange={(e) => setNotificationType(e.target.value)}
-                  style={{ marginRight: "8px" }}
+                  required
+                  style={{ marginRight: '8px' }}
                 />
                 Group
               </label>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
-              >
+              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
                 <input
                   type="radio"
                   name="notificationType"
                   value="All"
-                  checked={notificationType === "All"}
+                  checked={notificationType === 'All'}
                   onChange={(e) => setNotificationType(e.target.value)}
-                  style={{ marginRight: "8px" }}
+                  required
+                  style={{ marginRight: '8px' }}
                 />
                 All Users
               </label>
@@ -234,217 +257,328 @@ function Notifications() {
           </div>
 
           {/* Recipient Type (if Individual or Group) */}
-{notificationType !== "All" && (
-  <div className="form-group">
-    <label>Recipient Type *</label>
-    <select
-      value={recipientType}
-      onChange={(e) => {
-        setRecipientType(e.target.value);
-        setSelectedRecipients([]);
-        setSelectAll(false);
-        setSearchTerm("");
-      }}
-      required
-      style={{
-        width: "100%",
-        padding: "10px",
-        borderRadius: "6px",
-        border: "1px solid #ddd",
-        fontSize: "14px",
-        backgroundColor: "#fff",
-      }}
-    >
-      <option value="Student">Students</option>
-      <option value="Trainer">Trainers</option>
-    </select>
-  </div>
-)}
+          {notificationType && notificationType !== 'All' && (
+            <div className="form-group">
+              <label>Recipient Type *</label>
+              <select
+                value={recipientType}
+                onChange={handleRecipientTypeChange}
+                required
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '6px',
+                  border: '1px solid #ddd',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="Student">Students</option>
+                <option value="Trainer">Trainers</option>
+              </select>
+            </div>
+          )}
 
-{/* Individual Recipient Selection */}
-{notificationType === "Individual" && (
-  <div className="form-group">
-    <label>Select Recipients *</label>
-
-    {/* Search Bar */}
-    <div style={{ marginBottom: "15px", width: "100%" }}>
-      <input
-        type="text"
-        placeholder={`Search ${
-          recipientType === "Student" ? "students" : "trainers"
-        } by ID, name, or email...`}
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "10px",
-          borderRadius: "6px",
-          border: "1px solid #ddd",
-          fontSize: "14px",
-          backgroundColor: "#fff",
-        }}
-      />
-    </div>
-
-    {/* Select All Checkbox */}
-    <div style={{ marginBottom: "10px", width: "100%" }}>
-      <label
-        style={{
-          display: "flex",
-          alignItems: "center",
-         
-          width: "100%",
-          cursor: "pointer",
-        }}
-      >
-        <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                width: "50px",
-                justifyContent: "center"
-              }}><input
-          type="checkbox"
-          checked={selectAll}
-          onChange={handleSelectAll}
-          style={{ marginRight: "8px" }}
-        />
-        
-
+          {/* Individual Recipient Selection with Checkboxes */}
+          {notificationType === 'Individual' && (
+            <div className="form-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ fontSize: '15px', fontWeight: '500', color: '#1f2937', marginBottom: '0' }}>
+                  Select Recipients * ({selectedRecipients.length} selected)
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSelectAllIndividuals}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    background: selectedRecipients.length === getFilteredRecipients().length && getFilteredRecipients().length > 0 ? '#ef4444' : '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.05)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  {selectedRecipients.length === getFilteredRecipients().length && getFilteredRecipients().length > 0 ? 'Deselect All' : 'Select All'}
+                </button>
               </div>
-        
-        Select All (
-        {recipientType === "Student"
-          ? filteredStudents.length
-          : filteredTrainers.length}{" "}
-        {recipientType === "Student" ? "students" : "trainers"})
-      </label>
-    </div>
 
-    {/* Recipients List */}
-    <div
-      style={{
-        maxHeight: "300px",
-        overflowY: "auto",
-        border: "1px solid #e2e8f0",
-        borderRadius: "6px",
-        backgroundColor: "#fff",
-        width: "100%",
-      }}
-    >
-      {recipientType === "Student" ? (
-        filteredStudents.length > 0 ? (
-          filteredStudents.map((student) => (
-            <div
-              key={student._id}
-              style={{
-                padding: "10px 15px",
-                borderBottom: "1px solid #f1f5f9",
-                display: "flex",
-                alignItems: "center",
-                width: "100%",
-                backgroundColor: selectedRecipients.includes(student._id)
-                  ? "#f8fafc"
-                  : "transparent",
-              }}
-            >
-              <div style={{ 
-                display: "flex", 
-                alignItems: "center", 
-                width: "50px",
-                justifyContent: "center"
-              }}>
+              {/* Search Input */}
+              <div style={{ marginBottom: '12px' }}>
                 <input
-                  type="checkbox"
-                  checked={selectedRecipients.includes(student._id)}
-                  onChange={() => handleRecipientSelection(student._id)}
+                  type="text"
+                  placeholder="🔍 Search by name, email, ID, domain..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '6px',
+                    border: '2px solid #e5e7eb',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    color: '#1f2937',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e5e7eb';
+                    e.target.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+                  }}
                 />
               </div>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontWeight: "500", color: "#1e293b" }}>
-                  {student.internId} - {student.name}
-                </div>
-                <div style={{ fontSize: "12px", color: "#64748b" }}>
-                  {student.email}
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div
-            style={{
-              padding: "20px",
-              textAlign: "center",
-              color: "#64748b",
-            }}
-          >
-            No students found matching your search.
-          </div>
-        )
-      ) : filteredTrainers.length > 0 ? (
-        filteredTrainers.map((trainer) => (
-          <div
-            key={trainer._id}
-            style={{
-              padding: "10px 15px",
-              borderBottom: "1px solid #f1f5f9",
-              display: "flex",
-              alignItems: "center",
-              width: "100%",
-              backgroundColor: selectedRecipients.includes(trainer._id)
-                ? "#f8fafc"
-                : "transparent",
-            }}
-          >
-            <div style={{ 
-              display: "flex", 
-              alignItems: "center", 
-              width: "50px",
-              justifyContent: "center"
-            }}>
-              <input
-                type="checkbox"
-                checked={selectedRecipients.includes(trainer._id)}
-                onChange={() => handleRecipientSelection(trainer._id)}
-              />
-            </div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ fontWeight: "500", color: "#1e293b" }}>
-                {trainer.name}
-              </div>
-              <div style={{ fontSize: "12px", color: "#64748b" }}>
-                {trainer.email}
-              </div>
-            </div>
-          </div>
-        ))
-      ) : (
-        <div
-          style={{
-            padding: "20px",
-            textAlign: "center",
-            color: "#64748b",
-          }}
-        >
-          No trainers found matching your search.
-        </div>
-      )}
-    </div>
 
-    {selectedRecipients.length > 0 && (
-      <div
-        style={{
-          marginTop: "10px",
-          fontSize: "14px",
-          color: "#059669",
-          textAlign: "left",
-        }}
-      >
-        {selectedRecipients.length} recipient
-        {selectedRecipients.length > 1 ? "s" : ""} selected
-      </div>
-    )}
-  </div>
-)}
+              <div
+                style={{
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  maxHeight: '450px',
+                  overflowY: 'auto',
+                  background: '#ffffff',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                }}
+              >
+                {getFilteredRecipients().length > 0 ? (
+                  <div>
+                    {getFilteredRecipients().map((item) => (
+                      <label
+                        key={item._id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '12px 12px',
+                          margin: '4px 0',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          background: selectedRecipients.includes(item._id) ? '#eff6ff' : '#ffffff',
+                          border: selectedRecipients.includes(item._id) ? '1px solid #bfdbfe' : '1px solid transparent',
+                          transition: 'all 0.2s ease',
+                          userSelect: 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!selectedRecipients.includes(item._id)) {
+                            e.currentTarget.style.background = '#f9fafb';
+                            e.currentTarget.style.borderColor = '#e5e7eb';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!selectedRecipients.includes(item._id)) {
+                            e.currentTarget.style.background = '#ffffff';
+                            e.currentTarget.style.borderColor = 'transparent';
+                          }
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedRecipients.includes(item._id)}
+                          onChange={() => handleIndividualRecipientChange(item._id)}
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            minWidth: '18px',
+                            cursor: 'pointer',
+                            accentColor: '#3b82f6'
+                          }}
+                        />
+                        {recipientType === 'Student' ? (
+                          <>
+                            <span style={{ marginLeft: '10px', fontSize: '14px', color: '#374151', fontWeight: '500' }}>
+                              {item.internId}
+                            </span>
+                            <span style={{ marginLeft: '8px', fontSize: '14px', color: '#1f2937', fontWeight: '500' }}>
+                              {item.name}
+                            </span>
+                            {item.domain && (
+                              <span style={{ marginLeft: '8px', fontSize: '13px', color: '#6b7280', padding: '2px 6px', background: '#f3f4f6', borderRadius: '4px' }}>
+                                {item.domain}
+                              </span>
+                            )}
+                            <span style={{ marginLeft: 'auto', fontSize: '13px', color: '#9ca3af' }}>
+                              {item.email}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span style={{ marginLeft: '10px', fontSize: '14px', color: '#1f2937', fontWeight: '500' }}>
+                              {item.name}
+                            </span>
+                            <span style={{ marginLeft: 'auto', fontSize: '13px', color: '#9ca3af' }}>
+                              {item.email}
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#6b7280', textAlign: 'center', margin: '30px 0', fontSize: '14px' }}>
+                    {searchQuery ? `No ${recipientType.toLowerCase()}s found matching "${searchQuery}"` : `No ${recipientType.toLowerCase()}s available`}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Group Selection with Checkboxes */}
+          {notificationType === 'Group' && (
+            <div className="form-group">
+              <label style={{ fontSize: '15px', fontWeight: '500', color: '#1f2937', marginBottom: '12px', display: 'block' }}>
+                Select Groups to Notify * ({selectedGroups.length} selected)
+              </label>
+              <div
+                style={{
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  background: '#ffffff',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px 12px',
+                    margin: '4px 0',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    background: selectedGroups.includes('SMS Program') ? '#f0fdf4' : '#ffffff',
+                    border: selectedGroups.includes('SMS Program') ? '1px solid #bbf7d0' : '1px solid transparent',
+                    transition: 'all 0.2s ease',
+                    userSelect: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!selectedGroups.includes('SMS Program')) {
+                      e.currentTarget.style.background = '#f9fafb';
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedGroups.includes('SMS Program')) {
+                      e.currentTarget.style.background = '#ffffff';
+                      e.currentTarget.style.borderColor = 'transparent';
+                    }
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedGroups.includes('SMS Program')}
+                    onChange={() => handleGroupChange('SMS Program')}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      minWidth: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#22c55e'
+                    }}
+                  />
+                  <span style={{ marginLeft: '10px', fontSize: '14px', color: '#1f2937', fontWeight: '500' }}>
+                    SMS Program Students
+                  </span>
+                </label>
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px 12px',
+                    margin: '4px 0',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    background: selectedGroups.includes('Internship') ? '#fef3c7' : '#ffffff',
+                    border: selectedGroups.includes('Internship') ? '1px solid #fcd34d' : '1px solid transparent',
+                    transition: 'all 0.2s ease',
+                    userSelect: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!selectedGroups.includes('Internship')) {
+                      e.currentTarget.style.background = '#f9fafb';
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!selectedGroups.includes('Internship')) {
+                      e.currentTarget.style.background = '#ffffff';
+                      e.currentTarget.style.borderColor = 'transparent';
+                    }
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedGroups.includes('Internship')}
+                    onChange={() => handleGroupChange('Internship')}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      minWidth: '18px',
+                      cursor: 'pointer',
+                      accentColor: '#f59e0b'
+                    }}
+                  />
+                  <span style={{ marginLeft: '10px', fontSize: '14px', color: '#1f2937', fontWeight: '500' }}>
+                    Internship Students
+                  </span>
+                </label>
+                {recipientType === 'Trainer' && (
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '12px 12px',
+                      margin: '4px 0',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      background: selectedGroups.includes('All Trainers') ? '#fce7f3' : '#ffffff',
+                      border: selectedGroups.includes('All Trainers') ? '1px solid #fbcfe8' : '1px solid transparent',
+                      transition: 'all 0.2s ease',
+                      userSelect: 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selectedGroups.includes('All Trainers')) {
+                        e.currentTarget.style.background = '#f9fafb';
+                        e.currentTarget.style.borderColor = '#e5e7eb';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selectedGroups.includes('All Trainers')) {
+                        e.currentTarget.style.background = '#ffffff';
+                        e.currentTarget.style.borderColor = 'transparent';
+                      }
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedGroups.includes('All Trainers')}
+                      onChange={() => handleGroupChange('All Trainers')}
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        minWidth: '18px',
+                        cursor: 'pointer',
+                        accentColor: '#ec4899'
+                      }}
+                    />
+                    <span style={{ marginLeft: '10px', fontSize: '14px', color: '#1f2937', fontWeight: '500' }}>
+                      All Trainers
+                    </span>
+                  </label>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Subject */}
           <div className="form-group">
@@ -456,13 +590,11 @@ function Notifications() {
               placeholder="Enter notification subject"
               required
               style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "6px",
-                border: "1px solid #e2e8f0",
-                fontSize: "14px",
-                backgroundColor: "#fff",
-                transition: "border-color 0.2s ease",
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #ddd',
+                fontSize: '14px'
               }}
             />
           </div>
@@ -475,16 +607,14 @@ function Notifications() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter your message here..."
               required
-              rows={5}
+              rows={6}
               style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "6px",
-                border: "1px solid #e2e8f0",
-                fontSize: "14px",
-                resize: "vertical",
-                backgroundColor: "#fff",
-                transition: "border-color 0.2s ease",
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #ddd',
+                fontSize: '14px',
+                resize: 'vertical'
               }}
             />
           </div>
@@ -497,22 +627,14 @@ function Notifications() {
               type="file"
               onChange={handleFileChange}
               style={{
-                width: "100%",
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #e2e8f0",
-                fontSize: "14px",
-                backgroundColor: "#fff",
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #ddd',
+                fontSize: '14px'
               }}
             />
-            <small
-              style={{
-                color: "#64748b",
-                fontSize: "12px",
-                marginTop: "5px",
-                display: "block",
-              }}
-            >
+            <small style={{ color: '#666', fontSize: '12px', marginTop: '5px', display: 'block' }}>
               Max size: 10MB
             </small>
           </div>
@@ -522,37 +644,27 @@ function Notifications() {
             type="submit"
             disabled={loading}
             style={{
-              padding: "12px 24px",
-              backgroundColor: loading ? "#94a3b8" : "#324158",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontSize: "14px",
-              fontWeight: 500,
-              transition: "background-color 0.2s ease",
-              width: "100%",
+              padding: '12px 24px',
+              background: loading ? '#ccc' : '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: 600
             }}
           >
-            {loading ? "Sending..." : "Send Notification"}
+            {loading ? 'Sending...' : 'Send Notification'}
           </button>
         </form>
       </div>
 
       {/* Recent Notifications */}
-      <div className="card" style={{ marginTop: "20px" }}>
+      <div className="card" style={{ marginTop: '20px' }}>
         <h3>Recent Notifications</h3>
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "20px",
-            background: "#f9fafb",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}
-        >
-          <p style={{ color: "#6b7280" }}>
-            Notification history will be displayed here.
+        <div style={{ marginTop: '20px', padding: '20px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
+          <p style={{ color: '#6b7280' }}>
+             Notification history will be displayed here.
           </p>
         </div>
       </div>

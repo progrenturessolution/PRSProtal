@@ -13,24 +13,17 @@ if (!fs.existsSync(studentsUploadDir)) {
 	fs.mkdirSync(studentsUploadDir, { recursive: true });
 }
 
+// Ensure uploads/certificates folder exists
+const certsUploadDir = path.join(__dirname, '..', 'uploads', 'certificates');
+if (!fs.existsSync(certsUploadDir)) {
+	fs.mkdirSync(certsUploadDir, { recursive: true });
+}
+
 // Ensure uploads/notifications folder exists
 const notificationsUploadDir = path.join(__dirname, '..', 'uploads', 'notifications');
 if (!fs.existsSync(notificationsUploadDir)) {
 	fs.mkdirSync(notificationsUploadDir, { recursive: true });
 }
-
-const notificationStorage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, notificationsUploadDir);
-	},
-	filename: function (req, file, cb) {
-		const ext = path.extname(file.originalname);
-		const name = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-		cb(null, name);
-	}
-});
-
-const uploadNotification = multer({ storage: notificationStorage });
 
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
@@ -58,6 +51,20 @@ const certStorage = multer.diskStorage({
 });
 
 const uploadCert = multer({ storage: certStorage });
+
+// Separate multer config for notifications attachments
+const notificationStorage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, notificationsUploadDir);
+	},
+	filename: function (req, file, cb) {
+		const ext = path.extname(file.originalname);
+		const name = `notification-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+		cb(null, name);
+	}
+});
+
+const uploadNotification = multer({ storage: notificationStorage });
 
 // ========== INTERN/STUDENT MANAGEMENT ==========
 

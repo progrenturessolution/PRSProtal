@@ -4130,6 +4130,227 @@ form {
   margin: 0;
 }
 
+/* Trainer Student Records - Professional Form Design */
+.record-workspace {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.record-section {
+  padding: 22px;
+}
+
+.record-form-title {
+  margin-bottom: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.record-intro-card {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.record-intro-card strong {
+  display: block;
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.record-intro-card p {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.record-workspace form {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.record-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.record-workspace .form-group {
+  margin-bottom: 14px;
+}
+
+.record-workspace .form-group label {
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.record-workspace .form-group input,
+.record-workspace .form-group select,
+.record-workspace .form-group textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  padding: 11px 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.record-workspace .form-group textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.record-workspace .left-align {
+  grid-column: auto;
+}
+
+.record-workspace .form-group input:focus,
+.record-workspace .form-group select:focus,
+.record-workspace .form-group textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.record-workspace .checkbox-label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.record-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.record-checkbox-input {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0;
+  accent-color: #1d4ed8;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+.record-workspace .submit-btn {
+  width: auto;
+  grid-column: auto;
+  margin-top: 4px;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.22);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.record-submit-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.record-submit-btn-compact {
+  width: auto !important;
+  min-width: 0 !important;
+  grid-column: auto !important;
+  justify-self: start;
+  max-width: none;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(30, 64, 175, 0.2) !important;
+}
+
+.record-submit-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transition: left 0.45s ease;
+}
+
+.record-submit-btn:hover:not(:disabled)::after {
+  left: 120%;
+}
+
+.record-workspace .submit-btn:hover:not(:disabled) {
+  background: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.28);
+}
+
+.record-workspace .submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.record-history {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.record-history-title {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.record-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.record-workspace .premium-table thead th {
+  background: #f8fafc;
+}
+
+.record-workspace .premium-table tbody tr:nth-child(even) {
+  background: #fcfdff;
+}
+
+@media (max-width: 768px) {
+  .record-section {
+    padding: 16px;
+  }
+
+  .record-workspace form {
+    padding: 14px;
+  }
+
+  .record-submit-btn-compact {
+    width: 100% !important;
+    min-width: 0;
+  }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .page-header-compact h1 {

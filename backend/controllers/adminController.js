@@ -590,92 +590,90 @@ exports.getAllTrainers = async (req, res) => {
 exports.createNotification = async (req, res) => {
   try {
     const adminId = req.user.id;
-    
-    // Handle FormData fields
-    const { notificationType, recipientType, subject, message, recipientId, groupType } = req.body;
-    
-    // Map frontend fields to backend fields
-    const title = subject;
-    const sendTo = notificationType; // 'Individual', 'Group', or 'All'
-    let recipientIds = [];
-    let recipientModel = null;
-    
-    if (sendTo === 'Individual') {
-      // Handle multiple recipientIds (comma-separated or array)
-      if (Array.isArray(recipientId)) {
-        recipientIds = recipientId;
-      } else if (recipientId) {
-        recipientIds = recipientId.split(',');
-      }
-      recipientModel = recipientType === 'Student' ? 'Intern' : 'Trainer';
-    } else if (sendTo === 'Group') {
-      // For Group, we need to get all IDs of the specified type
-      if (recipientType === 'Student') {
-        const interns = await Intern.find({}, '_id');
-        recipientIds = interns.map(intern => intern._id);
-        recipientModel = 'Intern';
-      } else if (recipientType === 'Trainer') {
-        const trainers = await Trainer.find({}, '_id');
-        recipientIds = trainers.map(trainer => trainer._id);
-        recipientModel = 'Trainer';
-      }
-    } else if (sendTo === 'All') {
-      // For All, recipientIds remains empty, recipientModel can be null
-      recipientModel = null;
-    }
+    const { 
+      notificationType, 
+      recipientType, 
+      subject, 
+      message, 
+      recipientIds, 
+      selectedGroups 
+    } = req.body;
 
-    // Create notifications for each recipient (for Individual with multiple recipients)
-    if (sendTo === 'Individual' && recipientIds.length > 1) {
-      const notifications = [];
-      for (const id of recipientIds) {
-        const notification = new Notification({
-          title,
-          message,
-          notificationType: 'General/Announcement',
-          sendTo: 'Individual',
-          recipientIds: [id],
-          recipientModel,
-          createdBy: adminId
-        });
-
-        if (req.file) {
-          notification.attachment = {
-            filename: req.file.filename,
-            filepath: req.file.path,
-            mimetype: req.file.mimetype
-          };
-        }
-
-        notifications.push(notification.save());
-      }
-      
-      await Promise.all(notifications);
-    } else {
-      // Single notification for Group or All or single Individual
-      const notification = new Notification({
-        title,
-        message,
-        notificationType: 'General/Announcement',
-        sendTo,
-        recipientIds,
-        recipientModel,
-        createdBy: adminId
+    // Validation
+    if (!subject || !message || !notificationType) {
+      return res.status(400).json({
+        success: false,
+        message: 'Subject, message, and notification type are required'
       });
-
-      if (req.file) {
-        notification.attachment = {
-          filename: req.file.filename,
-          filepath: req.file.path,
-          mimetype: req.file.mimetype
-        };
-      }
-
-      await notification.save();
     }
+
+    let parsedRecipientIds = [];
+    let finalRecipientType = notificationType;
+    let sendTo = notificationType;
+    let recipientModel = recipientType === 'Student' ? 'Intern' : 'Trainer';
+
+    // Parse recipient IDs if provided
+    if (recipientIds) {
+      try {
+        parsedRecipientIds = typeof recipientIds === 'string' ? JSON.parse(recipientIds) : recipientIds;
+      } catch (e) {
+        parsedRecipientIds = [];
+      }
+    }
+
+    // Handle Group notifications - fetch recipients based on selected groups
+    if (notificationType === 'Group') {
+      try {
+        const selectedGroupsArray = typeof selectedGroups === 'string' ? JSON.parse(selectedGroups) : selectedGroups || [];
+        
+        if (recipientType === 'Student') {
+          // Fetch students from selected groups
+          const selectedInterns = await Intern.find({
+            studentType: { $in: selectedGroupsArray }
+          }).select('_id');
+          parsedRecipientIds = selectedInterns.map(intern => intern._id);
+        } else if (recipientType === 'Trainer') {
+          // Fetch trainers (or all trainers based on selected groups)
+          const trainers = await Trainer.find({}).select('_id');
+          parsedRecipientIds = trainers.map(trainer => trainer._id);
+        }
+      } catch (e) {
+        console.error('Error parsing selected groups:', e);
+      }
+    }
+
+    const notification = new Notification({
+      title: subject,
+      message,
+      notificationType: 'General/Announcement',
+      sendTo,
+      recipientIds: parsedRecipientIds,
+      recipientModel,
+      createdBy: adminId
+    });
+
+    // Handle file attachment if present
+    if (req.file) {
+      notification.attachment = {
+        filename: req.file.filename,
+        filepath: req.file.path,
+        mimetype: req.file.mimetype
+      };
+    }
+
+    await notification.save();
 
     res.status(201).json({
       success: true,
-      message: 'Notification created successfully'
+      message: 'Notification created successfully',
+      notification: {
+        _id: notification._id,
+        subject: notification.title,
+        message: notification.message,
+        recipientCount: parsedRecipientIds.length,
+        type: notificationType,
+        createdAt: notification.createdAt
+      }
     });
 
   } catch (error) {
