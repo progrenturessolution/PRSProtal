@@ -140,6 +140,7 @@ export const representativeAPI = {
   updateProfile: (data) => api.patch("/representative/profile", data),
   addStudent: (data) => api.post("/representative/students", data),
   getMyStudents: (params) => api.get("/representative/students", { params }),
+  getMyStudentStats: () => api.get("/representative/students/stats"),
   deleteStudent: (id) => api.delete(`/representative/students/${id}`),
 };
 
@@ -147,6 +148,7 @@ export const representativeAPI = {
 export const adminRepAPI = {
   addRepresentative: (data) => api.post("/admin/add-representative", data),
   getAllRepresentatives: () => api.get("/admin/representatives"),
+  getRepresentativeDetails: (id) => api.get(`/admin/representatives/${id}/details`),
   deleteRepresentative: (id) => api.delete(`/admin/representative/${id}`),
 };
 

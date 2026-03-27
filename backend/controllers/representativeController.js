@@ -1,7 +1,16 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Representative = require('../models/Representative');
-const RepStudent = require('../models/RepStudent');
+const Intern = require('../models/Intern');
+const { sendInternCredentials } = require('../config/emailService');
+
+// Generate unique Intern ID based on type
+const generateInternId = async (studentType) => {
+  const year = new Date().getFullYear();
+  const count = await Intern.countDocuments({ studentType });
+  const prefix = studentType === 'SMS Program' ? `PSMS${year}` : `PIID${year}`;
+  return `${prefix}${String(count + 1).padStart(4, '0')}`;
+};
 
 // Representative Login
 exports.representativeLogin = async (req, res) => {
@@ -99,27 +108,85 @@ exports.updateProfile = async (req, res) => {
 // Add a student
 exports.addStudent = async (req, res) => {
   try {
-    const { studentName, college, branch, mobile, email, domain, batchJoiningDate, totalAmount, firstInstallment, secondInstallment } = req.body;
+    const {
+      studentType,
+      name,
+      email,
+      password,
+      mobile,
+      domain,
+      joiningDate,
+      endingDate,
+      duration,
+      paymentDoneBy,
+      dateOfPayment,
+      transactionId,
+      paymentAmount,
+      currentDesignation
+    } = req.body;
 
-    if (!studentName) {
-      return res.status(400).json({ success: false, message: 'Student name is required' });
+    if (!studentType || !name || !email || !password || !mobile) {
+      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
     }
 
-    const student = await RepStudent.create({
-      representative: req.user.id,
-      studentName,
-      college,
-      branch,
-      mobile,
-      email,
-      domain,
-      batchJoiningDate: batchJoiningDate || null,
-      totalAmount: Number(totalAmount) || 0,
-      firstInstallment: Number(firstInstallment) || 0,
-      secondInstallment: Number(secondInstallment) || 0
-    });
+    if (studentType === 'Internship' && (!domain || !joiningDate || !duration)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all internship required fields'
+      });
+    }
 
-    res.status(201).json({ success: true, student });
+    const existingIntern = await Intern.findOne({ email });
+    if (existingIntern) {
+      return res.status(400).json({ success: false, message: 'Student with this email already exists' });
+    }
+
+    const internId = await generateInternId(studentType);
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const internData = {
+      studentType,
+      name,
+      email,
+      mobile,
+      internId,
+      password: hashedPassword,
+      role: 'intern',
+      addedByRepresentative: req.user.id
+    };
+
+    if (studentType === 'Internship') {
+      internData.domain = domain;
+      internData.joiningDate = joiningDate;
+      internData.duration = duration;
+      if (endingDate) {
+        internData.endingDate = endingDate;
+      }
+    } else if (studentType === 'SMS Program') {
+      internData.paymentDoneBy = paymentDoneBy;
+      internData.dateOfPayment = dateOfPayment;
+      internData.transactionId = transactionId;
+      internData.paymentAmount = paymentAmount;
+      internData.currentDesignation = currentDesignation || 'Student';
+    }
+
+    const intern = new Intern(internData);
+    await intern.save();
+
+    const emailResult = await sendInternCredentials(name, email, internId, password);
+
+    res.status(201).json({
+      success: true,
+      message: 'Student added successfully',
+      intern: {
+        id: intern._id,
+        name: intern.name,
+        email: intern.email,
+        internId: intern.internId,
+        studentType: intern.studentType
+      },
+      emailSent: emailResult.success
+    });
   } catch (error) {
     console.error('Add student error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
@@ -131,10 +198,10 @@ exports.getMyStudents = async (req, res) => {
   try {
     const { name, mobile, dateFrom, dateTo } = req.query;
 
-    const filter = { representative: req.user.id };
+    const filter = { addedByRepresentative: req.user.id, isDeleted: { $ne: true } };
 
     if (name) {
-      filter.studentName = { $regex: name, $options: 'i' };
+      filter.name = { $regex: name, $options: 'i' };
     }
 
     if (mobile) {
@@ -142,12 +209,14 @@ exports.getMyStudents = async (req, res) => {
     }
 
     if (dateFrom || dateTo) {
-      filter.batchJoiningDate = {};
-      if (dateFrom) filter.batchJoiningDate.$gte = new Date(dateFrom);
-      if (dateTo) filter.batchJoiningDate.$lte = new Date(dateTo);
+      filter.createdAt = {};
+      if (dateFrom) filter.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) filter.createdAt.$lte = new Date(dateTo);
     }
 
-    const students = await RepStudent.find(filter).sort({ createdAt: -1 });
+    const students = await Intern.find(filter)
+      .select('-password')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, count: students.length, students });
   } catch (error) {
@@ -159,12 +228,74 @@ exports.getMyStudents = async (req, res) => {
 // Delete a student
 exports.deleteStudent = async (req, res) => {
   try {
-    const student = await RepStudent.findOneAndDelete({ _id: req.params.id, representative: req.user.id });
+    const student = await Intern.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        addedByRepresentative: req.user.id,
+        isDeleted: { $ne: true }
+      },
+      {
+        isDeleted: true,
+        deletedAt: new Date()
+      },
+      { new: true }
+    );
+
     if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
 
     res.status(200).json({ success: true, message: 'Student deleted' });
   } catch (error) {
     console.error('Delete student error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get my student stats
+exports.getMyStudentStats = async (req, res) => {
+  try {
+    const repId = req.user.id;
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const baseFilter = { addedByRepresentative: repId, isDeleted: { $ne: true } };
+
+    const [totalStudents, weeklyStudents, monthlyStudents, typeBreakdown] = await Promise.all([
+      Intern.countDocuments(baseFilter),
+      Intern.countDocuments({ ...baseFilter, createdAt: { $gte: weekStart } }),
+      Intern.countDocuments({ ...baseFilter, createdAt: { $gte: monthStart } }),
+      Intern.aggregate([
+        { $match: baseFilter },
+        { $group: { _id: '$studentType', count: { $sum: 1 } } }
+      ])
+    ]);
+
+    const byType = {
+      internship: 0,
+      smsProgram: 0
+    };
+
+    typeBreakdown.forEach((item) => {
+      if (item._id === 'Internship') {
+        byType.internship = item.count;
+      }
+      if (item._id === 'SMS Program') {
+        byType.smsProgram = item.count;
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      stats: {
+        totalStudents,
+        weeklyStudents,
+        monthlyStudents,
+        byType
+      }
+    });
+  } catch (error) {
+    console.error('Get representative stats error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

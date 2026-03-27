@@ -162,6 +162,9 @@ router.post('/add-representative', verifyToken, verifyAdmin, adminController.add
 // Get all representatives
 router.get('/representatives', verifyToken, verifyAdmin, adminController.getAllRepresentatives);
 
+// Get representative details
+router.get('/representatives/:id/details', verifyToken, verifyAdmin, adminController.getRepresentativeDetails);
+
 // Delete representative
 router.delete('/representative/:id', verifyToken, verifyAdmin, adminController.deleteRepresentative);
 

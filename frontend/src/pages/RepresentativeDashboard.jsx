@@ -80,13 +80,30 @@ function RepresentativeDashboard() {
 
   // Add student state
   const [studentForm, setStudentForm] = useState({
-    studentName: '', college: '', branch: '', mobile: '', email: '',
-    domain: '', batchJoiningDate: '', totalAmount: '',
-    firstInstallment: '', secondInstallment: ''
+    studentType: 'Internship',
+    name: '',
+    email: '',
+    mobile: '',
+    password: '',
+    domain: '',
+    joiningDate: '',
+    endingDate: '',
+    duration: '',
+    paymentDoneBy: '',
+    dateOfPayment: '',
+    transactionId: '',
+    paymentAmount: '',
+    currentDesignation: ''
   });
   const [studentFormLoading, setStudentFormLoading] = useState(false);
   const [studentFormError, setStudentFormError] = useState('');
   const [studentFormSuccess, setStudentFormSuccess] = useState('');
+  const [studentStats, setStudentStats] = useState({
+    totalStudents: 0,
+    weeklyStudents: 0,
+    monthlyStudents: 0,
+    byType: { internship: 0, smsProgram: 0 }
+  });
 
   // My students filter state
   const [studentsLoading, setStudentsLoading] = useState(false);
@@ -103,6 +120,7 @@ function RepresentativeDashboard() {
     setUser(JSON.parse(stored));
     fetchProfile();
     fetchStudents();
+    fetchStudentStats();
   }, [navigate]);
 
   const fetchProfile = async () => {
@@ -125,6 +143,17 @@ function RepresentativeDashboard() {
       console.error('Fetch students error:', err);
     } finally {
       setStudentsLoading(false);
+    }
+  };
+
+  const fetchStudentStats = async () => {
+    try {
+      const res = await representativeAPI.getMyStudentStats();
+      if (res.data.success) {
+        setStudentStats(res.data.stats);
+      }
+    } catch (err) {
+      console.error('Fetch representative stats error:', err);
     }
   };
 
@@ -186,21 +215,49 @@ function RepresentativeDashboard() {
     e.preventDefault();
     setStudentFormError('');
     setStudentFormSuccess('');
-    if (!studentForm.studentName) {
-      setStudentFormError('Student name is required');
+
+    if (!studentForm.name || !studentForm.email || !studentForm.mobile || !studentForm.password) {
+      setStudentFormError('Please fill name, email, mobile and password');
       return;
     }
+
+    if (
+      studentForm.studentType === 'Internship' &&
+      (!studentForm.domain || !studentForm.joiningDate || !studentForm.duration)
+    ) {
+      setStudentFormError('For internship, domain, joining date and duration are required');
+      return;
+    }
+
     try {
       setStudentFormLoading(true);
       const res = await representativeAPI.addStudent(studentForm);
       if (res.data.success) {
-        setStudentFormSuccess('Student added successfully!');
+        const intern = res.data.intern;
+        const emailSent = res.data.emailSent;
+        const emailMsg = emailSent
+          ? `Credentials sent on email (${intern.email}).`
+          : 'Email not sent, please share credentials manually.';
+
+        setStudentFormSuccess(`Student added successfully! ID: ${intern.internId}. ${emailMsg}`);
         setStudentForm({
-          studentName: '', college: '', branch: '', mobile: '', email: '',
-          domain: '', batchJoiningDate: '', totalAmount: '',
-          firstInstallment: '', secondInstallment: ''
+          studentType: 'Internship',
+          name: '',
+          email: '',
+          mobile: '',
+          password: '',
+          domain: '',
+          joiningDate: '',
+          endingDate: '',
+          duration: '',
+          paymentDoneBy: '',
+          dateOfPayment: '',
+          transactionId: '',
+          paymentAmount: '',
+          currentDesignation: ''
         });
         fetchStudents();
+        fetchStudentStats();
         setTimeout(() => { setStudentFormSuccess(''); setActiveTab('my-students'); }, 1800);
       }
     } catch (err) {
@@ -235,6 +292,7 @@ function RepresentativeDashboard() {
     try {
       await representativeAPI.deleteStudent(id);
       setStudents(prev => prev.filter(s => s._id !== id));
+      fetchStudentStats();
       setDeleteSuccess('Student deleted.');
       setTimeout(() => setDeleteSuccess(''), 3000);
     } catch (err) {
@@ -244,9 +302,11 @@ function RepresentativeDashboard() {
 
   if (loading) return <div className="loading">Loading...</div>;
 
-  const totalStudents = students.length;
-  const totalCollected = students.reduce((s, st) => s + (st.firstInstallment || 0) + (st.secondInstallment || 0), 0);
-  const totalPending = students.reduce((s, st) => s + ((st.totalAmount || 0) - (st.firstInstallment || 0) - (st.secondInstallment || 0)), 0);
+  const totalStudents = studentStats.totalStudents || students.length;
+  const weeklyStudents = studentStats.weeklyStudents || 0;
+  const monthlyStudents = studentStats.monthlyStudents || 0;
+  const internshipStudents = studentStats.byType?.internship || 0;
+  const smsStudents = studentStats.byType?.smsProgram || 0;
 
   return (
     <div className="dashboard">
@@ -305,9 +365,9 @@ function RepresentativeDashboard() {
                     </svg>
                   </div>
                   <div className="stat-content">
-                    <div className="stat-label">Total Collected</div>
-                    <div className="stat-value">₹{totalCollected.toLocaleString()}</div>
-                    <div className="stat-meta">Paid amount</div>
+                    <div className="stat-label">This Week</div>
+                    <div className="stat-value">{weeklyStudents}</div>
+                    <div className="stat-meta">Students added in last 7 days</div>
                   </div>
                 </div>
 
@@ -319,9 +379,9 @@ function RepresentativeDashboard() {
                     </svg>
                   </div>
                   <div className="stat-content">
-                    <div className="stat-label">Pending Amount</div>
-                    <div className="stat-value">₹{totalPending.toLocaleString()}</div>
-                    <div className="stat-meta">Still due</div>
+                    <div className="stat-label">This Month</div>
+                    <div className="stat-value">{monthlyStudents}</div>
+                    <div className="stat-meta">Students added this month</div>
                   </div>
                 </div>
 
@@ -333,9 +393,9 @@ function RepresentativeDashboard() {
                     </svg>
                   </div>
                   <div className="stat-content">
-                    <div className="stat-label">My College</div>
-                    <div className="stat-value" style={{ fontSize: '16px', lineHeight: 1.3 }}>{profile?.college || '—'}</div>
-                    <div className="stat-meta">{profile?.designation || 'Representative'}</div>
+                    <div className="stat-label">Internship / SMS</div>
+                    <div className="stat-value" style={{ fontSize: '16px', lineHeight: 1.3 }}>{internshipStudents} / {smsStudents}</div>
+                    <div className="stat-meta">Type-wise student split</div>
                   </div>
                 </div>
               </div>
@@ -535,45 +595,72 @@ function RepresentativeDashboard() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
                     <div className="form-group">
+                      <label>Student Type *</label>
+                      <select name="studentType" value={studentForm.studentType} onChange={handleStudentChange}>
+                        <option value="Internship">Internship</option>
+                        <option value="SMS Program">SMS Program</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
                       <label>Student Name *</label>
-                      <input type="text" name="studentName" value={studentForm.studentName} onChange={handleStudentChange} placeholder="Full name" required />
+                      <input type="text" name="name" value={studentForm.name} onChange={handleStudentChange} placeholder="Full name" required />
                     </div>
                     <div className="form-group">
-                      <label>College</label>
-                      <input type="text" name="college" value={studentForm.college} onChange={handleStudentChange} placeholder="College name" />
+                      <label>Email *</label>
+                      <input type="email" name="email" value={studentForm.email} onChange={handleStudentChange} placeholder="Email address" required />
                     </div>
                     <div className="form-group">
-                      <label>Branch</label>
-                      <input type="text" name="branch" value={studentForm.branch} onChange={handleStudentChange} placeholder="e.g. CSE, ECE" />
-                    </div>
-                    <div className="form-group">
-                      <label>Mobile Number</label>
+                      <label>Mobile Number *</label>
                       <input type="tel" name="mobile" value={studentForm.mobile} onChange={handleStudentChange} placeholder="Mobile number" />
                     </div>
                     <div className="form-group">
-                      <label>Email</label>
-                      <input type="email" name="email" value={studentForm.email} onChange={handleStudentChange} placeholder="Email address" />
+                      <label>Password *</label>
+                      <input type="password" name="password" value={studentForm.password} onChange={handleStudentChange} placeholder="Set login password" min="6" required />
                     </div>
-                    <div className="form-group">
-                      <label>Domain</label>
-                      <input type="text" name="domain" value={studentForm.domain} onChange={handleStudentChange} placeholder="e.g. Web Dev, Data Science" />
-                    </div>
-                    <div className="form-group">
-                      <label>Batch Joining Date</label>
-                      <input type="date" name="batchJoiningDate" value={studentForm.batchJoiningDate} onChange={handleStudentChange} />
-                    </div>
-                    <div className="form-group">
-                      <label>Total Amount (₹)</label>
-                      <input type="number" name="totalAmount" value={studentForm.totalAmount} onChange={handleStudentChange} placeholder="0" min="0" />
-                    </div>
-                    <div className="form-group">
-                      <label>1st Installment (₹)</label>
-                      <input type="number" name="firstInstallment" value={studentForm.firstInstallment} onChange={handleStudentChange} placeholder="0" min="0" />
-                    </div>
-                    <div className="form-group">
-                      <label>2nd Installment (₹)</label>
-                      <input type="number" name="secondInstallment" value={studentForm.secondInstallment} onChange={handleStudentChange} placeholder="0" min="0" />
-                    </div>
+
+                    {studentForm.studentType === 'Internship' ? (
+                      <>
+                        <div className="form-group">
+                          <label>Domain *</label>
+                          <input type="text" name="domain" value={studentForm.domain} onChange={handleStudentChange} placeholder="e.g. Web Development" />
+                        </div>
+                        <div className="form-group">
+                          <label>Joining Date *</label>
+                          <input type="date" name="joiningDate" value={studentForm.joiningDate} onChange={handleStudentChange} />
+                        </div>
+                        <div className="form-group">
+                          <label>Duration *</label>
+                          <input type="text" name="duration" value={studentForm.duration} onChange={handleStudentChange} placeholder="e.g. 3 months" />
+                        </div>
+                        <div className="form-group">
+                          <label>Ending Date</label>
+                          <input type="date" name="endingDate" value={studentForm.endingDate} onChange={handleStudentChange} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="form-group">
+                          <label>Payment Done By</label>
+                          <input type="text" name="paymentDoneBy" value={studentForm.paymentDoneBy} onChange={handleStudentChange} placeholder="Student / Parent" />
+                        </div>
+                        <div className="form-group">
+                          <label>Date Of Payment</label>
+                          <input type="date" name="dateOfPayment" value={studentForm.dateOfPayment} onChange={handleStudentChange} />
+                        </div>
+                        <div className="form-group">
+                          <label>Transaction ID</label>
+                          <input type="text" name="transactionId" value={studentForm.transactionId} onChange={handleStudentChange} placeholder="Transaction reference" />
+                        </div>
+                        <div className="form-group">
+                          <label>Payment Amount</label>
+                          <input type="text" name="paymentAmount" value={studentForm.paymentAmount} onChange={handleStudentChange} placeholder="e.g. 5000" />
+                        </div>
+                        <div className="form-group">
+                          <label>Current Designation</label>
+                          <input type="text" name="currentDesignation" value={studentForm.currentDesignation} onChange={handleStudentChange} placeholder="e.g. Student" />
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
@@ -726,57 +813,50 @@ function RepresentativeDashboard() {
                         <thead>
                           <tr>
                             <th>Student Name</th>
-                            
+                            <th>Intern ID</th>
                             <th>Mobile</th>
                             <th>Email</th>
-                            <th>Domain</th>
-                            <th>Total Payment</th>
-                            <th>Paid</th>
-                            <th>Pending</th>
-                            <th>Joining Date</th>
+                            <th>Type</th>
+                            <th>Domain / Payment</th>
+                            <th>Added On</th>
                             <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
                           {students.map(student => {
-                            const paid = (student.firstInstallment || 0) + (student.secondInstallment || 0);
-                            const pending = (student.totalAmount || 0) - paid;
-                            const initials = student.studentName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
                             return (
                               <tr key={student._id}>
                                 <td>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    
-                                    <span style={{ fontWeight: '600', color: '#1f2937' }}>{student.studentName}</span>
+                                    <span style={{ fontWeight: '600', color: '#1f2937' }}>{student.name}</span>
                                   </div>
                                 </td>
-                               
+                                <td className="mono-text" style={{ fontSize: '13px' }}>{student.internId}</td>
                                 <td className="mono-text">{student.mobile || '—'}</td>
                                 <td style={{ fontSize: '13px' }}>{student.email || '—'}</td>
-                                <td>{student.domain || '—'}</td>
                                 <td>
-                                  <span style={{ fontWeight: '600', color: '#374151' }}>
-                                    ₹{(student.totalAmount || 0).toLocaleString()}
+                                  <span style={{
+                                    padding: '3px 10px',
+                                    borderRadius: '999px',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    background: student.studentType === 'SMS Program' ? '#ede9fe' : '#dcfce7',
+                                    color: student.studentType === 'SMS Program' ? '#6d28d9' : '#15803d'
+                                  }}>
+                                    {student.studentType}
                                   </span>
                                 </td>
                                 <td>
-                                  <span style={{ fontWeight: '600', color: '#059669' }}>
-                                    ₹{paid.toLocaleString()}
-                                  </span>
-                                </td>
-                                <td>
-                                  <span style={{ fontWeight: '600', color: pending > 0 ? '#dc2626' : '#059669' }}>
-                                    ₹{pending.toLocaleString()}
-                                  </span>
+                                  {student.studentType === 'SMS Program'
+                                    ? `₹${student.paymentAmount || 0}`
+                                    : (student.domain || '—')}
                                 </td>
                                 <td className="mono-text" style={{ fontSize: '13px' }}>
-                                  {student.batchJoiningDate
-                                    ? new Date(student.batchJoiningDate).toLocaleDateString('en-IN')
-                                    : '—'}
+                                  {student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '—'}
                                 </td>
                                 <td>
                                   <button
-                                    onClick={() => handleDeleteStudent(student._id, student.studentName)}
+                                    onClick={() => handleDeleteStudent(student._id, student.name)}
                                     className="table-action-btn"
                                     style={{ background: '#ef4444' }}
                                   >

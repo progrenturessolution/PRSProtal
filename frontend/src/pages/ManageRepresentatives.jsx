@@ -21,6 +21,8 @@ function ManageRepresentatives() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [selectedRepDetails, setSelectedRepDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     fetchRepresentatives();
@@ -95,6 +97,21 @@ function ManageRepresentatives() {
     } catch (err) {
       setError("Failed to delete representative");
       setTimeout(() => setError(""), 3000);
+    }
+  };
+
+  const handleViewDetails = async (repId) => {
+    try {
+      setDetailsLoading(true);
+      const res = await adminRepAPI.getRepresentativeDetails(repId);
+      if (res.data.success) {
+        setSelectedRepDetails(res.data);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to load representative details");
+      setTimeout(() => setError(""), 3000);
+    } finally {
+      setDetailsLoading(false);
     }
   };
 
@@ -251,6 +268,7 @@ function ManageRepresentatives() {
                     <th>College</th>
                     <th>Designation</th>
                     <th>Mobile</th>
+                    <th>Students Added</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -315,6 +333,20 @@ function ManageRepresentatives() {
                               borderRadius: "999px",
                               fontSize: "12px",
                               fontWeight: "600",
+                              background: "#ecfeff",
+                              color: "#0f766e",
+                            }}
+                          >
+                            {rep.totalStudents || 0}
+                          </span>
+                        </td>
+                        <td>
+                          <span
+                            style={{
+                              padding: "3px 10px",
+                              borderRadius: "999px",
+                              fontSize: "12px",
+                              fontWeight: "600",
                               background:
                                 rep.status === "active" ? "#dbeafe" : "#e5e7eb",
                               color:
@@ -325,22 +357,41 @@ function ManageRepresentatives() {
                           </span>
                         </td>
                         <td>
-                          <button
-                            onClick={() => handleDelete(rep._id, rep.name)}
-                            className="table-action-btn"
-                            style={{
-                              background: "#ef4444",
-                              color: "#fff",
-                              padding: "6px 14px",
-                              borderRadius: "6px",
-                              border: "none",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                            }}
-                          >
-                            Delete
-                          </button>
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              onClick={() => handleViewDetails(rep._id)}
+                              className="table-action-btn"
+                              style={{
+                                background: "#0ea5e9",
+                                color: "#fff",
+                                padding: "6px 14px",
+                                borderRadius: "6px",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                              }}
+                              disabled={detailsLoading}
+                            >
+                              {detailsLoading ? "Loading..." : "See Details"}
+                            </button>
+                            <button
+                              onClick={() => handleDelete(rep._id, rep.name)}
+                              className="table-action-btn"
+                              style={{
+                                background: "#ef4444",
+                                color: "#fff",
+                                padding: "6px 14px",
+                                borderRadius: "6px",
+                                border: "none",
+                                cursor: "pointer",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -565,6 +616,121 @@ function ManageRepresentatives() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {selectedRepDetails && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.5)",
+            zIndex: 1000,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "16px",
+          }}
+          onClick={() => setSelectedRepDetails(null)}
+        >
+          <div
+            className="premium-card"
+            style={{
+              width: "min(1000px, 100%)",
+              maxHeight: "90vh",
+              overflow: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="premium-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <h2 style={{ margin: 0, color: "#0f172a" }}>
+                  {selectedRepDetails.representative.name} - Student Details
+                </h2>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                  {selectedRepDetails.representative.email}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedRepDetails(null)}
+                style={{
+                  border: "1px solid #d1d5db",
+                  background: "#fff",
+                  borderRadius: "8px",
+                  padding: "8px 14px",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+
+            <div style={{ padding: "20px" }}>
+              <div className="premium-stats-grid" style={{ marginBottom: "20px" }}>
+                <div className="premium-stat-card accent-blue">
+                  <div className="stat-content">
+                    <div className="stat-label">Total Students</div>
+                    <div className="stat-value">{selectedRepDetails.stats.totalStudents}</div>
+                  </div>
+                </div>
+                <div className="premium-stat-card accent-teal">
+                  <div className="stat-content">
+                    <div className="stat-label">Weekly Added</div>
+                    <div className="stat-value">{selectedRepDetails.stats.weeklyStudents}</div>
+                  </div>
+                </div>
+                <div className="premium-stat-card accent-indigo">
+                  <div className="stat-content">
+                    <div className="stat-label">Monthly Added</div>
+                    <div className="stat-value">{selectedRepDetails.stats.monthlyStudents}</div>
+                  </div>
+                </div>
+                <div className="premium-stat-card accent-slate">
+                  <div className="stat-content">
+                    <div className="stat-label">Internship / SMS</div>
+                    <div className="stat-value" style={{ fontSize: "18px" }}>
+                      {selectedRepDetails.stats.byType.internship} / {selectedRepDetails.stats.byType.smsProgram}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ overflowX: "auto" }}>
+                <table className="premium-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Intern ID</th>
+                      <th>Type</th>
+                      <th>Email</th>
+                      <th>Mobile</th>
+                      <th>Added On</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedRepDetails.recentStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: "center", padding: "18px", color: "#6b7280" }}>
+                          No students added yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      selectedRepDetails.recentStudents.map((student) => (
+                        <tr key={student._id}>
+                          <td>{student.name}</td>
+                          <td className="mono-text">{student.internId}</td>
+                          <td>{student.studentType}</td>
+                          <td>{student.email}</td>
+                          <td>{student.mobile || "—"}</td>
+                          <td>{new Date(student.createdAt).toLocaleDateString("en-IN")}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

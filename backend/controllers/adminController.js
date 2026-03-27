@@ -930,9 +930,100 @@ exports.addRepresentative = async (req, res) => {
 exports.getAllRepresentatives = async (req, res) => {
   try {
     const reps = await Representative.find().select('-password').sort({ createdAt: -1 });
-    res.status(200).json({ success: true, count: reps.length, representatives: reps });
+
+    const counts = await Intern.aggregate([
+      {
+        $match: {
+          addedByRepresentative: { $ne: null },
+          isDeleted: { $ne: true }
+        }
+      },
+      {
+        $group: {
+          _id: '$addedByRepresentative',
+          totalStudents: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const countMap = new Map(counts.map((item) => [String(item._id), item.totalStudents]));
+
+    const representatives = reps.map((rep) => ({
+      ...rep.toObject(),
+      totalStudents: countMap.get(String(rep._id)) || 0
+    }));
+
+    res.status(200).json({ success: true, count: representatives.length, representatives });
   } catch (error) {
     console.error('Get representatives error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get representative student details
+exports.getRepresentativeDetails = async (req, res) => {
+  try {
+    const repId = req.params.id;
+    const representative = await Representative.findById(repId).select('-password');
+
+    if (!representative) {
+      return res.status(404).json({ success: false, message: 'Representative not found' });
+    }
+
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const baseFilter = { addedByRepresentative: representative._id, isDeleted: { $ne: true } };
+
+    const [
+      totalStudents,
+      weeklyStudents,
+      monthlyStudents,
+      typeBreakdown,
+      recentStudents
+    ] = await Promise.all([
+      Intern.countDocuments(baseFilter),
+      Intern.countDocuments({ ...baseFilter, createdAt: { $gte: weekStart } }),
+      Intern.countDocuments({ ...baseFilter, createdAt: { $gte: monthStart } }),
+      Intern.aggregate([
+        { $match: baseFilter },
+        { $group: { _id: '$studentType', count: { $sum: 1 } } }
+      ]),
+      Intern.find(baseFilter)
+        .select('name email internId studentType mobile createdAt')
+        .sort({ createdAt: -1 })
+        .limit(20)
+    ]);
+
+    const byType = {
+      internship: 0,
+      smsProgram: 0
+    };
+
+    typeBreakdown.forEach((item) => {
+      if (item._id === 'Internship') {
+        byType.internship = item.count;
+      }
+      if (item._id === 'SMS Program') {
+        byType.smsProgram = item.count;
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      representative,
+      stats: {
+        totalStudents,
+        weeklyStudents,
+        monthlyStudents,
+        byType
+      },
+      recentStudents
+    });
+  } catch (error) {
+    console.error('Get representative details error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

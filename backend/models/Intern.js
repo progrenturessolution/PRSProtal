@@ -114,6 +114,11 @@ const internSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Trainer'
   },
+  addedByRepresentative: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Representative',
+    default: null
+  },
   role: {
     type: String,
     default: 'intern',
