@@ -235,9 +235,12 @@ function RepresentativeDashboard() {
       if (res.data.success) {
         const intern = res.data.intern;
         const emailSent = res.data.emailSent;
-        const emailMsg = emailSent
-          ? `Credentials sent on email (${intern.email}).`
-          : 'Email not sent, please share credentials manually.';
+        const emailQueued = res.data.emailQueued;
+        const emailMsg = emailQueued
+          ? 'Credentials email queued and will be sent shortly.'
+          : (emailSent
+            ? `Credentials sent on email (${intern.email}).`
+            : 'Email not sent, please share credentials manually.');
 
         setStudentFormSuccess(`Student added successfully! ID: ${intern.internId}. ${emailMsg}`);
         setStudentForm({

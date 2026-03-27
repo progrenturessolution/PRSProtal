@@ -1,18 +1,36 @@
-const bcrypt = require('bcryptjs');
+﻿const bcrypt = require('bcryptjs');
 const Intern = require('../models/Intern');
 const Trainer = require('../models/Trainer');
 const Representative = require('../models/Representative');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
-const { sendInternCredentials } = require('../config/emailService');
+const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification } = require('../config/emailService');
 
 // Generate unique Intern ID based on type
 const generateInternId = async (studentType) => {
   const year = new Date().getFullYear();
-  const count = await Intern.countDocuments({ studentType });
-  
-  let prefix = studentType === 'SMS Program' ? `PSMS${year}` : `PIID${year}`;
-  const internId = `${prefix}${String(count + 1).padStart(4, '0')}`;
+  const prefix = studentType === 'SMS Program' ? `PSMS${year}` : `PIID${year}`;
+
+  const lastIntern = await Intern.findOne({
+    internId: { $regex: `^${prefix}` }
+  })
+    .sort({ internId: -1 })
+    .select('internId');
+
+  let nextNumber = 1;
+  if (lastIntern?.internId) {
+    const tail = Number(lastIntern.internId.slice(prefix.length));
+    if (Number.isFinite(tail)) {
+      nextNumber = tail + 1;
+    }
+  }
+
+  let internId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+  while (await Intern.exists({ internId })) {
+    nextNumber += 1;
+    internId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+  }
+
   return internId;
 };
 
@@ -130,8 +148,16 @@ exports.addIntern = async (req, res) => {
     const intern = new Intern(internData);
     await intern.save();
 
-    // Send email with credentials
-    const emailResult = await sendInternCredentials(name, email, internId, password);
+    // Send email in background so API responds immediately
+    sendInternCredentials(name, email, internId, password)
+      .then((emailResult) => {
+        if (!emailResult.success) {
+          console.error(`Background credential email failed for ${email}:`, emailResult.error);
+        }
+      })
+      .catch((emailError) => {
+        console.error(`Background credential email error for ${email}:`, emailError.message);
+      });
 
     res.status(201).json({
       success: true,
@@ -143,11 +169,22 @@ exports.addIntern = async (req, res) => {
         internId: intern.internId,
         studentType: intern.studentType
       },
-      emailSent: emailResult.success
+      emailSent: false,
+      emailQueued: true
     });
 
   } catch (error) {
     console.error('Add intern error:', error);
+
+    if (error?.code === 11000) {
+      if (error?.keyPattern?.email) {
+        return res.status(409).json({ success: false, message: 'Student with this email already exists' });
+      }
+      if (error?.keyPattern?.internId) {
+        return res.status(409).json({ success: false, message: 'Could not generate unique intern ID. Please retry.' });
+      }
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -471,6 +508,18 @@ exports.addTrainer = async (req, res) => {
 
     await trainer.save();
 
+    let emailSent = false;
+    let emailError = null;
+    if (trainer.email) {
+      const emailResult = await sendTrainerCredentials({
+        trainerName: trainer.name,
+        trainerEmail: trainer.email,
+        password
+      });
+      emailSent = !!emailResult.success;
+      emailError = emailResult.success ? null : emailResult.error;
+    }
+
     res.status(201).json({
       success: true,
       message: 'Trainer added successfully',
@@ -479,11 +528,36 @@ exports.addTrainer = async (req, res) => {
         name: trainer.name,
         email: trainer.email,
         role: trainer.role
-      }
+      },
+      emailSent,
+      emailError
     });
 
   } catch (error) {
     console.error('Add trainer error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Delete trainer
+exports.deleteTrainer = async (req, res) => {
+  try {
+    const trainer = await Trainer.findByIdAndDelete(req.params.id);
+    if (!trainer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Trainer not found'
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: 'Trainer deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete trainer error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -542,9 +616,33 @@ exports.assignStudentsToTrainer = async (req, res) => {
 
     console.log('Assignment successful');
 
+    // Send email to trainer
+    const trainerEmailResult = await sendTrainerAssignmentNotification({
+      trainerName: trainer.name,
+      trainerEmail: trainer.email,
+      studentsList: students.map(s => ({ name: s.name, email: s.email, internId: s.internId }))
+    });
+
+    // Send emails to students
+    const studentEmailPromises = students.map(s =>
+      sendStudentAssignmentNotification({
+        studentName: s.name,
+        studentEmail: s.email,
+        trainerName: trainer.name,
+        trainerEmail: trainer.email,
+        trainerMobile: trainer.mobile
+      })
+    );
+    const studentResults = await Promise.allSettled(studentEmailPromises);
+    const studentEmailSuccess = studentResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
+
     res.status(200).json({
       success: true,
-      message: `${studentIds.length} student(s) assigned successfully to ${trainer.name}`
+      message: `${studentIds.length} student(s) assigned successfully to ${trainer.name}`,
+      emailSent: {
+        trainer: trainerEmailResult.success,
+        students: studentEmailSuccess
+      }
     });
 
   } catch (error) {
@@ -909,6 +1007,20 @@ exports.addRepresentative = async (req, res) => {
       role: 'representative'
     });
 
+    let emailSent = false;
+    let emailError = null;
+    if (rep.email) {
+      const emailResult = await sendRepresentativeCredentials({
+        repName: rep.name,
+        repEmail: rep.email,
+        password
+      });
+      emailSent = !!emailResult.success;
+      emailError = emailResult.success ? null : emailResult.error;
+    } else {
+      emailError = 'Representative email not found';
+    }
+
     res.status(201).json({
       success: true,
       message: 'Representative added successfully',
@@ -918,7 +1030,9 @@ exports.addRepresentative = async (req, res) => {
         email: rep.email,
         college: rep.college,
         designation: rep.designation
-      }
+      },
+      emailSent,
+      emailError
     });
   } catch (error) {
     console.error('Add representative error:', error);
@@ -1039,3 +1153,9 @@ exports.deleteRepresentative = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+
+
+
+
+

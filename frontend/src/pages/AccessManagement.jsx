@@ -137,6 +137,29 @@ function AccessManagement() {
     }
   };
 
+  const handleDeleteTrainer = async (trainerId, trainerName) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete trainer "${trainerName}"? This action cannot be undone.`
+      )
+    ) {
+      try {
+        const response = await adminAPI.deleteTrainer(trainerId);
+        if (response.data.success) {
+          setTrainers(trainers.filter((t) => t._id !== trainerId));
+          setOpenMenuId(null);
+          setSuccess("Trainer deleted successfully");
+          setTimeout(() => setSuccess(""), 5000);
+        } else {
+          setError(response.data.message || "Failed to delete trainer");
+        }
+      } catch (error) {
+        console.error("Delete trainer error:", error);
+        setError("Failed to delete trainer. Please try again.");
+      }
+    }
+  };
+
   const handleStudentSelection = (studentId) => {
     if (selectedStudents.includes(studentId)) {
       setSelectedStudents(selectedStudents.filter((id) => id !== studentId));
@@ -1043,6 +1066,38 @@ function AccessManagement() {
                               }
                             >
                               View Details
+                            </button>
+                            <div
+                              style={{
+                                height: "1px",
+                                background: "#e5e7eb",
+                                margin: "0",
+                              }}
+                            ></div>
+                            <button
+                              onClick={() => {
+                                handleDeleteTrainer(trainer._id, trainer.name);
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: "10px 14px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#dc2626",
+                                transition: "background 0.2s",
+                              }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#fee2e2")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background = "white")
+                              }
+                            >
+                              Delete Trainer
                             </button>
                           </div>
                         )}

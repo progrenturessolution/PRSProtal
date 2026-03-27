@@ -1,6 +1,7 @@
 const fs = require('fs');
 const Certificate = require('../models/Certificate');
 const Intern = require('../models/Intern');
+const { sendCertificateAssignmentEmail } = require('../config/emailService');
 
 // Assign multiple certificates to a student (5-day expiry)
 const assignCertificates = async (req, res) => {
@@ -40,10 +41,32 @@ const assignCertificates = async (req, res) => {
 
     const created = await Certificate.insertMany(docs);
 
+    let emailSent = false;
+    let emailError = null;
+    if (student.email) {
+      const emailResult = await sendCertificateAssignmentEmail({
+        internName: student.name,
+        internEmail: student.email,
+        certificateNames: created.map((cert) => cert.name),
+        expiresAt,
+        certificateFiles: created.map((cert) => ({
+          filename: cert.filename,
+          filepath: cert.filepath
+        }))
+      });
+      emailSent = !!emailResult.success;
+      emailError = emailResult.success ? null : emailResult.error;
+    } else {
+      emailError = 'Student email not found';
+      console.error(`Certificate notification skipped: no email for student ${student._id}`);
+    }
+
     res.status(201).json({
       success: true,
       message: `${created.length} certificate(s) assigned successfully`,
-      certificates: created
+      certificates: created,
+      emailSent,
+      emailError
     });
   } catch (err) {
     console.error('Assign certificates error:', err);

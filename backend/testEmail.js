@@ -1,10 +1,14 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
+const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+const smtpPort = Number(process.env.SMTP_PORT || 587);
+const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpSecure,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -16,6 +20,7 @@ const transporter = nodemailer.createTransport({
 
 console.log('Testing email with:');
 console.log('Email:', process.env.EMAIL_USER);
+console.log('SMTP:', `${smtpHost}:${smtpPort}`, 'secure=', smtpSecure);
 console.log('Password length:', process.env.EMAIL_PASS.length);
 
 transporter.verify(function(error, success) {
@@ -27,7 +32,7 @@ transporter.verify(function(error, success) {
     
     // Send test email
     const mailOptions = {
-      from: `"Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
       subject: 'Test Email from Progrentures',
       text: 'If you receive this, email is working!'

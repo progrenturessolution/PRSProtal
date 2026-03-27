@@ -1,11 +1,16 @@
 const nodemailer = require('nodemailer');
+const path = require('path');
 require('dotenv').config();
+
+const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
+const smtpPort = Number(process.env.SMTP_PORT || 587);
+const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
 
 // Create transporter with detailed configuration
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  host: smtpHost,
+  port: smtpPort,
+  secure: smtpSecure, // true for 465, false for STARTTLS (587)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s/g, '') : ''
@@ -17,7 +22,7 @@ const transporter = nodemailer.createTransport({
 
 // Log email configuration status
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  console.log('📧 Email service configured for:', process.env.EMAIL_USER);
+  console.log('📧 Email service configured for:', process.env.EMAIL_USER, `via ${smtpHost}:${smtpPort}`);
 } else {
   console.log('⚠️ Email credentials not configured in .env file');
   console.log('   EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'MISSING');
@@ -28,89 +33,78 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
 exports.sendInternCredentials = async (internName, internEmail, internId, password) => {
   try {
     const mailOptions = {
-      from: `"Progrentures Team" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: internEmail,
-      subject: 'Progrentures Internship - Your Login Credentials',
+      subject: 'Progrentures Internship Program: Login Credentials',
       text: `
-Welcome to Progrentures!
-
 Dear ${internName},
 
-Congratulations! You have been registered for the internship at Progrentures.
+    Greetings from Progrentures.
 
-This is your Progrentures Internship ID and Password:
+    This is to inform you that your internship account has been successfully created.
+    Please use the credentials below to sign in:
 
 Intern ID: ${internId}
-Password: ${password}
+Temporary Password: ${password}
 
-Please keep these credentials safe and use them to login to your account.
+    Important:
+    - After login, please download your Offer Letter from the Certifications section.
 
-Important: Do not share your credentials with anyone.
+Security Notice:
+- Keep these credentials confidential.
+- Update your password after your first login.
 
-Best regards,
+    Best regards,
 Progrentures Team
       `,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
-          
-          <!-- Header -->
-          <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 26px;">Welcome to Progrentures!</h1>
-          </div>
-          
-          <!-- Main Content -->
-          <div style="padding: 40px 30px; background-color: #ffffff; border-radius: 0 0 10px 10px;">
-            
-            <p style="font-size: 17px; color: #333; margin-bottom: 10px;">Dear <strong>${internName}</strong>,</p>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 30px;">
-              Congratulations! You have been successfully registered as an intern at <strong>Progrentures</strong>.
-            </p>
-            
-            <!-- Credentials Box -->
-            <div style="background: #f0f9ff; border: 2px solid #3b82f6; padding: 25px; border-radius: 10px; margin: 30px 0;">
-              <h2 style="margin: 0 0 20px 0; color: #1e40af; font-size: 20px; text-align: center;">
-                📧 This is your Progrentures Internship ID and Password
-              </h2>
-              
-              <div style="background-color: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                <p style="margin: 15px 0; font-size: 16px; color: #1e293b;">
-                  <strong style="display: inline-block; width: 120px;">Intern ID:</strong>
-                  <span style="font-size: 20px; color: #2563eb; font-weight: bold; letter-spacing: 1px;">${internId}</span>
-                </p>
-                <p style="margin: 15px 0; font-size: 16px; color: #1e293b;">
-                  <strong style="display: inline-block; width: 120px;">Password:</strong>
-                  <span style="font-size: 20px; color: #2563eb; font-weight: bold; letter-spacing: 1px;">${password}</span>
-                </p>
-              </div>
-            </div>
-            
-            <!-- Instructions -->
-            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin: 25px 0;">
-              <p style="margin: 0; color: #92400e; font-size: 15px; line-height: 1.6;">
-                <strong>⚠️ Important:</strong> Please keep these credentials safe and do not share them with anyone. 
-                Change your password after first login for security.
-              </p>
-            </div>
-            
-            <p style="font-size: 15px; color: #555; margin-top: 25px; line-height: 1.6;">
-              You can now login to your account using the credentials provided above.
-            </p>
-            
-            <!-- Footer -->
-            <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-              <p style="margin: 5px 0; color: #666; font-size: 15px;">Best regards,</p>
-              <p style="margin: 5px 0; color: #0f172a; font-weight: 700; font-size: 16px;">Progrentures Team</p>
-            </div>
-          </div>
-          
-          <!-- Bottom Note -->
-          <div style="text-align: center; margin-top: 20px; padding: 15px;">
-            <p style="margin: 0; font-size: 12px; color: #999;">
-              This is an automated email. Please do not reply to this message.
-            </p>
-          </div>
-        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                <tr>
+                  <td style="background:#111827;padding:20px 28px;">
+                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
+                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Internship Management</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px;">
+                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Internship Account Credentials</h1>
+                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${internName},</p>
+                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">This is to inform you that your internship account has been successfully created. Please use the credentials below to sign in.</p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Intern ID</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${internId}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Temporary Password</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${password}</td>
+                      </tr>
+                    </table>
+
+                    <div style="background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin:0 0 20px;">
+                      <p style="margin:0;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Security Notice:</strong> Keep credentials confidential and update your password after first login.</p>
+                    </div>
+
+                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
+                      <p style="margin:0;color:#1d4ed8;font-size:13px;line-height:1.6;"><strong>Next Step:</strong> After login, please download your Offer Letter from the Certifications section.</p>
+                    </div>
+
+                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Team</strong></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       `
     };
 
@@ -123,30 +117,316 @@ Progrentures Team
     if (error.code === 'EAUTH') {
       console.error('Authentication failed. Please check:', 'line 124');
       console.error('   1. EMAIL_USER is correct in .env');
-      console.error('   2. EMAIL_PASS is a valid Gmail App Password (not regular password)');
-      console.error('   3. 2-Step Verification is enabled on your Google account');
-      console.error('   4. Generate new App Password: https://myaccount.google.com/apppasswords');
+      console.error('   2. EMAIL_PASS is correct for your SMTP provider');
+      console.error('   3. SMTP_HOST, SMTP_PORT, SMTP_SECURE are configured correctly');
     }
     return { success: false, error: error.message };
   }
 };
 
+// Send representative login credentials
+exports.sendRepresentativeCredentials = async ({
+  repName,
+  repEmail,
+  password
+}) => {
+  try {
+    const mailOptions = {
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      to: repEmail,
+      subject: 'Progrentures Representative Panel: Login Credentials',
+      text: `
+Dear ${repName},
+
+Greetings from Team Progrentures.
+
+Your Representative Panel account has been created successfully.
+Please use the following credentials to login:
+
+Email: ${repEmail}
+Temporary Password: ${password}
+
+Security Notice:
+- Keep these credentials confidential.
+- Please change your password after first login.
+
+Best regards,
+Team Progrentures
+      `,
+      html: `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                <tr>
+                  <td style="background:#111827;padding:20px 28px;">
+                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
+                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Representative Management</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px;">
+                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Representative Login Credentials</h1>
+                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${repName},</p>
+                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Your Representative Panel account has been created successfully. Please use the credentials below to login.</p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Login Email</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${repEmail}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Temporary Password</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${password}</td>
+                      </tr>
+                    </table>
+
+                    <div style="background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin:0 0 20px;">
+                      <p style="margin:0;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Security Notice:</strong> Keep credentials confidential and change your password after first login.</p>
+                    </div>
+
+                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Representative credentials email sent to ${repEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Representative email sending failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// Send trainer credentials email
+exports.sendTrainerCredentials = async ({
+  trainerName,
+  trainerEmail,
+  password
+}) => {
+  try {
+    const mailOptions = {
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      to: trainerEmail,
+      subject: 'Progrentures Trainer Panel: Login Credentials',
+      text: `
+Dear ${trainerName},
+
+Greetings from Team Progrentures.
+
+Your Trainer Panel account has been created successfully.
+Please use the following credentials to login:
+
+Email: ${trainerEmail}
+Temporary Password: ${password}
+
+Security Notice:
+- Keep these credentials confidential.
+- Please change your password after first login.
+
+Best regards,
+Team Progrentures
+      `,
+      html: `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                <tr>
+                  <td style="background:#111827;padding:20px 28px;">
+                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
+                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Trainer Management</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px;">
+                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Trainer Login Credentials</h1>
+                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${trainerName},</p>
+                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Your Trainer Panel account has been created successfully. Please use the credentials below to login.</p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Login Email</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${trainerEmail}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Temporary Password</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${password}</td>
+                      </tr>
+                    </table>
+
+                    <div style="background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin:0 0 20px;">
+                      <p style="margin:0;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Security Notice:</strong> Keep credentials confidential and change your password after first login.</p>
+                    </div>
+
+                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Trainer credentials email sent to ${trainerEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Trainer email sending failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// Send certificate assignment notification
+exports.sendCertificateAssignmentEmail = async ({
+  internName,
+  internEmail,
+  certificateNames = [],
+  expiresAt,
+  certificateFiles = []
+}) => {
+  try {
+    const formattedExpiry = expiresAt
+      ? new Date(expiresAt).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })
+      : null;
+
+    const namesListText = certificateNames.length > 0
+      ? certificateNames.map((name, index) => `${index + 1}. ${name}`).join('\n')
+      : 'Your assigned certificate(s) are now available in your account.';
+
+    const namesListHtml = certificateNames.length > 0
+      ? `<ul style="margin:10px 0 0 18px;padding:0;color:#374151;font-size:14px;line-height:1.6;">${certificateNames.map((name) => `<li style="margin-bottom:6px;">${name}</li>`).join('')}</ul>`
+      : '<p style="margin:10px 0 0;color:#374151;font-size:14px;line-height:1.6;">Your assigned certificate(s) are now available in your account.</p>';
+
+    const mailOptions = {
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      to: internEmail,
+      subject: 'Progrentures Internship Program: Certificate Assignment Notice',
+      text: `
+Dear ${internName},
+
+This is to inform you that certificate(s) have been assigned to your account.
+
+Assigned Certificates:
+${namesListText}
+
+Please login to your dashboard and open the Certifications section to view and download your certificates.
+${formattedExpiry ? `\nNote: Access may expire on ${formattedExpiry}.` : ''}
+
+Best regards,
+Progrentures Team
+      `,
+      attachments: Array.isArray(certificateFiles)
+        ? certificateFiles
+            .filter((file) => file && file.filepath && file.filename)
+            .map((file) => ({
+              filename: file.filename,
+              path: path.resolve(file.filepath),
+              contentDisposition: 'attachment'
+            }))
+        : [],
+      html: `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                <tr>
+                  <td style="background:#111827;padding:20px 28px;">
+                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
+                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Internship Management</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px;">
+                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Certificate Assignment Notice</h1>
+                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${internName},</p>
+                    <p style="margin:0 0 14px;color:#374151;font-size:14px;line-height:1.6;">Certificate(s) have been assigned to your account.</p>
+
+                    <div style="border:1px solid #d1d5db;background:#f9fafb;padding:12px 14px;margin:0 0 16px;">
+                      <p style="margin:0;color:#4b5563;font-size:13px;font-weight:600;">Assigned Certificates</p>
+                      ${namesListHtml}
+                    </div>
+
+                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 16px;">
+                      <p style="margin:0;color:#1d4ed8;font-size:13px;line-height:1.6;"><strong>Action Required:</strong> Please login and open the Certifications section to view and download your certificates.${certificateFiles.length > 0 ? ' The assigned certificate file(s) are also attached with this email for direct download.' : ''}</p>
+                    </div>
+
+                    ${formattedExpiry ? `<p style="margin:0 0 14px;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Note:</strong> Access may expire on ${formattedExpiry}.</p>` : ''}
+
+                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Team</strong></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Certificate assignment email sent to ${internEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Certificate assignment email failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
 // Send task assignment email
-exports.sendTaskAssignmentEmail = async (internName, internEmail, taskTitle, taskDescription, deadline) => {
+exports.sendTaskAssignmentEmail = async ({
+  internName,
+  internEmail,
+  taskTitle,
+  taskDescription,
+  deadline,
+  isTeamTask = false,
+  teamMembers = [],
+  taskDocument = null
+}) => {
   try {
     const formattedDeadline = new Date(deadline).toLocaleString('en-US', {
       dateStyle: 'long',
       timeStyle: 'short'
     });
 
+    const teamListText = teamMembers.length > 0
+      ? teamMembers.map((member, index) => `${index + 1}. ${member.name}${member.internId ? ` (${member.internId})` : ''}`).join('\n')
+      : 'No additional team members listed.';
+
+    const teamListHtml = teamMembers.length > 0
+      ? `<ul style="margin:10px 0 0 18px;padding:0;color:#374151;font-size:14px;line-height:1.6;">${teamMembers.map((member) => `<li style="margin-bottom:6px;">${member.name}${member.internId ? ` (${member.internId})` : ''}</li>`).join('')}</ul>`
+      : '<p style="margin:10px 0 0;color:#374151;font-size:14px;line-height:1.6;">No additional team members listed.</p>';
+
     const mailOptions = {
-      from: `"Progrentures Team" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: internEmail,
-      subject: '📋 New Task Assigned - Progrentures Internship',
+      subject: 'Progrentures Internship: New Task Assignment',
       text: `
 Dear ${internName},
 
-You have been assigned a new internship task!
+You have been assigned a new internship task.
 
 Task Title: ${taskTitle}
 
@@ -154,71 +434,86 @@ Description: ${taskDescription}
 
 Deadline: ${formattedDeadline}
 
-Please login to your dashboard to view complete details and update your progress.
+Task Type: ${isTeamTask ? 'Team Task' : 'Individual Task'}
+
+${isTeamTask ? `Team Members:\n${teamListText}\n` : ''}
+
+Please sign in to your dashboard to review details and update progress.
+${taskDocument ? '\nThe task PDF/document has been attached to this email.' : ''}
 
 Best regards,
 Progrentures Team
       `,
+      attachments: taskDocument ? [{
+        filename: taskDocument.filename,
+        path: path.resolve(taskDocument.filepath),
+        contentDisposition: 'attachment'
+      }] : [],
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
-          
-          <!-- Header -->
-          <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 26px;">📋 New Task Assigned!</h1>
-          </div>
-          
-          <!-- Main Content -->
-          <div style="padding: 40px 30px; background-color: #ffffff; border-radius: 0 0 10px 10px;">
-            
-            <p style="font-size: 17px; color: #333; margin-bottom: 10px;">Dear <strong>${internName}</strong>,</p>
-            
-            <p style="font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 30px;">
-              You have been assigned a new internship task at <strong>Progrentures</strong>.
-            </p>
-            
-            <!-- Task Details Box -->
-            <div style="background: #f0f9ff; border: 2px solid #3b82f6; padding: 25px; border-radius: 10px; margin: 30px 0;">
-              <h2 style="margin: 0 0 20px 0; color: #1e40af; font-size: 20px; text-align: center;">
-                Task Details
-              </h2>
-              
-              <div style="background-color: white; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                <p style="margin: 15px 0; font-size: 16px; color: #1e293b;">
-                  <strong style="display: block; margin-bottom: 5px; color: #64748b;">Task Title:</strong>
-                  <span style="font-size: 18px; color: #0f172a; font-weight: 600;">${taskTitle}</span>
-                </p>
-                <p style="margin: 15px 0; font-size: 16px; color: #1e293b;">
-                  <strong style="display: block; margin-bottom: 5px; color: #64748b;">Description:</strong>
-                  <span style="font-size: 15px; color: #334155; line-height: 1.6;">${taskDescription}</span>
-                </p>
-                <p style="margin: 15px 0; font-size: 16px; color: #1e293b;">
-                  <strong style="display: block; margin-bottom: 5px; color: #64748b;">Deadline:</strong>
-                  <span style="font-size: 18px; color: #dc2626; font-weight: 600;">⏰ ${formattedDeadline}</span>
-                </p>
-              </div>
-            </div>
-            
-            <!-- Action Box -->
-            <div style="background-color: #dcfce7; border-left: 4px solid #16a34a; padding: 15px; border-radius: 8px; margin: 25px 0;">
-              <p style="margin: 0; color: #166534; font-size: 15px; line-height: 1.6;">
-                <strong>📌 Next Steps:</strong> Please login to your dashboard to view complete details and update your progress regularly.
-              </p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-              <p style="margin: 5px 0; color: #666; font-size: 15px;">Best regards,</p>
-              <p style="margin: 5px 0; color: #0f172a; font-weight: 700; font-size: 16px;">Progrentures Team</p>
-            </div>
-          </div>
-          
-          <!-- Bottom Note -->
-          <div style="text-align: center; margin-top: 20px; padding: 15px;">
-            <p style="margin: 0; font-size: 12px; color: #999;">
-              This is an automated email. Please do not reply to this message.
-            </p>
-          </div>
-        </div>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                <tr>
+                  <td style="background:#111827;padding:20px 28px;">
+                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
+                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Internship Management</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px;">
+                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">New Task Assignment</h1>
+                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${internName},</p>
+                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">A new task has been assigned to you. Please review the details below.</p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Task Title</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${taskTitle}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;vertical-align:top;">Description</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#374151;font-size:14px;line-height:1.6;">${taskDescription}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Deadline</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#991b1b;font-size:14px;font-weight:700;">${formattedDeadline}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Task Type</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${isTeamTask ? 'Team Task' : 'Individual Task'}</td>
+                      </tr>
+                    </table>
+
+                    ${isTeamTask ? `
+                      <div style="border:1px solid #d1d5db;background:#f9fafb;padding:12px 14px;margin:0 0 16px;">
+                        <p style="margin:0;color:#4b5563;font-size:13px;font-weight:600;">Team Members</p>
+                        ${teamListHtml}
+                      </div>
+                    ` : ''}
+
+                    <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px 14px;margin:0 0 20px;">
+                      <p style="margin:0;color:#065f46;font-size:13px;line-height:1.6;"><strong>Action Required:</strong> Please sign in to your dashboard and update progress regularly.</p>
+                    </div>
+
+                    ${taskDocument ? `
+                      <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
+                        <p style="margin:0;color:#1d4ed8;font-size:13px;line-height:1.6;"><strong>Attachment:</strong> Task PDF/document is attached with this email.</p>
+                      </div>
+                    ` : ''}
+
+                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Team</strong></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       `
     };
 
@@ -235,7 +530,7 @@ Progrentures Team
 exports.sendEmail = async (to, subject, html) => {
   try {
     await transporter.sendMail({
-      from: `"Progrentures Team" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       html
@@ -244,6 +539,189 @@ exports.sendEmail = async (to, subject, html) => {
     return { success: true };
   } catch (error) {
     console.error('❌ Email send failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+// Send trainer assignment notification
+exports.sendTrainerAssignmentNotification = async ({
+  trainerName,
+  trainerEmail,
+  studentsList = []
+}) => {
+  try {
+    const studentListHtml = studentsList
+      .map((student) => `
+        <tr>
+          <td style="padding:10px;border:1px solid #d1d5db;">${student.name || 'N/A'}</td>
+          <td style="padding:10px;border:1px solid #d1d5db;">${student.email || 'N/A'}</td>
+          <td style="padding:10px;border:1px solid #d1d5db;">${student.internId || 'N/A'}</td>
+        </tr>
+      `)
+      .join('');
+
+    const mailOptions = {
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      to: trainerEmail,
+      subject: 'Students Assigned to You - Progrentures Trainer Panel',
+      text: `
+Dear ${trainerName},
+
+Greetings from Team Progrentures.
+
+You have been assigned ${studentsList.length} student(s) for mentoring and training.
+
+Student Details:
+${studentsList.map((s) => `- ${s.name} (${s.internId}) - ${s.email}`).join('\n')}
+
+Please login to your Trainer Panel to view more details and start mentoring.
+
+Best regards,
+Team Progrentures
+      `,
+      html: `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                <tr>
+                  <td style="background:#111827;padding:20px 28px;">
+                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
+                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Trainer Assignment</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px;">
+                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">New Students Assigned</h1>
+                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${trainerName},</p>
+                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">You have been assigned ${studentsList.length} student(s) for mentoring and training. Please review their details below.</p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
+                      <thead>
+                        <tr style="background:#f9fafb;">
+                          <th style="padding:12px;border:1px solid #d1d5db;text-align:left;color:#4b5563;font-size:13px;font-weight:600;">Student Name</th>
+                          <th style="padding:12px;border:1px solid #d1d5db;text-align:left;color:#4b5563;font-size:13px;font-weight:600;">Email</th>
+                          <th style="padding:12px;border:1px solid #d1d5db;text-align:left;color:#4b5563;font-size:13px;font-weight:600;">Intern ID</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${studentListHtml}
+                      </tbody>
+                    </table>
+
+                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
+                      <p style="margin:0;color:#1e40af;font-size:13px;line-height:1.6;"><strong>Action Required:</strong> Login to your Trainer Panel to view complete student details and start mentoring.</p>
+                    </div>
+
+                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`? Trainer assignment email sent to ${trainerEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('? Trainer assignment email failed:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// Send student assignment notification
+exports.sendStudentAssignmentNotification = async ({
+  studentName,
+  studentEmail,
+  trainerName,
+  trainerEmail,
+  trainerMobile
+}) => {
+  try {
+    const mailOptions = {
+      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      to: studentEmail,
+      subject: 'Trainer Assignment - Your Mentor Details - Progrentures',
+      text: `
+Dear ${studentName},
+
+Greetings from Team Progrentures.
+
+You have been assigned a dedicated trainer/mentor for your internship journey.
+
+Trainer Details:
+Name: ${trainerName}
+Email: ${trainerEmail}
+Mobile: ${trainerMobile || 'N/A'}
+
+Please feel free to reach out to your trainer for guidance and support.
+
+Best regards,
+Team Progrentures
+      `,
+      html: `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
+                <tr>
+                  <td style="background:#111827;padding:20px 28px;">
+                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
+                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Trainer Assignment</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:28px;">
+                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Trainer Assigned</h1>
+                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${studentName},</p>
+                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Great news! You have been assigned a dedicated trainer/mentor for your internship journey. Here are their contact details.</p>
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
+                      <tr>
+                        <td style="width:140px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Trainer Name</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${trainerName}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:140px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Email</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#0078d4;font-size:14px;word-break:break-all;">${trainerEmail}</td>
+                      </tr>
+                      <tr>
+                        <td style="width:140px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Mobile</td>
+                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${trainerMobile || 'N/A'}</td>
+                      </tr>
+                    </table>
+
+                    <div style="background:#ecfdf5;border:1px solid #bbf7d0;padding:12px 14px;margin:0 0 20px;">
+                      <p style="margin:0;color:#166534;font-size:13px;line-height:1.6;"><strong>Next Steps:</strong> Reach out to your trainer to introduce yourself and understand your training plan.</p>
+                    </div>
+
+                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
+                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`? Student assignment email sent to ${studentEmail}`);
+    return { success: true };
+  } catch (error) {
+    console.error('? Student assignment email failed:', error.message);
     return { success: false, error: error.message };
   }
 };

@@ -119,6 +119,9 @@ router.get('/trainers', verifyToken, verifyAdmin, adminController.getAllTrainers
 // Assign students to trainer
 router.post('/assign-students', verifyToken, verifyAdmin, adminController.assignStudentsToTrainer);
 
+// Delete trainer
+router.delete('/trainer/:id', verifyToken, verifyAdmin, adminController.deleteTrainer);
+
 // ========== NOTIFICATIONS ==========
 
 // Create notification

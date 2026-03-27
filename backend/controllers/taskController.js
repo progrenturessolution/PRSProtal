@@ -7,6 +7,8 @@ exports.createAndAssignTask = async (req, res) => {
   try {
     let { title, description, deadline, assignedTo, isTeamTask, teamMembers } = req.body;
 
+    const teamTaskEnabled = isTeamTask === true || String(isTeamTask).toLowerCase() === 'true';
+
     // Parse teamMembers if it's a JSON string (from FormData)
     if (typeof teamMembers === 'string') {
       try {
@@ -22,6 +24,24 @@ exports.createAndAssignTask = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide all required fields'
+      });
+    }
+
+    const normalizedTeamMembers = Array.isArray(teamMembers)
+      ? teamMembers
+          .map((member) => {
+            if (typeof member === 'object' && member !== null) {
+              return member._id || member.id || member.value || null;
+            }
+            return member;
+          })
+          .filter(Boolean)
+      : [];
+
+    if (teamTaskEnabled && normalizedTeamMembers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide team members for team task assignment'
       });
     }
 
@@ -44,6 +64,19 @@ exports.createAndAssignTask = async (req, res) => {
       };
     }
 
+    const recipientIds = [...new Set([
+      String(assignedTo),
+      ...(teamTaskEnabled ? normalizedTeamMembers.map((id) => String(id)) : [])
+    ])];
+
+    const recipients = await Intern.find({ _id: { $in: recipientIds } }).select('name email internId');
+    if (recipients.length !== recipientIds.length) {
+      return res.status(404).json({
+        success: false,
+        message: 'One or more selected team members were not found'
+      });
+    }
+
     // Create task
     const task = new Task({
       title,
@@ -52,27 +85,73 @@ exports.createAndAssignTask = async (req, res) => {
       assignedTo,
       status: 'Assigned',
       progress: 0,
-      isTeamTask: isTeamTask || false,
-      teamMembers: teamMembers || [],
+      isTeamTask: teamTaskEnabled,
+      teamMembers: teamTaskEnabled ? normalizedTeamMembers : [],
       taskDocument: taskDocument
     });
 
     await task.save();
 
-    // Send email notification
-    const emailResult = await sendTaskAssignmentEmail(
-      intern.name,
-      intern.email,
-      title,
-      description,
-      deadline
+    // Send email notifications to all recipients and report delivery status
+    const teamDetails = recipients.map((member) => ({
+      name: member.name,
+      internId: member.internId
+    }));
+
+    const emailResults = await Promise.allSettled(
+      recipients.map((recipient) => {
+        if (!recipient.email) {
+          return Promise.resolve({ success: false, error: 'Recipient email missing' });
+        }
+
+        return sendTaskAssignmentEmail({
+          internName: recipient.name,
+          internEmail: recipient.email,
+          taskTitle: title,
+          taskDescription: description,
+          deadline,
+          isTeamTask: teamTaskEnabled,
+          teamMembers: teamDetails,
+          taskDocument
+        });
+      })
     );
+
+    let emailSentCount = 0;
+    let emailFailedCount = 0;
+    const emailFailures = [];
+
+    emailResults.forEach((result, index) => {
+      const recipient = recipients[index];
+
+      if (result.status === 'fulfilled' && result.value?.success) {
+        emailSentCount += 1;
+      } else {
+        emailFailedCount += 1;
+        const reason = result.status === 'rejected'
+          ? result.reason?.message || 'Unknown error'
+          : (result.value?.error || 'Unknown error');
+        emailFailures.push({
+          studentId: recipient?._id,
+          email: recipient?.email || null,
+          reason
+        });
+      }
+    });
+
+    if (emailFailedCount > 0) {
+      console.error(`Task assignment email had ${emailFailedCount} failure(s) for task ${task._id}`, emailFailures);
+    }
 
     res.status(201).json({
       success: true,
       message: 'Task created and assigned successfully',
       task,
-      emailSent: emailResult.success
+      emailSent: emailFailedCount === 0,
+      emailRecipients: recipients.length,
+      emailSentCount,
+      emailFailedCount,
+      emailFailures
     });
 
   } catch (error) {

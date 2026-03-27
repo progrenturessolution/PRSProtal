@@ -7,9 +7,29 @@ const { sendInternCredentials } = require('../config/emailService');
 // Generate unique Intern ID based on type
 const generateInternId = async (studentType) => {
   const year = new Date().getFullYear();
-  const count = await Intern.countDocuments({ studentType });
   const prefix = studentType === 'SMS Program' ? `PSMS${year}` : `PIID${year}`;
-  return `${prefix}${String(count + 1).padStart(4, '0')}`;
+
+  const lastIntern = await Intern.findOne({
+    internId: { $regex: `^${prefix}` }
+  })
+    .sort({ internId: -1 })
+    .select('internId');
+
+  let nextNumber = 1;
+  if (lastIntern?.internId) {
+    const tail = Number(lastIntern.internId.slice(prefix.length));
+    if (Number.isFinite(tail)) {
+      nextNumber = tail + 1;
+    }
+  }
+
+  let internId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+  while (await Intern.exists({ internId })) {
+    nextNumber += 1;
+    internId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+  }
+
+  return internId;
 };
 
 // Representative Login
@@ -173,7 +193,16 @@ exports.addStudent = async (req, res) => {
     const intern = new Intern(internData);
     await intern.save();
 
-    const emailResult = await sendInternCredentials(name, email, internId, password);
+    // Send email in background so API responds immediately
+    sendInternCredentials(name, email, internId, password)
+      .then((emailResult) => {
+        if (!emailResult.success) {
+          console.error(`Background credential email failed for ${email}:`, emailResult.error);
+        }
+      })
+      .catch((emailError) => {
+        console.error(`Background credential email error for ${email}:`, emailError.message);
+      });
 
     res.status(201).json({
       success: true,
@@ -185,10 +214,21 @@ exports.addStudent = async (req, res) => {
         internId: intern.internId,
         studentType: intern.studentType
       },
-      emailSent: emailResult.success
+      emailSent: false,
+      emailQueued: true
     });
   } catch (error) {
     console.error('Add student error:', error);
+
+    if (error?.code === 11000) {
+      if (error?.keyPattern?.email) {
+        return res.status(409).json({ success: false, message: 'Student with this email already exists' });
+      }
+      if (error?.keyPattern?.internId) {
+        return res.status(409).json({ success: false, message: 'Could not generate unique intern ID. Please retry.' });
+      }
+    }
+
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

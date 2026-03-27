@@ -118,10 +118,13 @@ function AddIntern({ onInternAdded }) {
       if (response.data.success) {
         const intern = response.data.intern;
         const emailSent = response.data.emailSent;
+        const emailQueued = response.data.emailQueued;
 
         let successMsg = `Student added successfully!\n\nID: ${intern.internId}\nName: ${intern.name}\nEmail: ${intern.email}\nType: ${intern.studentType}`;
 
-        if (emailSent) {
+        if (emailQueued) {
+          successMsg += `\n\nCredentials email is queued and will be sent shortly.`;
+        } else if (emailSent) {
           successMsg += `\n\nLogin credentials have been sent to ${intern.email}`;
         } else {
           successMsg += `\n\nWarning: Email could not be sent. Please share credentials manually.`;
