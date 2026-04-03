@@ -13,6 +13,12 @@ function AdminLogin() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const getErrorMessage = (err) =>
+    err.response?.data?.message ||
+    (err.response
+      ? 'Login failed. Please try again.'
+      : 'Unable to reach the backend. Check the API URL and deployment status.');
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -29,7 +35,10 @@ function AdminLogin() {
     setSuccess('');
 
     try {
-      const response = await authAPI.adminLogin(formData);
+      const response = await authAPI.adminLogin({
+        email: formData.email.trim(),
+        password: formData.password,
+      });
       
       if (response.data.success) {
         // Clear any existing data first
@@ -49,7 +58,7 @@ function AdminLogin() {
         }, 1000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
