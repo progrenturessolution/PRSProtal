@@ -3,10 +3,31 @@ const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
 const Intern = require('../models/Intern');
 
+const normalizeCredentialValue = (value) => {
+  if (typeof value !== 'string') {
+    return value;
+  }
+  const trimmed = value.trim();
+  // Accept values pasted with surrounding quotes.
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+};
+
 // Admin Login
 exports.adminLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const normalizedBody = req.body || {};
+    const email = normalizeCredentialValue(
+      normalizedBody.email ?? normalizedBody['email:']
+    );
+    const password = normalizeCredentialValue(
+      normalizedBody.password ?? normalizedBody['password:']
+    );
     const blockedAdminEmails = new Set(['admin@progrentures.com']);
 
     // Validation
@@ -25,7 +46,8 @@ exports.adminLogin = async (req, res) => {
     }
 
     // Check if admin exists
-    const admin = await Admin.findOne({ email });
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const admin = await Admin.findOne({ email: normalizedEmail });
     if (!admin) {
       return res.status(401).json({ 
         success: false, 
