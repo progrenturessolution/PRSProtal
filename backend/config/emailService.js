@@ -5,6 +5,8 @@ require('dotenv').config();
 const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
 const smtpPort = Number(process.env.SMTP_PORT || 587);
 const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+const PRS_LOGIN_URL = 'https://prs-protal.vercel.app/';
+const PRS_COMPANY_NAME = 'Progrentures™ Solution Pvt. Ltd.';
 
 // Create transporter with detailed configuration
 const transporter = nodemailer.createTransport({
@@ -33,79 +35,31 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
 exports.sendInternCredentials = async (internName, internEmail, internId, password) => {
   try {
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
       to: internEmail,
-      subject: 'Progrentures Internship Program: Login Credentials',
+      subject: 'Your PRS Account Credentials – PRS Portal',
       text: `
 Dear ${internName},
 
-    Greetings from Progrentures.
+This is to inform you that your account has been successfully created.
+You can now log in to your dashboard using the credentials below:
 
-    This is to inform you that your internship account has been successfully created.
-    Please use the credentials below to sign in:
-
-Intern ID: ${internId}
+User ID: ${internId}
 Temporary Password: ${password}
 
-    Important:
-    - After login, please download your Offer Letter from the Certifications section.
-
-Security Notice:
-- Keep these credentials confidential.
-- Update your password after your first login.
-
-    Best regards,
-Progrentures Team
-      `,
+Login Here: ${PRS_LOGIN_URL}
+Please use the above link to access your account.
+      `.trim(),
       html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#111827;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
-                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Internship Management</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Internship Account Credentials</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${internName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">This is to inform you that your internship account has been successfully created. Please use the credentials below to sign in.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Intern ID</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${internId}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Temporary Password</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${password}</td>
-                      </tr>
-                    </table>
-
-                    <div style="background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Security Notice:</strong> Keep credentials confidential and update your password after first login.</p>
-                    </div>
-
-                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#1d4ed8;font-size:13px;line-height:1.6;"><strong>Next Step:</strong> After login, please download your Offer Letter from the Certifications section.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Team</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+        <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;max-width:640px;margin:0 auto;padding:20px;">
+          <p>Dear ${internName},</p>
+          <p>This is to inform you that your account has been successfully created.</p>
+          <p>You can now log in to your dashboard using the credentials below:</p>
+          <p><strong>User ID:</strong> ${internId}<br/><strong>Temporary Password:</strong> ${password}</p>
+          <p><strong>Login Here:</strong> <a href="${PRS_LOGIN_URL}">${PRS_LOGIN_URL}</a></p>
+          <p>Please use the above link to access your account.</p>
+        </div>
+      `.trim()
     };
 
     await transporter.sendMail(mailOptions);
@@ -132,72 +86,36 @@ exports.sendRepresentativeCredentials = async ({
 }) => {
   try {
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
       to: repEmail,
-      subject: 'Progrentures Representative Panel: Login Credentials',
+      subject: 'Your PRS Representative Account Credentials - PRS Portal',
       text: `
 Dear ${repName},
 
-Greetings from Team Progrentures.
+This is to inform you that your account has been successfully created.
+You can now log in to your dashboard using the credentials below:
 
-Your Representative Panel account has been created successfully.
-Please use the following credentials to login:
-
-Email: ${repEmail}
+User ID: ${repEmail}
 Temporary Password: ${password}
 
-Security Notice:
-- Keep these credentials confidential.
-- Please change your password after first login.
+Login Here: ${PRS_LOGIN_URL}
+Please use the above link to access your account.
 
-Best regards,
-Team Progrentures
-      `,
+Regards,
+${PRS_COMPANY_NAME}
+      `.trim(),
       html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#111827;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
-                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Representative Management</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Representative Login Credentials</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${repName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Your Representative Panel account has been created successfully. Please use the credentials below to login.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Login Email</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${repEmail}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Temporary Password</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${password}</td>
-                      </tr>
-                    </table>
-
-                    <div style="background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Security Notice:</strong> Keep credentials confidential and change your password after first login.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+        <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;max-width:640px;margin:0 auto;padding:20px;">
+          <h2 style="margin:0 0 12px;">Representative Account Credentials</h2>
+          <p>Dear ${repName},</p>
+          <p>This is to inform you that your account has been successfully created.</p>
+          <p>You can now log in to your dashboard using the credentials below:</p>
+          <p><strong>User ID:</strong> ${repEmail}<br/><strong>Temporary Password:</strong> ${password}</p>
+          <p><strong>Login Here:</strong> <a href="${PRS_LOGIN_URL}">${PRS_LOGIN_URL}</a></p>
+          <p>Please use the above link to access your account.</p>
+          <p>Regards,<br/><strong>${PRS_COMPANY_NAME}</strong></p>
+        </div>
+      `.trim()
     };
 
     await transporter.sendMail(mailOptions);
@@ -217,72 +135,36 @@ exports.sendTrainerCredentials = async ({
 }) => {
   try {
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
       to: trainerEmail,
-      subject: 'Progrentures Trainer Panel: Login Credentials',
+      subject: 'Your PRS Trainer Account Credentials - PRS Portal',
       text: `
 Dear ${trainerName},
 
-Greetings from Team Progrentures.
+This is to inform you that your account has been successfully created.
+You can now log in to your dashboard using the credentials below:
 
-Your Trainer Panel account has been created successfully.
-Please use the following credentials to login:
-
-Email: ${trainerEmail}
+User ID: ${trainerEmail}
 Temporary Password: ${password}
 
-Security Notice:
-- Keep these credentials confidential.
-- Please change your password after first login.
+Login Here: ${PRS_LOGIN_URL}
+Please use the above link to access your account.
 
-Best regards,
-Team Progrentures
-      `,
+Regards,
+${PRS_COMPANY_NAME}
+      `.trim(),
       html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#111827;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
-                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Trainer Management</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Trainer Login Credentials</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${trainerName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Your Trainer Panel account has been created successfully. Please use the credentials below to login.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Login Email</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${trainerEmail}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Temporary Password</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${password}</td>
-                      </tr>
-                    </table>
-
-                    <div style="background:#fff7ed;border:1px solid #fed7aa;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Security Notice:</strong> Keep credentials confidential and change your password after first login.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+        <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;max-width:640px;margin:0 auto;padding:20px;">
+          <h2 style="margin:0 0 12px;">Trainer Account Credentials</h2>
+          <p>Dear ${trainerName},</p>
+          <p>This is to inform you that your account has been successfully created.</p>
+          <p>You can now log in to your dashboard using the credentials below:</p>
+          <p><strong>User ID:</strong> ${trainerEmail}<br/><strong>Temporary Password:</strong> ${password}</p>
+          <p><strong>Login Here:</strong> <a href="${PRS_LOGIN_URL}">${PRS_LOGIN_URL}</a></p>
+          <p>Please use the above link to access your account.</p>
+          <p>Regards,<br/><strong>${PRS_COMPANY_NAME}</strong></p>
+        </div>
+      `.trim()
     };
 
     await transporter.sendMail(mailOptions);
