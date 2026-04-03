@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { taskAPI } from "../services/api";
+import { taskAPI, UPLOADS_BASE } from "../services/api";
 
 function TeamTasks({
   user,
@@ -391,7 +391,7 @@ function TeamTasks({
                 {/* Task Document */}
                 {selectedTask.taskDocument?.filename && (
                   <a
-                    href={`http://localhost:5000/uploads/tasks/${selectedTask.taskDocument.filename}`}
+                    href={`${UPLOADS_BASE}/uploads/tasks/${selectedTask.taskDocument.filename}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { adminAPI } from "../services/api";
+import { adminAPI, UPLOADS_BASE } from "../services/api";
 
 function ViewInterns({ onInternDeleted }) {
   const [interns, setInterns] = useState([]);
@@ -1156,7 +1156,7 @@ function ViewInterns({ onInternDeleted }) {
                         </div>
                         {selectedStudent.documents?.[key] ? (
                           <a
-                            href={`http://localhost:5000/uploads/students/${selectedStudent.documents[key].filename}`}
+                            href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents[key].filename}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -1218,7 +1218,7 @@ function ViewInterns({ onInternDeleted }) {
                             </div>
                           </div>
                           <a
-                            href={`http://localhost:5000/uploads/students/${cert.filename}`}
+                            href={`${UPLOADS_BASE}/uploads/students/${cert.filename}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
@@ -1991,7 +1991,7 @@ function ViewInterns({ onInternDeleted }) {
                   <div>
                     {selectedStudent.documents?.offerLetter ? (
                       <a
-                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.offerLetter.filename}`}
+                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.offerLetter.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -2054,7 +2054,7 @@ function ViewInterns({ onInternDeleted }) {
                   <div>
                     {selectedStudent.documents?.welcomeLetter ? (
                       <a
-                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.welcomeLetter.filename}`}
+                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.welcomeLetter.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -2117,7 +2117,7 @@ function ViewInterns({ onInternDeleted }) {
                   <div>
                     {selectedStudent.documents?.paymentReceipt ? (
                       <a
-                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.paymentReceipt.filename}`}
+                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.paymentReceipt.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -2180,7 +2180,7 @@ function ViewInterns({ onInternDeleted }) {
                   <div>
                     {selectedStudent.documents?.completionCertificate ? (
                       <a
-                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.completionCertificate.filename}`}
+                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.completionCertificate.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -2243,7 +2243,7 @@ function ViewInterns({ onInternDeleted }) {
                   <div>
                     {selectedStudent.documents?.experienceLetter ? (
                       <a
-                        href={`http://localhost:5000/uploads/students/${selectedStudent.documents.experienceLetter.filename}`}
+                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.experienceLetter.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -2305,7 +2305,7 @@ function ViewInterns({ onInternDeleted }) {
                               {cert.name || cert.filename}
                             </span>
                             <a
-                              href={`http://localhost:5000/uploads/students/${cert.filename}`}
+                              href={`${UPLOADS_BASE}/uploads/students/${cert.filename}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{
