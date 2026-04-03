@@ -4775,3 +4775,170 @@ border-radius: 8px;
     width: 100%;
   }
 }
+
+/* ============================================
+   Global Responsive Hardening
+   Ensures inline-heavy pages remain usable on phones
+   ============================================ */
+@media (max-width: 900px) {
+  .main-content {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .content-header,
+  .content-header-with-back,
+  .premium-page-header {
+    padding-left: 58px;
+  }
+
+  .card,
+  .enterprise-card,
+  .quick-actions-card,
+  .dashboard-header {
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 14px 10px 20px;
+  }
+
+  .content-header,
+  .content-header-with-back,
+  .premium-page-header {
+    padding-left: 52px;
+    margin-bottom: 14px;
+  }
+
+  .content-header h1,
+  .content-header-with-back h1,
+  .page-header-compact h1 {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+
+  .card,
+  .enterprise-card,
+  .quick-actions-card,
+  .dashboard-header {
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  .stats-grid,
+  .stats-grid-large,
+  .enterprise-stats-grid,
+  .quick-actions-grid,
+  .enterprise-actions-grid,
+  .tasks-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .table-container,
+  .data-table,
+  .task-table {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table,
+  .data-table,
+  .task-table {
+    min-width: 640px;
+  }
+
+  .modal-overlay {
+    padding: 8px;
+  }
+
+  .modal-content,
+  .profile-modal-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92vh;
+    border-radius: 10px;
+  }
+
+  .modal-header,
+  .profile-header {
+    padding: 14px 12px !important;
+  }
+
+  .modal-actions,
+  .profile-actions,
+  .action-buttons,
+  .button-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .submit-btn,
+  .login-submit-btn,
+  .profile-btn,
+  .action-btn,
+  .table-action-btn,
+  .table-action-btn-minimal,
+  .delete-btn-small,
+  .approve-btn,
+  .back-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-size: 16px;
+  }
+
+  /* Force common inline 2-column layouts to single column on phones */
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns: repeat(2"],
+  [style*="grid-template-columns:repeat(2"],
+  [style*="grid-template-columns: 50% 50%"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [style*="max-width: 600px"],
+  [style*="max-width: 700px"],
+  [style*="max-width: 800px"],
+  [style*="max-width: 1040px"] {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-menu-btn {
+    top: 12px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .main-content {
+    padding: 10px 8px 16px;
+  }
+
+  .content-header,
+  .content-header-with-back,
+  .premium-page-header {
+    padding-left: 46px;
+  }
+
+  .sidebar {
+    width: 86vw;
+  }
+
+  .modal-content,
+  .profile-modal-container {
+    border-radius: 8px;
+  }
+}
