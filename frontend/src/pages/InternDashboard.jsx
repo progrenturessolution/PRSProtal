@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { taskAPI, internAPI, UPLOADS_BASE } from "../services/api";
 import TeamTasks from "./TeamTasks";
 import logo from "../assets/logo.png";
-import AIAssistant from "../components/AIAssistant";
 
 function InternDashboard() {
   const navigate = useNavigate();
@@ -129,46 +128,6 @@ function InternDashboard() {
     } catch (err) {
       console.error(`Failed to fetch ${section}:`, err);
     }
-  };
-
-  const handleAssistantAction = async (action) => {
-    await handleSectionClick(action.section);
-    if (action.taskView) {
-      setTaskView(action.taskView);
-    }
-  };
-
-  const getAssistantSnapshot = async () => {
-    const [profileResult, tasksResult, notificationsResult] = await Promise.allSettled([
-      internAPI.getMyProfile(),
-      taskAPI.getInternTasks(),
-      internAPI.getMyNotifications(),
-    ]);
-
-    const profileData =
-      profileResult.status === "fulfilled" && profileResult.value.data?.success
-        ? profileResult.value.data.profile
-        : user;
-
-    const taskList =
-      tasksResult.status === "fulfilled" && tasksResult.value.data?.success
-        ? tasksResult.value.data.tasks || []
-        : tasks;
-
-    const notificationList =
-      notificationsResult.status === "fulfilled" && notificationsResult.value.data?.success
-        ? notificationsResult.value.data.notifications || []
-        : notifications;
-
-    const completedTasks = taskList.filter((task) => task.status === "Completed").length;
-
-    return {
-      name: profileData?.name || user?.name || "Intern",
-      totalTasks: taskList.length,
-      pendingTasks: taskList.length - completedTasks,
-      completedTasks,
-      notifications: notificationList.length,
-    };
   };
 
   const handleLogout = () => {
@@ -2140,11 +2099,6 @@ function InternDashboard() {
         )}
       </main>
 
-      <AIAssistant
-        currentSection={activeSection}
-        onAction={handleAssistantAction}
-        onRefreshData={getAssistantSnapshot}
-      />
     </div>
   );
 }
