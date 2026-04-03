@@ -176,7 +176,6 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li
               style={{
                 padding: '11px 16px 11px 32px',
-                paddingLeft: '32px',
                 background: selectedStudentTab === 'aptitude' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent',
                 borderLeft: selectedStudentTab === 'aptitude' ? '4px solid #667eea' : '2px solid transparent',
                 cursor: 'pointer',
@@ -215,7 +214,6 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li
               style={{
                 padding: '11px 16px 11px 32px',
-                paddingLeft: '32px',
                 background: selectedStudentTab === 'assessments' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent',
                 borderLeft: selectedStudentTab === 'assessments' ? '4px solid #667eea' : '2px solid transparent',
                 cursor: 'pointer',
@@ -254,7 +252,6 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li
               style={{
                 padding: '11px 16px 11px 32px',
-                paddingLeft: '32px',
                 background: selectedStudentTab === 'training' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent',
                 borderLeft: selectedStudentTab === 'training' ? '4px solid #667eea' : '2px solid transparent',
                 cursor: 'pointer',

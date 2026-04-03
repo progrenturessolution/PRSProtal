@@ -34,7 +34,7 @@ const syncDefaultAdmins = async () => {
     for (const adminConfig of defaultAdmins) {
       const hashedPassword = await bcrypt.hash(adminConfig.password, 10);
 
-      const admin = await Admin.findOneAndUpdate(
+      await Admin.findOneAndUpdate(
         { email: adminConfig.email },
         {
           $set: {
@@ -45,8 +45,6 @@ const syncDefaultAdmins = async () => {
         },
         { upsert: true, new: true, runValidators: true }
       );
-
-      console.log(`✅ Admin ready: ${admin.email}`);
     }
   } catch (error) {
     console.error('Error syncing default admins:', error.message);
