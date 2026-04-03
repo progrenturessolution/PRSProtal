@@ -50,13 +50,32 @@ function ManageRepresentatives() {
     e.preventDefault();
     setError("");
     setSuccess("");
-    if (!formData.name || !formData.email || !formData.password) {
+    const normalizedName = String(formData.name || "").trim();
+    const normalizedEmail = String(formData.email || "").trim().toLowerCase();
+    const normalizedPassword = String(formData.password || "").trim();
+
+    if (!normalizedName || !normalizedEmail || !normalizedPassword) {
       setError("Name, email and password are required.");
       return;
     }
+
+    const autoPgirId = `PGIR${String(Date.now()).slice(-6)}${Math.floor(Math.random() * 10)}`;
+    const payload = {
+      ...formData,
+      name: normalizedName,
+      email: normalizedEmail,
+      password: normalizedPassword,
+      pgirId: autoPgirId,
+      // Legacy backend compatibility aliases
+      fullName: normalizedName,
+      repName: normalizedName,
+      repEmail: normalizedEmail,
+      pass: normalizedPassword,
+    };
+
     try {
       setSubmitting(true);
-      const res = await adminRepAPI.addRepresentative(formData);
+      const res = await adminRepAPI.addRepresentative(payload);
       if (res.data.success) {
         setSuccess("Representative added successfully!");
         setFormData({

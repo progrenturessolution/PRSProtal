@@ -824,7 +824,7 @@ function ViewInterns({ onInternDeleted }) {
                   <h2 className="profile-name">{selectedStudent.name}</h2>
                   <div className="profile-badges">
                     <span className="profile-badge">
-                      {selectedStudent.internId}
+                      PIID: {selectedStudent.internId}
                     </span>
                     <span
                       className={`profile-badge ${
@@ -865,7 +865,7 @@ function ViewInterns({ onInternDeleted }) {
                       </div>
                     </div>
                     <div className="profile-info-card">
-                      <div className="profile-info-label">Student ID</div>
+                      <div className="profile-info-label">PIID</div>
                       <div className="profile-info-value">
                         {selectedStudent.internId}
                       </div>
@@ -959,6 +959,30 @@ function ViewInterns({ onInternDeleted }) {
                             : "Not set"}
                         </div>
                       </div>
+                        <div className="profile-detail-card type-domain">
+                          <div className="profile-detail-label color-indigo">
+                            College Name
+                          </div>
+                          <div className="profile-detail-value">
+                            {selectedStudent.collegeName || "Not specified"}
+                          </div>
+                        </div>
+                        <div className="profile-detail-card type-domain">
+                          <div className="profile-detail-label color-indigo">
+                            Branch
+                          </div>
+                          <div className="profile-detail-value">
+                            {selectedStudent.branch || "Not specified"}
+                          </div>
+                        </div>
+                        <div className="profile-detail-card type-domain">
+                          <div className="profile-detail-label color-indigo">
+                            Year of Study
+                          </div>
+                          <div className="profile-detail-value">
+                            {selectedStudent.yearOfStudy || "Not specified"}
+                          </div>
+                        </div>
                       <div className="profile-detail-card type-warning">
                         <div className="profile-detail-label color-warning">
                           Ending Date
@@ -987,6 +1011,131 @@ function ViewInterns({ onInternDeleted }) {
                       SMS Program Details
                     </h3>
                     <div className="profile-details-grid">
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
+                          Suggested Domain
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.suggestedDomain || "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
+                          Current Qualification
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.currentQualification ||
+                            "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
+                          College/Institute Name
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.instituteName || "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
+                          Year of Study
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.yearOfStudy || "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-domain">
+                        <div className="profile-detail-label color-indigo">
+                          College/Institute Location
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.instituteLocation ||
+                            "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Enrolment Date
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.enrolmentDate
+                            ? new Date(
+                                selectedStudent.enrolmentDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                            : "Not set"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Enrol Batch Month
+                        </div>
+                        <div className="profile-detail-value">
+                          {selectedStudent.enrolBatchMonth || "Not specified"}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Total Fees
+                        </div>
+                        <div className="profile-detail-value">
+                          ₹{selectedStudent.totalFees || 0}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          First Payment
+                        </div>
+                        <div className="profile-detail-value">
+                          ₹{selectedStudent.firstPaymentAmount || 0}
+                          {selectedStudent.firstPaymentDate
+                            ? ` on ${new Date(
+                                selectedStudent.firstPaymentDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}`
+                            : ""}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Second Payment
+                        </div>
+                        <div className="profile-detail-value">
+                          ₹{selectedStudent.secondPaymentAmount || 0}
+                          {selectedStudent.secondPaymentDate
+                            ? ` on ${new Date(
+                                selectedStudent.secondPaymentDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}`
+                            : ""}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Final Payment
+                        </div>
+                        <div className="profile-detail-value">
+                          ₹{selectedStudent.finalPaymentAmount || 0}
+                          {selectedStudent.finalPaymentDate
+                            ? ` on ${new Date(
+                                selectedStudent.finalPaymentDate,
+                              ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })}`
+                            : ""}
+                        </div>
+                      </div>
                       <div className="profile-detail-card type-pink">
                         <div className="profile-detail-label color-pink">
                           Gender
@@ -1110,6 +1259,10 @@ function ViewInterns({ onInternDeleted }) {
                       { key: "offerLetter", label: "Offer Letter" },
                       { key: "welcomeLetter", label: "Welcome Letter" },
                       { key: "paymentReceipt", label: "Payment Receipt" },
+                      {
+                        key: "smsProgramEnrollmentLetter",
+                        label: "SMS Program Enrollment Letter",
+                      },
                       {
                         key: "completionCertificate",
                         label: "Completion Certificate",

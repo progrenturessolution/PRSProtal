@@ -6,6 +6,23 @@ const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification } = require('../config/emailService');
 
+const generateRepresentativeId = async () => {
+  const baseCount = await Representative.countDocuments({});
+  let sequence = baseCount + 1;
+
+  while (true) {
+    const candidate = `PGIR${String(sequence).padStart(4, '0')}`;
+    const exists = await Representative.findOne({ pgirId: candidate }).select('_id');
+    if (!exists) return candidate;
+    sequence += 1;
+  }
+};
+
+const generateFallbackRepresentativeId = () =>
+  `PGIR${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)
+    .toString()
+    .padStart(2, '0')}`;
+
 // Generate unique Intern ID based on type with new format
 // Format: PRS/MAR26004/DJS (PRS = internship, PSMS = SMS program)
 // MAR = month, 26 = year, 004 = count in month, DJS = first 3 letters of name
@@ -69,6 +86,9 @@ exports.addIntern = async (req, res) => {
       joiningDate,
       endingDate,
       duration,
+      collegeName,
+      branch,
+      yearOfStudy,
       // SMS Program fields
       paymentDoneBy,
       dateOfPayment,
@@ -89,7 +109,7 @@ exports.addIntern = async (req, res) => {
     }
 
     // Type-specific validation
-    if (studentType === 'Internship' && (!domain || !joiningDate || !duration)) {
+    if (studentType === 'Internship' && (!domain || !joiningDate || !duration || !collegeName || !branch || !yearOfStudy)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide all internship required fields'
@@ -127,6 +147,9 @@ exports.addIntern = async (req, res) => {
       internData.domain = domain;
       internData.joiningDate = joiningDate;
       internData.duration = duration;
+      internData.collegeName = collegeName;
+      internData.branch = branch;
+      internData.yearOfStudy = yearOfStudy;
       // endingDate is optional, can be calculated later if needed
       if (endingDate) {
         internData.endingDate = endingDate;
@@ -474,6 +497,9 @@ exports.updateIntern = async (req, res) => {
       'joiningDate',
       'endingDate',
       'duration',
+      'collegeName',
+      'branch',
+      'yearOfStudy',
       'paymentDoneBy',
       'dateOfPayment',
       'transactionId',
@@ -1014,20 +1040,33 @@ exports.addRepresentative = async (req, res) => {
   try {
     const { name, email, password, mobile, college, course, department, year, designation, sheetLinks, upiId } = req.body;
 
-    if (!name || !email || !password) {
+    const normalizedName = String(name || '').trim();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    const normalizedPassword = String(password || '').trim();
+
+    if (!normalizedName || !normalizedEmail || !normalizedPassword) {
       return res.status(400).json({ success: false, message: 'Name, email and password are required' });
     }
 
-    const existing = await Representative.findOne({ email });
+    const existing = await Representative.findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(400).json({ success: false, message: 'Representative with this email already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(normalizedPassword, 10);
+
+    let generatedPgirId;
+    try {
+      generatedPgirId = await generateRepresentativeId();
+    } catch (idError) {
+      console.warn('Representative ID generation fallback used:', idError.message);
+      generatedPgirId = generateFallbackRepresentativeId();
+    }
 
     const rep = await Representative.create({
-      name,
-      email,
+      pgirId: generatedPgirId,
+      name: normalizedName,
+      email: normalizedEmail,
       password: hashedPassword,
       mobile,
       college,
@@ -1043,13 +1082,21 @@ exports.addRepresentative = async (req, res) => {
     let emailSent = false;
     let emailError = null;
     if (rep.email) {
-      const emailResult = await sendRepresentativeCredentials({
+      // Do not block account creation on email transport issues.
+      sendRepresentativeCredentials({
         repName: rep.name,
         repEmail: rep.email,
-        password
-      });
-      emailSent = !!emailResult.success;
-      emailError = emailResult.success ? null : emailResult.error;
+        password: normalizedPassword
+      })
+        .then((emailResult) => {
+          if (!emailResult?.success) {
+            console.error('Representative credentials email failed:', emailResult?.error || 'Unknown email error');
+          }
+        })
+        .catch((mailErr) => {
+          console.error('Representative credentials email exception:', mailErr?.message || mailErr);
+        });
+      emailError = 'Credentials email queued in background';
     } else {
       emailError = 'Representative email not found';
     }
@@ -1059,6 +1106,7 @@ exports.addRepresentative = async (req, res) => {
       message: 'Representative added successfully',
       representative: {
         id: rep._id,
+        pgirId: rep.pgirId,
         name: rep.name,
         email: rep.email,
         college: rep.college,
@@ -1069,7 +1117,21 @@ exports.addRepresentative = async (req, res) => {
     });
   } catch (error) {
     console.error('Add representative error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+
+    if (error?.code === 11000) {
+      if (error?.keyPattern?.email) {
+        return res.status(409).json({ success: false, message: 'Representative with this email already exists' });
+      }
+      if (error?.keyPattern?.pgirId) {
+        return res.status(409).json({ success: false, message: 'Could not generate a unique representative ID. Please retry.' });
+      }
+      return res.status(409).json({ success: false, message: 'Duplicate representative data found. Please verify details.' });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: error?.message ? `Server error: ${error.message}` : 'Server error'
+    });
   }
 };
 

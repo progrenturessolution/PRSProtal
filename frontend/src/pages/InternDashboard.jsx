@@ -368,7 +368,7 @@ function InternDashboard() {
                       marginBottom: "5px",
                     }}
                   >
-                    Intern ID
+                    PIID
                   </div>
                   <div style={{ fontSize: "18px", fontWeight: 600 }}>
                     {user.internId}
@@ -615,6 +615,87 @@ function InternDashboard() {
                         }}
                       >
                         {user.duration || "Not Specified"}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "15px",
+                        background: "#f0f9ff",
+                        borderRadius: "10px",
+                        border: "1px solid #bfdbfe",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#0c4a6e",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        College Name
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {user.collegeName || "Not Specified"}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "15px",
+                        background: "#f0f9ff",
+                        borderRadius: "10px",
+                        border: "1px solid #bfdbfe",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#0c4a6e",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        Branch
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {user.branch || "Not Specified"}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "15px",
+                        background: "#f0f9ff",
+                        borderRadius: "10px",
+                        border: "1px solid #bfdbfe",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#0c4a6e",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        Year of Study
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {user.yearOfStudy || "Not Specified"}
                       </div>
                     </div>
                     <div

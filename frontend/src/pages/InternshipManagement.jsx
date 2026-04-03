@@ -17,6 +17,9 @@ function InternshipManagement() {
     mobile: "",
     domain: "",
     duration: "",
+    collegeName: "",
+    branch: "",
+    yearOfStudy: "",
     joiningDate: "",
     status: "",
   });
@@ -68,7 +71,10 @@ function InternshipManagement() {
           student.email?.toLowerCase().includes(query) ||
           student.internId?.toLowerCase().includes(query) ||
           student.mobile?.includes(query) ||
-          student.domain?.toLowerCase().includes(query),
+          student.domain?.toLowerCase().includes(query) ||
+          student.collegeName?.toLowerCase().includes(query) ||
+          student.branch?.toLowerCase().includes(query) ||
+          student.yearOfStudy?.toLowerCase().includes(query),
       );
     }
 
@@ -139,6 +145,9 @@ function InternshipManagement() {
       mobile: selectedStudent.mobile || "",
       domain: selectedStudent.domain || "",
       duration: selectedStudent.duration || "",
+      collegeName: selectedStudent.collegeName || "",
+      branch: selectedStudent.branch || "",
+      yearOfStudy: selectedStudent.yearOfStudy || "",
       joiningDate: selectedStudent.joiningDate
         ? selectedStudent.joiningDate.split("T")[0]
         : "",
@@ -155,6 +164,9 @@ function InternshipManagement() {
       mobile: "",
       domain: "",
       duration: "",
+      collegeName: "",
+      branch: "",
+      yearOfStudy: "",
       joiningDate: "",
       status: "",
     });
@@ -602,7 +614,7 @@ function InternshipManagement() {
                   opacity: 0.95,
                 }}
               >
-                <span>ID: {selectedStudent.internId}</span>
+                <span>PIID: {selectedStudent.internId}</span>
                 <span>•</span>
                 <span>Type: {selectedStudent.studentType}</span>
               </div>
@@ -678,6 +690,25 @@ function InternshipManagement() {
                           }}
                         >
                           {selectedStudent.email}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
+                          PIID
+                        </span>
+                        <span
+                          style={{
+                            fontWeight: "500",
+                            fontSize: "14px",
+                            color: "#111827",
+                          }}
+                        >
+                          {selectedStudent.internId}
                         </span>
                       </div>
                       <div
@@ -853,6 +884,63 @@ function InternshipManagement() {
                         }}
                       >
                         <span style={{ color: "#6b7280", fontSize: "14px" }}>
+                          College Name
+                        </span>
+                        <span
+                          style={{
+                            fontWeight: "500",
+                            fontSize: "14px",
+                            color: "#111827",
+                          }}
+                        >
+                          {selectedStudent.collegeName || "Not specified"}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
+                          Branch
+                        </span>
+                        <span
+                          style={{
+                            fontWeight: "500",
+                            fontSize: "14px",
+                            color: "#111827",
+                          }}
+                        >
+                          {selectedStudent.branch || "Not specified"}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
+                          Year of Study
+                        </span>
+                        <span
+                          style={{
+                            fontWeight: "500",
+                            fontSize: "14px",
+                            color: "#111827",
+                          }}
+                        >
+                          {selectedStudent.yearOfStudy || "Not specified"}
+                        </span>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
                           Joining Date
                         </span>
                         <span
@@ -940,6 +1028,81 @@ function InternshipManagement() {
                           type="text"
                           name="duration"
                           value={editForm.duration}
+                          onChange={handleInputChange}
+                          style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          style={{
+                            display: "block",
+                            color: "#6b7280",
+                            fontSize: "13px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          College Name
+                        </label>
+                        <input
+                          type="text"
+                          name="collegeName"
+                          value={editForm.collegeName}
+                          onChange={handleInputChange}
+                          style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          style={{
+                            display: "block",
+                            color: "#6b7280",
+                            fontSize: "13px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Branch
+                        </label>
+                        <input
+                          type="text"
+                          name="branch"
+                          value={editForm.branch}
+                          onChange={handleInputChange}
+                          style={{
+                            width: "100%",
+                            padding: "8px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "6px",
+                            fontSize: "14px",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          style={{
+                            display: "block",
+                            color: "#6b7280",
+                            fontSize: "13px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Year of Study
+                        </label>
+                        <input
+                          type="text"
+                          name="yearOfStudy"
+                          value={editForm.yearOfStudy}
                           onChange={handleInputChange}
                           style={{
                             width: "100%",

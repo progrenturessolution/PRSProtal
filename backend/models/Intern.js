@@ -50,6 +50,18 @@ const internSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  collegeName: {
+    type: String,
+    trim: true
+  },
+  branch: {
+    type: String,
+    trim: true
+  },
+  yearOfStudy: {
+    type: String,
+    trim: true
+  },
   // SMS Program specific fields
   gender: {
     type: String,
@@ -88,6 +100,54 @@ const internSchema = new mongoose.Schema({
     trim: true,
     default: 'Student'
   },
+  suggestedDomain: {
+    type: String,
+    trim: true
+  },
+  currentQualification: {
+    type: String,
+    trim: true
+  },
+  instituteName: {
+    type: String,
+    trim: true
+  },
+  instituteLocation: {
+    type: String,
+    trim: true
+  },
+  enrolmentDate: {
+    type: Date
+  },
+  enrolBatchMonth: {
+    type: String,
+    trim: true
+  },
+  totalFees: {
+    type: String,
+    trim: true
+  },
+  firstPaymentAmount: {
+    type: String,
+    trim: true
+  },
+  firstPaymentDate: {
+    type: Date
+  },
+  secondPaymentAmount: {
+    type: String,
+    trim: true
+  },
+  secondPaymentDate: {
+    type: Date
+  },
+  finalPaymentAmount: {
+    type: String,
+    trim: true
+  },
+  finalPaymentDate: {
+    type: Date
+  },
   // Document uploads (synced across profile & certificates)
   documents: {
     offerLetter: {
@@ -101,6 +161,11 @@ const internSchema = new mongoose.Schema({
       uploadedAt: Date
     },
     paymentReceipt: {
+      filename: String,
+      filepath: String,
+      uploadedAt: Date
+    },
+    smsProgramEnrollmentLetter: {
       filename: String,
       filepath: String,
       uploadedAt: Date

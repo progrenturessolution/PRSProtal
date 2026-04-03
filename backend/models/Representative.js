@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const representativeSchema = new mongoose.Schema({
+  pgirId: {
+    type: String,
+    trim: true,
+    unique: true,
+    sparse: true
+  },
   name: {
     type: String,
     required: true,

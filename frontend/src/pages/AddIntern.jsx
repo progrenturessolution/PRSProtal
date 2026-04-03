@@ -13,6 +13,9 @@ function AddIntern({ onInternAdded }) {
     customDomain: "",
     joiningDate: "",
     duration: "",
+    collegeName: "",
+    branch: "",
+    yearOfStudy: "",
     paymentDoneBy: "",
     dateOfPayment: "",
     transactionId: "",
@@ -73,9 +76,16 @@ function AddIntern({ onInternAdded }) {
         const selectedDomain =
           formData.domain === "Other" ? formData.customDomain : formData.domain;
 
-        if (!selectedDomain || !formData.joiningDate || !formData.duration) {
+        if (
+          !selectedDomain ||
+          !formData.joiningDate ||
+          !formData.duration ||
+          !formData.collegeName ||
+          !formData.branch ||
+          !formData.yearOfStudy
+        ) {
           setError(
-            "Please fill in all required fields: Domain, Joining Date, and Duration",
+            "Please fill all required internship fields: Domain, Joining Date, Duration, College Name, Branch, and Year of Study",
           );
           setLoading(false);
           return;
@@ -84,11 +94,17 @@ function AddIntern({ onInternAdded }) {
         submitData.domain = selectedDomain;
         submitData.joiningDate = formData.joiningDate;
         submitData.duration = formData.duration;
+        submitData.collegeName = formData.collegeName;
+        submitData.branch = formData.branch;
+        submitData.yearOfStudy = formData.yearOfStudy;
 
         console.log("Internship data being sent:", {
           domain: submitData.domain,
           joiningDate: submitData.joiningDate,
           duration: submitData.duration,
+          collegeName: submitData.collegeName,
+          branch: submitData.branch,
+          yearOfStudy: submitData.yearOfStudy,
         });
       } else if (studentType === "SMS Program") {
         submitData.paymentDoneBy = formData.paymentDoneBy;
@@ -145,10 +161,13 @@ function AddIntern({ onInternAdded }) {
           mobile: "",
           password: "",
           domain: "",
+          customDomain: "",
           joiningDate: "",
           endingDate: "",
           duration: "",
-          gender: "",
+          collegeName: "",
+          branch: "",
+          yearOfStudy: "",
           paymentDoneBy: "",
           dateOfPayment: "",
           transactionId: "",
@@ -369,6 +388,42 @@ function AddIntern({ onInternAdded }) {
                   value={formData.duration}
                   onChange={handleChange}
                   placeholder="e.g., 3 months, 6 months"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>College Name *</label>
+                <input
+                  type="text"
+                  name="collegeName"
+                  value={formData.collegeName}
+                  onChange={handleChange}
+                  placeholder="Enter college name"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Branch *</label>
+                <input
+                  type="text"
+                  name="branch"
+                  value={formData.branch}
+                  onChange={handleChange}
+                  placeholder="Enter branch"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Year of Study *</label>
+                <input
+                  type="text"
+                  name="yearOfStudy"
+                  value={formData.yearOfStudy}
+                  onChange={handleChange}
+                  placeholder="e.g., 2nd Year, Final Year"
                   required
                 />
               </div>
