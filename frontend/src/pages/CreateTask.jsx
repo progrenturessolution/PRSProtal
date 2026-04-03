@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { adminAPI } from "../services/api";
 import { taskAPI } from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function CreateTask({ onTaskCreated }) {
   const [interns, setInterns] = useState([]);
@@ -586,11 +587,13 @@ function CreateTask({ onTaskCreated }) {
           )}
 
           <button type="submit" className="submit-btn" disabled={loading}>
-            {loading
-              ? "Creating Task..."
-              : assignmentType === "team"
-                ? `Assign to ${selectedTeamMembers.length} Team Members`
-                : "Create & Assign Task"}
+            {loading ? (
+              <LoadingSpinner text="Creating Task..." inline size="sm" />
+            ) : assignmentType === "team" ? (
+              `Assign to ${selectedTeamMembers.length} Team Members`
+            ) : (
+              "Create & Assign Task"
+            )}
           </button>
         </form>
       </div>

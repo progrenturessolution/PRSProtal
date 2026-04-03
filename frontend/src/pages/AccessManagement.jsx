@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { adminAPI } from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function AccessManagement() {
   const [trainers, setTrainers] = useState([]);
@@ -512,7 +513,11 @@ function AccessManagement() {
                   fontWeight: 600,
                 }}
               >
-                {loading ? "Adding..." : "Add Trainer"}
+                {loading ? (
+                  <LoadingSpinner text="Adding..." inline size="sm" />
+                ) : (
+                  "Add Trainer"
+                )}
               </button>
               <button
                 type="button"

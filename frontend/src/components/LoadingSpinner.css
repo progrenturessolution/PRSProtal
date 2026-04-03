@@ -1,0 +1,59 @@
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.loading-spinner--inline {
+  display: inline-flex;
+  padding: 0;
+  gap: 8px;
+}
+
+.loading-spinner--sm .spinner-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.loading-spinner--md .spinner-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.loading-spinner--lg .spinner-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.spinner-icon {
+  animation: spin 0.8s linear infinite;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+/* Button with inline spinner */
+button .loading-spinner--inline .spinner-icon {
+  width: 16px;
+  height: 16px;
+}
+
+button .loading-spinner--inline .spinner-text {
+  font-size: 14px;
+}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { representativeAPI } from '../services/api';
 import logo from '../assets/logo.png';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 /* ─────────────── Sidebar ─────────────── */
 function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
@@ -93,6 +94,9 @@ function RepresentativeDashboard() {
     dateOfPayment: '',
     transactionId: '',
     paymentAmount: '',
+    completedFees: '',
+    pendingFees: '',
+    lastPaymentDate: '',
     currentDesignation: ''
   });
   const [studentFormLoading, setStudentFormLoading] = useState(false);
@@ -109,6 +113,7 @@ function RepresentativeDashboard() {
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [filters, setFilters] = useState({ name: '', mobile: '', dateFrom: '', dateTo: '' });
   const [deleteSuccess, setDeleteSuccess] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -257,6 +262,9 @@ function RepresentativeDashboard() {
           dateOfPayment: '',
           transactionId: '',
           paymentAmount: '',
+          completedFees: '',
+          pendingFees: '',
+          lastPaymentDate: '',
           currentDesignation: ''
         });
         fetchStudents();
@@ -303,6 +311,10 @@ function RepresentativeDashboard() {
     }
   };
 
+  const handleViewStudentDetails = (student) => {
+    setSelectedStudent(student);
+  };
+
   if (loading) return <div className="loading">Loading...</div>;
 
   const totalStudents = studentStats.totalStudents || students.length;
@@ -310,6 +322,18 @@ function RepresentativeDashboard() {
   const monthlyStudents = studentStats.monthlyStudents || 0;
   const internshipStudents = studentStats.byType?.internship || 0;
   const smsStudents = studentStats.byType?.smsProgram || 0;
+  const profileName = profile?.name || user?.name || 'Representative';
+  const profileInitials = profileName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase() || 'RP';
+  const profileEmail = profile?.email || 'Not available';
+  const profileMobile = profile?.mobile || 'Not available';
+  const profileDesignation = profile?.designation || 'Representative';
+  const profileSheetLink = profile?.sheetLinks || '';
 
   return (
     <div className="dashboard">
@@ -444,118 +468,188 @@ function RepresentativeDashboard() {
                   <h1>My Profile</h1>
                   <p className="header-subtitle">View and update your information</p>
                 </div>
-                {!editMode && (
-                  <div className="header-right">
-                    <button className="premium-btn-secondary" onClick={startEdit}>Edit Profile</button>
-                  </div>
-                )}
               </div>
 
               {editMode ? (
-                <div className="premium-card">
-                  <div className="premium-card-header"><h2 style ={{color : '#324158'}}>Edit Profile</h2></div>
-                  <form onSubmit={handleEditSubmit} style={{ padding: '24px' }}>
-                    {editError && <div className="error-message" style={{ marginBottom: '16px' }}>{editError}</div>}
-                    {editSuccess && <div className="success-message" style={{ marginBottom: '16px' }}>{editSuccess}</div>}
-
-                    <div className="info-banner" style={{ marginBottom: '20px' }}>
-                      <strong>Note:</strong> Name, designation, sheet links, and certificates are managed by the admin and cannot be edited here.
+                <div className="rep-profile-shell">
+                  <div className="premium-card rep-profile-edit-card">
+                    <div className="premium-card-header rep-profile-edit-header">
+                      <h2>Edit Your Profile</h2>
                     </div>
+                    <form onSubmit={handleEditSubmit} className="rep-profile-edit-form">
+                      {editError && <div className="error-message" style={{ marginBottom: '16px' }}>{editError}</div>}
+                      {editSuccess && <div className="success-message" style={{ marginBottom: '16px' }}>{editSuccess}</div>}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                      <div className="form-group">
-                        <label>College</label>
-                        <input type="text" name="college" value={editData.college} onChange={handleEditChange} placeholder="College name" />
+                      <div className="rep-profile-note">
+                        <strong>Note:</strong> Name, designation and sheet links are managed by admin only.
                       </div>
-                      <div className="form-group">
-                        <label>Course</label>
-                        <input type="text" name="course" value={editData.course} onChange={handleEditChange} placeholder="e.g. B.Tech" />
-                      </div>
-                      <div className="form-group">
-                        <label>Department</label>
-                        <input type="text" name="department" value={editData.department} onChange={handleEditChange} placeholder="e.g. CSE" />
-                      </div>
-                      <div className="form-group">
-                        <label>Year</label>
-                        <select name="year" value={editData.year} onChange={handleEditChange} style={{ width: '100%' }}>
-                          <option value="">Select Year</option>
-                          <option>1st Year</option>
-                          <option>2nd Year</option>
-                          <option>3rd Year</option>
-                          <option>4th Year</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Mobile Number</label>
-                        <input type="tel" name="mobile" value={editData.mobile} onChange={handleEditChange} placeholder="Mobile number" />
-                      </div>
-                      <div className="form-group">
-                        <label>Email Address</label>
-                        <input type="email" name="email" value={editData.email} onChange={handleEditChange} placeholder="Email address" />
-                      </div>
-                      <div className="form-group">
-                        <label>UPI ID</label>
-                        <input type="text" name="upiId" value={editData.upiId} onChange={handleEditChange} placeholder="e.g. name@upi" />
-                      </div>
-                      <div className="form-group">
-                        <label>New Password (optional)</label>
-                        <input type="password" name="password" value={editData.password} onChange={handleEditChange} placeholder="Leave blank to keep current" />
-                      </div>
-                    </div>
 
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                      <button type="submit" disabled={editLoading}
-                        style={{
-                          padding: '10px 28px', borderRadius: '8px', border: 'none',
-                          background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                          color: '#fff', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
-                        }}
-                      >
-                        {editLoading ? 'Saving...' : 'Save Changes'}
-                      </button>
-                      <button type="button" onClick={() => setEditMode(false)}
-                        style={{
-                          padding: '10px 24px', borderRadius: '8px',
-                          border: '1px solid #d1d5db', background: '#fff',
-                          color: '#6b7280', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
+                      <div className="rep-profile-form-section">
+                        <h3>Academic Information</h3>
+                        <div className="rep-profile-form-grid">
+                          <div className="form-group">
+                            <label>College</label>
+                            <input type="text" name="college" value={editData.college} onChange={handleEditChange} placeholder="Enter college name" />
+                          </div>
+                          <div className="form-group">
+                            <label>Course</label>
+                            <input type="text" name="course" value={editData.course} onChange={handleEditChange} placeholder="e.g. B.Tech" />
+                          </div>
+                          <div className="form-group">
+                            <label>Department</label>
+                            <input type="text" name="department" value={editData.department} onChange={handleEditChange} placeholder="e.g. CSE" />
+                          </div>
+                          <div className="form-group">
+                            <label>Year</label>
+                            <select name="year" value={editData.year} onChange={handleEditChange}>
+                              <option value="">Select Year</option>
+                              <option>1st Year</option>
+                              <option>2nd Year</option>
+                              <option>3rd Year</option>
+                              <option>4th Year</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rep-profile-form-section">
+                        <h3>Contact Information</h3>
+                        <div className="rep-profile-form-grid">
+                          <div className="form-group">
+                            <label>Mobile Number</label>
+                            <input type="tel" name="mobile" value={editData.mobile} onChange={handleEditChange} placeholder="Mobile number" />
+                          </div>
+                          <div className="form-group">
+                            <label>Email Address</label>
+                            <input type="email" name="email" value={editData.email} onChange={handleEditChange} placeholder="Email address" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rep-profile-form-section">
+                        <h3>Payment and Security</h3>
+                        <div className="rep-profile-form-grid">
+                          <div className="form-group">
+                            <label>UPI ID</label>
+                            <input type="text" name="upiId" value={editData.upiId} onChange={handleEditChange} placeholder="name@upi" />
+                          </div>
+                          <div className="form-group">
+                            <label>New Password (optional)</label>
+                            <input type="password" name="password" value={editData.password} onChange={handleEditChange} placeholder="Leave blank to keep current" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rep-profile-actions">
+                        <button type="submit" className="rep-profile-btn rep-profile-btn-primary" disabled={editLoading}>
+                          {editLoading ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button type="button" className="rep-profile-btn rep-profile-btn-ghost" onClick={() => setEditMode(false)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               ) : (
-                <div className="premium-card">
-                  <div className="premium-card-header"><h2>Personal Information</h2></div>
-                  <div className="profile-info-grid">
-                    {[
-                      { label: 'Full Name', value: profile?.name, locked: true },
-                      { label: 'Email', value: profile?.email },
-                      { label: 'Mobile', value: profile?.mobile || '—' },
-                      { label: 'College', value: profile?.college || '—' },
-                      { label: 'Course', value: profile?.course || '—' },
-                      { label: 'Department', value: profile?.department || '—' },
-                      { label: 'Year', value: profile?.year || '—' },
-                      { label: 'UPI ID', value: profile?.upiId || '—' },
-                      { label: 'Designation', value: profile?.designation, locked: true },
-                      { label: 'Sheet Links', value: profile?.sheetLinks || '—', locked: true }
-                    ].map(field => (
-                      <div key={field.label} className="profile-field">
-                        <label>
-                          {field.label}
-                          {field.locked && (
-                            <span style={{
-                              marginLeft: '6px', fontSize: '11px', padding: '1px 6px',
-                              borderRadius: '4px', background: '#f3f4f6', color: '#9ca3af'
-                            }}>
-                              read-only
-                            </span>
-                          )}
-                        </label>
-                        <div className="field-value">{field.value}</div>
+                <div className="rep-profile-shell">
+                  <section className="rep-profile-hero">
+                    <div className="rep-profile-hero-glow" />
+                    <div className="rep-profile-hero-main">
+                      <div className="rep-profile-avatar">{profileInitials}</div>
+                      <div className="rep-profile-identity">
+                        <h2>{profileName}</h2>
+                        <p>{profileDesignation}</p>
+                        <div className="rep-profile-contact-row">
+                          <span>{profileEmail}</span>
+                          <span>{profileMobile}</span>
+                        </div>
                       </div>
-                    ))}
+                    </div>
+                    <div className="rep-profile-hero-stats">
+                      <div className="rep-mini-stat">
+                        <span className="value">{totalStudents}</span>
+                        <span className="label">Total Students</span>
+                      </div>
+                      <div className="rep-mini-stat">
+                        <span className="value">{monthlyStudents}</span>
+                        <span className="label">This Month</span>
+                      </div>
+                      <button className="rep-profile-btn rep-profile-btn-light" onClick={startEdit}>Edit Profile</button>
+                    </div>
+                  </section>
+
+                  <div className="rep-profile-section-grid">
+                    <article className="rep-profile-card tone-sky">
+                      <header>
+                        <h3>Personal Information</h3>
+                      </header>
+                      <div className="rep-profile-data-grid">
+                        <div className="rep-profile-data-item">
+                          <label>Full Name</label>
+                          <p>{profileName}</p>
+                          <span className="rep-readonly-chip">Read only</span>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Email Address</label>
+                          <p>{profileEmail}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Mobile Number</label>
+                          <p>{profileMobile}</p>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="rep-profile-card tone-amber">
+                      <header>
+                        <h3>Academic Information</h3>
+                      </header>
+                      <div className="rep-profile-data-grid">
+                        <div className="rep-profile-data-item">
+                          <label>College</label>
+                          <p>{profile?.college || 'Not provided'}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Course</label>
+                          <p>{profile?.course || 'Not provided'}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Department</label>
+                          <p>{profile?.department || 'Not provided'}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Year</label>
+                          <p>{profile?.year || 'Not provided'}</p>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="rep-profile-card tone-emerald">
+                      <header>
+                        <h3>Additional Information</h3>
+                      </header>
+                      <div className="rep-profile-data-grid">
+                        <div className="rep-profile-data-item">
+                          <label>UPI ID</label>
+                          <p>{profile?.upiId || 'Not provided'}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Designation</label>
+                          <p>{profileDesignation}</p>
+                          <span className="rep-readonly-chip">Read only</span>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Sheet Link</label>
+                          {profileSheetLink ? (
+                            <a href={profileSheetLink} target="_blank" rel="noreferrer" className="rep-sheet-link">Open sheet link</a>
+                          ) : (
+                            <p>Not available</p>
+                          )}
+                          <span className="rep-readonly-chip">Read only</span>
+                        </div>
+                      </div>
+                    </article>
                   </div>
                 </div>
               )}
@@ -659,6 +753,18 @@ function RepresentativeDashboard() {
                           <input type="text" name="paymentAmount" value={studentForm.paymentAmount} onChange={handleStudentChange} placeholder="e.g. 5000" />
                         </div>
                         <div className="form-group">
+                          <label>Completed Fees</label>
+                          <input type="text" name="completedFees" value={studentForm.completedFees} onChange={handleStudentChange} placeholder="e.g. 3000" />
+                        </div>
+                        <div className="form-group">
+                          <label>Pending Fees</label>
+                          <input type="text" name="pendingFees" value={studentForm.pendingFees} onChange={handleStudentChange} placeholder="e.g. 2000" />
+                        </div>
+                        <div className="form-group">
+                          <label>Last Payment Date</label>
+                          <input type="date" name="lastPaymentDate" value={studentForm.lastPaymentDate} onChange={handleStudentChange} />
+                        </div>
+                        <div className="form-group">
                           <label>Current Designation</label>
                           <input type="text" name="currentDesignation" value={studentForm.currentDesignation} onChange={handleStudentChange} placeholder="e.g. Student" />
                         </div>
@@ -674,7 +780,11 @@ function RepresentativeDashboard() {
                         color: '#fff', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
                       }}
                     >
-                      {studentFormLoading ? 'Adding...' : 'Add Student'}
+                      {studentFormLoading ? (
+                        <LoadingSpinner text="Adding..." inline size="sm" />
+                      ) : (
+                        'Add Student'
+                      )}
                     </button>
                     <button type="button" onClick={() => setActiveTab('my-students')}
                       style={{
@@ -820,6 +930,7 @@ function RepresentativeDashboard() {
                             <th>Mobile</th>
                             <th>Email</th>
                             <th>Type</th>
+                            <th>Added By</th>
                             <th>Domain / Payment</th>
                             <th>Added On</th>
                             <th>Action</th>
@@ -850,6 +961,27 @@ function RepresentativeDashboard() {
                                   </span>
                                 </td>
                                 <td>
+                                  <span
+                                    style={{
+                                      padding: "4px 10px",
+                                      background: student.addedByRepresentative
+                                        ? "#fef3c7"
+                                        : "#dbeafe",
+                                      color: student.addedByRepresentative
+                                        ? "#b45309"
+                                        : "#1e40af",
+                                      borderRadius: "6px",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    {student.addedByRepresentative
+                                      ? `Added by ${student.addedByRepresentative.name}`
+                                      : "Added by Admin"}
+                                  </span>
+                                </td>
+                                <td>
                                   {student.studentType === 'SMS Program'
                                     ? `₹${student.paymentAmount || 0}`
                                     : (student.domain || '—')}
@@ -858,13 +990,22 @@ function RepresentativeDashboard() {
                                   {student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '—'}
                                 </td>
                                 <td>
-                                  <button
-                                    onClick={() => handleDeleteStudent(student._id, student.name)}
-                                    className="table-action-btn"
-                                    style={{ background: '#ef4444' }}
-                                  >
-                                    Delete
-                                  </button>
+                                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    <button
+                                      onClick={() => handleViewStudentDetails(student)}
+                                      className="table-action-btn"
+                                      style={{ background: '#324158' }}
+                                    >
+                                      View Details
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteStudent(student._id, student.name)}
+                                      className="table-action-btn"
+                                      style={{ background: '#ef4444' }}
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );
@@ -876,6 +1017,155 @@ function RepresentativeDashboard() {
                 )}
               </div>
             </>
+          )}
+
+          {selectedStudent && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(15, 23, 42, 0.58)',
+                zIndex: 1200,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '16px'
+              }}
+              onClick={() => setSelectedStudent(null)}
+            >
+              <div
+                style={{
+                  width: 'min(760px, 100%)',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                  background: '#fff',
+                  borderRadius: '18px',
+                  boxShadow: '0 30px 80px rgba(15, 23, 42, 0.35)'
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ padding: '22px 24px', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', color: '#fff', position: 'relative' }}>
+                  <button
+                    onClick={() => setSelectedStudent(null)}
+                    style={{
+                      position: 'absolute',
+                      top: '16px',
+                      right: '16px',
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: 'rgba(255,255,255,0.16)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      fontSize: '18px'
+                    }}
+                  >
+                    ✕
+                  </button>
+                  <h2 style={{ margin: '0 0 8px 0' }}>{selectedStudent.name}</h2>
+                  <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: '14px', opacity: 0.95 }}>
+                    <span>ID: {selectedStudent.internId}</span>
+                    <span>•</span>
+                    <span>{selectedStudent.studentType}</span>
+                  </div>
+                </div>
+
+                <div style={{ padding: '24px' }}>
+                  <div style={{ display: 'grid', gap: '20px' }}>
+                    <section>
+                      <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Student Information</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                          <div style={{ color: '#64748b', fontSize: '13px' }}>Email</div>
+                          <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.email || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                          <div style={{ color: '#64748b', fontSize: '13px' }}>Mobile</div>
+                          <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.mobile || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                          <div style={{ color: '#64748b', fontSize: '13px' }}>Designation</div>
+                          <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.currentDesignation || 'N/A'}</div>
+                        </div>
+                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                          <div style={{ color: '#64748b', fontSize: '13px' }}>Added On</div>
+                          <div style={{ color: '#0f172a', fontWeight: '600' }}>
+                            {selectedStudent.createdAt ? new Date(selectedStudent.createdAt).toLocaleDateString('en-IN') : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    {selectedStudent.studentType === 'SMS Program' ? (
+                      <section>
+                        <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Payment & Fees</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Payment Done By</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.paymentDoneBy || 'N/A'}</div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Transaction ID</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600', fontFamily: 'monospace' }}>{selectedStudent.transactionId || 'N/A'}</div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Payment Amount</div>
+                            <div style={{ color: '#059669', fontWeight: '700' }}>{selectedStudent.paymentAmount ? `₹${selectedStudent.paymentAmount}` : '₹0'}</div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Completed Fees</div>
+                            <div style={{ color: '#059669', fontWeight: '700' }}>{selectedStudent.completedFees ? `₹${selectedStudent.completedFees}` : '₹0'}</div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Pending Fees</div>
+                            <div style={{ color: '#d97706', fontWeight: '700' }}>{selectedStudent.pendingFees ? `₹${selectedStudent.pendingFees}` : '₹0'}</div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Payment Date</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
+                              {selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString('en-IN') : 'N/A'}
+                            </div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Last Payment Date</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
+                              {selectedStudent.lastPaymentDate ? new Date(selectedStudent.lastPaymentDate).toLocaleDateString('en-IN') : 'N/A'}
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+                    ) : (
+                      <section>
+                        <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Internship Details</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Domain</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.domain || 'N/A'}</div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Joining Date</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
+                              {selectedStudent.joiningDate ? new Date(selectedStudent.joiningDate).toLocaleDateString('en-IN') : 'N/A'}
+                            </div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Ending Date</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
+                              {selectedStudent.endingDate ? new Date(selectedStudent.endingDate).toLocaleDateString('en-IN') : 'N/A'}
+                            </div>
+                          </div>
+                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ color: '#64748b', fontSize: '13px' }}>Duration</div>
+                            <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.duration || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </section>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ─── PERFORMANCE ─── */}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { representativeAPI } from '../services/api';
+import LoadingSpinner from './LoadingSpinner';
 
 function RepresentativeLogin() {
   const navigate = useNavigate();
@@ -85,7 +86,11 @@ function RepresentativeLogin() {
           </div>
 
           <button type="submit" className="btn-submit" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <LoadingSpinner text="Logging in..." inline size="sm" />
+            ) : (
+              'Login'
+            )}
           </button>
 
           <div style={{ textAlign: 'center', marginTop: '16px' }}>

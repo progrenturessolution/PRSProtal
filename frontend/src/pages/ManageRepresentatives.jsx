@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { adminRepAPI } from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function ManageRepresentatives() {
   const [activeTab, setActiveTab] = useState("list");
@@ -596,7 +597,11 @@ function ManageRepresentatives() {
                   cursor: "pointer",
                 }}
               >
-                {submitting ? "Adding..." : "Add Representative"}
+                {submitting ? (
+                  <LoadingSpinner text="Adding..." inline size="sm" />
+                ) : (
+                  "Add Representative"
+                )}
               </button>
               <button
                 type="button"
@@ -704,13 +709,16 @@ function ManageRepresentatives() {
                       <th>Type</th>
                       <th>Email</th>
                       <th>Mobile</th>
+                      <th>Payment</th>
+                      <th>Completed Fees</th>
+                      <th>Pending Fees</th>
                       <th>Added On</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedRepDetails.recentStudents.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: "center", padding: "18px", color: "#6b7280" }}>
+                        <td colSpan={9} style={{ textAlign: "center", padding: "18px", color: "#6b7280" }}>
                           No students added yet.
                         </td>
                       </tr>
@@ -722,6 +730,9 @@ function ManageRepresentatives() {
                           <td>{student.studentType}</td>
                           <td>{student.email}</td>
                           <td>{student.mobile || "—"}</td>
+                          <td>{student.paymentAmount ? `₹${student.paymentAmount}` : "₹0"}</td>
+                          <td>{student.completedFees ? `₹${student.completedFees}` : "₹0"}</td>
+                          <td>{student.pendingFees ? `₹${student.pendingFees}` : "₹0"}</td>
                           <td>{new Date(student.createdAt).toLocaleDateString("en-IN")}</td>
                         </tr>
                       ))

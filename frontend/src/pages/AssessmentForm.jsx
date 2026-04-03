@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { trainerAPI } from "../services/api";
 import TrainerSidebar from "../components/TrainerSidebar";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function AssessmentForm() {
   const { studentId } = useParams();
@@ -148,7 +149,11 @@ function AssessmentForm() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? "Saving..." : "Save Assessment Record"}
+              {loading ? (
+                <LoadingSpinner text="Saving..." inline size="sm" />
+              ) : (
+                "Save Assessment Record"
+              )}
             </button>
           </form>
         </div>

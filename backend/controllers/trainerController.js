@@ -8,6 +8,7 @@ const Assessment = require('../models/Assessment');
 const Training = require('../models/Training');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
+const { sendInterviewResultEmail, sendAptitudeResultEmail, sendAssessmentResultEmail, sendTrainingResultEmail } = require('../config/emailService');
 
 // Trainer Login
 exports.trainerLogin = async (req, res) => {
@@ -117,6 +118,9 @@ exports.addInterview = async (req, res) => {
       });
     }
 
+    // Get trainer details for email
+    const trainer = await Trainer.findById(trainerId);
+
     const interview = new Interview({
       studentId,
       trainerId,
@@ -133,9 +137,24 @@ exports.addInterview = async (req, res) => {
 
     await interview.save();
 
+    // Send email to student with interview results
+    await sendInterviewResultEmail({
+      studentName: student.name,
+      studentEmail: student.email,
+      trainerName: trainer.name,
+      interviewType,
+      attemptNumber,
+      communicationLevel,
+      confidenceLevel,
+      clarityLevel,
+      overallLevel,
+      levelCrossed,
+      remarks
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Interview record added successfully',
+      message: 'Interview record added successfully and email sent to student',
       interview
     });
 
@@ -163,6 +182,9 @@ exports.addAptitude = async (req, res) => {
       });
     }
 
+    // Get trainer details for email
+    const trainer = await Trainer.findById(trainerId);
+
     const aptitude = new Aptitude({
       studentId,
       trainerId,
@@ -174,9 +196,20 @@ exports.addAptitude = async (req, res) => {
 
     await aptitude.save();
 
+    // Send email to student with aptitude results
+    await sendAptitudeResultEmail({
+      studentName: student.name,
+      studentEmail: student.email,
+      trainerName: trainer.name,
+      roundNumber,
+      score,
+      result,
+      remarks
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Aptitude record added successfully',
+      message: 'Aptitude record added successfully and email sent to student',
       aptitude
     });
 
@@ -204,6 +237,9 @@ exports.addAssessment = async (req, res) => {
       });
     }
 
+    // Get trainer details for email
+    const trainer = await Trainer.findById(trainerId);
+
     const assessment = new Assessment({
       studentId,
       trainerId,
@@ -215,9 +251,20 @@ exports.addAssessment = async (req, res) => {
 
     await assessment.save();
 
+    // Send email to student with assessment results
+    await sendAssessmentResultEmail({
+      studentName: student.name,
+      studentEmail: student.email,
+      trainerName: trainer.name,
+      assessmentType,
+      score,
+      status,
+      feedback
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Assessment record added successfully',
+      message: 'Assessment record added successfully and email sent to student',
       assessment
     });
 
@@ -245,6 +292,9 @@ exports.addTraining = async (req, res) => {
       });
     }
 
+    // Get trainer details for email
+    const trainer = await Trainer.findById(trainerId);
+
     const training = new Training({
       studentId,
       trainerId,
@@ -257,9 +307,21 @@ exports.addTraining = async (req, res) => {
 
     await training.save();
 
+    // Send email to student with training session report
+    await sendTrainingResultEmail({
+      studentName: student.name,
+      studentEmail: student.email,
+      trainerName: trainer.name,
+      date,
+      attendance,
+      skillImprovementNote,
+      engagementLevel,
+      trainerRemarks
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Training record added successfully',
+      message: 'Training record added successfully and email sent to student',
       training
     });
 

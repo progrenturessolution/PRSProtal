@@ -383,6 +383,7 @@ function InternshipManagement() {
                   <th>Joining Date</th>
                   <th>Duration</th>
                   <th>Status</th>
+                  <th>Added By</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -412,6 +413,27 @@ function InternshipManagement() {
                           ? student.status.charAt(0).toUpperCase() +
                             student.status.slice(1)
                           : "N/A"}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "4px 10px",
+                          background: student.addedByRepresentative
+                            ? "#fef3c7"
+                            : "#dbeafe",
+                          color: student.addedByRepresentative
+                            ? "#b45309"
+                            : "#1e40af",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {student.addedByRepresentative
+                          ? `Added by ${student.addedByRepresentative.name}`
+                          : "Added by Admin"}
                       </span>
                     </td>
                     <td style={{ position: "relative" }}>

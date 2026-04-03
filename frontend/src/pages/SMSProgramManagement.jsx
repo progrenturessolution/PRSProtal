@@ -18,7 +18,10 @@ function SMSProgramManagement() {
     paymentDoneBy: '',
     transactionId: '',
     paymentAmount: '',
+    completedFees: '',
+    pendingFees: '',
     dateOfPayment: '',
+    lastPaymentDate: '',
     status: ''
   });
 
@@ -146,7 +149,10 @@ function SMSProgramManagement() {
       paymentDoneBy: selectedStudent.paymentDoneBy || '',
       transactionId: selectedStudent.transactionId || '',
       paymentAmount: selectedStudent.paymentAmount || '',
+      completedFees: selectedStudent.completedFees || '',
+      pendingFees: selectedStudent.pendingFees || '',
       dateOfPayment: selectedStudent.dateOfPayment ? selectedStudent.dateOfPayment.split('T')[0] : '',
+      lastPaymentDate: selectedStudent.lastPaymentDate ? selectedStudent.lastPaymentDate.split('T')[0] : '',
       status: selectedStudent.status || 'active'
     });
     setIsEditing(true);
@@ -162,7 +168,10 @@ function SMSProgramManagement() {
       paymentDoneBy: '',
       transactionId: '',
       paymentAmount: '',
+      completedFees: '',
+      pendingFees: '',
       dateOfPayment: '',
+      lastPaymentDate: '',
       status: ''
     });
   };
@@ -933,9 +942,23 @@ function SMSProgramManagement() {
                         <span style={{ fontWeight: '700', fontSize: '14px', color: '#059669' }}>{selectedStudent.paymentAmount ? `₹${selectedStudent.paymentAmount}` : 'N/A'}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Completed Fees</span>
+                        <span style={{ fontWeight: '700', fontSize: '14px', color: '#059669' }}>{selectedStudent.completedFees ? `₹${selectedStudent.completedFees}` : '₹0'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Pending Fees</span>
+                        <span style={{ fontWeight: '700', fontSize: '14px', color: '#d97706' }}>{selectedStudent.pendingFees ? `₹${selectedStudent.pendingFees}` : '₹0'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment Date</span>
                         <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
                           {selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString() : 'N/A'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Last Payment Date</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
+                          {selectedStudent.lastPaymentDate ? new Date(selectedStudent.lastPaymentDate).toLocaleDateString() : 'N/A'}
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1004,11 +1027,61 @@ function SMSProgramManagement() {
                         />
                       </div>
                       <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Completed Fees (₹)</label>
+                        <input 
+                          type="number" 
+                          name="completedFees" 
+                          value={editForm.completedFees} 
+                          onChange={handleInputChange}
+                          placeholder="e.g. 3000"
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Pending Fees (₹)</label>
+                        <input 
+                          type="number" 
+                          name="pendingFees" 
+                          value={editForm.pendingFees} 
+                          onChange={handleInputChange}
+                          placeholder="e.g. 2000"
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
                         <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Payment Date</label>
                         <input 
                           type="date" 
                           name="dateOfPayment" 
                           value={editForm.dateOfPayment} 
+                          onChange={handleInputChange}
+                          style={{ 
+                            width: '100%', 
+                            padding: '8px', 
+                            border: '1px solid #d1d5db', 
+                            borderRadius: '6px',
+                            fontSize: '14px'
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Last Payment Date</label>
+                        <input 
+                          type="date" 
+                          name="lastPaymentDate" 
+                          value={editForm.lastPaymentDate} 
                           onChange={handleInputChange}
                           style={{ 
                             width: '100%', 

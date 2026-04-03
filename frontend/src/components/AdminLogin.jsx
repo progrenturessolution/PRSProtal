@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
+import LoadingSpinner from './LoadingSpinner';
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -124,7 +125,11 @@ function AdminLogin() {
             className="submit-btn"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <LoadingSpinner text="Logging in..." inline size="sm" />
+            ) : (
+              'Login'
+            )}
           </button>
 
           <Link to="/" className="back-btn">

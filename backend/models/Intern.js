@@ -70,6 +70,19 @@ const internSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  completedFees: {
+    type: String,
+    trim: true,
+    default: '0'
+  },
+  pendingFees: {
+    type: String,
+    trim: true,
+    default: '0'
+  },
+  lastPaymentDate: {
+    type: Date
+  },
   currentDesignation: {
     type: String,
     trim: true,

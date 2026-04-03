@@ -7,12 +7,20 @@ const Intern = require('../models/Intern');
 exports.adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const blockedAdminEmails = new Set(['admin@progrentures.com']);
 
     // Validation
     if (!email || !password) {
       return res.status(400).json({ 
         success: false, 
         message: 'Please provide email and password' 
+      });
+    }
+
+    if (blockedAdminEmails.has(String(email).toLowerCase().trim())) {
+      return res.status(403).json({
+        success: false,
+        message: 'This admin account is disabled.'
       });
     }
 

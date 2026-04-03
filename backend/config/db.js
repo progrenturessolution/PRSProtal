@@ -6,47 +6,50 @@ const connectDB = async () => {
       family: 4 // Force IPv4
     });
     console.log('MongoDB Connected Successfully to database: progrentures');
-    
-    // Create dummy admin after connection
-    await createDummyAdmin();
+
+    // Create or sync default admin accounts after connection
+    await syncDefaultAdmins();
   } catch (error) {
     console.error('MongoDB Connection Error:', error.message);
     process.exit(1);
   }
 };
 
-const createDummyAdmin = async () => {
+const syncDefaultAdmins = async () => {
   try {
     const Admin = require('../models/Admin');
     const bcrypt = require('bcryptjs');
-    
-    // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email: 'admin@progrentures.com' });
-    
-    if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      
-      const admin = new Admin({
-        email: 'admin@progrentures.com',
-        password: hashedPassword,
-        role: 'admin'
-      });
-      
-      await admin.save();
-      console.log('✅ Dummy admin created successfully');
-      console.log('   Email: admin@progrentures.com');
-      console.log('   Password: admin123');
-    } else {
-      // Ensure existing admin has role field
-      if (!existingAdmin.role) {
-        existingAdmin.role = 'admin';
-        await existingAdmin.save();
-        console.log('✅ Admin role updated');
+
+    const defaultAdmins = [
+      {
+        email: 'aniruddharaut2004@gmail.com',
+        password: 'Raut@2004'
+      },
+      {
+        email: 'rohanghatol4@gamil.com',
+        password: 'Rohan@2004'
       }
-      console.log('✅ Admin already exists with role:', existingAdmin.role);
+    ];
+
+    for (const adminConfig of defaultAdmins) {
+      const hashedPassword = await bcrypt.hash(adminConfig.password, 10);
+
+      const admin = await Admin.findOneAndUpdate(
+        { email: adminConfig.email },
+        {
+          $set: {
+            email: adminConfig.email,
+            password: hashedPassword,
+            role: 'admin'
+          }
+        },
+        { upsert: true, new: true, runValidators: true }
+      );
+
+      console.log(`✅ Admin ready: ${admin.email}`);
     }
   } catch (error) {
-    console.error('Error creating dummy admin:', error.message);
+    console.error('Error syncing default admins:', error.message);
   }
 };
 

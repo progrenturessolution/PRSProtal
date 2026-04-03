@@ -6,29 +6,50 @@ const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification } = require('../config/emailService');
 
-// Generate unique Intern ID based on type
-const generateInternId = async (studentType) => {
-  const year = new Date().getFullYear();
-  const prefix = studentType === 'SMS Program' ? `PSMS${year}` : `PIID${year}`;
-
-  const lastIntern = await Intern.findOne({
-    internId: { $regex: `^${prefix}` }
-  })
-    .sort({ internId: -1 })
-    .select('internId');
-
-  let nextNumber = 1;
-  if (lastIntern?.internId) {
-    const tail = Number(lastIntern.internId.slice(prefix.length));
-    if (Number.isFinite(tail)) {
-      nextNumber = tail + 1;
-    }
-  }
-
-  let internId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+// Generate unique Intern ID based on type with new format
+// Format: PRS/MAR26004/DJS (PRS = internship, PSMS = SMS program)
+// MAR = month, 26 = year, 004 = count in month, DJS = first 3 letters of name
+const generateInternId = async (studentType, internName) => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  // Get month abbreviation
+  const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 
+                      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  const monthAbbr = monthNames[currentMonth];
+  
+  // Get last 2 digits of year
+  const yearSuffix = String(currentYear).slice(-2);
+  
+  // Get first 3 letters of name (uppercase)
+  const nameAbbr = (internName || 'XXX').substring(0, 3).toUpperCase();
+  
+  // Determine prefix
+  const prefix = studentType === 'SMS Program' ? 'PSMS' : 'PRS';
+  
+  // Get the start and end of current month
+  const monthStart = new Date(currentYear, currentMonth, 1);
+  const monthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999);
+  
+  // Count interns added in current month with same studentType
+  const count = await Intern.countDocuments({
+    studentType: studentType,
+    createdAt: { $gte: monthStart, $lte: monthEnd }
+  });
+  
+  const nextNumber = count + 1;
+  const numberPart = String(nextNumber).padStart(3, '0');
+  
+  // Build the ID
+  let internId = `${prefix}/${monthAbbr}${yearSuffix}${numberPart}/${nameAbbr}`;
+  
+  // Check if this ID already exists (unlikely but possible)
+  let counter = 1;
   while (await Intern.exists({ internId })) {
-    nextNumber += 1;
-    internId = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+    const uniqueNumber = String(nextNumber + counter).padStart(3, '0');
+    internId = `${prefix}/${monthAbbr}${yearSuffix}${uniqueNumber}/${nameAbbr}`;
+    counter++;
   }
 
   return internId;
@@ -53,6 +74,9 @@ exports.addIntern = async (req, res) => {
       dateOfPayment,
       transactionId,
       paymentAmount,
+      completedFees,
+      pendingFees,
+      lastPaymentDate,
       currentDesignation
     } = req.body;
 
@@ -81,8 +105,8 @@ exports.addIntern = async (req, res) => {
       });
     }
 
-    // Generate intern ID based on type
-    const internId = await generateInternId(studentType);
+    // Generate intern ID based on type and name
+    const internId = await generateInternId(studentType, name);
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -112,6 +136,9 @@ exports.addIntern = async (req, res) => {
       internData.dateOfPayment = dateOfPayment;
       internData.transactionId = transactionId;
       internData.paymentAmount = paymentAmount;
+      internData.completedFees = completedFees || '0';
+      internData.pendingFees = pendingFees || '0';
+      internData.lastPaymentDate = lastPaymentDate || dateOfPayment || null;
       internData.currentDesignation = currentDesignation || 'Student';
     }
 
@@ -195,7 +222,10 @@ exports.addIntern = async (req, res) => {
 // Get all interns (exclude soft-deleted)
 exports.getAllInterns = async (req, res) => {
   try {
-    const interns = await Intern.find({ isDeleted: { $ne: true } }).select('-password').populate('assignedTrainer', 'name email');
+    const interns = await Intern.find({ isDeleted: { $ne: true } })
+      .select('-password')
+      .populate('assignedTrainer', 'name email')
+      .populate('addedByRepresentative', 'name');
     
     res.status(200).json({
       success: true,
@@ -448,6 +478,9 @@ exports.updateIntern = async (req, res) => {
       'dateOfPayment',
       'transactionId',
       'paymentAmount',
+      'completedFees',
+      'pendingFees',
+      'lastPaymentDate',
       'currentDesignation'
     ];
 
@@ -1106,7 +1139,7 @@ exports.getRepresentativeDetails = async (req, res) => {
         { $group: { _id: '$studentType', count: { $sum: 1 } } }
       ]),
       Intern.find(baseFilter)
-        .select('name email internId studentType mobile createdAt')
+        .select('name email internId studentType mobile createdAt paymentAmount completedFees pendingFees dateOfPayment lastPaymentDate currentDesignation paymentDoneBy transactionId domain joiningDate endingDate duration status')
         .sort({ createdAt: -1 })
         .limit(20)
     ]);

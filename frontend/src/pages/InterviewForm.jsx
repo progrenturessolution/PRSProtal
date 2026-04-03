@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { trainerAPI } from "../services/api";
 import TrainerSidebar from "../components/TrainerSidebar";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function InterviewForm() {
   const { studentId } = useParams();
@@ -237,7 +238,11 @@ function InterviewForm() {
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? "Saving..." : "Save Interview Record"}
+              {loading ? (
+                <LoadingSpinner text="Saving..." inline size="sm" />
+              ) : (
+                "Save Interview Record"
+              )}
             </button>
           </form>
         </div>

@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function Certificates() {
   const [students, setStudents] = useState([]);
@@ -279,7 +280,11 @@ function Certificates() {
               boxShadow: submitting ? 'none' : '0 4px 12px rgba(37,99,235,0.25)'
             }}
           >
-            {submitting ? 'Assigning...' : 'Assign Certificates'}
+            {submitting ? (
+              <LoadingSpinner text="Assigning..." inline size="sm" />
+            ) : (
+              'Assign Certificates'
+            )}
           </button>
         </form>
       </div>

@@ -161,6 +161,15 @@ function ViewInterns({ onInternDeleted }) {
         : "",
       paymentDoneBy: student.paymentDoneBy || "",
       transactionId: student.transactionId || "",
+      dateOfPayment: student.dateOfPayment
+        ? new Date(student.dateOfPayment).toISOString().slice(0, 10)
+        : "",
+      paymentAmount: student.paymentAmount || "",
+      completedFees: student.completedFees || "",
+      pendingFees: student.pendingFees || "",
+      lastPaymentDate: student.lastPaymentDate
+        ? new Date(student.lastPaymentDate).toISOString().slice(0, 10)
+        : "",
     });
     setShowEditModal(true);
     setOpenMenuId(null);
@@ -501,6 +510,7 @@ function ViewInterns({ onInternDeleted }) {
                   <th>Email</th>
                   <th>Mobile</th>
                   <th>Type</th>
+                  <th>Added By</th>
                   <th>Domain / Role</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -561,6 +571,27 @@ function ViewInterns({ onInternDeleted }) {
                         }}
                       >
                         {student.studentType || "—"}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "4px 10px",
+                          background: student.addedByRepresentative
+                            ? "#fef3c7"
+                            : "#dbeafe",
+                          color: student.addedByRepresentative
+                            ? "#b45309"
+                            : "#1e40af",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {student.addedByRepresentative
+                          ? `Added by ${student.addedByRepresentative.name}`
+                          : "Added by Admin"}
                       </span>
                     </td>
                     <td style={{ color: "#475569", fontSize: "13px" }}>
@@ -992,6 +1023,30 @@ function ViewInterns({ onInternDeleted }) {
                           {selectedStudent.transactionId || "Not provided"}
                         </div>
                       </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Payment Amount
+                        </div>
+                        <div className="profile-detail-value">
+                          ₹{selectedStudent.paymentAmount || 0}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-success">
+                        <div className="profile-detail-label color-success">
+                          Completed Fees
+                        </div>
+                        <div className="profile-detail-value">
+                          ₹{selectedStudent.completedFees || 0}
+                        </div>
+                      </div>
+                      <div className="profile-detail-card type-warning">
+                        <div className="profile-detail-label color-warning">
+                          Pending Fees
+                        </div>
+                        <div className="profile-detail-value">
+                          ₹{selectedStudent.pendingFees || 0}
+                        </div>
+                      </div>
                       {selectedStudent.dateOfPayment && (
                         <div className="profile-detail-card type-success">
                           <div className="profile-detail-label color-success">
@@ -1000,6 +1055,22 @@ function ViewInterns({ onInternDeleted }) {
                           <div className="profile-detail-value">
                             {new Date(
                               selectedStudent.dateOfPayment,
+                            ).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {selectedStudent.lastPaymentDate && (
+                        <div className="profile-detail-card type-warning">
+                          <div className="profile-detail-label color-warning">
+                            Last Payment Date
+                          </div>
+                          <div className="profile-detail-value">
+                            {new Date(
+                              selectedStudent.lastPaymentDate,
                             ).toLocaleDateString("en-US", {
                               year: "numeric",
                               month: "short",
@@ -1484,6 +1555,123 @@ function ViewInterns({ onInternDeleted }) {
                       value={editForm.transactionId}
                       onChange={(e) =>
                         handleEditChange("transactionId", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid #e5e7eb",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Date of Payment
+                    </label>
+                    <input
+                      type="date"
+                      value={editForm.dateOfPayment}
+                      onChange={(e) =>
+                        handleEditChange("dateOfPayment", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid #e5e7eb",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Payment Amount
+                    </label>
+                    <input
+                      value={editForm.paymentAmount}
+                      onChange={(e) =>
+                        handleEditChange("paymentAmount", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid #e5e7eb",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Completed Fees
+                    </label>
+                    <input
+                      value={editForm.completedFees}
+                      onChange={(e) =>
+                        handleEditChange("completedFees", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid #e5e7eb",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Pending Fees
+                    </label>
+                    <input
+                      value={editForm.pendingFees}
+                      onChange={(e) =>
+                        handleEditChange("pendingFees", e.target.value)
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "6px",
+                        border: "1px solid #e5e7eb",
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Last Payment Date
+                    </label>
+                    <input
+                      type="date"
+                      value={editForm.lastPaymentDate}
+                      onChange={(e) =>
+                        handleEditChange("lastPaymentDate", e.target.value)
                       }
                       style={{
                         width: "100%",

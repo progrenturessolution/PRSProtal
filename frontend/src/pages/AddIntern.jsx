@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { adminAPI } from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function AddIntern({ onInternAdded }) {
   const [studentType, setStudentType] = useState("Internship");
@@ -16,6 +17,9 @@ function AddIntern({ onInternAdded }) {
     dateOfPayment: "",
     transactionId: "",
     paymentAmount: "",
+    completedFees: "",
+    pendingFees: "",
+    lastPaymentDate: "",
     currentDesignation: "",
   });
   const [welcomeFile, setWelcomeFile] = useState(null);
@@ -91,6 +95,9 @@ function AddIntern({ onInternAdded }) {
         submitData.dateOfPayment = formData.dateOfPayment;
         submitData.transactionId = formData.transactionId;
         submitData.paymentAmount = formData.paymentAmount;
+        submitData.completedFees = formData.completedFees;
+        submitData.pendingFees = formData.pendingFees;
+        submitData.lastPaymentDate = formData.lastPaymentDate;
         submitData.currentDesignation = formData.currentDesignation;
       }
 
@@ -146,6 +153,9 @@ function AddIntern({ onInternAdded }) {
           dateOfPayment: "",
           transactionId: "",
           paymentAmount: "",
+          completedFees: "",
+          pendingFees: "",
+          lastPaymentDate: "",
           currentDesignation: "",
         });
 
@@ -433,6 +443,35 @@ function AddIntern({ onInternAdded }) {
                 />
               </div>
               <div className="form-group">
+                <label>Completed Fees (₹)</label>
+                <input
+                  type="number"
+                  name="completedFees"
+                  value={formData.completedFees}
+                  onChange={handleChange}
+                  placeholder="e.g. 3000"
+                />
+              </div>
+              <div className="form-group">
+                <label>Pending Fees (₹)</label>
+                <input
+                  type="number"
+                  name="pendingFees"
+                  value={formData.pendingFees}
+                  onChange={handleChange}
+                  placeholder="e.g. 2000"
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Payment Date</label>
+                <input
+                  type="date"
+                  name="lastPaymentDate"
+                  value={formData.lastPaymentDate}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="form-group">
                 <label>Upload Welcome Letter (PDF)</label>
                 <input
                   type="file"
@@ -465,7 +504,11 @@ function AddIntern({ onInternAdded }) {
           )}
 
           <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? "Adding Student..." : "Add Student"}
+            {loading ? (
+              <LoadingSpinner text="Adding Student..." inline size="sm" />
+            ) : (
+              "Add Student"
+            )}
           </button>
         </form>
       </div>

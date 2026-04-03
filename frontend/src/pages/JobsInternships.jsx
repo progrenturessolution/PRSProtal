@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { adminAPI } from "../services/api";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 function JobsInternships() {
   const [postings, setPostings] = useState([]);
@@ -416,7 +417,11 @@ function JobsInternships() {
                 fontWeight: 600,
               }}
             >
-              {loading ? "Posting..." : "Post Opportunity"}
+              {loading ? (
+                <LoadingSpinner text="Posting..." inline size="sm" />
+              ) : (
+                "Post Opportunity"
+              )}
             </button>
           </form>
         </div>

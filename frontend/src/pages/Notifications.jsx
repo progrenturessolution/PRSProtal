@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { adminAPI } from '../services/api';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 function Notifications() {
   const [students, setStudents] = useState([]);
@@ -654,7 +655,11 @@ function Notifications() {
               fontWeight: 600
             }}
           >
-            {loading ? 'Sending...' : 'Send Notification'}
+            {loading ? (
+              <LoadingSpinner text="Sending..." inline size="sm" />
+            ) : (
+              'Send Notification'
+            )}
           </button>
         </form>
       </div>
