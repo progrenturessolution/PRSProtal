@@ -3,9 +3,7 @@ import axios from "axios";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.PROD
-    ? "https://prsprotal.onrender.com/api"
-    : "http://localhost:5000/api");
+  "https://prsprotal.onrender.com/api";
 
 // Base URL for uploaded files (backend origin)
 export const UPLOADS_BASE = API_BASE_URL.replace("/api", "");
