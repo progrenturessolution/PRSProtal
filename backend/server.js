@@ -36,13 +36,23 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // Connect to MongoDB
-connectDB();
+const startServer = async () => {
+  try {
+    await connectDB();
 
-// Run expired-certificate cleanup on startup then every hour
-setTimeout(() => {
-  cleanupExpiredCertificates();
-  setInterval(cleanupExpiredCertificates, 60 * 60 * 1000);
-}, 5000); // wait 5 s for DB to connect first
+    // Run expired-certificate cleanup on startup then every hour.
+    await cleanupExpiredCertificates();
+    setInterval(cleanupExpiredCertificates, 60 * 60 * 1000);
+
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -60,7 +70,4 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+startServer();

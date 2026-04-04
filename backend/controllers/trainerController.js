@@ -13,7 +13,8 @@ const { sendInterviewResultEmail, sendAptitudeResultEmail, sendAssessmentResultE
 // Trainer Login
 exports.trainerLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = req.body?.password;
 
     // Validation
     if (!email || !password) {
@@ -24,7 +25,7 @@ exports.trainerLogin = async (req, res) => {
     }
 
     // Check if trainer exists
-    const trainer = await Trainer.findOne({ email });
+    const trainer = await Trainer.findOne({ email }).lean();
     if (!trainer) {
       return res.status(401).json({
         success: false,

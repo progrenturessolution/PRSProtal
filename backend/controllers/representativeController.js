@@ -57,13 +57,14 @@ const generateInternId = async (studentType, internName) => {
 // Representative Login
 exports.representativeLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = req.body?.password;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    const rep = await Representative.findOne({ email });
+    const rep = await Representative.findOne({ email }).lean();
     if (!rep) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }

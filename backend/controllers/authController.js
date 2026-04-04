@@ -94,7 +94,8 @@ exports.adminLogin = async (req, res) => {
 // Intern Login
 exports.internLogin = async (req, res) => {
   try {
-    const { internId, password } = req.body;
+    const internId = normalizeCredentialValue(req.body?.internId);
+    const password = normalizeCredentialValue(req.body?.password);
 
     // Validation
     if (!internId || !password) {
@@ -105,7 +106,8 @@ exports.internLogin = async (req, res) => {
     }
 
     // Check if intern exists
-    const intern = await Intern.findOne({ internId });
+    const normalizedInternId = String(internId).trim();
+    const intern = await Intern.findOne({ internId: normalizedInternId }).lean();
     if (!intern) {
       return res.status(401).json({ 
         success: false, 
@@ -137,40 +139,10 @@ exports.internLogin = async (req, res) => {
         id: intern._id,
         name: intern.name,
         email: intern.email,
-        mobile: intern.mobile,
         internId: intern.internId,
-        studentType: intern.studentType,
-        currentDesignation: intern.currentDesignation,
         status: intern.status,
-        role: intern.role,
-        domain: intern.domain,
-        joiningDate: intern.joiningDate,
-        endingDate: intern.endingDate,
-        duration: intern.duration,
-        collegeName: intern.collegeName,
-        branch: intern.branch,
-        yearOfStudy: intern.yearOfStudy,
-        gender: intern.gender,
-        paymentDoneBy: intern.paymentDoneBy,
-        dateOfPayment: intern.dateOfPayment,
-        transactionId: intern.transactionId,
-        paymentAmount: intern.paymentAmount,
-        completedFees: intern.completedFees,
-        pendingFees: intern.pendingFees,
-        lastPaymentDate: intern.lastPaymentDate,
-        suggestedDomain: intern.suggestedDomain,
-        currentQualification: intern.currentQualification,
-        instituteName: intern.instituteName,
-        instituteLocation: intern.instituteLocation,
-        enrolmentDate: intern.enrolmentDate,
-        enrolBatchMonth: intern.enrolBatchMonth,
-        totalFees: intern.totalFees,
-        firstPaymentAmount: intern.firstPaymentAmount,
-        firstPaymentDate: intern.firstPaymentDate,
-        secondPaymentAmount: intern.secondPaymentAmount,
-        secondPaymentDate: intern.secondPaymentDate,
-        finalPaymentAmount: intern.finalPaymentAmount,
-        finalPaymentDate: intern.finalPaymentDate
+        studentType: intern.studentType,
+        role: intern.role
       }
     });
 

@@ -15,6 +15,9 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   const getErrorMessage = (err) =>
+    err.code === 'ECONNABORTED'
+      ? 'Login request timed out. Please try again.'
+      :
     err.response?.data?.message ||
     (err.response
       ? 'Login failed. Please try again.'
@@ -30,6 +33,8 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
+
     setLoading(true);
     setError('');
 
@@ -48,39 +53,35 @@ function Login() {
         });
       } else if (activeTab === 'trainer') {
         response = await authAPI.trainerLogin({
-          email: formData.email,
+          email: formData.email.trim(),
           password: formData.password
         });
       } else if (activeTab === 'representative') {
         response = await representativeAPI.login({
-          email: formData.email,
+          email: formData.email.trim(),
           password: formData.password
         });
       }
 
       if (response?.data.success) {
-        // Store token and user info (clear and set atomically)
+        // Store only auth keys to avoid wiping unrelated app state.
         const token = response.data.token;
         const user = JSON.stringify(response.data.user);
-        const role = activeTab;
-        
-        localStorage.clear();
+        const dashboardRouteMap = {
+          admin: '/admin-dashboard',
+          intern: '/intern-dashboard',
+          trainer: '/trainer-dashboard',
+          representative: '/representative-dashboard'
+        };
+
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
         localStorage.setItem('token', token);
         localStorage.setItem('user', user);
-        localStorage.setItem('userRole', role);
-        
-        // Small delay to ensure localStorage is committed
-        setTimeout(() => {
-          if (activeTab === 'admin') {
-            navigate('/admin-dashboard');
-          } else if (activeTab === 'intern') {
-            navigate('/intern-dashboard');
-          } else if (activeTab === 'trainer') {
-            navigate('/trainer-dashboard');
-          } else if (activeTab === 'representative') {
-            navigate('/representative-dashboard');
-          }
-        }, 100);
+        localStorage.setItem('userRole', activeTab);
+
+        navigate(dashboardRouteMap[activeTab] || '/', { replace: true });
       }
     } catch (err) {
       setError(getErrorMessage(err));

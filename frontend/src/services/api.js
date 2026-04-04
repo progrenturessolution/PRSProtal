@@ -11,6 +11,7 @@ export const UPLOADS_BASE = API_BASE_URL.replace("/api", "");
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 15000,
 });
 
 // Add token to requests if available
@@ -29,6 +30,29 @@ api.interceptors.request.use(
   (error) => {
     return Promise.reject(error);
   },
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config || {};
+    const requestUrl = originalRequest.url || "";
+    const isAuthRequest =
+      typeof requestUrl === "string" && requestUrl.startsWith("/auth/");
+    const isRetryableStatus =
+      error.response && error.response.status >= 500 && error.response.status < 600;
+    const shouldRetryOnce =
+      isAuthRequest &&
+      !originalRequest.__isRetryRequest &&
+      (!error.response || error.code === "ECONNABORTED" || isRetryableStatus);
+
+    if (shouldRetryOnce) {
+      originalRequest.__isRetryRequest = true;
+      return api(originalRequest);
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 // Authentication APIs

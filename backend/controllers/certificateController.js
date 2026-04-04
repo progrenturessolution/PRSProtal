@@ -3,6 +3,20 @@ const Certificate = require('../models/Certificate');
 const Intern = require('../models/Intern');
 const { sendCertificateAssignmentEmail } = require('../config/emailService');
 
+const removeFileIfExists = async (filepath) => {
+  if (!filepath) return;
+
+  try {
+    await fs.promises.access(filepath, fs.constants.F_OK);
+    await fs.promises.unlink(filepath);
+  } catch (error) {
+    // Ignore missing files; rethrow unexpected errors.
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+};
+
 // Assign multiple certificates to a student (5-day expiry)
 const assignCertificates = async (req, res) => {
   try {
@@ -112,10 +126,8 @@ const deleteCertificate = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Certificate not found' });
     }
 
-    // Remove file from disk
-    if (cert.filepath && fs.existsSync(cert.filepath)) {
-      fs.unlinkSync(cert.filepath);
-    }
+    // Remove file from disk without blocking the event loop.
+    await removeFileIfExists(cert.filepath);
 
     await Certificate.deleteOne({ _id: cert._id });
 
@@ -130,11 +142,11 @@ const deleteCertificate = async (req, res) => {
 const cleanupExpiredCertificates = async () => {
   try {
     const expired = await Certificate.find({ expiresAt: { $lte: new Date() } });
-    for (const cert of expired) {
-      if (cert.filepath && fs.existsSync(cert.filepath)) {
-        fs.unlinkSync(cert.filepath);
-      }
-    }
+
+    await Promise.all(
+      expired.map((cert) => removeFileIfExists(cert.filepath))
+    );
+
     if (expired.length > 0) {
       await Certificate.deleteMany({ expiresAt: { $lte: new Date() } });
       console.log(`🗑️  Cleaned up ${expired.length} expired certificate(s)`);
