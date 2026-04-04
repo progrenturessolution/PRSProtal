@@ -146,14 +146,24 @@ export const representativeAPI = {
   getMyStudents: (params) => api.get("/representative/students", { params }),
   getMyStudentStats: () => api.get("/representative/students/stats"),
   deleteStudent: (id) => api.delete(`/representative/students/${id}`),
+  getMyPayouts: () => api.get("/representative/payouts"),
 };
 
 // Admin representative management APIs (added to adminAPI)
 export const adminRepAPI = {
   addRepresentative: (data) => api.post("/admin/add-representative", data),
-  getAllRepresentatives: () => api.get("/admin/representatives"),
+  getAllRepresentatives: (params) => api.get("/admin/representatives", { params }),
   getRepresentativeDetails: (id) => api.get(`/admin/representatives/${id}/details`),
   deleteRepresentative: (id) => api.delete(`/admin/representative/${id}`),
+  getRepresentativePayouts: (params) =>
+    api.get("/admin/representatives/payouts", { params }),
+  upsertRepresentativePayout: (data) =>
+    api.post("/admin/representatives/payouts", data),
+  createGroup: (data) => api.post("/admin/groups", data),
+  getGroups: () => api.get("/admin/groups"),
+  getGroupDetails: (id) => api.get(`/admin/groups/${id}`),
+  updateGroup: (id, data) => api.patch(`/admin/groups/${id}`, data),
+  deleteGroup: (id) => api.delete(`/admin/groups/${id}`),
 };
 
 export default api;

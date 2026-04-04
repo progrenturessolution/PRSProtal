@@ -22,5 +22,6 @@ router.post('/students', verifyToken, verifyRep, repController.addStudent);
 router.get('/students', verifyToken, verifyRep, repController.getMyStudents);
 router.get('/students/stats', verifyToken, verifyRep, repController.getMyStudentStats);
 router.delete('/students/:id', verifyToken, verifyRep, repController.deleteStudent);
+router.get('/payouts', verifyToken, verifyRep, repController.getMyPayouts);
 
 module.exports = router;

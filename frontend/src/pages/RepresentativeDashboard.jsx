@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { representativeAPI } from '../services/api';
+import { representativeAPI, UPLOADS_BASE } from '../services/api';
 import logo from '../assets/logo.png';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -108,6 +108,8 @@ function RepresentativeDashboard() {
     monthlyStudents: 0,
     byType: { internship: 0, smsProgram: 0 }
   });
+  const [payouts, setPayouts] = useState([]);
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
 
   // My students filter state
   const [studentsLoading, setStudentsLoading] = useState(false);
@@ -126,6 +128,7 @@ function RepresentativeDashboard() {
     fetchProfile();
     fetchStudents();
     fetchStudentStats();
+    fetchPayouts();
   }, [navigate]);
 
   const fetchProfile = async () => {
@@ -159,6 +162,20 @@ function RepresentativeDashboard() {
       }
     } catch (err) {
       console.error('Fetch representative stats error:', err);
+    }
+  };
+
+  const fetchPayouts = async () => {
+    try {
+      setPayoutsLoading(true);
+      const res = await representativeAPI.getMyPayouts();
+      if (res.data.success) {
+        setPayouts(res.data.payouts || []);
+      }
+    } catch (err) {
+      console.error('Fetch payout history error:', err);
+    } finally {
+      setPayoutsLoading(false);
     }
   };
 
@@ -334,6 +351,14 @@ function RepresentativeDashboard() {
   const profileMobile = profile?.mobile || 'Not available';
   const profileDesignation = profile?.designation || 'Representative';
   const profileSheetLink = profile?.sheetLinks || '';
+  const profileApplicationFormLink = profile?.internshipApplicationFormLink || '';
+  const profileInternshipSheetLink = profile?.internshipSheetLink || '';
+
+  const resolveFileUrl = (filepath) => {
+    if (!filepath) return '';
+    const relative = String(filepath).replace(/\\/g, '/').split('uploads/')[1] || '';
+    return `${UPLOADS_BASE}/${relative}`;
+  };
 
   return (
     <div className="dashboard">
@@ -647,6 +672,58 @@ function RepresentativeDashboard() {
                             <p>Not available</p>
                           )}
                           <span className="rep-readonly-chip">Read only</span>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Intern Application Form</label>
+                          {profileApplicationFormLink ? (
+                            <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" className="rep-sheet-link">Open form link</a>
+                          ) : (
+                            <p>Not available</p>
+                          )}
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Internship Sheet Link</label>
+                          {profileInternshipSheetLink ? (
+                            <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" className="rep-sheet-link">Open internship sheet</a>
+                          ) : (
+                            <p>Not available</p>
+                          )}
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Instagram Profile</label>
+                          <p>{profile?.instagramProfile || 'Not provided'}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>LinkedIn Profile</label>
+                          <p>{profile?.linkedinProfile || 'Not provided'}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>UPI / Mobile (Payout)</label>
+                          <p>{profile?.upiMobileNumber || 'Not provided'}</p>
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>UPI Scanner</label>
+                          {profile?.docs?.upiScanner?.filepath ? (
+                            <a href={resolveFileUrl(profile.docs.upiScanner.filepath)} target="_blank" rel="noreferrer" className="rep-sheet-link">Open file</a>
+                          ) : (
+                            <p>Not uploaded</p>
+                          )}
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>PGIR Selection Letter</label>
+                          {profile?.docs?.pgirSelectionLetter?.filepath ? (
+                            <a href={resolveFileUrl(profile.docs.pgirSelectionLetter.filepath)} target="_blank" rel="noreferrer" className="rep-sheet-link">Open file</a>
+                          ) : (
+                            <p>Not uploaded</p>
+                          )}
+                        </div>
+                        <div className="rep-profile-data-item">
+                          <label>Internship Offer Letter</label>
+                          {profile?.docs?.internshipOfferLetter?.filepath ? (
+                            <a href={resolveFileUrl(profile.docs.internshipOfferLetter.filepath)} target="_blank" rel="noreferrer" className="rep-sheet-link">Open file</a>
+                          ) : (
+                            <p>Not uploaded</p>
+                          )}
                         </div>
                       </div>
                     </article>
@@ -1174,20 +1251,79 @@ function RepresentativeDashboard() {
               <div className="premium-page-header">
                 <div className="header-left">
                   <h1>Weekly Performance & Rewards</h1>
-                  <p className="header-subtitle">Track your weekly targets and earnings</p>
+                  <p className="header-subtitle">Track eligibility, reward percentage and payout status</p>
                 </div>
               </div>
-              <div className="premium-card">
-                <div className="premium-empty-state">
-                  <div className="empty-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+
+              <div className="premium-stats-grid" style={{ marginBottom: '16px' }}>
+                <div className="premium-stat-card accent-blue">
+                  <div className="stat-content">
+                    <div className="stat-label">Total Reward Cycles</div>
+                    <div className="stat-value">{payouts.length}</div>
                   </div>
-                  <p className="empty-title">Coming Soon</p>
-                  <p className="empty-subtitle">Weekly performance tracking and rewards will be available here</p>
                 </div>
+                <div className="premium-stat-card accent-teal">
+                  <div className="stat-content">
+                    <div className="stat-label">Paid Cycles</div>
+                    <div className="stat-value">{payouts.filter((item) => item.payoutStatus === 'Paid').length}</div>
+                  </div>
+                </div>
+                <div className="premium-stat-card accent-indigo">
+                  <div className="stat-content">
+                    <div className="stat-label">Total Earned (₹)</div>
+                    <div className="stat-value">
+                      ₹{payouts.reduce((sum, item) => sum + (Number(item.payoutAmount) || 0), 0)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="premium-card">
+                {payoutsLoading ? (
+                  <div style={{ padding: '30px', textAlign: 'center' }}>Loading reward history...</div>
+                ) : payouts.length === 0 ? (
+                  <div className="premium-empty-state">
+                    <p className="empty-title">No reward records yet</p>
+                    <p className="empty-subtitle">Admin will add weekly payout entries here</p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table className="premium-table">
+                      <thead>
+                        <tr>
+                          <th>Month</th>
+                          <th>Week</th>
+                          <th>Enrollments</th>
+                          <th>3000 Paid</th>
+                          <th>Payout Eligible</th>
+                          <th>Reward %</th>
+                          <th>Payout (₹)</th>
+                          <th>Status</th>
+                          <th>Release Date</th>
+                          <th>UPI/QR</th>
+                          <th>Promotional Docs</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payouts.map((row) => (
+                          <tr key={row._id}>
+                            <td>{row.monthLabel}</td>
+                            <td>{row.weekLabel}</td>
+                            <td>{row.totalEnrollmentCount}</td>
+                            <td>{row.studentsWith3000Paid}</td>
+                            <td>{row.payoutEligible}</td>
+                            <td>{row.rewardPercent}%</td>
+                            <td>₹{row.payoutAmount || 0}</td>
+                            <td>{row.payoutStatus}</td>
+                            <td>{row.payoutReleaseDate ? new Date(row.payoutReleaseDate).toLocaleDateString('en-IN') : '-'}</td>
+                            <td>{row.upiQrDriveLink ? <a href={row.upiQrDriveLink} target="_blank" rel="noreferrer">Open</a> : '-'}</td>
+                            <td>{row.promotionalDocumentsLink ? <a href={row.promotionalDocumentsLink} target="_blank" rel="noreferrer">Open</a> : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </>
           )}

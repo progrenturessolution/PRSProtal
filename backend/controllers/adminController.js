@@ -2,6 +2,8 @@
 const Intern = require('../models/Intern');
 const Trainer = require('../models/Trainer');
 const Representative = require('../models/Representative');
+const RepresentativePayout = require('../models/RepresentativePayout');
+const StudentGroup = require('../models/StudentGroup');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification } = require('../config/emailService');
@@ -22,6 +24,38 @@ const generateFallbackRepresentativeId = () =>
   `PGIR${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)
     .toString()
     .padStart(2, '0')}`;
+
+const resolveRewardPercent = (totalEnrollmentCount = 0) => {
+  const slabs = [
+    { min: 100, value: 21 },
+    { min: 20, value: 20 },
+    { min: 16, value: 19 },
+    { min: 15, value: 18 },
+    { min: 11, value: 17 },
+    { min: 10, value: 15 },
+    { min: 6, value: 15 },
+    { min: 5, value: 13 },
+    { min: 3, value: 13 },
+    { min: 2, value: 12 },
+    { min: 1, value: 10 },
+  ];
+
+  const match = slabs.find((slab) => totalEnrollmentCount >= slab.min);
+  return match ? match.value : 0;
+};
+
+const computePayoutFields = (totalEnrollmentCount = 0, studentsWith3000Paid = 0) => {
+  const normalizedTotal = Number(totalEnrollmentCount) || 0;
+  const normalizedPaid = Number(studentsWith3000Paid) || 0;
+  const payoutEligible = normalizedTotal === normalizedPaid ? 'Yes' : 'No';
+  const rewardPercent = resolveRewardPercent(normalizedTotal);
+  const payoutAmount =
+    payoutEligible === 'Yes'
+      ? (normalizedTotal * 5500 * rewardPercent) / 100
+      : 0;
+
+  return { payoutEligible, rewardPercent, payoutAmount };
+};
 
 // Generate unique Intern ID based on type with new format
 // Format: PRS/MAR26004/DJS (PRS = internship, PSMS = SMS program)
@@ -1038,7 +1072,26 @@ exports.getStudentDocuments = async (req, res) => {
 // Add representative (Admin only)
 exports.addRepresentative = async (req, res) => {
   try {
-    const { name, email, password, mobile, college, course, department, year, designation, sheetLinks, upiId } = req.body;
+    const {
+      name,
+      email,
+      password,
+      mobile,
+      college,
+      course,
+      department,
+      year,
+      designation,
+      sheetLinks,
+      upiId,
+      internshipApplicationFormLink,
+      internshipSheetLink,
+      promotionalMessage,
+      joiningDate,
+      instagramProfile,
+      linkedinProfile,
+      upiMobileNumber,
+    } = req.body;
 
     const normalizedName = String(name || '').trim();
     const normalizedEmail = String(email || '').trim().toLowerCase();
@@ -1075,7 +1128,37 @@ exports.addRepresentative = async (req, res) => {
       year,
       designation: designation || 'Campus Representative',
       sheetLinks,
+      internshipApplicationFormLink,
+      internshipSheetLink,
+      promotionalMessage,
+      joiningDate: joiningDate || undefined,
+      instagramProfile,
+      linkedinProfile,
       upiId,
+      upiMobileNumber,
+      docs: {
+        upiScanner: req.files?.upiScanner?.[0]
+          ? {
+              filename: req.files.upiScanner[0].filename,
+              filepath: req.files.upiScanner[0].path,
+              uploadedAt: new Date(),
+            }
+          : undefined,
+        pgirSelectionLetter: req.files?.pgirSelectionLetter?.[0]
+          ? {
+              filename: req.files.pgirSelectionLetter[0].filename,
+              filepath: req.files.pgirSelectionLetter[0].path,
+              uploadedAt: new Date(),
+            }
+          : undefined,
+        internshipOfferLetter: req.files?.internshipOfferLetter?.[0]
+          ? {
+              filename: req.files.internshipOfferLetter[0].filename,
+              filepath: req.files.internshipOfferLetter[0].path,
+              uploadedAt: new Date(),
+            }
+          : undefined,
+      },
       role: 'representative'
     });
 
@@ -1138,7 +1221,24 @@ exports.addRepresentative = async (req, res) => {
 // Get all representatives
 exports.getAllRepresentatives = async (req, res) => {
   try {
-    const reps = await Representative.find().select('-password').sort({ createdAt: -1 });
+    const { joiningMonth, batchMonth, name } = req.query;
+
+    const repFilter = {};
+
+    if (name) {
+      repFilter.name = { $regex: name, $options: 'i' };
+    }
+
+    if (joiningMonth) {
+      const parsed = new Date(joiningMonth);
+      if (!Number.isNaN(parsed.getTime())) {
+        const start = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+        const end = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 1);
+        repFilter.joiningDate = { $gte: start, $lt: end };
+      }
+    }
+
+    const reps = await Representative.find(repFilter).select('-password').sort({ createdAt: -1 });
 
     const counts = await Intern.aggregate([
       {
@@ -1157,10 +1257,17 @@ exports.getAllRepresentatives = async (req, res) => {
 
     const countMap = new Map(counts.map((item) => [String(item._id), item.totalStudents]));
 
-    const representatives = reps.map((rep) => ({
-      ...rep.toObject(),
-      totalStudents: countMap.get(String(rep._id)) || 0
-    }));
+    const representatives = reps
+      .map((rep) => ({
+        ...rep.toObject(),
+        totalStudents: countMap.get(String(rep._id)) || 0
+      }))
+      .filter((rep) => {
+        if (!batchMonth) return true;
+        const sourceDate = rep.joiningDate ? new Date(rep.joiningDate) : new Date(rep.createdAt);
+        const formatted = `${sourceDate.getFullYear()}-${String(sourceDate.getMonth() + 1).padStart(2, '0')}`;
+        return formatted === batchMonth;
+      });
 
     res.status(200).json({ success: true, count: representatives.length, representatives });
   } catch (error) {
@@ -1191,7 +1298,8 @@ exports.getRepresentativeDetails = async (req, res) => {
       weeklyStudents,
       monthlyStudents,
       typeBreakdown,
-      recentStudents
+      recentStudents,
+      payouts
     ] = await Promise.all([
       Intern.countDocuments(baseFilter),
       Intern.countDocuments({ ...baseFilter, createdAt: { $gte: weekStart } }),
@@ -1203,6 +1311,9 @@ exports.getRepresentativeDetails = async (req, res) => {
       Intern.find(baseFilter)
         .select('name email internId studentType mobile createdAt paymentAmount completedFees pendingFees dateOfPayment lastPaymentDate currentDesignation paymentDoneBy transactionId domain joiningDate endingDate duration status')
         .sort({ createdAt: -1 })
+        .limit(20),
+      RepresentativePayout.find({ representative: representative._id })
+        .sort({ weekStartDate: -1 })
         .limit(20)
     ]);
 
@@ -1229,7 +1340,8 @@ exports.getRepresentativeDetails = async (req, res) => {
         monthlyStudents,
         byType
       },
-      recentStudents
+      recentStudents,
+      payouts
     });
   } catch (error) {
     console.error('Get representative details error:', error);
@@ -1246,6 +1358,247 @@ exports.deleteRepresentative = async (req, res) => {
   } catch (error) {
     console.error('Delete representative error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Create or update representative payout
+exports.upsertRepresentativePayout = async (req, res) => {
+  try {
+    const {
+      id,
+      representativeId,
+      monthLabel,
+      weekLabel,
+      weekStartDate,
+      weekEndDate,
+      upiQrDriveLink,
+      totalEnrollmentCount,
+      studentsWith3000Paid,
+      payoutStatus,
+      payoutReleaseDate,
+      promotionalDocumentsLink,
+      notes,
+    } = req.body;
+
+    if (!representativeId || !monthLabel || !weekLabel || !weekStartDate || !weekEndDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Representative, month, week label and week date range are required',
+      });
+    }
+
+    const computed = computePayoutFields(totalEnrollmentCount, studentsWith3000Paid);
+
+    const payload = {
+      representative: representativeId,
+      monthLabel,
+      weekLabel,
+      weekStartDate,
+      weekEndDate,
+      upiQrDriveLink,
+      totalEnrollmentCount: Number(totalEnrollmentCount) || 0,
+      studentsWith3000Paid: Number(studentsWith3000Paid) || 0,
+      payoutEligible: computed.payoutEligible,
+      rewardPercent: computed.rewardPercent,
+      payoutAmount: computed.payoutAmount,
+      payoutStatus: payoutStatus || 'Hold',
+      payoutReleaseDate: payoutReleaseDate || undefined,
+      promotionalDocumentsLink,
+      notes,
+    };
+
+    let payout;
+
+    if (id) {
+      payout = await RepresentativePayout.findByIdAndUpdate(id, payload, {
+        new: true,
+        runValidators: true,
+      }).populate('representative', 'name pgirId email');
+    } else {
+      payout = await RepresentativePayout.findOneAndUpdate(
+        {
+          representative: representativeId,
+          weekStartDate: new Date(weekStartDate),
+          weekEndDate: new Date(weekEndDate),
+        },
+        payload,
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+          runValidators: true,
+        },
+      ).populate('representative', 'name pgirId email');
+    }
+
+    return res.status(200).json({ success: true, payout });
+  } catch (error) {
+    console.error('Upsert representative payout error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get payout list for admin
+exports.getRepresentativePayouts = async (req, res) => {
+  try {
+    const { month, representativeId, status, fromDate, toDate } = req.query;
+    const filter = {};
+
+    if (representativeId) filter.representative = representativeId;
+    if (status) filter.payoutStatus = status;
+    if (month) filter.monthLabel = { $regex: month, $options: 'i' };
+
+    if (fromDate || toDate) {
+      filter.weekStartDate = {};
+      if (fromDate) filter.weekStartDate.$gte = new Date(fromDate);
+      if (toDate) filter.weekStartDate.$lte = new Date(toDate);
+    }
+
+    const payouts = await RepresentativePayout.find(filter)
+      .populate('representative', 'name pgirId email upiId upiMobileNumber')
+      .sort({ weekStartDate: -1 });
+
+    return res.status(200).json({ success: true, count: payouts.length, payouts });
+  } catch (error) {
+    console.error('Get representative payouts error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get all groups
+exports.getStudentGroups = async (req, res) => {
+  try {
+    const groups = await StudentGroup.find()
+      .populate('students', 'name internId studentType email mobile')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({ success: true, count: groups.length, groups });
+  } catch (error) {
+    console.error('Get student groups error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Create group
+exports.createStudentGroup = async (req, res) => {
+  try {
+    const { groupNumber, groupName, groupDescription, studentType, students, assignedEmployees } = req.body;
+
+    if (!groupNumber || !groupName) {
+      return res.status(400).json({ success: false, message: 'Group number and name are required' });
+    }
+
+    const parsedStudents = Array.isArray(students)
+      ? students
+      : typeof students === 'string' && students.trim()
+        ? JSON.parse(students)
+        : [];
+
+    const parsedEmployees = Array.isArray(assignedEmployees)
+      ? assignedEmployees
+      : typeof assignedEmployees === 'string' && assignedEmployees.trim()
+        ? JSON.parse(assignedEmployees)
+        : [];
+
+    const group = await StudentGroup.create({
+      groupNumber,
+      groupName,
+      groupDescription,
+      studentType: studentType || 'All',
+      students: parsedStudents,
+      assignedEmployees: parsedEmployees,
+      createdBy: req.user.id,
+    });
+
+    const populated = await StudentGroup.findById(group._id).populate(
+      'students',
+      'name internId studentType email mobile',
+    );
+
+    return res.status(201).json({ success: true, group: populated });
+  } catch (error) {
+    console.error('Create student group error:', error);
+    if (error?.code === 11000) {
+      return res.status(409).json({ success: false, message: 'Group number already exists' });
+    }
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get group details
+exports.getStudentGroupDetails = async (req, res) => {
+  try {
+    const group = await StudentGroup.findById(req.params.id).populate(
+      'students',
+      'name internId studentType email mobile createdAt',
+    );
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+
+    return res.status(200).json({ success: true, group });
+  } catch (error) {
+    console.error('Get student group details error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Update group
+exports.updateStudentGroup = async (req, res) => {
+  try {
+    const { groupNumber, groupName, groupDescription, studentType, students, assignedEmployees } = req.body;
+
+    const updatePayload = {
+      groupNumber,
+      groupName,
+      groupDescription,
+      studentType,
+    };
+
+    if (students !== undefined) {
+      updatePayload.students = Array.isArray(students)
+        ? students
+        : typeof students === 'string' && students.trim()
+          ? JSON.parse(students)
+          : [];
+    }
+
+    if (assignedEmployees !== undefined) {
+      updatePayload.assignedEmployees = Array.isArray(assignedEmployees)
+        ? assignedEmployees
+        : typeof assignedEmployees === 'string' && assignedEmployees.trim()
+          ? JSON.parse(assignedEmployees)
+          : [];
+    }
+
+    const group = await StudentGroup.findByIdAndUpdate(req.params.id, updatePayload, {
+      new: true,
+      runValidators: true,
+    }).populate('students', 'name internId studentType email mobile');
+
+    if (!group) {
+      return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+
+    return res.status(200).json({ success: true, group });
+  } catch (error) {
+    console.error('Update student group error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Delete group
+exports.deleteStudentGroup = async (req, res) => {
+  try {
+    const deleted = await StudentGroup.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Group not found' });
+    }
+    return res.status(200).json({ success: true, message: 'Group deleted successfully' });
+  } catch (error) {
+    console.error('Delete student group error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

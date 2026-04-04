@@ -15,6 +15,8 @@ import JobsInternships from "./JobsInternships";
 import AccessManagement from "./AccessManagement";
 import Reports from "./Reports";
 import ManageRepresentatives from "./ManageRepresentatives";
+import RepresentativePayoutManagement from "./RepresentativePayoutManagement";
+import GroupManagement from "./GroupManagement";
 import { adminAPI, taskAPI } from "../services/api";
 import logo from "../assets/logo.png";
 
@@ -385,6 +387,9 @@ function AdminDashboard() {
       case "view-interns":
         return <ViewInterns key="view-interns" onInternDeleted={fetchStats} />;
 
+      case "group-management":
+        return <GroupManagement key="group-management" />;
+
       case "archived-students":
         return <ArchivedStudents key="archived-students" />;
 
@@ -430,6 +435,9 @@ function AdminDashboard() {
 
       case "representatives":
         return <ManageRepresentatives key="representatives" />;
+
+      case "representative-payout":
+        return <RepresentativePayoutManagement key="representative-payout" />;
 
       default:
         return (
@@ -544,6 +552,23 @@ function AdminDashboard() {
             View All Students
           </li>
           <li
+            className={activeMenu === "group-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("group-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 7h10v10H7zM3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4z"
+              />
+            </svg>
+            Group Management
+          </li>
+          <li
             className={activeMenu === "archived-students" ? "active" : ""}
             onClick={() => {
               setActiveMenu("archived-students");
@@ -615,6 +640,43 @@ function AdminDashboard() {
               />
             </svg>
             Certificates
+          </li>
+
+          {/* Representatives */}
+          <li className="menu-section-header">REPRESENTATIVES</li>
+          <li
+            className={activeMenu === "representatives" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("representatives");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+            Representatives
+          </li>
+          <li
+            className={activeMenu === "representative-payout" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("representative-payout");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1m0-1a9 9 0 110-18 9 9 0 010 18z"
+              />
+            </svg>
+            Representative Payout
           </li>
 
           {/* Tasks & Projects */}
@@ -738,26 +800,6 @@ function AdminDashboard() {
               />
             </svg>
             Jobs & Internship Updates
-          </li>
-
-          {/* Representatives */}
-          <li className="menu-section-header">REPRESENTATIVES</li>
-          <li
-            className={activeMenu === "representatives" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("representatives");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z"
-              />
-            </svg>
-            Representatives
           </li>
 
           {/* Access Management */}

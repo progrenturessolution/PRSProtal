@@ -56,6 +56,50 @@ const representativeSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  internshipApplicationFormLink: {
+    type: String,
+    trim: true
+  },
+  internshipSheetLink: {
+    type: String,
+    trim: true
+  },
+  promotionalMessage: {
+    type: String,
+    trim: true
+  },
+  joiningDate: {
+    type: Date
+  },
+  instagramProfile: {
+    type: String,
+    trim: true
+  },
+  linkedinProfile: {
+    type: String,
+    trim: true
+  },
+  upiMobileNumber: {
+    type: String,
+    trim: true
+  },
+  docs: {
+    upiScanner: {
+      filename: String,
+      filepath: String,
+      uploadedAt: Date
+    },
+    pgirSelectionLetter: {
+      filename: String,
+      filepath: String,
+      uploadedAt: Date
+    },
+    internshipOfferLetter: {
+      filename: String,
+      filepath: String,
+      uploadedAt: Date
+    }
+  },
   role: {
     type: String,
     default: 'representative'

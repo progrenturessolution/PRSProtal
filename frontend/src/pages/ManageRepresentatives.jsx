@@ -1,101 +1,151 @@
-import { useState, useEffect } from "react";
-import { adminRepAPI } from "../services/api";
+import { useEffect, useMemo, useState } from "react";
+import { adminRepAPI, UPLOADS_BASE } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
+
+const initialForm = {
+  name: "",
+  email: "",
+  password: "",
+  mobile: "",
+  designation: "Campus Representative",
+  internshipApplicationFormLink: "",
+  internshipSheetLink: "",
+  promotionalMessage: "",
+  joiningDate: "",
+  college: "",
+  course: "",
+  department: "",
+  year: "",
+  instagramProfile: "",
+  linkedinProfile: "",
+  upiId: "",
+  upiMobileNumber: "",
+};
+
+function formatDate(dateValue) {
+  if (!dateValue) return "-";
+  return new Date(dateValue).toLocaleDateString("en-IN");
+}
+
+function toPublicFilePath(filepath) {
+  if (!filepath) return "";
+  return `${UPLOADS_BASE}/${String(filepath).replace(/\\\\/g, "/").split("uploads/")[1] || ""}`;
+}
 
 function ManageRepresentatives() {
   const [activeTab, setActiveTab] = useState("list");
   const [representatives, setRepresentatives] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    mobile: "",
-    college: "",
-    course: "",
-    department: "",
-    year: "",
-    designation: "Campus Representative",
-    sheetLinks: "",
-    upiId: "",
-  });
   const [submitting, setSubmitting] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [filters, setFilters] = useState({
+    name: "",
+    joiningMonth: "",
+    batchMonth: "",
+  });
+
+  const [formData, setFormData] = useState(initialForm);
+  const [files, setFiles] = useState({
+    upiScanner: null,
+    pgirSelectionLetter: null,
+    internshipOfferLetter: null,
+  });
+
   const [selectedRepDetails, setSelectedRepDetails] = useState(null);
-  const [detailsLoading, setDetailsLoading] = useState(false);
 
-  useEffect(() => {
-    fetchRepresentatives();
-  }, []);
-
-  const fetchRepresentatives = async () => {
+  const fetchRepresentatives = async (query = {}) => {
     try {
       setLoading(true);
-      const res = await adminRepAPI.getAllRepresentatives();
-      if (res.data.success) setRepresentatives(res.data.representatives);
+      const params = Object.fromEntries(
+        Object.entries(query).filter(([, value]) => String(value || "").trim() !== ""),
+      );
+      const response = await adminRepAPI.getAllRepresentatives(params);
+      if (response.data.success) {
+        setRepresentatives(response.data.representatives || []);
+      }
     } catch (err) {
-      console.error("Fetch reps error:", err);
+      console.error("Fetch representatives error:", err);
+      setError("Failed to load representatives");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    fetchRepresentatives();
+  }, []);
+
+  const totalReps = representatives.length;
+  const activeReps = useMemo(
+    () => representatives.filter((rep) => rep.status === "active").length,
+    [representatives],
+  );
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const applyFilters = () => {
+    fetchRepresentatives(filters);
+  };
+
+  const clearFilters = () => {
+    const next = { name: "", joiningMonth: "", batchMonth: "" };
+    setFilters(next);
+    fetchRepresentatives(next);
+  };
+
+  const handleInput = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileInput = (e) => {
+    const { name, files: selectedFiles } = e.target;
+    setFiles((prev) => ({ ...prev, [name]: selectedFiles?.[0] || null }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    const normalizedName = String(formData.name || "").trim();
-    const normalizedEmail = String(formData.email || "").trim().toLowerCase();
-    const normalizedPassword = String(formData.password || "").trim();
 
-    if (!normalizedName || !normalizedEmail || !normalizedPassword) {
-      setError("Name, email and password are required.");
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+      setError("PGIR full name, email and password are required");
       return;
     }
 
-    const autoPgirId = `PGIR${String(Date.now()).slice(-6)}${Math.floor(Math.random() * 10)}`;
-    const payload = {
-      ...formData,
-      name: normalizedName,
-      email: normalizedEmail,
-      password: normalizedPassword,
-      pgirId: autoPgirId,
-      // Legacy backend compatibility aliases
-      fullName: normalizedName,
-      repName: normalizedName,
-      repEmail: normalizedEmail,
-      pass: normalizedPassword,
-    };
+    const hasAnyFile = Object.values(files).some(Boolean);
+
+    let payload;
+    if (hasAnyFile) {
+      payload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        payload.append(key, value || "");
+      });
+
+      Object.entries(files).forEach(([key, file]) => {
+        if (file) payload.append(key, file);
+      });
+    } else {
+      // Use JSON for plain profile creation; this avoids multipart parsing issues
+      // when no documents are uploaded.
+      payload = { ...formData };
+    }
 
     try {
       setSubmitting(true);
-      const res = await adminRepAPI.addRepresentative(payload);
-      if (res.data.success) {
-        setSuccess("Representative added successfully!");
-        setFormData({
-          name: "",
-          email: "",
-          password: "",
-          mobile: "",
-          college: "",
-          course: "",
-          department: "",
-          year: "",
-          designation: "Campus Representative",
-          sheetLinks: "",
-          upiId: "",
-        });
-        fetchRepresentatives();
-        setTimeout(() => {
-          setSuccess("");
-          setActiveTab("list");
-        }, 2000);
+      const response = await adminRepAPI.addRepresentative(payload);
+      if (response.data.success) {
+        setSuccess("Representative added successfully");
+        setFormData(initialForm);
+        setFiles({ upiScanner: null, pgirSelectionLetter: null, internshipOfferLetter: null });
+        await fetchRepresentatives(filters);
+        setActiveTab("list");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to add representative");
@@ -105,539 +155,240 @@ function ManageRepresentatives() {
   };
 
   const handleDelete = async (id, name) => {
-    if (
-      !window.confirm(`Delete representative "${name}"? This cannot be undone.`)
-    )
-      return;
+    if (!window.confirm(`Delete PGIR ${name}?`)) return;
     try {
       await adminRepAPI.deleteRepresentative(id);
-      setRepresentatives((prev) => prev.filter((r) => r._id !== id));
-      setSuccess("Representative deleted.");
-      setTimeout(() => setSuccess(""), 3000);
+      await fetchRepresentatives(filters);
+      setSuccess("Representative deleted successfully");
     } catch (err) {
+      console.error("Delete representative error:", err);
       setError("Failed to delete representative");
-      setTimeout(() => setError(""), 3000);
     }
   };
 
-  const handleViewDetails = async (repId) => {
+  const handleViewDetails = async (id) => {
     try {
       setDetailsLoading(true);
-      const res = await adminRepAPI.getRepresentativeDetails(repId);
-      if (res.data.success) {
-        setSelectedRepDetails(res.data);
+      const response = await adminRepAPI.getRepresentativeDetails(id);
+      if (response.data.success) {
+        setSelectedRepDetails(response.data);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load representative details");
-      setTimeout(() => setError(""), 3000);
+      console.error("Representative details error:", err);
+      setError("Failed to load profile details");
     } finally {
       setDetailsLoading(false);
     }
   };
-
-  const totalReps = representatives.length;
-  const activeReps = representatives.filter(
-    (r) => r.status === "active",
-  ).length;
 
   return (
     <div>
       <div className="premium-page-header">
         <div className="header-left">
           <h1>Representative Management</h1>
-          <p className="header-subtitle">
-            Add and manage campus representatives
-          </p>
+          <p className="header-subtitle">Manage PGIR profiles, onboarding docs and filters</p>
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="premium-stats-grid" style={{ marginBottom: "24px" }}>
+      <div className="premium-stats-grid" style={{ marginBottom: "20px" }}>
         <div className="premium-stat-card accent-blue">
-          <div className="stat-icon-wrapper">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z"
-              />
-            </svg>
-          </div>
           <div className="stat-content">
-            <div className="stat-label">Total Representatives</div>
+            <div className="stat-label">Total PGIR</div>
             <div className="stat-value">{totalReps}</div>
-            <div className="stat-meta">All registered</div>
           </div>
         </div>
         <div className="premium-stat-card accent-teal">
-          <div className="stat-icon-wrapper">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-          </div>
           <div className="stat-content">
-            <div className="stat-label">Active</div>
+            <div className="stat-label">Active PGIR</div>
             <div className="stat-value">{activeReps}</div>
-            <div className="stat-meta">Currently active</div>
           </div>
         </div>
       </div>
 
-      {success && (
-        <div className="success-message" style={{ marginBottom: "16px" }}>
-          {success}
-        </div>
-      )}
-      {error && (
-        <div className="error-message" style={{ marginBottom: "16px" }}>
-          {error}
-        </div>
-      )}
+      {success && <div className="success-message" style={{ marginBottom: "12px" }}>{success}</div>}
+      {error && <div className="error-message" style={{ marginBottom: "12px" }}>{error}</div>}
 
-      {/* Tab Nav */}
       <div
         style={{
           display: "flex",
           gap: "4px",
-          marginBottom: "20px",
+          marginBottom: "16px",
           background: "#f1f5f9",
           padding: "6px",
           borderRadius: "12px",
           width: "fit-content",
         }}
       >
-        {[
-          { key: "list", label: "All Representatives" },
-          { key: "add", label: "+ Add Representative" },
-        ].map((tab) => (
+        {[{ key: "list", label: "All PGIR" }, { key: "add", label: "+ Add PGIR" }].map((item) => (
           <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            key={item.key}
+            onClick={() => setActiveTab(item.key)}
             style={{
-              padding: "10px 22px",
-              borderRadius: "8px",
+              padding: "10px 18px",
               border: "none",
-              cursor: "pointer",
+              borderRadius: "8px",
               fontWeight: "600",
-              fontSize: "14px",
-              background: activeTab === tab.key ? "white" : "transparent",
-              color: activeTab === tab.key ? "#0f172a" : "#64748b",
-              boxShadow:
-                activeTab === tab.key ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
-              transition: "all 0.2s",
+              cursor: "pointer",
+              background: activeTab === item.key ? "#fff" : "transparent",
+              color: activeTab === item.key ? "#0f172a" : "#64748b",
             }}
           >
-            {tab.label}
+            {item.label}
           </button>
         ))}
       </div>
 
       {activeTab === "list" && (
-        <div className="premium-card">
-          {loading ? (
+        <>
+          <div className="premium-card" style={{ marginBottom: "16px", padding: "18px" }}>
             <div
-              style={{ padding: "40px", textAlign: "center", color: "#9ca3af" }}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: "12px",
+              }}
             >
-              Loading...
-            </div>
-          ) : representatives.length === 0 ? (
-            <div className="premium-empty-state">
-              <div className="empty-icon">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z"
-                  />
-                </svg>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>PGIR Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={filters.name}
+                  onChange={handleFilterChange}
+                  placeholder="Search by name"
+                />
               </div>
-              <p className="empty-title">No representatives yet</p>
-              <p className="empty-subtitle">
-                Add your first campus representative
-              </p>
-              <button
-                onClick={() => setActiveTab("add")}
-                style={{
-                  marginTop: "12px",
-                  padding: "9px 22px",
-                  border: "none",
-                  borderRadius: "8px",
-                  background: "#324158",
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontWeight: "600",
-                  fontSize: "14px",
-                }}
-              >
-                Add Representative
-              </button>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Enroll / Joining Month</label>
+                <input
+                  type="month"
+                  name="joiningMonth"
+                  value={filters.joiningMonth}
+                  onChange={handleFilterChange}
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Batch Month</label>
+                <input
+                  type="month"
+                  name="batchMonth"
+                  value={filters.batchMonth}
+                  onChange={handleFilterChange}
+                />
+              </div>
+              <div style={{ display: "flex", gap: "8px", alignItems: "end" }}>
+                <button className="table-action-btn" style={{ background: "#324158" }} onClick={applyFilters}>
+                  Apply
+                </button>
+                <button className="table-action-btn" style={{ background: "#94a3b8" }} onClick={clearFilters}>
+                  Clear
+                </button>
+              </div>
             </div>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="premium-table">
-                <thead>
-                  <tr>
-                    <th>Representative</th>
-                    <th>College</th>
-                    <th>Designation</th>
-                    <th>Mobile</th>
-                    <th>Students Added</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {representatives.map((rep) => {
-                    const initials = rep.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase();
-                    return (
+          </div>
+
+          <div className="premium-card">
+            {loading ? (
+              <div style={{ padding: "40px", textAlign: "center" }}>Loading...</div>
+            ) : representatives.length === 0 ? (
+              <div className="premium-empty-state">
+                <p className="empty-title">No PGIR found</p>
+                <p className="empty-subtitle">Add a representative to get started</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table className="premium-table">
+                  <thead>
+                    <tr>
+                      <th>PGIR ID</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>WhatsApp</th>
+                      <th>College</th>
+                      <th>Designation</th>
+                      <th>Joining Date</th>
+                      <th>Students</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {representatives.map((rep) => (
                       <tr key={rep._id}>
-                        <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "12px",
-                            }}
-                          >
-                            
-                            <div>
-                              <div
-                                style={{
-                                  fontWeight: "600",
-                                  color: "#1f2937",
-                                  fontSize: "14px",
-                                }}
-                              >
-                                {rep.name}
-                              </div>
-                              <div
-                                style={{ fontSize: "12px", color: "#9ca3af" }}
-                              >
-                                {rep.email}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{rep.college || "—"}</td>
-                        <td>
-                          <span
-                            style={{
-                              padding: "3px 10px",
-                              borderRadius: "999px",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              background: "#f1f5f9",
-                              color: "#475569",
-                            }}
-                          >
-                            {rep.designation}
-                          </span>
-                        </td>
-                        <td className="mono-text">{rep.mobile || "—"}</td>
-                        <td>
-                          <span
-                            style={{
-                              padding: "3px 10px",
-                              borderRadius: "999px",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              background: "#ecfeff",
-                              color: "#0f766e",
-                            }}
-                          >
-                            {rep.totalStudents || 0}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            style={{
-                              padding: "3px 10px",
-                              borderRadius: "999px",
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              background:
-                                rep.status === "active" ? "#dbeafe" : "#e5e7eb",
-                              color:
-                                rep.status === "active" ? "#1e40af" : "#6b7280",
-                            }}
-                          >
-                            {rep.status === "active" ? "Active" : "Inactive"}
-                          </span>
-                        </td>
+                        <td className="mono-text">{rep.pgirId || "-"}</td>
+                        <td>{rep.name}</td>
+                        <td>{rep.email}</td>
+                        <td>{rep.mobile || "-"}</td>
+                        <td>{rep.college || "-"}</td>
+                        <td>{rep.designation || "-"}</td>
+                        <td>{formatDate(rep.joiningDate)}</td>
+                        <td>{rep.totalStudents || 0}</td>
                         <td>
                           <div style={{ display: "flex", gap: "8px" }}>
                             <button
-                              onClick={() => handleViewDetails(rep._id)}
                               className="table-action-btn"
-                              style={{
-                                background: "#0ea5e9",
-                                color: "#fff",
-                                padding: "6px 14px",
-                                borderRadius: "6px",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                              }}
+                              style={{ background: "#0ea5e9" }}
+                              onClick={() => handleViewDetails(rep._id)}
                               disabled={detailsLoading}
                             >
-                              {detailsLoading ? "Loading..." : "See Details"}
+                              {detailsLoading ? "Loading..." : "View"}
                             </button>
                             <button
-                              onClick={() => handleDelete(rep._id, rep.name)}
                               className="table-action-btn"
-                              style={{
-                                background: "#ef4444",
-                                color: "#fff",
-                                padding: "6px 14px",
-                                borderRadius: "6px",
-                                border: "none",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                              }}
+                              style={{ background: "#ef4444" }}
+                              onClick={() => handleDelete(rep._id, rep.name)}
                             >
                               Delete
                             </button>
                           </div>
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {activeTab === "add" && (
         <div className="premium-card">
           <div className="premium-card-header">
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <div
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  borderRadius: "10px",
-                  background: "#e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg
-                  fill="none"
-                  stroke="#475569"
-                  viewBox="0 0 24 24"
-                  style={{ width: "22px", height: "22px" }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                  />
-                </svg>
-              </div>
-              <div>
-                <h2 style={{ margin: 0, color: "#0f172a" }}>
-                  Add New Representative
-                </h2>
-                <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
-                  Fill in the representative's details
-                </p>
-              </div>
-            </div>
+            <h2 style={{ margin: 0 }}>Add Representative (PGIR)</h2>
           </div>
-
-          <form onSubmit={handleSubmit} style={{ padding: "24px" }}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: "16px",
-              }}
-            >
-              <div className="form-group">
-                <label>Full Name *</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Enter full name"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Email Address *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Enter email"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Password *</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Set login password"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label>Mobile Number</label>
-                <input
-                  type="tel"
-                  name="mobile"
-                  value={formData.mobile}
-                  onChange={handleChange}
-                  placeholder="Enter mobile number"
-                />
-              </div>
-              <div className="form-group">
-                <label>College</label>
-                <input
-                  type="text"
-                  name="college"
-                  value={formData.college}
-                  onChange={handleChange}
-                  placeholder="College name"
-                />
-              </div>
-              <div className="form-group">
-                <label>Course</label>
-                <input
-                  type="text"
-                  name="course"
-                  value={formData.course}
-                  onChange={handleChange}
-                  placeholder="e.g. B.Tech, MBA"
-                />
-              </div>
-              <div className="form-group">
-                <label>Department</label>
-                <input
-                  type="text"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  placeholder="e.g. CSE, ECE"
-                />
-              </div>
-              <div className="form-group">
-                <label>Year</label>
-                <select
-                  name="year"
-                  value={formData.year}
-                  onChange={handleChange}
-                  style={{ width: "100%" }}
-                >
-                  <option value="">Select Year</option>
-                  <option>1st Year</option>
-                  <option>2nd Year</option>
-                  <option>3rd Year</option>
-                  <option>4th Year</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Designation</label>
-                <input
-                  type="text"
-                  name="designation"
-                  value={formData.designation}
-                  onChange={handleChange}
-                  placeholder="Campus Representative"
-                />
-              </div>
-              <div className="form-group">
-                <label>UPI ID</label>
-                <input
-                  type="text"
-                  name="upiId"
-                  value={formData.upiId}
-                  onChange={handleChange}
-                  placeholder="e.g. name@upi"
-                />
-              </div>
+          <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
+              <div className="form-group"><label>PGIR ID (Auto)</label><input disabled value="Auto Generated" /></div>
+              <div className="form-group"><label>Full Name *</label><input name="name" value={formData.name} onChange={handleInput} required /></div>
+              <div className="form-group"><label>Email Address *</label><input type="email" name="email" value={formData.email} onChange={handleInput} required /></div>
+              <div className="form-group"><label>Password *</label><input type="password" name="password" value={formData.password} onChange={handleInput} required /></div>
+              <div className="form-group"><label>WhatsApp Number</label><input name="mobile" value={formData.mobile} onChange={handleInput} /></div>
+              <div className="form-group"><label>Current Designation</label><input name="designation" value={formData.designation} onChange={handleInput} /></div>
+              <div className="form-group"><label>Joining Date</label><input type="date" name="joiningDate" value={formData.joiningDate} onChange={handleInput} /></div>
+              <div className="form-group"><label>College Full Name</label><input name="college" value={formData.college} onChange={handleInput} /></div>
+              <div className="form-group"><label>Branch / Course / Stream</label><input name="course" value={formData.course} onChange={handleInput} /></div>
+              <div className="form-group"><label>Department</label><input name="department" value={formData.department} onChange={handleInput} /></div>
+              <div className="form-group"><label>Year of Study</label><input name="year" value={formData.year} onChange={handleInput} /></div>
+              <div className="form-group"><label>Instagram Profile</label><input name="instagramProfile" value={formData.instagramProfile} onChange={handleInput} /></div>
+              <div className="form-group"><label>LinkedIn Profile</label><input name="linkedinProfile" value={formData.linkedinProfile} onChange={handleInput} /></div>
+              <div className="form-group"><label>UPI ID</label><input name="upiId" value={formData.upiId} onChange={handleInput} /></div>
+              <div className="form-group"><label>UPI / Mobile Number (Payout)</label><input name="upiMobileNumber" value={formData.upiMobileNumber} onChange={handleInput} /></div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Intern Application Form Link</label><input name="internshipApplicationFormLink" value={formData.internshipApplicationFormLink} onChange={handleInput} /></div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Internship Sheet Link</label><input name="internshipSheetLink" value={formData.internshipSheetLink} onChange={handleInput} /></div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label>Sheet Link1</label>
-                <input
-                  type="text"
-                  name="sheetLinks"
-                  value={formData.sheetLinks}
-                  onChange={handleChange}
-                  placeholder="Google Sheets or tracking link (optional)"
-                />
+                <label>Internship & SMS Promotional Messages</label>
+                <textarea name="promotionalMessage" value={formData.promotionalMessage} onChange={handleInput} rows={3} />
               </div>
-               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label>Sheet Link2</label>
-                <input
-                  type="text"
-                  name="sheetLinks"
-                  value={formData.sheetLinks}
-                  onChange={handleChange}
-                  placeholder="Google Sheets or tracking link (optional)"
-                />
-              </div>
+              <div className="form-group"><label>UPI Scanner</label><input type="file" name="upiScanner" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileInput} /></div>
+              <div className="form-group"><label>PGIR Selection Letter</label><input type="file" name="pgirSelectionLetter" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileInput} /></div>
+              <div className="form-group"><label>Internship Offer Letter</label><input type="file" name="internshipOfferLetter" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileInput} /></div>
             </div>
 
-            <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-              <button
-                type="submit"
-                disabled={submitting}
-                style={{
-                  padding: "10px 28px",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#324158",
-                  color: "#fff",
-                  fontWeight: "600",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                }}
-              >
-                {submitting ? (
-                  <LoadingSpinner text="Adding..." inline size="sm" />
-                ) : (
-                  "Add Representative"
-                )}
+            <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
+              <button type="submit" disabled={submitting} className="table-action-btn" style={{ background: "#324158" }}>
+                {submitting ? <LoadingSpinner text="Saving..." inline size="sm" /> : "Add Representative"}
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab("list")}
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "8px",
-                  border: "1px solid #d1d5db",
-                  background: "#fff",
-                  color: "#6b7280",
-                  fontWeight: "600",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
+              <button type="button" className="table-action-btn" style={{ background: "#94a3b8" }} onClick={() => setActiveTab("list")}>Cancel</button>
             </div>
           </form>
         </div>
@@ -648,116 +399,110 @@ function ManageRepresentatives() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.5)",
-            zIndex: 1000,
+            background: "rgba(15, 23, 42, 0.58)",
+            zIndex: 1200,
             display: "flex",
-            justifyContent: "center",
             alignItems: "center",
+            justifyContent: "center",
             padding: "16px",
           }}
           onClick={() => setSelectedRepDetails(null)}
         >
-          <div
-            className="premium-card"
-            style={{
-              width: "min(1000px, 100%)",
-              maxHeight: "90vh",
-              overflow: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="premium-card" style={{ width: "min(1100px, 100%)", maxHeight: "92vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
             <div className="premium-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h2 style={{ margin: 0, color: "#0f172a" }}>
-                  {selectedRepDetails.representative.name} - Student Details
-                </h2>
-                <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
-                  {selectedRepDetails.representative.email}
-                </p>
+                <h2 style={{ margin: 0 }}>{selectedRepDetails.representative.name} Profile</h2>
+                <p style={{ margin: 0, color: "#64748b", fontSize: "13px" }}>{selectedRepDetails.representative.email}</p>
               </div>
-              <button
-                onClick={() => setSelectedRepDetails(null)}
-                style={{
-                  border: "1px solid #d1d5db",
-                  background: "#fff",
-                  borderRadius: "8px",
-                  padding: "8px 14px",
-                  cursor: "pointer",
-                }}
-              >
-                Close
-              </button>
+              <button className="table-action-btn" style={{ background: "#64748b" }} onClick={() => setSelectedRepDetails(null)}>Close</button>
             </div>
 
-            <div style={{ padding: "20px" }}>
-              <div className="premium-stats-grid" style={{ marginBottom: "20px" }}>
-                <div className="premium-stat-card accent-blue">
-                  <div className="stat-content">
-                    <div className="stat-label">Total Students</div>
-                    <div className="stat-value">{selectedRepDetails.stats.totalStudents}</div>
-                  </div>
+            <div style={{ padding: "18px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px", marginBottom: "18px" }}>
+                <div className="premium-stat-card accent-blue"><div className="stat-content"><div className="stat-label">PGIR ID</div><div className="stat-value" style={{ fontSize: "18px" }}>{selectedRepDetails.representative.pgirId || "-"}</div></div></div>
+                <div className="premium-stat-card accent-teal"><div className="stat-content"><div className="stat-label">Total Students</div><div className="stat-value">{selectedRepDetails.stats.totalStudents}</div></div></div>
+                <div className="premium-stat-card accent-indigo"><div className="stat-content"><div className="stat-label">This Week</div><div className="stat-value">{selectedRepDetails.stats.weeklyStudents}</div></div></div>
+                <div className="premium-stat-card accent-slate"><div className="stat-content"><div className="stat-label">This Month</div><div className="stat-value">{selectedRepDetails.stats.monthlyStudents}</div></div></div>
+              </div>
+
+              <div className="premium-card" style={{ marginBottom: "16px" }}>
+                <div style={{ padding: "14px 16px", borderBottom: "1px solid #e5e7eb", fontWeight: 700, color: "#0f172a" }}>
+                  PGIR Profile Details
                 </div>
-                <div className="premium-stat-card accent-teal">
-                  <div className="stat-content">
-                    <div className="stat-label">Weekly Added</div>
-                    <div className="stat-value">{selectedRepDetails.stats.weeklyStudents}</div>
+                <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
+                  <div><strong>WhatsApp:</strong> {selectedRepDetails.representative.mobile || "-"}</div>
+                  <div><strong>Designation:</strong> {selectedRepDetails.representative.designation || "-"}</div>
+                  <div><strong>Joining Date:</strong> {formatDate(selectedRepDetails.representative.joiningDate)}</div>
+                  <div><strong>College:</strong> {selectedRepDetails.representative.college || "-"}</div>
+                  <div><strong>Course/Stream:</strong> {selectedRepDetails.representative.course || "-"}</div>
+                  <div><strong>Department:</strong> {selectedRepDetails.representative.department || "-"}</div>
+                  <div><strong>Year:</strong> {selectedRepDetails.representative.year || "-"}</div>
+                  <div><strong>Instagram:</strong> {selectedRepDetails.representative.instagramProfile || "-"}</div>
+                  <div><strong>LinkedIn:</strong> {selectedRepDetails.representative.linkedinProfile || "-"}</div>
+                  <div><strong>UPI ID:</strong> {selectedRepDetails.representative.upiId || "-"}</div>
+                  <div><strong>UPI / Mobile:</strong> {selectedRepDetails.representative.upiMobileNumber || "-"}</div>
+                  <div><strong>Application Link:</strong> {selectedRepDetails.representative.internshipApplicationFormLink || "-"}</div>
+                  <div><strong>Internship Sheet:</strong> {selectedRepDetails.representative.internshipSheetLink || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><strong>Promotional Message:</strong> {selectedRepDetails.representative.promotionalMessage || "-"}</div>
+                  <div>
+                    <strong>UPI Scanner:</strong>{" "}
+                    {selectedRepDetails.representative.docs?.upiScanner?.filepath ? (
+                      <a href={toPublicFilePath(selectedRepDetails.representative.docs.upiScanner.filepath)} target="_blank" rel="noreferrer">Open</a>
+                    ) : "-"}
                   </div>
-                </div>
-                <div className="premium-stat-card accent-indigo">
-                  <div className="stat-content">
-                    <div className="stat-label">Monthly Added</div>
-                    <div className="stat-value">{selectedRepDetails.stats.monthlyStudents}</div>
+                  <div>
+                    <strong>Selection Letter:</strong>{" "}
+                    {selectedRepDetails.representative.docs?.pgirSelectionLetter?.filepath ? (
+                      <a href={toPublicFilePath(selectedRepDetails.representative.docs.pgirSelectionLetter.filepath)} target="_blank" rel="noreferrer">Open</a>
+                    ) : "-"}
                   </div>
-                </div>
-                <div className="premium-stat-card accent-slate">
-                  <div className="stat-content">
-                    <div className="stat-label">Internship / SMS</div>
-                    <div className="stat-value" style={{ fontSize: "18px" }}>
-                      {selectedRepDetails.stats.byType.internship} / {selectedRepDetails.stats.byType.smsProgram}
-                    </div>
+                  <div>
+                    <strong>Offer Letter:</strong>{" "}
+                    {selectedRepDetails.representative.docs?.internshipOfferLetter?.filepath ? (
+                      <a href={toPublicFilePath(selectedRepDetails.representative.docs.internshipOfferLetter.filepath)} target="_blank" rel="noreferrer">Open</a>
+                    ) : "-"}
                   </div>
                 </div>
               </div>
 
-              <div style={{ overflowX: "auto" }}>
-                <table className="premium-table">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Intern ID</th>
-                      <th>Type</th>
-                      <th>Email</th>
-                      <th>Mobile</th>
-                      <th>Payment</th>
-                      <th>Completed Fees</th>
-                      <th>Pending Fees</th>
-                      <th>Added On</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedRepDetails.recentStudents.length === 0 ? (
+              <div className="premium-card" style={{ marginBottom: "16px" }}>
+                <div style={{ padding: "14px 16px", borderBottom: "1px solid #e5e7eb", fontWeight: 700, color: "#0f172a" }}>
+                  Recent Payouts
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <table className="premium-table">
+                    <thead>
                       <tr>
-                        <td colSpan={9} style={{ textAlign: "center", padding: "18px", color: "#6b7280" }}>
-                          No students added yet.
-                        </td>
+                        <th>Month</th>
+                        <th>Week</th>
+                        <th>Enrollments</th>
+                        <th>3000 Paid</th>
+                        <th>Eligible</th>
+                        <th>Reward %</th>
+                        <th>Payout</th>
+                        <th>Status</th>
                       </tr>
-                    ) : (
-                      selectedRepDetails.recentStudents.map((student) => (
-                        <tr key={student._id}>
-                          <td>{student.name}</td>
-                          <td className="mono-text">{student.internId}</td>
-                          <td>{student.studentType}</td>
-                          <td>{student.email}</td>
-                          <td>{student.mobile || "—"}</td>
-                          <td>{student.paymentAmount ? `₹${student.paymentAmount}` : "₹0"}</td>
-                          <td>{student.completedFees ? `₹${student.completedFees}` : "₹0"}</td>
-                          <td>{student.pendingFees ? `₹${student.pendingFees}` : "₹0"}</td>
-                          <td>{new Date(student.createdAt).toLocaleDateString("en-IN")}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {(selectedRepDetails.payouts || []).length === 0 ? (
+                        <tr><td colSpan={8} style={{ textAlign: "center" }}>No payout records</td></tr>
+                      ) : (
+                        selectedRepDetails.payouts.map((item) => (
+                          <tr key={item._id}>
+                            <td>{item.monthLabel}</td>
+                            <td>{item.weekLabel}</td>
+                            <td>{item.totalEnrollmentCount}</td>
+                            <td>{item.studentsWith3000Paid}</td>
+                            <td>{item.payoutEligible}</td>
+                            <td>{item.rewardPercent}%</td>
+                            <td>₹{item.payoutAmount || 0}</td>
+                            <td>{item.payoutStatus}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

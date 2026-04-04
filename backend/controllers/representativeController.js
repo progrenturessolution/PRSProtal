@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Representative = require('../models/Representative');
 const Intern = require('../models/Intern');
+const RepresentativePayout = require('../models/RepresentativePayout');
 const { sendInternCredentials } = require('../config/emailService');
 
 // Generate unique Intern ID based on type with new format
@@ -364,6 +365,20 @@ exports.getMyStudentStats = async (req, res) => {
     });
   } catch (error) {
     console.error('Get representative stats error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get representative payout/reward history
+exports.getMyPayouts = async (req, res) => {
+  try {
+    const payouts = await RepresentativePayout.find({ representative: req.user.id })
+      .sort({ weekStartDate: -1 })
+      .limit(50);
+
+    res.status(200).json({ success: true, count: payouts.length, payouts });
+  } catch (error) {
+    console.error('Get representative payouts error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

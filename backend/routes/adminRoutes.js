@@ -25,6 +25,12 @@ if (!fs.existsSync(notificationsUploadDir)) {
 	fs.mkdirSync(notificationsUploadDir, { recursive: true });
 }
 
+// Ensure uploads/representatives folder exists
+const repsUploadDir = path.join(__dirname, '..', 'uploads', 'representatives');
+if (!fs.existsSync(repsUploadDir)) {
+	fs.mkdirSync(repsUploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
 		cb(null, studentsUploadDir);
@@ -65,6 +71,20 @@ const notificationStorage = multer.diskStorage({
 });
 
 const uploadNotification = multer({ storage: notificationStorage });
+
+// Representative docs upload
+const representativeStorage = multer.diskStorage({
+	destination: function (req, file, cb) {
+		cb(null, repsUploadDir);
+	},
+	filename: function (req, file, cb) {
+		const ext = path.extname(file.originalname);
+		const name = `rep-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+		cb(null, name);
+	}
+});
+
+const uploadRepresentativeDocs = multer({ storage: representativeStorage });
 
 // ========== INTERN/STUDENT MANAGEMENT ==========
 
@@ -160,7 +180,17 @@ router.delete('/certificates/:id', verifyToken, verifyAdmin, certificateControll
 // ========== REPRESENTATIVE MANAGEMENT ==========
 
 // Add representative
-router.post('/add-representative', verifyToken, verifyAdmin, adminController.addRepresentative);
+router.post(
+	'/add-representative',
+	verifyToken,
+	verifyAdmin,
+	uploadRepresentativeDocs.fields([
+		{ name: 'upiScanner', maxCount: 1 },
+		{ name: 'pgirSelectionLetter', maxCount: 1 },
+		{ name: 'internshipOfferLetter', maxCount: 1 }
+	]),
+	adminController.addRepresentative
+);
 
 // Get all representatives
 router.get('/representatives', verifyToken, verifyAdmin, adminController.getAllRepresentatives);
@@ -170,6 +200,17 @@ router.get('/representatives/:id/details', verifyToken, verifyAdmin, adminContro
 
 // Delete representative
 router.delete('/representative/:id', verifyToken, verifyAdmin, adminController.deleteRepresentative);
+
+// Representative payout management
+router.post('/representatives/payouts', verifyToken, verifyAdmin, adminController.upsertRepresentativePayout);
+router.get('/representatives/payouts', verifyToken, verifyAdmin, adminController.getRepresentativePayouts);
+
+// Group management
+router.post('/groups', verifyToken, verifyAdmin, adminController.createStudentGroup);
+router.get('/groups', verifyToken, verifyAdmin, adminController.getStudentGroups);
+router.get('/groups/:id', verifyToken, verifyAdmin, adminController.getStudentGroupDetails);
+router.patch('/groups/:id', verifyToken, verifyAdmin, adminController.updateStudentGroup);
+router.delete('/groups/:id', verifyToken, verifyAdmin, adminController.deleteStudentGroup);
 
 module.exports = router;
 
