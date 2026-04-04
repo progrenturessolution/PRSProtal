@@ -534,7 +534,12 @@ exports.getProfile = async (req, res) => {
   try {
     const trainerId = req.user.id;
 
-    const trainer = await Trainer.findById(trainerId).select('-password');
+    const trainer = await Trainer.findById(trainerId)
+      .select('-password')
+      .populate('assignedStudents', 'name email internId studentType status assignedTrainer')
+      .populate('assignedGroups', 'groupName groupNumber students createdAt')
+      .populate('workAssignments.assignedStudents', 'name email internId')
+      .populate('workAssignments.assignedGroups', 'groupName groupNumber');
     if (!trainer) {
       return res.status(404).json({
         success: false,

@@ -132,12 +132,15 @@ router.delete('/delete-all-interns', verifyToken, verifyAdmin, adminController.d
 
 // Add trainer
 router.post('/add-trainer', verifyToken, verifyAdmin, adminController.addTrainer);
+router.patch('/trainer/:id', verifyToken, verifyAdmin, adminController.updateTrainer);
 
 // Get all trainers
 router.get('/trainers', verifyToken, verifyAdmin, adminController.getAllTrainers);
 
 // Assign students to trainer
 router.post('/assign-students', verifyToken, verifyAdmin, adminController.assignStudentsToTrainer);
+router.post('/assign-groups', verifyToken, verifyAdmin, adminController.assignGroupsToTrainer);
+router.post('/assign-work', verifyToken, verifyAdmin, adminController.assignWorkToTrainer);
 
 // Delete trainer
 router.delete('/trainer/:id', verifyToken, verifyAdmin, adminController.deleteTrainer);

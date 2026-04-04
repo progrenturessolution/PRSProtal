@@ -353,12 +353,68 @@ function RepresentativeDashboard() {
   const profileSheetLink = profile?.sheetLinks || '';
   const profileApplicationFormLink = profile?.internshipApplicationFormLink || '';
   const profileInternshipSheetLink = profile?.internshipSheetLink || '';
+  const profileHighlights = [
+    { label: 'Total Students', value: totalStudents, note: 'All-time referrals' },
+    { label: 'This Month', value: monthlyStudents, note: 'Current month activity' },
+    { label: 'This Week', value: weeklyStudents, note: 'Recent additions' },
+    { label: 'Designation', value: profileDesignation, note: 'Current role' },
+  ];
+
+  const profileInfoRows = [
+    { label: 'PGIR ID', value: profile?.pgirId || '-' },
+    { label: 'College', value: profile?.college || 'Not provided' },
+    { label: 'Course', value: profile?.course || 'Not provided' },
+    { label: 'Department', value: profile?.department || 'Not provided' },
+    { label: 'Year', value: profile?.year || 'Not provided' },
+    { label: 'Joining Date', value: profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : 'Not provided' },
+    { label: 'Email', value: profileEmail },
+    { label: 'Mobile', value: profileMobile },
+    { label: 'UPI ID', value: profile?.upiId || 'Not provided' },
+    { label: 'UPI/Mobile', value: profile?.upiMobileNumber || 'Not provided' },
+  ];
+
+  const profileLinkRows = [
+    { label: 'Application Form', href: profileApplicationFormLink },
+    { label: 'Internship Sheet', href: profileInternshipSheetLink },
+    { label: 'Sheet Links', href: profileSheetLink },
+  ];
+
+  const profilePromoRows = [
+    { label: 'Internship', value: profile?.internshipPromotionalMessage || 'Not provided' },
+    { label: 'SMS Program', value: profile?.smsPromotionalMessage || 'Not provided' },
+  ];
 
   const resolveFileUrl = (filepath) => {
     if (!filepath) return '';
     const relative = String(filepath).replace(/\\/g, '/').split('uploads/')[1] || '';
-    return `${UPLOADS_BASE}/${relative}`;
+    return `${UPLOADS_BASE}/uploads/${relative}`;
   };
+
+  const assignedDocs = [
+    {
+      key: 'upiScanner',
+      label: 'UPI Scanner',
+      filename: profile?.docs?.upiScanner?.filename,
+      filepath: profile?.docs?.upiScanner?.filepath,
+      uploadedAt: profile?.docs?.upiScanner?.uploadedAt,
+    },
+    {
+      key: 'pgirSelectionLetter',
+      label: 'PGIR Selection Letter',
+      filename: profile?.docs?.pgirSelectionLetter?.filename,
+      filepath: profile?.docs?.pgirSelectionLetter?.filepath,
+      uploadedAt: profile?.docs?.pgirSelectionLetter?.uploadedAt,
+    },
+    {
+      key: 'internshipOfferLetter',
+      label: 'Internship Offer Letter',
+      filename: profile?.docs?.internshipOfferLetter?.filename,
+      filepath: profile?.docs?.internshipOfferLetter?.filepath,
+      uploadedAt: profile?.docs?.internshipOfferLetter?.uploadedAt,
+    },
+  ];
+
+  const certificateCount = assignedDocs.filter((doc) => doc.filepath).length;
 
   return (
     <div className="dashboard">
@@ -491,7 +547,7 @@ function RepresentativeDashboard() {
               <div className="premium-page-header">
                 <div className="header-left">
                   <h1>My Profile</h1>
-                  <p className="header-subtitle">View and update your information</p>
+                  <p className="header-subtitle">Your identity, assignments and account details in one structured view</p>
                 </div>
               </div>
 
@@ -577,156 +633,131 @@ function RepresentativeDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="rep-profile-shell">
-                  <section className="rep-profile-hero">
-                    <div className="rep-profile-hero-glow" />
-                    <div className="rep-profile-hero-main">
-                      <div className="rep-profile-avatar">{profileInitials}</div>
-                      <div className="rep-profile-identity">
-                        <h2>{profileName}</h2>
-                        <p>{profileDesignation}</p>
-                        <div className="rep-profile-contact-row">
-                          <span>{profileEmail}</span>
-                          <span>{profileMobile}</span>
+                <div className="rep-profile-shell" style={{ display: 'grid', gap: '16px' }}>
+                  <section
+                    style={{
+                      position: 'relative',
+                      overflow: 'hidden',
+                      borderRadius: '22px',
+                      padding: '22px',
+                      background: 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #38bdf8 100%)',
+                      color: '#fff',
+                      boxShadow: '0 18px 50px rgba(15, 23, 42, 0.18)',
+                    }}
+                  >
+                    <div style={{ position: 'absolute', inset: 'auto -60px -80px auto', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', filter: 'blur(10px)' }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px', alignItems: 'center', position: 'relative' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                        <div className="rep-profile-avatar" style={{ width: '84px', height: '84px', fontSize: '28px', border: '2px solid rgba(255,255,255,0.35)', boxShadow: '0 10px 26px rgba(15, 23, 42, 0.15)' }}>{profileInitials}</div>
+                        <div style={{ minWidth: '240px' }}>
+                          <div style={{ fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.82 }}>Representative Profile</div>
+                          <h2 style={{ margin: '6px 0 4px', fontSize: '30px', lineHeight: 1.1 }}>{profileName}</h2>
+                          <p style={{ margin: 0, opacity: 0.92, fontSize: '16px' }}>{profileDesignation}</p>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
+                            <span style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '999px', padding: '6px 10px', fontSize: '12px', fontWeight: 700 }}>PGIR: {profile?.pgirId || '-'}</span>
+                            <span style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '999px', padding: '6px 10px', fontSize: '12px', fontWeight: 700 }}>{profileMobile}</span>
+                            <span style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '999px', padding: '6px 10px', fontSize: '12px', fontWeight: 700 }}>{profileEmail}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="rep-profile-hero-stats">
-                      <div className="rep-mini-stat">
-                        <span className="value">{totalStudents}</span>
-                        <span className="label">Total Students</span>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
+                        {profileHighlights.map((item) => (
+                          <div key={item.label} style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '16px', padding: '12px 14px', backdropFilter: 'blur(6px)' }}>
+                            <div style={{ fontSize: '12px', opacity: 0.85 }}>{item.label}</div>
+                            <div style={{ fontSize: '20px', fontWeight: 800, marginTop: '4px' }}>{item.value}</div>
+                            <div style={{ fontSize: '12px', opacity: 0.82, marginTop: '2px' }}>{item.note}</div>
+                          </div>
+                        ))}
+                        <button className="rep-profile-btn rep-profile-btn-light" onClick={startEdit} style={{ gridColumn: '1 / -1', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)' }}>Edit Profile</button>
                       </div>
-                      <div className="rep-mini-stat">
-                        <span className="value">{monthlyStudents}</span>
-                        <span className="label">This Month</span>
-                      </div>
-                      <button className="rep-profile-btn rep-profile-btn-light" onClick={startEdit}>Edit Profile</button>
                     </div>
                   </section>
 
-                  <div className="rep-profile-section-grid">
-                    <article className="rep-profile-card tone-sky">
-                      <header>
-                        <h3>Personal Information</h3>
-                      </header>
-                      <div className="rep-profile-data-grid">
-                        <div className="rep-profile-data-item">
-                          <label>Full Name</label>
-                          <p>{profileName}</p>
-                          <span className="rep-readonly-chip">Read only</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(280px, 0.8fr)', gap: '16px', alignItems: 'start' }}>
+                    <div style={{ display: 'grid', gap: '16px' }}>
+                      <article className="premium-card" style={{ padding: '18px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                          <h3 style={{ margin: 0 }}>Profile Details</h3>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#334155', background: '#e2e8f0', padding: '6px 10px', borderRadius: '999px' }}>Identity & Contact</span>
                         </div>
-                        <div className="rep-profile-data-item">
-                          <label>Email Address</label>
-                          <p>{profileEmail}</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
+                          {profileInfoRows.map((item) => (
+                            <div key={item.label} style={{ padding: '12px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '6px', fontWeight: 800 }}>{item.label}</div>
+                              <div style={{ color: '#0f172a', fontWeight: 600, wordBreak: 'break-word' }}>{item.value}</div>
+                            </div>
+                          ))}
                         </div>
-                        <div className="rep-profile-data-item">
-                          <label>Mobile Number</label>
-                          <p>{profileMobile}</p>
-                        </div>
-                      </div>
-                    </article>
+                      </article>
 
-                    <article className="rep-profile-card tone-amber">
-                      <header>
-                        <h3>Academic Information</h3>
-                      </header>
-                      <div className="rep-profile-data-grid">
-                        <div className="rep-profile-data-item">
-                          <label>College</label>
-                          <p>{profile?.college || 'Not provided'}</p>
+                      <article className="premium-card" style={{ padding: '18px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                          <h3 style={{ margin: 0 }}>Assigned Documents</h3>
+                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#334155', background: '#e2e8f0', padding: '6px 10px', borderRadius: '999px' }}>{certificateCount} ready</span>
                         </div>
-                        <div className="rep-profile-data-item">
-                          <label>Course</label>
-                          <p>{profile?.course || 'Not provided'}</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                          {assignedDocs.map((doc) => {
+                            const isReady = Boolean(doc.filepath);
+                            return (
+                              <div key={doc.key} style={{ borderRadius: '16px', border: `1px solid ${isReady ? '#cbd5e1' : '#fecaca'}`, background: isReady ? 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' : 'linear-gradient(180deg, #fff5f5 0%, #ffffff 100%)', padding: '14px', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.05)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'start' }}>
+                                  <div>
+                                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned file</div>
+                                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>{doc.label}</div>
+                                  </div>
+                                  <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 9px', borderRadius: '999px', background: isReady ? '#dcfce7' : '#fee2e2', color: isReady ? '#166534' : '#991b1b' }}>{isReady ? 'READY' : 'MISSING'}</span>
+                                </div>
+                                <div style={{ marginTop: '12px', display: 'grid', gap: '8px', color: '#334155', fontSize: '13px' }}>
+                                  <div><strong>File:</strong> {doc.filename || 'Not uploaded'}</div>
+                                  <div><strong>Uploaded:</strong> {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '-'}</div>
+                                  {isReady ? (
+                                    <a href={resolveFileUrl(doc.filepath)} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', width: 'fit-content', marginTop: '4px', alignItems: 'center', justifyContent: 'center', padding: '9px 14px', borderRadius: '10px', background: '#0f172a', color: '#fff', textDecoration: 'none', fontWeight: 700 }}>Open Document</a>
+                                  ) : (
+                                    <div style={{ marginTop: '4px', color: '#64748b' }}>This document has not been assigned yet.</div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="rep-profile-data-item">
-                          <label>Department</label>
-                          <p>{profile?.department || 'Not provided'}</p>
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>Year</label>
-                          <p>{profile?.year || 'Not provided'}</p>
-                        </div>
-                      </div>
-                    </article>
+                      </article>
+                    </div>
 
-                    <article className="rep-profile-card tone-emerald">
-                      <header>
-                        <h3>Additional Information</h3>
-                      </header>
-                      <div className="rep-profile-data-grid">
-                        <div className="rep-profile-data-item">
-                          <label>UPI ID</label>
-                          <p>{profile?.upiId || 'Not provided'}</p>
+                    <aside style={{ display: 'grid', gap: '16px' }}>
+                      <article className="premium-card" style={{ padding: '18px' }}>
+                        <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links</h3>
+                        <div style={{ display: 'grid', gap: '10px' }}>
+                          {profileLinkRows.map((item) => (
+                            <div key={item.label} style={{ padding: '12px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.label}</div>
+                              {item.href ? <a href={item.href} target="_blank" rel="noreferrer">Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
+                            </div>
+                          ))}
                         </div>
-                        <div className="rep-profile-data-item">
-                          <label>Designation</label>
-                          <p>{profileDesignation}</p>
-                          <span className="rep-readonly-chip">Read only</span>
+                      </article>
+
+                      <article className="premium-card" style={{ padding: '18px' }}>
+                        <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Promotional Messages</h3>
+                        <div style={{ display: 'grid', gap: '12px' }}>
+                          {profilePromoRows.map((item) => (
+                            <div key={item.label} style={{ padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0', background: '#fff' }}>
+                              <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '6px', fontWeight: 800 }}>{item.label}</div>
+                              <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{item.value}</div>
+                            </div>
+                          ))}
                         </div>
-                        <div className="rep-profile-data-item">
-                          <label>Sheet Link</label>
-                          {profileSheetLink ? (
-                            <a href={profileSheetLink} target="_blank" rel="noreferrer" className="rep-sheet-link">Open sheet link</a>
-                          ) : (
-                            <p>Not available</p>
-                          )}
-                          <span className="rep-readonly-chip">Read only</span>
+                      </article>
+
+                      <article className="premium-card" style={{ padding: '18px' }}>
+                        <h3 style={{ marginTop: 0, marginBottom: '12px' }}>At a Glance</h3>
+                        <div style={{ display: 'grid', gap: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span>Instagram</span><strong style={{ textAlign: 'right' }}>{profile?.instagramProfile || 'Not provided'}</strong></div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span>LinkedIn</span><strong style={{ textAlign: 'right' }}>{profile?.linkedinProfile || 'Not provided'}</strong></div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span>Sheet Links</span><strong style={{ textAlign: 'right' }}>{profileSheetLink ? 'Available' : 'Not available'}</strong></div>
                         </div>
-                        <div className="rep-profile-data-item">
-                          <label>Intern Application Form</label>
-                          {profileApplicationFormLink ? (
-                            <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" className="rep-sheet-link">Open form link</a>
-                          ) : (
-                            <p>Not available</p>
-                          )}
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>Internship Sheet Link</label>
-                          {profileInternshipSheetLink ? (
-                            <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" className="rep-sheet-link">Open internship sheet</a>
-                          ) : (
-                            <p>Not available</p>
-                          )}
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>Instagram Profile</label>
-                          <p>{profile?.instagramProfile || 'Not provided'}</p>
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>LinkedIn Profile</label>
-                          <p>{profile?.linkedinProfile || 'Not provided'}</p>
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>UPI / Mobile (Payout)</label>
-                          <p>{profile?.upiMobileNumber || 'Not provided'}</p>
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>UPI Scanner</label>
-                          {profile?.docs?.upiScanner?.filepath ? (
-                            <a href={resolveFileUrl(profile.docs.upiScanner.filepath)} target="_blank" rel="noreferrer" className="rep-sheet-link">Open file</a>
-                          ) : (
-                            <p>Not uploaded</p>
-                          )}
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>PGIR Selection Letter</label>
-                          {profile?.docs?.pgirSelectionLetter?.filepath ? (
-                            <a href={resolveFileUrl(profile.docs.pgirSelectionLetter.filepath)} target="_blank" rel="noreferrer" className="rep-sheet-link">Open file</a>
-                          ) : (
-                            <p>Not uploaded</p>
-                          )}
-                        </div>
-                        <div className="rep-profile-data-item">
-                          <label>Internship Offer Letter</label>
-                          {profile?.docs?.internshipOfferLetter?.filepath ? (
-                            <a href={resolveFileUrl(profile.docs.internshipOfferLetter.filepath)} target="_blank" rel="noreferrer" className="rep-sheet-link">Open file</a>
-                          ) : (
-                            <p>Not uploaded</p>
-                          )}
-                        </div>
-                      </div>
-                    </article>
+                      </article>
+                    </aside>
                   </div>
                 </div>
               )}
@@ -1334,20 +1365,148 @@ function RepresentativeDashboard() {
               <div className="premium-page-header">
                 <div className="header-left">
                   <h1>Certificates</h1>
-                  <p className="header-subtitle">Your certificates and achievements</p>
+                  <p className="header-subtitle">Assigned files, certification details and quick access</p>
                 </div>
               </div>
-              <div className="premium-card">
-                <div className="premium-empty-state">
-                  <div className="empty-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 0.8fr', gap: '16px', alignItems: 'start' }}>
+                <section
+                  className="premium-card"
+                  style={{
+                    padding: '0',
+                    overflow: 'hidden',
+                    border: '1px solid #e2e8f0',
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{ padding: '18px 18px 14px', background: 'linear-gradient(135deg, #0f172a 0%, #334155 55%, #0ea5e9 100%)', color: '#fff' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85 }}>Certificates Hub</div>
+                        <h2 style={{ margin: '6px 0 4px' }}>Your Assigned Documents</h2>
+                        <p style={{ margin: 0, opacity: 0.9 }}>Everything assigned by admin in one organized view.</p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
+                          <div style={{ fontSize: '12px', opacity: 0.85 }}>Assigned</div>
+                          <div style={{ fontSize: '22px', fontWeight: 800 }}>{certificateCount}</div>
+                        </div>
+                        <div style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
+                          <div style={{ fontSize: '12px', opacity: 0.85 }}>Total Docs</div>
+                          <div style={{ fontSize: '22px', fontWeight: 800 }}>{assignedDocs.length}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="empty-title">No certificates yet</p>
-                  <p className="empty-subtitle">Certificates assigned by the admin will appear here</p>
-                </div>
+
+                  <div style={{ padding: '18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
+                      {assignedDocs.map((doc) => {
+                        const isReady = Boolean(doc.filepath);
+                        return (
+                          <div
+                            key={doc.key}
+                            style={{
+                              borderRadius: '16px',
+                              border: `1px solid ${isReady ? '#cbd5e1' : '#fecaca'}`,
+                              background: isReady ? 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' : 'linear-gradient(180deg, #fff5f5 0%, #ffffff 100%)',
+                              padding: '14px',
+                              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '10px' }}>
+                              <div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned File</div>
+                                <h3 style={{ margin: 0, color: '#0f172a', fontSize: '16px' }}>{doc.label}</h3>
+                              </div>
+                              <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 9px', borderRadius: '999px', background: isReady ? '#dcfce7' : '#fee2e2', color: isReady ? '#166534' : '#991b1b' }}>
+                                {isReady ? 'READY' : 'MISSING'}
+                              </span>
+                            </div>
+
+                            <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
+                              <div style={{ fontSize: '13px', color: '#334155' }}>
+                                <strong>File:</strong> {doc.filename || 'Not uploaded'}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#334155' }}>
+                                <strong>Uploaded:</strong> {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '-'}
+                              </div>
+
+                              {isReady ? (
+                                <a
+                                  href={resolveFileUrl(doc.filepath)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  style={{
+                                    marginTop: '6px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    width: 'fit-content',
+                                    padding: '9px 14px',
+                                    borderRadius: '10px',
+                                    background: '#0f172a',
+                                    color: '#fff',
+                                    textDecoration: 'none',
+                                    fontWeight: 700,
+                                    fontSize: '13px',
+                                  }}
+                                >
+                                  Open Document
+                                </a>
+                              ) : (
+                                <div style={{ marginTop: '6px', color: '#64748b', fontSize: '13px' }}>This document has not been assigned yet.</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+
+                <aside style={{ display: 'grid', gap: '16px' }}>
+                  <section className="premium-card" style={{ padding: '16px' }}>
+                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Certification Metadata</h2>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>PGIR ID</strong><div style={{ marginTop: '6px' }}>{profile?.pgirId || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>Designation</strong><div style={{ marginTop: '6px' }}>{profile?.designation || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>Joining Date</strong><div style={{ marginTop: '6px' }}>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>UPI ID</strong><div style={{ marginTop: '6px' }}>{profile?.upiId || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>UPI/Mobile</strong><div style={{ marginTop: '6px' }}>{profile?.upiMobileNumber || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>LinkedIn</strong><div style={{ marginTop: '6px' }}>{profile?.linkedinProfile || '-'}</div></div>
+                    </div>
+                  </section>
+
+                  <section className="premium-card" style={{ padding: '16px' }}>
+                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links</h2>
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Application Form</div>
+                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer">Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
+                      </div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Internship Sheet</div>
+                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer">Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="premium-card" style={{ padding: '16px' }}>
+                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Promotional Messages</h2>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <div style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '12px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Internship</div>
+                        <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
+                      </div>
+                      <div style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '12px' }}>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>SMS Program</div>
+                        <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
+                      </div>
+                    </div>
+                  </section>
+                </aside>
               </div>
             </>
           )}

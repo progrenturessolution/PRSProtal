@@ -9,6 +9,7 @@ function TrainerDashboard() {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [students, setStudents] = useState([]);
+  const [trainerProfile, setTrainerProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -87,7 +88,7 @@ function TrainerDashboard() {
     }
 
     setUser(JSON.parse(storedUser));
-    fetchAssignedStudents();
+    fetchDashboardData();
   }, [navigate]);
 
   useEffect(() => {
@@ -97,14 +98,31 @@ function TrainerDashboard() {
     fetchStudentRecords(selectedStudent._id);
   }, [selectedStudent]);
 
-  const fetchAssignedStudents = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const response = await trainerAPI.getAssignedStudents();
-      if (response.data.success) {
-        setStudents(response.data.students);
+      const [profileResult, studentsResult] = await Promise.allSettled([
+        trainerAPI.getProfile(),
+        trainerAPI.getAssignedStudents(),
+      ]);
+
+      if (profileResult.status === "fulfilled" && profileResult.value.data.success) {
+        const profileUser = profileResult.value.data.user;
+        setTrainerProfile(profileUser);
+        setUser((prev) => ({
+          ...(prev || {}),
+          ...profileUser,
+        }));
+
+        if (Array.isArray(profileUser.assignedStudents)) {
+          setStudents(profileUser.assignedStudents);
+        }
+      }
+
+      if (studentsResult.status === "fulfilled" && studentsResult.value.data.success) {
+        setStudents(studentsResult.value.data.students || []);
       }
     } catch (error) {
-      console.error("Error fetching students:", error);
+      console.error("Error fetching trainer dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -381,6 +399,9 @@ function TrainerDashboard() {
     return <div className="loading">Loading...</div>;
   }
 
+  const assignedGroups = trainerProfile?.assignedGroups || [];
+  const workAssignments = trainerProfile?.workAssignments || [];
+
   return (
     <div className="dashboard">
       {/* Mobile Menu Button */}
@@ -515,6 +536,28 @@ function TrainerDashboard() {
                   </div>
                 </div>
 
+                <div
+                  className="premium-stat-card accent-emerald"
+                  onClick={() => setActiveTab("assignments")}
+                  style={{ cursor: "pointer" }}
+                >
+                  <div className="stat-icon-wrapper">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 11H5m14 0a2 2 0 100-4H5a2 2 0 100 4m14 0a2 2 0 110 4H5a2 2 0 110-4m0 0v6a2 2 0 002 2h10a2 2 0 002-2v-6"
+                      />
+                    </svg>
+                  </div>
+                  <div className="stat-content">
+                    <div className="stat-label">Assigned Groups</div>
+                    <div className="stat-value">{assignedGroups.length}</div>
+                    <div className="stat-meta">Click to view details</div>
+                  </div>
+                </div>
+
                 <div className="premium-stat-card accent-slate">
                   <div className="stat-icon-wrapper">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -558,6 +601,131 @@ function TrainerDashboard() {
                     View
                   </button>
                 </div>
+
+                <div className="premium-action-card">
+                  <div className="action-card-icon teal">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8c-1.657 0-3 1.567-3 3.5S10.343 15 12 15s3-1.567 3-3.5S13.657 8 12 8zm0 0V5m0 10v4m7-7h-3M8 12H5"
+                      />
+                    </svg>
+                  </div>
+                  <div className="action-card-content">
+                    <h3>My Assignments</h3>
+                    <p>Check assigned groups and work tasks</p>
+                  </div>
+                  <button
+                    className="action-card-btn"
+                    onClick={() => setActiveTab("assignments")}
+                  >
+                    Open
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === "assignments" && (
+            <>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>My Assignments</h1>
+                  <p className="header-subtitle">
+                    All students, groups, and work assigned by admin
+                  </p>
+                </div>
+              </div>
+
+              <div className="premium-stats-grid" style={{ marginBottom: "20px" }}>
+                <div className="premium-stat-card accent-blue">
+                  <div className="stat-content">
+                    <div className="stat-label">Assigned Students</div>
+                    <div className="stat-value">{students.length}</div>
+                  </div>
+                </div>
+                <div className="premium-stat-card accent-emerald">
+                  <div className="stat-content">
+                    <div className="stat-label">Assigned Groups</div>
+                    <div className="stat-value">{assignedGroups.length}</div>
+                  </div>
+                </div>
+                <div className="premium-stat-card accent-indigo">
+                  <div className="stat-content">
+                    <div className="stat-label">Work Items</div>
+                    <div className="stat-value">{workAssignments.length}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="premium-card" style={{ marginBottom: "16px" }}>
+                <div className="premium-card-header">
+                  <h2>Assigned Groups</h2>
+                </div>
+                {assignedGroups.length === 0 ? (
+                  <div className="premium-empty-state">
+                    <p className="empty-title">No groups assigned yet</p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="premium-table">
+                      <thead>
+                        <tr>
+                          <th>Group Name</th>
+                          <th>Group Number</th>
+                          <th>Students</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {assignedGroups.map((group) => (
+                          <tr key={group._id}>
+                            <td>{group.groupName || "-"}</td>
+                            <td>{group.groupNumber || "-"}</td>
+                            <td>{Array.isArray(group.students) ? group.students.length : 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              <div className="premium-card">
+                <div className="premium-card-header">
+                  <h2>Assigned Work</h2>
+                </div>
+                {workAssignments.length === 0 ? (
+                  <div className="premium-empty-state">
+                    <p className="empty-title">No work assigned yet</p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="premium-table">
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Description</th>
+                          <th>Work Date</th>
+                          <th>Students</th>
+                          <th>Groups</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {workAssignments.map((item) => (
+                          <tr key={item._id}>
+                            <td>{item.title || "-"}</td>
+                            <td>{item.description || "-"}</td>
+                            <td>{item.workDate ? new Date(item.workDate).toLocaleDateString() : "-"}</td>
+                            <td>{Array.isArray(item.assignedStudents) ? item.assignedStudents.length : 0}</td>
+                            <td>{Array.isArray(item.assignedGroups) ? item.assignedGroups.length : 0}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </>
           )}

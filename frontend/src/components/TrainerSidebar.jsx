@@ -94,6 +94,21 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
           My Students
         </li>
 
+        <li
+          className={activeTab === "assignments" ? "active" : ""}
+          onClick={() => handleMenuClick("assignments")}
+        >
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11H5m14 0a2 2 0 100-4H5a2 2 0 100 4m14 0a2 2 0 110 4H5a2 2 0 110-4m0 0v6a2 2 0 002 2h10a2 2 0 002-2v-6"
+            />
+          </svg>
+          My Assignments
+        </li>
+
         
 
         <li className="menu-section-header">COMMUNICATION</li>

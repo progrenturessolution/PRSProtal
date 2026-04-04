@@ -38,8 +38,21 @@ function InternDashboard() {
     }
 
     setUser(parsedUser);
+    fetchProfileDetails();
     fetchTasks();
   }, [navigate]);
+
+  const fetchProfileDetails = async () => {
+    try {
+      const response = await internAPI.getMyProfile();
+      if (response.data.success && response.data.user) {
+        setUser(response.data.user);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile details:", err);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -858,6 +871,116 @@ function InternDashboard() {
                         }}
                       >
                         {user.transactionId || "Not Available"}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "15px",
+                        background: "#f0fdf4",
+                        borderRadius: "10px",
+                        border: "1px solid #b7e4c7",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#166534",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        Payment Amount
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {user.paymentAmount || "Not Available"}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "15px",
+                        background: "#f0fdf4",
+                        borderRadius: "10px",
+                        border: "1px solid #b7e4c7",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#166534",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        Completed Fees
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {user.completedFees || "0"}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "15px",
+                        background: "#f0fdf4",
+                        borderRadius: "10px",
+                        border: "1px solid #b7e4c7",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#166534",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        Pending Fees
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {user.pendingFees || "0"}
+                      </div>
+                    </div>
+                    <div
+                      style={{
+                        padding: "15px",
+                        background: "#f0fdf4",
+                        borderRadius: "10px",
+                        border: "1px solid #b7e4c7",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: "#166534",
+                          marginBottom: "5px",
+                        }}
+                      >
+                        Last Payment Date
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {user.lastPaymentDate
+                          ? new Date(user.lastPaymentDate).toLocaleDateString()
+                          : "Not Set"}
                       </div>
                     </div>
                   </div>

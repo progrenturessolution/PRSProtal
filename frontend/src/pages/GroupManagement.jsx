@@ -144,24 +144,49 @@ function GroupManagement() {
     }
   };
 
+  const selectAllFilteredStudents = () => {
+    setForm((prev) => ({
+      ...prev,
+      selectedStudents: [...new Set([...prev.selectedStudents, ...filteredStudents.map((item) => item._id)])],
+    }));
+  };
+
+  const clearSelectedStudents = () => {
+    setForm((prev) => ({
+      ...prev,
+      selectedStudents: [],
+    }));
+  };
+
   return (
-    <div>
-      <div className="premium-page-header">
-        <div className="header-left">
+    <div className="gm-page">
+      <div className="gm-header">
+        <div>
           <h1>Group Management</h1>
-          <p className="header-subtitle">Create, view and manage student groups</p>
+          <p>Create, edit, and maintain group assignments with structured student selection.</p>
+        </div>
+        <div className="gm-header-stats">
+          <div className="gm-stat-pill">
+            <span>Total Groups</span>
+            <strong>{groups.length}</strong>
+          </div>
+          <div className="gm-stat-pill">
+            <span>Students Pool</span>
+            <strong>{filteredStudents.length}</strong>
+          </div>
         </div>
       </div>
 
-      {success && <div className="success-message" style={{ marginBottom: "10px" }}>{success}</div>}
-      {error && <div className="error-message" style={{ marginBottom: "10px" }}>{error}</div>}
+      {success && <div className="gm-alert gm-alert-success">{success}</div>}
+      {error && <div className="gm-alert gm-alert-error">{error}</div>}
 
-      <div className="premium-card" style={{ marginBottom: "16px" }}>
-        <div className="premium-card-header">
+      <div className="gm-card">
+        <div className="gm-card-header">
           <h2>{form.id ? "Edit Group" : "Create Group"}</h2>
+          {form.id && <span className="gm-edit-chip">Editing Existing Group</span>}
         </div>
-        <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
-          <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+        <form onSubmit={handleSubmit} className="gm-form-wrap">
+          <div className="gm-grid-3">
             <div className="form-group"><label>Group Number *</label><input name="groupNumber" value={form.groupNumber} onChange={handleInput} required /></div>
             <div className="form-group"><label>Group Name *</label><input name="groupName" value={form.groupName} onChange={handleInput} required /></div>
             <div className="form-group"><label>Select Student Type</label>
@@ -171,11 +196,11 @@ function GroupManagement() {
                 <option value="SMS Program">SMS Program</option>
               </select>
             </div>
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+            <div className="form-group gm-span-all">
               <label>Group Description</label>
               <textarea name="groupDescription" value={form.groupDescription} onChange={handleInput} rows={2} />
             </div>
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+            <div className="form-group gm-span-all">
               <label>Group Assigned (Employee Names, comma-separated)</label>
               <input
                 name="assignedEmployeesText"
@@ -184,54 +209,58 @@ function GroupManagement() {
                 placeholder="e.g. Ananya Singh, Rahul Verma"
               />
             </div>
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-              <label>Select Students ({form.selectedStudents.length} selected)</label>
-              <div
-                style={{
-                  maxHeight: "220px",
-                  overflow: "auto",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  padding: "8px",
-                }}
-              >
+            <div className="form-group gm-span-all">
+              <div className="gm-students-head">
+                <label>Select Students ({form.selectedStudents.length} selected)</label>
+                <div className="gm-head-actions">
+                  <button type="button" className="gm-link-btn" onClick={selectAllFilteredStudents}>Select All Shown</button>
+                  <button type="button" className="gm-link-btn" onClick={clearSelectedStudents}>Clear</button>
+                </div>
+              </div>
+              <div className="gm-students-box">
                 {filteredStudents.length === 0 ? (
-                  <div style={{ padding: "10px", color: "#64748b" }}>No students found for selected type</div>
+                  <div className="gm-empty-inline">No students found for selected type</div>
                 ) : (
                   filteredStudents.map((student) => (
-                    <label key={student._id} style={{ display: "flex", gap: "8px", padding: "6px" }}>
-                      <input
-                        type="checkbox"
-                        checked={form.selectedStudents.includes(student._id)}
-                        onChange={() => toggleStudentSelection(student._id)}
-                      />
-                      <span>
-                        {student.name} ({student.internId}) - {student.studentType}
+                    <button
+                      key={student._id}
+                      type="button"
+                      className={`gm-student-row ${form.selectedStudents.includes(student._id) ? "is-selected" : ""}`}
+                      onClick={() => toggleStudentSelection(student._id)}
+                      aria-pressed={form.selectedStudents.includes(student._id)}
+                    >
+                      <span className="gm-student-content">
+                        <strong>{student.name}</strong>
+                        <small>{student.internId}</small>
+                        <span className="gm-type-chip">{student.studentType}</span>
                       </span>
-                    </label>
+                    </button>
                   ))
                 )}
               </div>
             </div>
           </div>
 
-          <div style={{ marginTop: "14px", display: "flex", gap: "8px" }}>
-            <button type="submit" className="table-action-btn" style={{ background: "#324158" }} disabled={saving}>
+          <div className="gm-actions">
+            <button type="submit" className="gm-btn gm-btn-primary" disabled={saving}>
               {saving ? "Saving..." : form.id ? "Update Group" : "Create Group"}
             </button>
-            <button type="button" className="table-action-btn" style={{ background: "#94a3b8" }} onClick={() => setForm(defaultForm)}>
+            <button type="button" className="gm-btn gm-btn-muted" onClick={() => setForm(defaultForm)}>
               Reset
             </button>
           </div>
         </form>
       </div>
 
-      <div className="premium-card">
+      <div className="gm-card">
+        <div className="gm-card-header">
+          <h2>Existing Groups</h2>
+        </div>
         {loading ? (
-          <div style={{ padding: "36px", textAlign: "center" }}>Loading groups...</div>
+          <div className="gm-loading">Loading groups...</div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="premium-table">
+          <div className="gm-table-wrap">
+            <table className="premium-table gm-table">
               <thead>
                 <tr>
                   <th>Group Number</th>
@@ -256,10 +285,10 @@ function GroupManagement() {
                       <td>{(group.assignedEmployees || []).join(", ") || "-"}</td>
                       <td>{(group.students || []).length}</td>
                       <td>
-                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                          <button className="table-action-btn" style={{ background: "#0ea5e9" }} onClick={() => openDetails(group._id)}>View</button>
-                          <button className="table-action-btn" style={{ background: "#2563eb" }} onClick={() => editGroup(group)}>Edit</button>
-                          <button className="table-action-btn" style={{ background: "#ef4444" }} onClick={() => removeGroup(group._id)}>Delete</button>
+                        <div className="gm-row-actions">
+                          <button className="gm-btn gm-btn-sky" onClick={() => openDetails(group._id)}>View</button>
+                          <button className="gm-btn gm-btn-blue" onClick={() => editGroup(group)}>Edit</button>
+                          <button className="gm-btn gm-btn-danger" onClick={() => removeGroup(group._id)}>Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -272,36 +301,20 @@ function GroupManagement() {
       </div>
 
       {detailsGroup && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15, 23, 42, 0.55)",
-            zIndex: 1200,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
-          onClick={() => setDetailsGroup(null)}
-        >
-          <div
-            className="premium-card"
-            style={{ width: "min(900px, 100%)", maxHeight: "90vh", overflow: "auto" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="premium-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ margin: 0 }}>{detailsGroup.groupName}</h2>
-              <button className="table-action-btn" style={{ background: "#94a3b8" }} onClick={() => setDetailsGroup(null)}>Close</button>
+        <div className="gm-modal-backdrop" onClick={() => setDetailsGroup(null)}>
+          <div className="gm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gm-modal-head">
+              <h2>{detailsGroup.groupName}</h2>
+              <button className="gm-btn gm-btn-muted" onClick={() => setDetailsGroup(null)}>Close</button>
             </div>
-            <div style={{ padding: "16px" }}>
+            <div className="gm-modal-body">
               <p><strong>Group Number:</strong> {detailsGroup.groupNumber}</p>
               <p><strong>Description:</strong> {detailsGroup.groupDescription || "-"}</p>
               <p><strong>Student Type:</strong> {detailsGroup.studentType}</p>
               <p><strong>Assigned Employees:</strong> {(detailsGroup.assignedEmployees || []).join(", ") || "-"}</p>
 
               <h3 style={{ marginTop: "14px" }}>Student Details</h3>
-              <div style={{ overflowX: "auto" }}>
+              <div className="gm-table-wrap">
                 <table className="premium-table">
                   <thead>
                     <tr>

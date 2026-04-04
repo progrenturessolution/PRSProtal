@@ -8,6 +8,13 @@ const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification } = require('../config/emailService');
 
+const PASSWORD_SALT_ROUNDS = (() => {
+  const defaultRounds = process.env.NODE_ENV === 'production' ? 10 : 4;
+  const parsed = Number.parseInt(process.env.PASSWORD_SALT_ROUNDS || String(defaultRounds), 10);
+  if (Number.isNaN(parsed)) return defaultRounds;
+  return Math.min(Math.max(parsed, 4), 12);
+})();
+
 const generateRepresentativeId = async () => {
   const baseCount = await Representative.countDocuments({});
   let sequence = baseCount + 1;
@@ -569,10 +576,26 @@ exports.updateIntern = async (req, res) => {
 
 // ========== TRAINER MANAGEMENT ==========
 
-// Add new trainer
+const normalizeEmployeeRole = (role, customRole) => {
+  const normalizedRole = String(role || 'trainer').toLowerCase();
+  if (normalizedRole === 'other') {
+    return {
+      role: 'other',
+      customRole: String(customRole || '').trim(),
+    };
+  }
+
+  if (normalizedRole === 'hr') {
+    return { role: 'hr', customRole: '' };
+  }
+
+  return { role: 'trainer', customRole: '' };
+};
+
+// Add new trainer / employee
 exports.addTrainer = async (req, res) => {
   try {
-    const { name, email, password, mobile, role } = req.body;
+    const { name, email, password, mobile, role, customRole, joiningDate } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -581,7 +604,13 @@ exports.addTrainer = async (req, res) => {
       });
     }
 
-    const existingTrainer = await Trainer.findOne({ email });
+    const normalizedEmail = String(email).toLowerCase();
+
+    const [existingTrainer, hashedPassword] = await Promise.all([
+      Trainer.findOne({ email: normalizedEmail }).select('_id'),
+      bcrypt.hash(password, PASSWORD_SALT_ROUNDS)
+    ]);
+
     if (existingTrainer) {
       return res.status(400).json({
         success: false,
@@ -589,41 +618,49 @@ exports.addTrainer = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const normalized = normalizeEmployeeRole(role, customRole);
 
     const trainer = new Trainer({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       mobile,
-      role: role || 'trainer'
+      role: normalized.role,
+      customRole: normalized.customRole,
+      joiningDate: joiningDate || null
     });
 
     await trainer.save();
 
-    let emailSent = false;
-    let emailError = null;
     if (trainer.email) {
-      const emailResult = await sendTrainerCredentials({
+      sendTrainerCredentials({
         trainerName: trainer.name,
         trainerEmail: trainer.email,
         password
-      });
-      emailSent = !!emailResult.success;
-      emailError = emailResult.success ? null : emailResult.error;
+      })
+        .then((emailResult) => {
+          if (!emailResult.success) {
+            console.error(`Background employee credential email failed for ${trainer.email}:`, emailResult.error);
+          }
+        })
+        .catch((emailError) => {
+          console.error(`Background employee credential email error for ${trainer.email}:`, emailError.message);
+        });
     }
 
     res.status(201).json({
       success: true,
-      message: 'Trainer added successfully',
+      message: 'Employee added successfully',
       trainer: {
         id: trainer._id,
         name: trainer.name,
         email: trainer.email,
-        role: trainer.role
+        role: trainer.role,
+        customRole: trainer.customRole,
+        joiningDate: trainer.joiningDate
       },
-      emailSent,
-      emailError
+      emailSent: false,
+      emailQueued: true
     });
 
   } catch (error) {
@@ -632,6 +669,52 @@ exports.addTrainer = async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+// Update trainer / employee
+exports.updateTrainer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, mobile, status, role, customRole, joiningDate } = req.body;
+
+    const trainer = await Trainer.findById(id);
+    if (!trainer) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    if (email && email.toLowerCase() !== trainer.email) {
+      const existingTrainer = await Trainer.findOne({ email: email.toLowerCase(), _id: { $ne: id } });
+      if (existingTrainer) {
+        return res.status(400).json({ success: false, message: 'Email already in use by another employee' });
+      }
+      trainer.email = email.toLowerCase();
+    }
+
+    if (name !== undefined) trainer.name = name;
+    if (mobile !== undefined) trainer.mobile = mobile;
+    if (joiningDate !== undefined) trainer.joiningDate = joiningDate || null;
+    if (status !== undefined) trainer.status = String(status).toLowerCase();
+
+    if (role !== undefined || customRole !== undefined) {
+      const normalized = normalizeEmployeeRole(role ?? trainer.role, customRole ?? trainer.customRole);
+      trainer.role = normalized.role;
+      trainer.customRole = normalized.customRole;
+    }
+
+    await trainer.save();
+
+    const updatedTrainer = await Trainer.findById(trainer._id)
+      .select('-password')
+      .populate('assignedStudents', 'name email internId studentType status assignedTrainer')
+      .populate('assignedGroups', 'groupName groupNumber students createdAt')
+      .populate('workAssignments.assignedStudents', 'name email internId')
+      .populate('workAssignments.assignedGroups', 'groupName groupNumber');
+
+    res.status(200).json({ success: true, message: 'Employee updated successfully', trainer: updatedTrainer });
+  } catch (error) {
+    console.error('Update trainer error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -665,9 +748,10 @@ exports.assignStudentsToTrainer = async (req, res) => {
     console.log('User from token:', req.user);
 
     const { trainerId, studentIds } = req.body;
+    const uniqueStudentIds = [...new Set((studentIds || []).map((id) => String(id)))];
 
     // Validation
-    if (!trainerId || !studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+    if (!trainerId || !studentIds || !Array.isArray(studentIds) || uniqueStudentIds.length === 0) {
       console.log('Validation failed: missing required fields');
       return res.status(400).json({
         success: false,
@@ -675,8 +759,8 @@ exports.assignStudentsToTrainer = async (req, res) => {
       });
     }
 
-    // Check if trainer exists
-    const trainer = await Trainer.findById(trainerId);
+    // Check if trainer exists (minimal fields only)
+    const trainer = await Trainer.findById(trainerId).select('name email mobile');
     if (!trainer) {
       console.log('Trainer not found:', trainerId);
       return res.status(404).json({
@@ -686,9 +770,10 @@ exports.assignStudentsToTrainer = async (req, res) => {
     }
 
     // Check if all students exist
-    const students = await Intern.find({ _id: { $in: studentIds } });
-    if (students.length !== studentIds.length) {
-      console.log('Some students not found. Requested:', studentIds.length, 'Found:', students.length);
+    const students = await Intern.find({ _id: { $in: uniqueStudentIds } })
+      .select('name email internId');
+    if (students.length !== uniqueStudentIds.length) {
+      console.log('Some students not found. Requested:', uniqueStudentIds.length, 'Found:', students.length);
       return res.status(404).json({
         success: false,
         message: 'One or more students not found'
@@ -697,45 +782,59 @@ exports.assignStudentsToTrainer = async (req, res) => {
 
     console.log('Assigning students to trainer:', trainer.name);
 
-    // Update trainer's assigned students
-    trainer.assignedStudents = [...new Set([...trainer.assignedStudents, ...studentIds])];
-    await trainer.save();
-
-    // Update students' assigned trainer
-    await Intern.updateMany(
-      { _id: { $in: studentIds } },
-      { assignedTrainer: trainerId }
-    );
+    // Update assignments with atomic operators for better performance on large datasets.
+    await Promise.all([
+      Trainer.updateOne(
+        { _id: trainerId },
+        { $addToSet: { assignedStudents: { $each: uniqueStudentIds } } }
+      ),
+      Intern.updateMany(
+        { _id: { $in: uniqueStudentIds } },
+        { assignedTrainer: trainerId }
+      )
+    ]);
 
     console.log('Assignment successful');
 
-    // Send email to trainer
-    const trainerEmailResult = await sendTrainerAssignmentNotification({
+    // Queue emails in background so API returns quickly.
+    sendTrainerAssignmentNotification({
       trainerName: trainer.name,
       trainerEmail: trainer.email,
       studentsList: students.map(s => ({ name: s.name, email: s.email, internId: s.internId }))
-    });
+    })
+      .then((emailResult) => {
+        if (!emailResult.success) {
+          console.error(`Background trainer assignment email failed for ${trainer.email}:`, emailResult.error);
+        }
+      })
+      .catch((emailError) => {
+        console.error(`Background trainer assignment email error for ${trainer.email}:`, emailError.message);
+      });
 
-    // Send emails to students
-    const studentEmailPromises = students.map(s =>
-      sendStudentAssignmentNotification({
+    Promise.allSettled(
+      students.map(s => sendStudentAssignmentNotification({
         studentName: s.name,
         studentEmail: s.email,
         trainerName: trainer.name,
         trainerEmail: trainer.email,
         trainerMobile: trainer.mobile
+      }))
+    )
+      .then((results) => {
+        const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
+        if (failed > 0) {
+          console.error(`Background student assignment emails failed: ${failed}/${results.length}`);
+        }
       })
-    );
-    const studentResults = await Promise.allSettled(studentEmailPromises);
-    const studentEmailSuccess = studentResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      .catch((emailError) => {
+        console.error('Background student assignment email batch error:', emailError.message);
+      });
 
     res.status(200).json({
       success: true,
-      message: `${studentIds.length} student(s) assigned successfully to ${trainer.name}`,
-      emailSent: {
-        trainer: trainerEmailResult.success,
-        students: studentEmailSuccess
-      }
+      message: `${uniqueStudentIds.length} student(s) assigned successfully to ${trainer.name}`,
+      emailSent: false,
+      emailQueued: true
     });
 
   } catch (error) {
@@ -753,12 +852,78 @@ exports.assignStudentsToTrainer = async (req, res) => {
   }
 };
 
+// Assign groups to employee
+exports.assignGroupsToTrainer = async (req, res) => {
+  try {
+    const { trainerId, groupIds } = req.body;
+
+    if (!trainerId || !Array.isArray(groupIds) || groupIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Employee ID and group IDs are required' });
+    }
+
+    const trainer = await Trainer.findById(trainerId);
+    if (!trainer) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    const groups = await StudentGroup.find({ _id: { $in: groupIds } });
+    if (groups.length !== groupIds.length) {
+      return res.status(404).json({ success: false, message: 'One or more groups not found' });
+    }
+
+    trainer.assignedGroups = [...new Set([...trainer.assignedGroups.map((id) => String(id)), ...groupIds.map((id) => String(id))])];
+    await trainer.save();
+
+    res.status(200).json({ success: true, message: `${groupIds.length} group(s) assigned successfully` });
+  } catch (error) {
+    console.error('Assign groups error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Assign work to employee
+exports.assignWorkToTrainer = async (req, res) => {
+  try {
+    const { trainerId, title, description, workDate, studentIds, groupIds } = req.body;
+
+    if (!trainerId || !title || !description || !workDate) {
+      return res.status(400).json({ success: false, message: 'Employee, title, description, and work date are required' });
+    }
+
+    const trainer = await Trainer.findById(trainerId);
+    if (!trainer) {
+      return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    const workItem = {
+      title,
+      description,
+      workDate,
+      assignedStudents: Array.isArray(studentIds) ? studentIds : [],
+      assignedGroups: Array.isArray(groupIds) ? groupIds : [],
+      createdAt: new Date()
+    };
+
+    trainer.workAssignments = trainer.workAssignments || [];
+    trainer.workAssignments.push(workItem);
+    await trainer.save();
+
+    res.status(201).json({ success: true, message: 'Work assigned successfully', workItem });
+  } catch (error) {
+    console.error('Assign work error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 // Get all trainers
 exports.getAllTrainers = async (req, res) => {
   try {
     const trainers = await Trainer.find()
       .select('-password')
-      .populate('assignedStudents', 'name email internId');
+      .populate('assignedStudents', 'name email internId studentType status')
+      .populate('assignedGroups', 'groupName groupNumber students createdAt')
+      .populate('workAssignments.assignedStudents', 'name email internId')
+      .populate('workAssignments.assignedGroups', 'groupName groupNumber');
 
     res.status(200).json({
       success: true,
@@ -1073,6 +1238,7 @@ exports.getStudentDocuments = async (req, res) => {
 exports.addRepresentative = async (req, res) => {
   try {
     const {
+      pgirId,
       name,
       email,
       password,
@@ -1086,7 +1252,8 @@ exports.addRepresentative = async (req, res) => {
       upiId,
       internshipApplicationFormLink,
       internshipSheetLink,
-      promotionalMessage,
+      internshipPromotionalMessage,
+      smsPromotionalMessage,
       joiningDate,
       instagramProfile,
       linkedinProfile,
@@ -1094,11 +1261,12 @@ exports.addRepresentative = async (req, res) => {
     } = req.body;
 
     const normalizedName = String(name || '').trim();
+    const normalizedPgirId = String(pgirId || '').trim().toUpperCase();
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const normalizedPassword = String(password || '').trim();
 
-    if (!normalizedName || !normalizedEmail || !normalizedPassword) {
-      return res.status(400).json({ success: false, message: 'Name, email and password are required' });
+    if (!normalizedPgirId || !normalizedName || !normalizedEmail || !normalizedPassword) {
+      return res.status(400).json({ success: false, message: 'PGIR ID, name, email and password are required' });
     }
 
     const existing = await Representative.findOne({ email: normalizedEmail });
@@ -1106,18 +1274,15 @@ exports.addRepresentative = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Representative with this email already exists' });
     }
 
-    const hashedPassword = await bcrypt.hash(normalizedPassword, 10);
-
-    let generatedPgirId;
-    try {
-      generatedPgirId = await generateRepresentativeId();
-    } catch (idError) {
-      console.warn('Representative ID generation fallback used:', idError.message);
-      generatedPgirId = generateFallbackRepresentativeId();
+    const existingPgir = await Representative.findOne({ pgirId: normalizedPgirId }).select('_id');
+    if (existingPgir) {
+      return res.status(409).json({ success: false, message: 'Representative with this PGIR ID already exists' });
     }
 
+    const hashedPassword = await bcrypt.hash(normalizedPassword, 10);
+
     const rep = await Representative.create({
-      pgirId: generatedPgirId,
+      pgirId: normalizedPgirId,
       name: normalizedName,
       email: normalizedEmail,
       password: hashedPassword,
@@ -1130,7 +1295,8 @@ exports.addRepresentative = async (req, res) => {
       sheetLinks,
       internshipApplicationFormLink,
       internshipSheetLink,
-      promotionalMessage,
+      internshipPromotionalMessage,
+      smsPromotionalMessage,
       joiningDate: joiningDate || undefined,
       instagramProfile,
       linkedinProfile,
@@ -1415,25 +1581,32 @@ exports.upsertRepresentativePayout = async (req, res) => {
         runValidators: true,
       }).populate('representative', 'name pgirId email');
     } else {
-      payout = await RepresentativePayout.findOneAndUpdate(
-        {
-          representative: representativeId,
-          weekStartDate: new Date(weekStartDate),
-          weekEndDate: new Date(weekEndDate),
-        },
-        payload,
-        {
-          new: true,
-          upsert: true,
-          setDefaultsOnInsert: true,
-          runValidators: true,
-        },
-      ).populate('representative', 'name pgirId email');
+      const existing = await RepresentativePayout.findOne({
+        representative: representativeId,
+        weekStartDate: new Date(weekStartDate),
+        weekEndDate: new Date(weekEndDate),
+      }).select('_id');
+
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          message: 'Payout entry already exists for this representative and week. Use Edit to update it.',
+        });
+      }
+
+      payout = await RepresentativePayout.create(payload);
+      payout = await RepresentativePayout.findById(payout._id).populate('representative', 'name pgirId email');
     }
 
     return res.status(200).json({ success: true, payout });
   } catch (error) {
     console.error('Upsert representative payout error:', error);
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Duplicate payout entry for the same representative week range',
+      });
+    }
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

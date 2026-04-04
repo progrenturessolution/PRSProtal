@@ -3,6 +3,7 @@ import { adminRepAPI, UPLOADS_BASE } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const initialForm = {
+  pgirId: "",
   name: "",
   email: "",
   password: "",
@@ -10,7 +11,8 @@ const initialForm = {
   designation: "Campus Representative",
   internshipApplicationFormLink: "",
   internshipSheetLink: "",
-  promotionalMessage: "",
+  internshipPromotionalMessage: "",
+  smsPromotionalMessage: "",
   joiningDate: "",
   college: "",
   course: "",
@@ -29,7 +31,7 @@ function formatDate(dateValue) {
 
 function toPublicFilePath(filepath) {
   if (!filepath) return "";
-  return `${UPLOADS_BASE}/${String(filepath).replace(/\\\\/g, "/").split("uploads/")[1] || ""}`;
+  return `${UPLOADS_BASE}/uploads/${String(filepath).replace(/\\/g, "/").split("uploads/")[1] || ""}`;
 }
 
 function ManageRepresentatives() {
@@ -114,8 +116,8 @@ function ManageRepresentatives() {
     setError("");
     setSuccess("");
 
-    if (!formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
-      setError("PGIR full name, email and password are required");
+    if (!formData.pgirId.trim() || !formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
+      setError("PGIR ID, full name, email and password are required");
       return;
     }
 
@@ -358,7 +360,7 @@ function ManageRepresentatives() {
           </div>
           <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
-              <div className="form-group"><label>PGIR ID (Auto)</label><input disabled value="Auto Generated" /></div>
+              <div className="form-group"><label>PGIR ID *</label><input name="pgirId" value={formData.pgirId} onChange={handleInput} placeholder="e.g. PGIR0101" required /></div>
               <div className="form-group"><label>Full Name *</label><input name="name" value={formData.name} onChange={handleInput} required /></div>
               <div className="form-group"><label>Email Address *</label><input type="email" name="email" value={formData.email} onChange={handleInput} required /></div>
               <div className="form-group"><label>Password *</label><input type="password" name="password" value={formData.password} onChange={handleInput} required /></div>
@@ -376,8 +378,12 @@ function ManageRepresentatives() {
               <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Intern Application Form Link</label><input name="internshipApplicationFormLink" value={formData.internshipApplicationFormLink} onChange={handleInput} /></div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Internship Sheet Link</label><input name="internshipSheetLink" value={formData.internshipSheetLink} onChange={handleInput} /></div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label>Internship & SMS Promotional Messages</label>
-                <textarea name="promotionalMessage" value={formData.promotionalMessage} onChange={handleInput} rows={3} />
+                <label>Internship Promotional Message</label>
+                <textarea name="internshipPromotionalMessage" value={formData.internshipPromotionalMessage} onChange={handleInput} rows={3} />
+              </div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label>SMS Promotional Message</label>
+                <textarea name="smsPromotionalMessage" value={formData.smsPromotionalMessage} onChange={handleInput} rows={3} />
               </div>
               <div className="form-group"><label>UPI Scanner</label><input type="file" name="upiScanner" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileInput} /></div>
               <div className="form-group"><label>PGIR Selection Letter</label><input type="file" name="pgirSelectionLetter" accept=".pdf,.png,.jpg,.jpeg" onChange={handleFileInput} /></div>
@@ -443,7 +449,8 @@ function ManageRepresentatives() {
                   <div><strong>UPI / Mobile:</strong> {selectedRepDetails.representative.upiMobileNumber || "-"}</div>
                   <div><strong>Application Link:</strong> {selectedRepDetails.representative.internshipApplicationFormLink || "-"}</div>
                   <div><strong>Internship Sheet:</strong> {selectedRepDetails.representative.internshipSheetLink || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><strong>Promotional Message:</strong> {selectedRepDetails.representative.promotionalMessage || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><strong>Internship Promotional Message:</strong> {selectedRepDetails.representative.internshipPromotionalMessage || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><strong>SMS Promotional Message:</strong> {selectedRepDetails.representative.smsPromotionalMessage || "-"}</div>
                   <div>
                     <strong>UPI Scanner:</strong>{" "}
                     {selectedRepDetails.representative.docs?.upiScanner?.filepath ? (

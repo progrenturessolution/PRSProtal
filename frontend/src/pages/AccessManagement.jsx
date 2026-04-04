@@ -4,10 +4,12 @@ import LoadingSpinner from "../components/LoadingSpinner";
 
 function AccessManagement() {
   const [trainers, setTrainers] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [students, setStudents] = useState([]);
   const [activeTab, setActiveTab] = useState("list");
   const [selectedTrainer, setSelectedTrainer] = useState("");
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedGroups, setSelectedGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -19,6 +21,17 @@ function AccessManagement() {
     mobile: "",
     password: "",
     role: "trainer",
+    customRole: "",
+    joiningDate: "",
+  });
+
+  const [editEmployeeData, setEditEmployeeData] = useState(null);
+  const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
+  const [workFormData, setWorkFormData] = useState({
+    trainerId: "",
+    title: "",
+    description: "",
+    workDate: "",
   });
 
   const [selectedTrainerDetails, setSelectedTrainerDetails] = useState(null);
@@ -28,6 +41,7 @@ function AccessManagement() {
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filteredStudents, setFilteredStudents] = useState([]);
+  const [portalEmployeeId, setPortalEmployeeId] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -71,16 +85,22 @@ function AccessManagement() {
 
   const fetchData = async () => {
     try {
-      // Fetch trainers
-      const trainersResponse = await adminAPI.getAllTrainers();
-      if (trainersResponse.data.success) {
-        setTrainers(trainersResponse.data.trainers);
+      const [trainersResult, studentsResult, groupsResult] = await Promise.allSettled([
+        adminAPI.getAllTrainers(),
+        adminAPI.getAllInterns(),
+        adminAPI.getGroups(),
+      ]);
+
+      if (trainersResult.status === "fulfilled" && trainersResult.value.data.success) {
+        setTrainers(trainersResult.value.data.trainers || []);
       }
 
-      // Fetch students
-      const studentsResponse = await adminAPI.getAllInterns();
-      if (studentsResponse.data.success) {
-        setStudents(studentsResponse.data.interns);
+      if (studentsResult.status === "fulfilled" && studentsResult.value.data.success) {
+        setStudents(studentsResult.value.data.interns || []);
+      }
+
+      if (groupsResult.status === "fulfilled" && groupsResult.value.data.success) {
+        setGroups(groupsResult.value.data.groups || []);
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -94,11 +114,20 @@ function AccessManagement() {
     });
   };
 
+  const handleWorkFormChange = (e) => {
+    setWorkFormData({
+      ...workFormData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
   const handleAddTrainer = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
     setSuccess("");
+
+    const resolvedRole = trainerFormData.role === "other" ? (trainerFormData.customRole || "Other") : trainerFormData.role;
 
     try {
       // Store credentials before clearing form
@@ -106,13 +135,13 @@ function AccessManagement() {
         email: trainerFormData.email,
         password: trainerFormData.password,
         name: trainerFormData.name,
-        role: trainerFormData.role,
+        role: resolvedRole,
       };
 
       const response = await adminAPI.addTrainer(trainerFormData);
 
       if (response.data.success) {
-        setSuccess("Trainer added successfully!");
+        setSuccess("Employee added successfully!");
 
         // Show credentials modal
         setNewTrainerCredentials(credentials);
@@ -124,6 +153,8 @@ function AccessManagement() {
           mobile: "",
           password: "",
           role: "trainer",
+          customRole: "",
+          joiningDate: "",
         });
         setActiveTab("list");
         fetchData();
@@ -131,8 +162,104 @@ function AccessManagement() {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Failed to add trainer. Please try again.",
+          "Failed to add employee. Please try again.",
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditEmployeeChange = (e) => {
+    if (!editEmployeeData) return;
+    setEditEmployeeData({
+      ...editEmployeeData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSaveEmployee = async (e) => {
+    e.preventDefault();
+    if (!editEmployeeData?._id) return;
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const payload = {
+        name: editEmployeeData.name,
+        email: editEmployeeData.email,
+        mobile: editEmployeeData.mobile,
+        role: editEmployeeData.role,
+        customRole: editEmployeeData.customRole,
+        joiningDate: editEmployeeData.joiningDate,
+        status: editEmployeeData.status,
+      };
+
+      const response = await adminAPI.updateTrainer(editEmployeeData._id, payload);
+      if (response.data.success) {
+        setSuccess("Employee updated successfully");
+        setShowEditEmployeeModal(false);
+        setEditEmployeeData(null);
+        await fetchData();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update employee");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignGroups = async (e) => {
+    e.preventDefault();
+    if (!selectedTrainer || selectedGroups.length === 0) {
+      setError("Please select an employee and at least one group.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await adminAPI.assignGroupsToTrainer({
+        trainerId: selectedTrainer,
+        groupIds: selectedGroups,
+      });
+      if (response.data.success) {
+        setSuccess(response.data.message || "Groups assigned successfully");
+        setSelectedGroups([]);
+        setActiveTab("list");
+        await fetchData();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to assign groups");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignWork = async (e) => {
+    e.preventDefault();
+    if (!workFormData.trainerId || !workFormData.title || !workFormData.description || !workFormData.workDate) {
+      setError("Please fill all work fields.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await adminAPI.assignWorkToTrainer(workFormData);
+      if (response.data.success) {
+        setSuccess(response.data.message || "Work assigned successfully");
+        setWorkFormData({ trainerId: "", title: "", description: "", workDate: "" });
+        setActiveTab("list");
+        await fetchData();
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to assign work");
     } finally {
       setLoading(false);
     }
@@ -242,9 +369,9 @@ function AccessManagement() {
       {/* Page Header */}
       <div className="premium-page-header">
         <div className="header-left">
-          <h1>Access Management</h1>
+          <h1>Employee Management</h1>
           <p className="header-subtitle">
-            Manage trainers, HR staff, and student assignments
+            Manage employees, role-based access, assignments, and work flow
           </p>
         </div>
         <div className="header-right">
@@ -272,9 +399,9 @@ function AccessManagement() {
             </svg>
           </div>
           <div className="stat-content">
-            <div className="stat-label">Total Trainers</div>
+            <div className="stat-label">Total Employees</div>
             <div className="stat-value">{trainers.length}</div>
-            <div className="stat-meta">All trainers and staff</div>
+            <div className="stat-meta">All employee records</div>
           </div>
         </div>
 
@@ -310,7 +437,7 @@ function AccessManagement() {
           <div className="stat-content">
             <div className="stat-label">Active</div>
             <div className="stat-value">{activeCount}</div>
-            <div className="stat-meta">Active trainers</div>
+            <div className="stat-meta">Active employees</div>
           </div>
         </div>
 
@@ -381,9 +508,12 @@ function AccessManagement() {
         }}
       >
         {[
-          { key: "list", label: "Trainers List" },
-          { key: "add", label: "Add Trainer" },
+          { key: "list", label: "Employees List" },
+          { key: "add", label: "Add Employee" },
           { key: "assign", label: "Assign Students" },
+          { key: "groups", label: "Assign Groups" },
+          { key: "work", label: "Assign Work" },
+          { key: "portal", label: "Employee Portal" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -407,7 +537,7 @@ function AccessManagement() {
         ))}
       </div>
 
-      {/* ── ADD TRAINER TAB ── */}
+      {/* ── ADD EMPLOYEE TAB ── */}
       {activeTab === "add" && (
         <div className="card">
           {/* Card header */}
@@ -423,10 +553,10 @@ function AccessManagement() {
           >
             <div>
               <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
-                Add New Trainer
+                Add New Employee
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
-                Create login credentials for a new trainer or HR staff
+                Create login credentials for HR, Trainer, or a custom role
               </p>
             </div>
           </div>
@@ -446,7 +576,7 @@ function AccessManagement() {
                   name="name"
                   value={trainerFormData.name}
                   onChange={handleTrainerFormChange}
-                  placeholder="Enter trainer's full name"
+                  placeholder="Enter employee's full name"
                   required
                 />
               </div>
@@ -485,6 +615,15 @@ function AccessManagement() {
                 />
               </div>
               <div className="form-group">
+                <label>Joining Date</label>
+                <input
+                  type="date"
+                  name="joiningDate"
+                  value={trainerFormData.joiningDate}
+                  onChange={handleTrainerFormChange}
+                />
+              </div>
+              <div className="form-group">
                 <label>Role *</label>
                 <select
                   name="role"
@@ -494,8 +633,22 @@ function AccessManagement() {
                 >
                   <option value="trainer">Trainer</option>
                   <option value="hr">HR</option>
+                  <option value="other">Other</option>
                 </select>
               </div>
+              {trainerFormData.role === "other" && (
+                <div className="form-group">
+                  <label>Custom Role *</label>
+                  <input
+                    type="text"
+                    name="customRole"
+                    value={trainerFormData.customRole}
+                    onChange={handleTrainerFormChange}
+                    placeholder="Enter custom role"
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
@@ -516,7 +669,7 @@ function AccessManagement() {
                 {loading ? (
                   <LoadingSpinner text="Adding..." inline size="sm" />
                 ) : (
-                  "Add Trainer"
+                  "Add Employee"
                 )}
               </button>
               <button
@@ -556,26 +709,26 @@ function AccessManagement() {
           >
             <div>
               <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
-                Assign Students to Trainer
+                Assign Students to Employee
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
-                Connect students with their assigned trainer
+                Connect students with their assigned employee
               </p>
             </div>
           </div>
 
           <form onSubmit={handleAssignStudents}>
             <div className="form-group" style={{ marginBottom: "20px" }}>
-              <label>Select Trainer *</label>
+              <label>Select Employee *</label>
               <select
                 value={selectedTrainer}
                 onChange={(e) => setSelectedTrainer(e.target.value)}
                 required
               >
-                <option value="">Choose a trainer...</option>
+                <option value="">Choose an employee...</option>
                 {trainers.map((trainer) => (
                   <option key={trainer._id} value={trainer._id}>
-                    {trainer.name} ({trainer.role === "hr" ? "HR" : "Trainer"})
+                    {trainer.name} ({trainer.role === "hr" ? "HR" : trainer.role === "other" ? (trainer.customRole || "Other") : "Trainer"})
                   </option>
                 ))}
               </select>
@@ -835,6 +988,246 @@ function AccessManagement() {
         </div>
       )}
 
+      {/* ── ASSIGN GROUPS TAB ── */}
+      {activeTab === "groups" && (
+        <div className="card">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "24px",
+              paddingBottom: "16px",
+              borderBottom: "1px solid #f1f5f9",
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
+                Assign Groups to Employee
+              </h3>
+              <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                Link employee access to student groups
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAssignGroups}>
+            <div className="form-group" style={{ marginBottom: "20px" }}>
+              <label>Select Employee *</label>
+              <select
+                value={selectedTrainer}
+                onChange={(e) => setSelectedTrainer(e.target.value)}
+                required
+              >
+                <option value="">Choose an employee...</option>
+                {trainers.map((trainer) => (
+                  <option key={trainer._id} value={trainer._id}>
+                    {trainer.name} ({trainer.role === "hr" ? "HR" : trainer.role === "other" ? (trainer.customRole || "Other") : "Trainer"})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Select Groups *</label>
+              <div className="selection-list-shell" style={{ marginTop: "10px", maxHeight: "280px" }}>
+                {groups.length === 0 ? (
+                  <div style={{ color: "#64748b", fontSize: "14px" }}>No groups available</div>
+                ) : (
+                  groups.map((group) => (
+                    <button
+                      key={group._id}
+                      type="button"
+                      className={`selection-check-row ${selectedGroups.includes(group._id) ? "is-selected" : ""}`}
+                      onClick={() => {
+                        setSelectedGroups((prev) =>
+                          prev.includes(group._id)
+                            ? prev.filter((id) => id !== group._id)
+                            : [...prev, group._id],
+                        );
+                      }}
+                      aria-pressed={selectedGroups.includes(group._id)}
+                    >
+                      <div className="selection-check-content">
+                        <strong>{group.groupName || `Group ${group.groupNumber || ""}`}</strong>
+                        <small>
+                          {group.students?.length || 0} students
+                        </small>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "12px 28px",
+                  background: loading ? "#94a3b8" : "#324158",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
+                {loading ? "Assigning..." : "Assign Groups"}
+              </button>
+              <button type="button" onClick={() => setActiveTab("list")} style={{ padding: "12px 24px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ── ASSIGN WORK TAB ── */}
+      {activeTab === "work" && (
+        <div className="card">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "24px",
+              paddingBottom: "16px",
+              borderBottom: "1px solid #f1f5f9",
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
+                Assign Work to Employee
+              </h3>
+              <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+                Mention title, description, date, and linked students/groups
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAssignWork}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+              <div className="form-group">
+                <label>Select Employee *</label>
+                <select name="trainerId" value={workFormData.trainerId} onChange={handleWorkFormChange} required>
+                  <option value="">Choose an employee...</option>
+                  {trainers.map((trainer) => (
+                    <option key={trainer._id} value={trainer._id}>
+                      {trainer.name} ({trainer.role === "hr" ? "HR" : trainer.role === "other" ? (trainer.customRole || "Other") : "Trainer"})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Work Title *</label>
+                <input type="text" name="title" value={workFormData.title} onChange={handleWorkFormChange} placeholder="Enter work title" required />
+              </div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label>Work Description *</label>
+                <textarea name="description" value={workFormData.description} onChange={handleWorkFormChange} placeholder="Describe the task, expected output, and notes" required rows={5} />
+              </div>
+              <div className="form-group">
+                <label>Work Date *</label>
+                <input type="date" name="workDate" value={workFormData.workDate} onChange={handleWorkFormChange} required />
+              </div>
+              <div className="form-group">
+                <label>Selected Students</label>
+                <div style={{ padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#f8fafc", minHeight: "42px" }}>
+                  {selectedStudents.length ? `${selectedStudents.length} student(s) selected from Assign Students` : "No students selected yet"}
+                </div>
+              </div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                <label>Selected Groups</label>
+                <div style={{ padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#f8fafc", minHeight: "42px" }}>
+                  {selectedGroups.length ? `${selectedGroups.length} group(s) selected from Assign Groups` : "No groups selected yet"}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "24px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <button type="submit" disabled={loading} style={{ padding: "12px 28px", background: loading ? "#94a3b8" : "#324158", color: "white", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600 }}>
+                {loading ? "Assigning..." : "Assign Work"}
+              </button>
+              <button type="button" onClick={() => setActiveTab("list")} style={{ padding: "12px 24px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ── EMPLOYEE PORTAL TAB ── */}
+      {activeTab === "portal" && (
+        <div className="card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
+            <div>
+              <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>Employee Portal Preview</h3>
+              <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>View work, groups, students, and access summary from the employee record</p>
+            </div>
+            <select value={portalEmployeeId} onChange={(e) => setPortalEmployeeId(e.target.value)} style={{ minWidth: "260px" }}>
+              <option value="">Use selected employee</option>
+              {trainers.map((trainer) => (
+                <option key={trainer._id} value={trainer._id}>{trainer.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {!portalEmployee ? (
+            <div style={{ color: "#64748b" }}>No employee selected.</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
+              <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#f8fafc" }}>
+                <h4 style={{ marginTop: 0 }}>Profile</h4>
+                <div><strong>Name:</strong> {portalEmployee.name}</div>
+                <div><strong>Email:</strong> {portalEmployee.email}</div>
+                <div><strong>Role:</strong> {portalEmployee.role === "other" ? (portalEmployee.customRole || "Other") : portalEmployee.role}</div>
+                <div><strong>Joining Date:</strong> {portalEmployee.joiningDate ? new Date(portalEmployee.joiningDate).toLocaleDateString("en-IN") : "-"}</div>
+                <div><strong>Assigned Students:</strong> {portalEmployee.assignedStudents?.length || 0}</div>
+                <div><strong>Assigned Groups:</strong> {portalEmployee.assignedGroups?.length || 0}</div>
+                <div><strong>Work Items:</strong> {portalEmployee.workAssignments?.length || 0}</div>
+              </div>
+              <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#fff" }}>
+                <h4 style={{ marginTop: 0 }}>Assigned Work</h4>
+                {(portalEmployee.workAssignments || []).length === 0 ? (
+                  <div style={{ color: "#64748b" }}>No work assigned yet.</div>
+                ) : (
+                  <div style={{ display: "grid", gap: "10px" }}>
+                    {portalEmployee.workAssignments.map((work) => (
+                      <div key={work._id} style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "12px", background: "#f8fafc" }}>
+                        <div style={{ fontWeight: 700 }}>{work.title}</div>
+                        <div style={{ fontSize: "13px", color: "#475569", marginTop: "4px" }}>{work.description}</div>
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "6px" }}>Work date: {work.workDate ? new Date(work.workDate).toLocaleDateString("en-IN") : "-"}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#fff" }}>
+                <h4 style={{ marginTop: 0 }}>Assigned Groups</h4>
+                {(portalEmployee.assignedGroups || []).length === 0 ? (
+                  <div style={{ color: "#64748b" }}>No groups assigned yet.</div>
+                ) : (
+                  <ul style={{ margin: 0, paddingLeft: "18px" }}>
+                    {(portalEmployee.assignedGroups || []).map((group) => (
+                      <li key={group._id || group}>{group.groupName || `Group ${group.groupNumber || ""}`}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div style={{ gridColumn: "1 / -1", padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#f8fafc" }}>
+                <h4 style={{ marginTop: 0 }}>Student View Note</h4>
+                <p style={{ marginBottom: 0, color: "#475569" }}>
+                  Detailed day-wise attendance, progress history, and restricted HR / trainer sheets are already handled inside the employee dashboard. This preview helps admin see the linked access summary.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── TRAINERS LIST TAB ── */}
       {activeTab === "list" && (
         <div className="card">
@@ -853,7 +1246,7 @@ function AccessManagement() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <h3 style={{ margin: 0, color: "#0f172a", fontSize: "17px" }}>
-                Trainers & HR Staff
+                Employees & HR Staff
               </h3>
             </div>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
@@ -870,7 +1263,7 @@ function AccessManagement() {
                   fontWeight: 600,
                 }}
               >
-                Add Trainer
+                Add Employee
               </button>
               <button
                 onClick={() => setActiveTab("assign")}
@@ -900,7 +1293,7 @@ function AccessManagement() {
                   fontWeight: 600,
                 }}
               >
-                No trainers yet
+                No employees yet
               </h3>
               <p
                 style={{
@@ -909,7 +1302,7 @@ function AccessManagement() {
                   fontSize: "14px",
                 }}
               >
-                Add your first trainer to get started
+                Add your first employee to get started
               </p>
               <button
                 onClick={() => setActiveTab("add")}
@@ -923,7 +1316,7 @@ function AccessManagement() {
                   fontWeight: 600,
                 }}
               >
-                + Add Trainer
+                + Add Employee
               </button>
             </div>
           ) : (
@@ -931,7 +1324,7 @@ function AccessManagement() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Trainer</th>
+                    <th>Employee</th>
                     <th>Email</th>
                     <th>Mobile</th>
                     <th>Role</th>
@@ -971,7 +1364,7 @@ function AccessManagement() {
                             textTransform: "capitalize",
                           }}
                         >
-                          {trainer.role === "hr" ? "HR" : "Trainer"}
+                          {trainer.role === "hr" ? "HR" : trainer.role === "other" ? (trainer.customRole || "Other") : "Trainer"}
                         </span>
                       </td>
                       <td>
@@ -1163,7 +1556,7 @@ function AccessManagement() {
                 }}
               >
                 <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
-                  Trainer Added Successfully!
+                  Employee Added Successfully!
                 </h2>
                 <button
                   onClick={() => setShowCredentialsModal(false)}
@@ -1194,7 +1587,7 @@ function AccessManagement() {
               <p
                 style={{ margin: "8px 0 0 0", opacity: 0.95, fontSize: "14px" }}
               >
-                Share these login credentials with the trainer
+                Share these login credentials with the employee
               </p>
             </div>
 
@@ -1225,12 +1618,12 @@ function AccessManagement() {
                   </strong>
                   <p style={{ margin: 0, color: "#78350f", fontSize: "14px" }}>
                     These login credentials will not be shown again. Please save
-                    them securely or share them with the trainer immediately.
+                    them securely or share them with the employee immediately.
                   </p>
                 </div>
               </div>
 
-              {/* Trainer Info Card */}
+              {/* Employee Info Card */}
               <div
                 style={{
                   background: "#f1f5f9",
@@ -1247,7 +1640,7 @@ function AccessManagement() {
                     fontSize: "18px",
                   }}
                 >
-                  Trainer Information
+                  Employee Information
                 </h3>
                 <div style={{ display: "grid", gap: "12px" }}>
                   <div>
@@ -1410,7 +1803,7 @@ function AccessManagement() {
                   <li>Go to the login page</li>
                   <li>Click on "Trainer / HR" tab</li>
                   <li>Enter the email and password shown above</li>
-                  <li>Click "Sign In" to access the trainer dashboard</li>
+                  <li>Click "Sign In" to access the employee dashboard</li>
                 </ol>
               </div>
 
@@ -1440,7 +1833,95 @@ function AccessManagement() {
         </div>
       )}
 
-      {/* Trainer Details Modal - Shows trainer info from table */}
+      {/* Edit Employee Modal */}
+      {showEditEmployeeModal && editEmployeeData && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 12000,
+            padding: "20px",
+          }}
+          onClick={() => setShowEditEmployeeModal(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              borderRadius: "18px",
+              width: "min(900px, 100%)",
+              maxHeight: "90vh",
+              overflow: "auto",
+              boxShadow: "0 24px 70px rgba(15, 23, 42, 0.35)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ padding: "22px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "22px", color: "#0f172a" }}>Edit Employee Profile</h2>
+                <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "14px" }}>Update contact details, role, and joining date.</p>
+              </div>
+              <button onClick={() => setShowEditEmployeeModal(false)} style={{ border: "none", background: "#f1f5f9", width: "38px", height: "38px", borderRadius: "10px", cursor: "pointer", fontSize: "20px" }}>×</button>
+            </div>
+
+            <form onSubmit={handleSaveEmployee} style={{ padding: "24px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px" }}>
+                <div className="form-group">
+                  <label>Full Name *</label>
+                  <input type="text" name="name" value={editEmployeeData.name || ""} onChange={handleEditEmployeeChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Email Address *</label>
+                  <input type="email" name="email" value={editEmployeeData.email || ""} onChange={handleEditEmployeeChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Mobile Number</label>
+                  <input type="tel" name="mobile" value={editEmployeeData.mobile || ""} onChange={handleEditEmployeeChange} />
+                </div>
+                <div className="form-group">
+                  <label>Joining Date</label>
+                  <input type="date" name="joiningDate" value={editEmployeeData.joiningDate || ""} onChange={handleEditEmployeeChange} />
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select name="status" value={editEmployeeData.status || "active"} onChange={handleEditEmployeeChange}>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Role *</label>
+                  <select name="role" value={editEmployeeData.role || "trainer"} onChange={handleEditEmployeeChange}>
+                    <option value="trainer">Trainer</option>
+                    <option value="hr">HR</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                {(editEmployeeData.role === "other") && (
+                  <div className="form-group">
+                    <label>Custom Role *</label>
+                    <input type="text" name="customRole" value={editEmployeeData.customRole || ""} onChange={handleEditEmployeeChange} required />
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginTop: "24px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <button type="submit" disabled={loading} style={{ padding: "12px 28px", background: loading ? "#94a3b8" : "#0f172a", color: "white", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600 }}>
+                  {loading ? "Saving..." : "Save Changes"}
+                </button>
+                <button type="button" onClick={() => setShowEditEmployeeModal(false)} style={{ padding: "12px 24px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Employee Details Modal - Shows employee info from table */}
       {selectedTrainerDetails && (
         <div
           style={{
@@ -1484,36 +1965,60 @@ function AccessManagement() {
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
+                  gap: "12px",
                 }}
               >
                 <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
-                  Trainer Details
+                  Employee Details
                 </h2>
-                <button
-                  onClick={() => setSelectedTrainerDetails(null)}
-                  style={{
-                    background: "rgba(255, 255, 255, 0.2)",
-                    border: "none",
-                    color: "white",
-                    fontSize: "24px",
-                    width: "36px",
-                    height: "36px",
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "background 0.2s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.target.style.background = "rgba(255, 255, 255, 0.3)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.target.style.background = "rgba(255, 255, 255, 0.2)")
-                  }
-                >
-                  ×
-                </button>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  <button
+                    onClick={() => {
+                      setEditEmployeeData({
+                        ...selectedTrainerDetails,
+                        joiningDate: selectedTrainerDetails?.joiningDate ? new Date(selectedTrainerDetails.joiningDate).toISOString().split("T")[0] : "",
+                      });
+                      setShowEditEmployeeModal(true);
+                    }}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.14)",
+                      border: "1px solid rgba(255, 255, 255, 0.24)",
+                      color: "white",
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={() => setSelectedTrainerDetails(null)}
+                    style={{
+                      background: "rgba(255, 255, 255, 0.2)",
+                      border: "none",
+                      color: "white",
+                      fontSize: "24px",
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.target.style.background = "rgba(255, 255, 255, 0.3)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.target.style.background = "rgba(255, 255, 255, 0.2)")
+                    }
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1605,7 +2110,25 @@ function AccessManagement() {
                           textTransform: "capitalize",
                         }}
                       >
-                        {selectedTrainerDetails.role}
+                        {selectedTrainerDetails.role === "other"
+                          ? (selectedTrainerDetails.customRole || "Other")
+                          : selectedTrainerDetails.role}
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#075985",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Joining Date
+                      </label>
+                      <div style={{ fontSize: "15px", color: "#0c4a6e" }}>
+                        {selectedTrainerDetails.joiningDate ? new Date(selectedTrainerDetails.joiningDate).toLocaleDateString("en-IN") : "-"}
                       </div>
                     </div>
                   </div>
@@ -1643,6 +2166,38 @@ function AccessManagement() {
                       <div style={{ fontSize: "15px", color: "#14532d" }}>
                         {selectedTrainerDetails.assignedStudents?.length || 0}{" "}
                         students
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#166534",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Assigned Groups
+                      </label>
+                      <div style={{ fontSize: "15px", color: "#14532d" }}>
+                        {selectedTrainerDetails.assignedGroups?.length || 0} groups
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#166534",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        Work Items
+                      </label>
+                      <div style={{ fontSize: "15px", color: "#14532d" }}>
+                        {selectedTrainerDetails.workAssignments?.length || 0} items
                       </div>
                     </div>
                     <div>
@@ -1712,7 +2267,7 @@ function AccessManagement() {
                           lineHeight: "1.5",
                         }}
                       >
-                        Trainer can login using their email address:{" "}
+                        Employee can login using their email address:{" "}
                         <strong>{selectedTrainerDetails.email}</strong>
                       </p>
                     </div>

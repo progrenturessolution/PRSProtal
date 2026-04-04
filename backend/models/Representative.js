@@ -64,7 +64,11 @@ const representativeSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  promotionalMessage: {
+  internshipPromotionalMessage: {
+    type: String,
+    trim: true
+  },
+  smsPromotionalMessage: {
     type: String,
     trim: true
   },

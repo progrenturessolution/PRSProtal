@@ -58,6 +58,10 @@ export const adminAPI = {
   addTrainer: (trainerData) => api.post("/admin/add-trainer", trainerData),
   getAllTrainers: () => api.get("/admin/trainers"),
   assignStudentsToTrainer: (data) => api.post("/admin/assign-students", data),
+  updateTrainer: (id, data) => api.patch(`/admin/trainer/${id}`, data),
+  assignGroupsToTrainer: (data) => api.post("/admin/assign-groups", data),
+  assignWorkToTrainer: (data) => api.post("/admin/assign-work", data),
+  getGroups: () => api.get("/admin/groups"),
   deleteTrainer: (id) => api.delete(`/admin/trainer/${id}`),
 
   // Notifications

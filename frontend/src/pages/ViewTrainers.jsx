@@ -212,7 +212,7 @@ function ViewTrainers() {
             <p style={{ color: "#9ca3af" }}>
               {searchQuery
                 ? "Try a different search term"
-                : "Add trainers from Access Management"}
+                : "Add employees from Employee Management"}
             </p>
           </div>
         ) : (
