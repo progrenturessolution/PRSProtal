@@ -132,7 +132,8 @@ export const trainerAPI = {
 // Task APIs
 export const taskAPI = {
   // Admin task APIs
-  createTask: (taskData) => api.post("/task/admin/create-task", taskData),
+  createTask: (taskData) =>
+    api.post("/task/admin/create-task", taskData, { timeout: 60000 }),
   getAllTasks: () => api.get("/task/admin/tasks"),
   getTaskStats: () => api.get("/task/admin/task-stats"),
   approveTask: (taskId) => api.put(`/task/admin/approve-task/${taskId}`),

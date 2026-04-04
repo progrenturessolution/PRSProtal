@@ -92,13 +92,13 @@ exports.createAndAssignTask = async (req, res) => {
 
     await task.save();
 
-    // Send email notifications to all recipients and report delivery status
+    // Send assignment emails in background so task creation stays fast and reliable.
     const teamDetails = recipients.map((member) => ({
       name: member.name,
       internId: member.internId
     }));
 
-    const emailResults = await Promise.allSettled(
+    Promise.allSettled(
       recipients.map((recipient) => {
         if (!recipient.email) {
           return Promise.resolve({ success: false, error: 'Recipient email missing' });
@@ -115,43 +115,41 @@ exports.createAndAssignTask = async (req, res) => {
           taskDocument
         });
       })
-    );
+    )
+      .then((emailResults) => {
+        const failures = [];
 
-    let emailSentCount = 0;
-    let emailFailedCount = 0;
-    const emailFailures = [];
+        emailResults.forEach((result, index) => {
+          const recipient = recipients[index];
+          if (result.status === 'fulfilled' && result.value?.success) {
+            return;
+          }
 
-    emailResults.forEach((result, index) => {
-      const recipient = recipients[index];
+          const reason = result.status === 'rejected'
+            ? result.reason?.message || 'Unknown error'
+            : (result.value?.error || 'Unknown error');
 
-      if (result.status === 'fulfilled' && result.value?.success) {
-        emailSentCount += 1;
-      } else {
-        emailFailedCount += 1;
-        const reason = result.status === 'rejected'
-          ? result.reason?.message || 'Unknown error'
-          : (result.value?.error || 'Unknown error');
-        emailFailures.push({
-          studentId: recipient?._id,
-          email: recipient?.email || null,
-          reason
+          failures.push({
+            studentId: recipient?._id,
+            email: recipient?.email || null,
+            reason
+          });
         });
-      }
-    });
 
-    if (emailFailedCount > 0) {
-      console.error(`Task assignment email had ${emailFailedCount} failure(s) for task ${task._id}`, emailFailures);
-    }
+        if (failures.length > 0) {
+          console.error(`Task assignment email had ${failures.length} failure(s) for task ${task._id}`, failures);
+        }
+      })
+      .catch((emailError) => {
+        console.error(`Background task assignment email processing failed for task ${task._id}:`, emailError.message);
+      });
 
     res.status(201).json({
       success: true,
       message: 'Task created and assigned successfully',
       task,
-      emailSent: emailFailedCount === 0,
-      emailRecipients: recipients.length,
-      emailSentCount,
-      emailFailedCount,
-      emailFailures
+      emailQueued: true,
+      emailRecipients: recipients.length
     });
 
   } catch (error) {
@@ -191,7 +189,9 @@ exports.approveTask = async (req, res) => {
   try {
     const { taskId } = req.params;
 
-    const task = await Task.findById(taskId);
+    const task = await Task.findById(taskId)
+      .populate('assignedTo', 'name email internId')
+      .populate('teamMembers', 'name email internId');
 
     if (!task) {
       return res.status(404).json({
@@ -210,21 +210,46 @@ exports.approveTask = async (req, res) => {
     task.status = 'Completed';
     task.completedAt = new Date();
     task.hasUnreadFeedback = false;
-    // For team tasks: auto-post approval as a reply to the submission message
-    if (task.isTeamTask) {
-      const submissionMsg = [...task.teamMessages].reverse().find(m =>
-        m.message && m.message.includes('submitted this task for admin review')
-      );
-      task.teamMessages.push({
-        message: 'Task Approved! Great work team!',
-        sentBy: req.user.id,
-        senderName: 'Admin',
-        sentAt: new Date(),
-        replyToSnippet: submissionMsg ? submissionMsg.message : null,
-        replyToSenderName: submissionMsg ? submissionMsg.senderName : null
-      });
-    }
+    const submissionMsg = [...task.teamMessages].reverse().find(m =>
+      m.message && m.message.includes('submitted this task for admin review')
+    );
+    task.teamMessages.push({
+      message: task.isTeamTask ? 'Task Approved! Great work team!' : 'Task Approved! Great work!',
+      sentBy: req.user.id,
+      senderName: 'Admin',
+      sentAt: new Date(),
+      replyToSnippet: submissionMsg ? submissionMsg.message : null,
+      replyToSenderName: submissionMsg ? submissionMsg.senderName : null
+    });
     await task.save();
+
+    const approvalRecipients = [
+      task.assignedTo,
+      ...(task.isTeamTask ? (task.teamMembers || []) : [])
+    ].filter(Boolean);
+
+    Promise.allSettled(
+      approvalRecipients.map((recipient) =>
+        sendEmail(
+          recipient.email,
+          'Task Approved',
+          `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 28px; text-align: center; border-radius: 10px 10px 0 0;">
+                <h1 style="color: white; margin: 0; font-size: 26px;">Task Approved</h1>
+              </div>
+              <div style="padding: 30px; background-color: #ffffff; border-radius: 0 0 10px 10px;">
+                <p style="font-size: 16px; color: #334155;">Hi <strong>${recipient.name}</strong>,</p>
+                <p style="font-size: 15px; color: #475569;">Your task <strong>${task.title}</strong> has been approved by the admin.</p>
+                <p style="font-size: 15px; color: #475569;">You can view the approval note inside your dashboard timeline.</p>
+              </div>
+            </div>
+          `
+        )
+      )
+    ).catch((emailError) => {
+      console.error(`Background task approval email processing failed for task ${task._id}:`, emailError.message);
+    });
 
     res.status(200).json({
       success: true,
@@ -270,30 +295,26 @@ exports.sendTaskFeedback = async (req, res) => {
       sentAt: new Date()
     });
 
-    // For team tasks: post feedback as a reply to the submission message
-    if (task.isTeamTask) {
-      const submissionMsg = [...task.teamMessages].reverse().find(m =>
-        m.message && m.message.includes('submitted this task for admin review')
-      );
-      task.teamMessages.push({
-        message: `🔄 Changes requested — ${message.trim()}`,
-        sentBy: req.user.id,
-        senderName: 'Admin',
-        sentAt: new Date(),
-        replyToSnippet: submissionMsg ? submissionMsg.message : null,
-        replyToSenderName: submissionMsg ? submissionMsg.senderName : null
-      });
-    }
+    const submissionMsg = [...task.teamMessages].reverse().find(m =>
+      m.message && m.message.includes('submitted this task for admin review')
+    );
+    task.teamMessages.push({
+      message: `🔄 Changes requested — ${message.trim()}`,
+      sentBy: req.user.id,
+      senderName: 'Admin',
+      sentAt: new Date(),
+      replyToSnippet: submissionMsg ? submissionMsg.message : null,
+      replyToSenderName: submissionMsg ? submissionMsg.senderName : null
+    });
 
     // Mark task back to In Progress and set unread flag
     task.status = 'In Progress';
     task.hasUnreadFeedback = true;
     await task.save();
 
-    // Send email notification (non-blocking — don't fail the API if email fails)
-    let emailSent = false;
-    try {
-      const emailResult = await sendEmail(
+    // Send email notification in background so the response stays fast.
+    Promise.resolve()
+      .then(() => sendEmail(
         task.assignedTo.email,
         'Task Feedback - Changes Requested',
         `
@@ -314,16 +335,20 @@ exports.sendTaskFeedback = async (req, res) => {
             </div>
           </div>
         `
-      );
-      emailSent = emailResult.success;
-    } catch (emailError) {
-      console.warn('Email notification failed (non-critical):', emailError.message);
-    }
+      ))
+      .then((emailResult) => {
+        if (!emailResult?.success) {
+          console.warn('Email notification failed (non-critical):', emailResult?.error || 'Unknown error');
+        }
+      })
+      .catch((emailError) => {
+        console.warn('Email notification failed (non-critical):', emailError.message);
+      });
 
     res.status(200).json({
       success: true,
       message: 'Feedback sent successfully',
-      emailSent,
+      emailQueued: true,
       task
     });
 
@@ -409,18 +434,17 @@ exports.updateTaskProgress = async (req, res) => {
       task.status = 'In Progress';
     } else if (progress === 100) {
       task.status = 'Pending Approval';
-      // For team tasks: auto-post a submission message so the whole team sees it
-      if (task.isTeamTask) {
-        const submitter = await Intern.findById(internId).select('name');
-        task.teamMessages.push({
-          message: `📤 ${submitter?.name || 'Team Member'} submitted this task for admin review`,
-          sentBy: internId,
-          senderName: submitter?.name || 'Team Member',
-          sentAt: new Date(),
-          replyToSnippet: null,
-          replyToSenderName: null
-        });
-      }
+      const submitter = await Intern.findById(internId).select('name');
+      task.teamMessages.push({
+        message: task.isTeamTask
+          ? `📤 ${submitter?.name || 'Team Member'} submitted this task for admin review`
+          : `📤 ${submitter?.name || 'Intern'} submitted this task for admin review`,
+        sentBy: internId,
+        senderName: submitter?.name || (task.isTeamTask ? 'Team Member' : 'Intern'),
+        sentAt: new Date(),
+        replyToSnippet: null,
+        replyToSenderName: null
+      });
     }
 
     await task.save();

@@ -191,6 +191,45 @@ function InternDashboard() {
     };
   };
 
+  const getTaskTimeline = (task) => {
+    const timeline = [
+      ...(task.comments || []).map((entry) => ({
+        source: entry.sentBy === "admin" ? "Admin feedback" : "Your note",
+        message: entry.message,
+        sentAt: entry.sentAt,
+      })),
+      ...(task.teamMessages || []).map((entry) => ({
+        source: entry.senderName || "Update",
+        message: entry.message,
+        sentAt: entry.sentAt,
+      })),
+    ]
+      .filter((entry) => entry.message)
+      .sort((left, right) => new Date(left.sentAt) - new Date(right.sentAt));
+
+    return timeline;
+  };
+
+  const getLatestTaskUpdate = (task) => {
+    const timeline = getTaskTimeline(task);
+    return timeline.length > 0 ? timeline[timeline.length - 1] : null;
+  };
+
+  const getRecentTaskUpdates = (task, limit = 2) => {
+    return getTaskTimeline(task).slice(-limit);
+  };
+
+  const formatTaskUpdateTime = (value) => {
+    if (!value) {
+      return "Just now";
+    }
+
+    return new Date(value).toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
   if (!user) {
     return <div>Loading...</div>;
   }
@@ -325,223 +364,41 @@ function InternDashboard() {
             </div>
 
             <div className="card" style={{ marginBottom: "30px" }}>
-              <h2
-                style={{
-                  marginBottom: "20px",
-                  fontSize: "20px",
-                  color: "#0f172a",
-                }}
-              >
-                Personal Details
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                    boxShadow: "0 8px 20px rgba(37, 99, 235, 0.25)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Name
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600 }}>
-                    {user.name}
-                  </div>
+              <h2 className="intern-profile-section-title">Personal Details</h2>
+              <div className="intern-profile-grid">
+                <div className="intern-profile-card intern-profile-card-accent-slate">
+                  <div className="intern-profile-label">Name</div>
+                  <div className="intern-profile-value">{user.name}</div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                    boxShadow: "0 8px 20px rgba(2, 132, 199, 0.25)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                    }}
-                  >
-                    PIID
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600 }}>
-                    {user.internId}
-                  </div>
+                <div className="intern-profile-card intern-profile-card-accent-blue">
+                  <div className="intern-profile-label">PIID</div>
+                  <div className="intern-profile-value">{user.internId}</div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #14b8a6 0%, #0f766e 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                    boxShadow: "0 8px 20px rgba(20, 184, 166, 0.25)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Email
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {user.email}
-                  </div>
+                <div className="intern-profile-card intern-profile-card-accent-cyan">
+                  <div className="intern-profile-label">Email</div>
+                  <div className="intern-profile-value intern-profile-value-break">{user.email}</div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background:
-                      "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
-                    borderRadius: "12px",
-                    color: "white",
-                    boxShadow: "0 8px 20px rgba(234, 88, 12, 0.25)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Mobile
-                  </div>
-                  <div style={{ fontSize: "18px", fontWeight: 600 }}>
-                    {user.mobile}
-                  </div>
+                <div className="intern-profile-card intern-profile-card-accent-amber">
+                  <div className="intern-profile-label">Mobile</div>
+                  <div className="intern-profile-value">{user.mobile}</div>
                 </div>
               </div>
             </div>
 
             <div className="card">
-              <h2
-                style={{
-                  marginBottom: "20px",
-                  fontSize: "20px",
-                  color: "#0f172a",
-                }}
-              >
-                Current Designation & Program
-              </h2>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "20px",
-                }}
-              >
-                <div
-                  style={{
-                    padding: "15px",
-                    background: "#f3f4f6",
-                    borderRadius: "12px",
-                    borderLeft: "4px solid #6366f1",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    Current Designation
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "#0f172a",
-                    }}
-                  >
-                    {user.currentDesignation || "Not Set"}
-                  </div>
+              <h2 className="intern-profile-section-title">Current Designation & Program</h2>
+              <div className="intern-profile-grid intern-profile-grid-compact">
+                <div className="intern-profile-card intern-profile-card-light intern-profile-card-accent-indigo">
+                  <div className="intern-profile-label">Current Designation</div>
+                  <div className="intern-profile-value">{user.currentDesignation || "Not Set"}</div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background: "#f3f4f6",
-                    borderRadius: "12px",
-                    borderLeft: "4px solid #8b5cf6",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    Student Type
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "#0f172a",
-                    }}
-                  >
-                    {user.studentType}
-                  </div>
+                <div className="intern-profile-card intern-profile-card-light intern-profile-card-accent-violet">
+                  <div className="intern-profile-label">Student Type</div>
+                  <div className="intern-profile-value">{user.studentType}</div>
                 </div>
-                <div
-                  style={{
-                    padding: "15px",
-                    background: "#f3f4f6",
-                    borderRadius: "12px",
-                    borderLeft: "4px solid #ec4899",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      opacity: 0.8,
-                      marginBottom: "5px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    Status
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "18px",
-                      fontWeight: 600,
-                      color: "#0f172a",
-                    }}
-                  >
-                    {user.status || "Active"}
-                  </div>
+                <div className="intern-profile-card intern-profile-card-light intern-profile-card-accent-emerald">
+                  <div className="intern-profile-label">Status</div>
+                  <div className="intern-profile-value">{user.status || "Active"}</div>
                 </div>
               </div>
             </div>
@@ -1101,121 +958,27 @@ function InternDashboard() {
                 </div>
               ) : (
                 <>
-                  <div className="desktop-only">
-                    <div
-                      className="card"
-                      style={{ padding: 0, overflow: "hidden" }}
-                    >
-                      <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th>Task Title</th>
-                            <th>Description</th>
-                            <th>Deadline</th>
-                            <th>Progress</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tasks
-                            .filter((t) => !t.isTeamTask)
-                            .map((task) => (
-                              <tr key={task._id}>
-                                <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                                  {task.title}
-                                  {task.taskDocument?.filename && (
-                                    <a
-                                      href={`${UPLOADS_BASE}/uploads/tasks/${task.taskDocument.filename}`}
-                                      target="_blank" rel="noopener noreferrer"
-                                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '11px', color: '#2563eb', textDecoration: 'none', fontWeight: '600' }}
-                                    >
-                                      📄 View PDF
-                                    </a>
-                                  )}
-                                </td>
-                                <td>{task.description.substring(0, 60)}</td>
-                                <td>{formatDeadline(task.deadline)}</td>
-                                <td>
-                                  <div
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "10px",
-                                    }}
-                                  >
-                                    <div
-                                      className="progress-bar-container"
-                                      style={{ flex: 1, minWidth: "100px" }}
-                                    >
-                                      <div
-                                        className="progress-bar-fill"
-                                        style={{ width: `${task.progress}%` }}
-                                      ></div>
-                                    </div>
-                                    <span
-                                      style={{
-                                        fontSize: "13px",
-                                        fontWeight: 600,
-                                        color: "#3b82f6",
-                                      }}
-                                    >
-                                      {task.progress}%
-                                    </span>
-                                  </div>
-                                </td>
-                                <td>
-                                  <span
-                                    className="status-badge"
-                                    style={{
-                                      backgroundColor: `${getStatusColor(task.status)}20`,
-                                      color: getStatusColor(task.status),
-                                    }}
-                                  >
-                                    {task.status}
-                                  </span>
-                                </td>
-                                <td>
-                                  {task.status !== "Completed" && (
-                                    <select
-                                      value={task.progress}
-                                      onChange={(e) =>
-                                        handleProgressUpdate(
-                                          task._id,
-                                          parseInt(e.target.value),
-                                        )
-                                      }
-                                      className="progress-select"
-                                      style={{
-                                        padding: "6px 8px",
-                                        fontSize: "12px",
-                                      }}
-                                    >
-                                      <option value={0}>Not Started</option>
-                                      <option value={25}>25%</option>
-                                      <option value={50}>50%</option>
-                                      <option value={75}>75%</option>
-                                      <option value={100}>Submit</option>
-                                    </select>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                  <div className="individual-task-grid">
+                    {tasks
+                      .filter((t) => !t.isTeamTask)
+                      .map((task) => {
+                        const latestUpdate = getLatestTaskUpdate(task);
+                        const recentUpdates = getRecentTaskUpdates(task, 3);
 
-                  <div className="mobile-only">
-                    <div className="tasks-grid">
-                      {tasks
-                        .filter((t) => !t.isTeamTask)
-                        .map((task) => (
-                          <div key={task._id} className="task-card">
-                            <div className="task-header">
-                              <h3>{task.title}</h3>
+                        return (
+                          <article key={task._id} className="individual-task-card">
+                            <header className="individual-task-card-header">
+                              <div>
+                                <h3 className="individual-task-title">{task.title}</h3>
+                                <p className="individual-task-deadline">
+                                  Deadline: {formatDeadline(task.deadline)}
+                                  {isOverdue(task.deadline) && task.status !== "Completed" && (
+                                    <span className="individual-task-overdue">Overdue</span>
+                                  )}
+                                </p>
+                              </div>
                               <span
-                                className="task-status-badge"
+                                className="individual-task-status"
                                 style={{
                                   backgroundColor: `${getStatusColor(task.status)}20`,
                                   color: getStatusColor(task.status),
@@ -1223,45 +986,80 @@ function InternDashboard() {
                               >
                                 {task.status}
                               </span>
-                            </div>
-                            <p className="task-description">{task.description}</p>
+                            </header>
+
+                            <p className="individual-task-description">{task.description}</p>
+
                             {task.taskDocument?.filename && (
                               <a
                                 href={`${UPLOADS_BASE}/uploads/tasks/${task.taskDocument.filename}`}
-                                target="_blank" rel="noopener noreferrer"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', margin: '8px 0', padding: '8px 14px', background: '#dbeafe', borderRadius: '8px', border: '1px solid #93c5fd', color: '#1e40af', textDecoration: 'none', fontWeight: '600', fontSize: '13px' }}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="individual-task-doc-link"
                               >
-                                📄 View Task Document (PDF)
+                                View task document (PDF)
                               </a>
                             )}
-                            <div className="task-deadline">
-                              Deadline: {formatDeadline(task.deadline)}
-                            </div>
-                            <div className="task-progress">
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  marginBottom: "8px",
-                                }}
-                              >
+
+                            <section className="individual-task-progress-wrap">
+                              <div className="individual-task-progress-head">
                                 <span>Progress</span>
-                                <span
-                                  style={{ color: "#3b82f6", fontWeight: 600 }}
-                                >
-                                  {task.progress}%
-                                </span>
+                                <strong>{task.progress}%</strong>
                               </div>
-                              <div className="progress-bar-container">
+                              <div className="progress-bar-container" style={{ marginBottom: 0 }}>
                                 <div
                                   className="progress-bar-fill"
                                   style={{ width: `${task.progress}%` }}
                                 ></div>
                               </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
+                            </section>
+
+                            <section
+                              className={`individual-task-updates ${task.hasUnreadFeedback ? "has-unread" : ""}`}
+                            >
+                              <div className="individual-task-updates-head">
+                                <span>{task.hasUnreadFeedback ? "New Feedback" : "Recent Updates"}</span>
+                                {latestUpdate && (
+                                  <small>{formatTaskUpdateTime(latestUpdate.sentAt)}</small>
+                                )}
+                              </div>
+
+                              {recentUpdates.length > 0 ? (
+                                <div className="individual-task-update-list">
+                                  {recentUpdates.map((update, index) => (
+                                    <div key={`${task._id}-update-${index}`} className="individual-task-update-item">
+                                      <p className="individual-task-update-source">{update.source}</p>
+                                      <p className="individual-task-update-message">{update.message}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="individual-task-update-empty">No updates yet.</p>
+                              )}
+                            </section>
+
+                            {task.status !== "Completed" && (
+                              <div className="individual-task-action">
+                                <label htmlFor={`progress-${task._id}`}>Update Progress</label>
+                                <select
+                                  id={`progress-${task._id}`}
+                                  value={task.progress}
+                                  onChange={(e) =>
+                                    handleProgressUpdate(task._id, parseInt(e.target.value))
+                                  }
+                                  className="progress-select"
+                                >
+                                  <option value={0}>Not Started</option>
+                                  <option value={25}>25%</option>
+                                  <option value={50}>50%</option>
+                                  <option value={75}>75%</option>
+                                  <option value={100}>Submit for Approval</option>
+                                </select>
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
                   </div>
                 </>
               )

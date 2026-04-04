@@ -2440,6 +2440,226 @@ table tr:hover {
   opacity: 0.7;
 }
 
+/* Individual Tasks Redesign */
+.individual-task-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.individual-task-card {
+  border: 1px solid #dbe5f1;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.individual-task-card:hover {
+  transform: translateY(-2px);
+  border-color: #bfdbfe;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.1);
+}
+
+.individual-task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.individual-task-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.individual-task-deadline {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.individual-task-overdue {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 10px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.individual-task-status {
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.individual-task-description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #334155;
+}
+
+.individual-task-doc-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.individual-task-doc-link:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.individual-task-progress-wrap {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.individual-task-progress-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 9px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.individual-task-progress-head strong {
+  color: #1d4ed8;
+  font-size: 14px;
+}
+
+.individual-task-updates {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
+.individual-task-updates.has-unread {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+
+.individual-task-updates-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.individual-task-updates-head span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.individual-task-updates-head small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.individual-task-update-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.individual-task-update-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 9px 10px;
+}
+
+.individual-task-update-source {
+  margin: 0 0 3px 0;
+  font-size: 11px;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.individual-task-update-message {
+  margin: 0;
+  font-size: 13px;
+  color: #0f172a;
+  line-height: 1.45;
+}
+
+.individual-task-update-empty {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.individual-task-action {
+  margin-top: auto;
+  padding-top: 8px;
+}
+
+.individual-task-action label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 768px) {
+  .individual-task-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .individual-task-card {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .individual-task-title {
+    font-size: 16px;
+  }
+
+  .individual-task-status {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
 .approve-btn {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
@@ -7740,4 +7960,111 @@ border-radius: 8px;
 
 .gm-modal-body {
   padding: 16px 18px;
+}
+
+/* Intern profile polish */
+.intern-profile-section-title {
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+
+.intern-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.intern-profile-grid-compact {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.intern-profile-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  border-top: 3px solid #94a3b8;
+}
+
+.intern-profile-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.intern-profile-card-light {
+  background: #f8fafc;
+}
+
+.intern-profile-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.intern-profile-value {
+  font-size: 17px;
+  color: #0f172a;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.intern-profile-value-break {
+  word-break: break-word;
+}
+
+.intern-profile-card-accent-slate {
+  border-top-color: #475569;
+}
+
+.intern-profile-card-accent-blue {
+  border-top-color: #2563eb;
+}
+
+.intern-profile-card-accent-cyan {
+  border-top-color: #0891b2;
+}
+
+.intern-profile-card-accent-amber {
+  border-top-color: #d97706;
+}
+
+.intern-profile-card-accent-indigo {
+  border-top-color: #4f46e5;
+}
+
+.intern-profile-card-accent-violet {
+  border-top-color: #7c3aed;
+}
+
+.intern-profile-card-accent-emerald {
+  border-top-color: #059669;
+}
+
+@media (max-width: 768px) {
+  .intern-profile-section-title {
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+
+  .intern-profile-grid,
+  .intern-profile-grid-compact {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .intern-profile-card {
+    padding: 14px;
+  }
+
+  .intern-profile-value {
+    font-size: 16px;
+  }
 }
