@@ -321,6 +321,16 @@ exports.sendCertificateAssignmentEmail = async ({
       ? `<ul style="margin:10px 0 0 18px;padding:0;color:#374151;font-size:14px;line-height:1.6;">${certificateNames.map((name) => `<li style="margin-bottom:6px;">${name}</li>`).join('')}</ul>`
       : '<p style="margin:10px 0 0;color:#374151;font-size:14px;line-height:1.6;">Your assigned certificate(s) are now available in your account.</p>';
 
+    const attachments = Array.isArray(certificateFiles)
+      ? certificateFiles
+          .filter((file) => file && file.filepath && file.filename)
+          .map((file) => ({
+            filename: file.filename,
+            path: path.resolve(file.filepath),
+            contentDisposition: 'attachment'
+          }))
+      : [];
+
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: internEmail,
@@ -335,15 +345,7 @@ ${namesListText}
 Please login to your dashboard and open the Certificates section to view and download your certificates.
 ${formattedExpiry ? `\nNote: Access may expire on ${formattedExpiry}.` : ''}
       `.trim(),
-      attachments: Array.isArray(certificateFiles)
-        ? certificateFiles
-            .filter((file) => file && file.filepath && file.filename)
-            .map((file) => ({
-              filename: file.filename,
-              path: path.resolve(file.filepath),
-              contentDisposition: 'attachment'
-            }))
-        : [],
+      attachments,
       html: buildEmailShell({
         subtitle: 'Certificate Assignment Notice',
         title: 'Your Certificates Are Ready – PRS Portal',
@@ -362,7 +364,24 @@ ${formattedExpiry ? `\nNote: Access may expire on ${formattedExpiry}.` : ''}
       })
     };
 
-    await sendMailWithRetry(mailOptions);
+    try {
+      await sendMailWithRetry(mailOptions);
+    } catch (error) {
+      if (attachments.length === 0) {
+        throw error;
+      }
+
+      console.error(
+        `⚠️ Certificate assignment email with attachments failed for ${internEmail}, retrying without attachments:`,
+        error.message
+      );
+
+      await sendMailWithRetry({
+        ...mailOptions,
+        attachments: []
+      });
+    }
+
     console.log(`✅ Certificate assignment email sent to ${internEmail}`);
     return { success: true };
   } catch (error) {
