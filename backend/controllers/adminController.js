@@ -1291,10 +1291,11 @@ exports.uploadStudentDocument = async (req, res) => {
 
     await student.save();
 
-    let emailError = null;
+    let emailQueued = false;
     if (student.email) {
-      try {
-        const emailResult = await sendCertificateAssignmentEmail({
+      emailQueued = true;
+      Promise.resolve()
+        .then(() => sendCertificateAssignmentEmail({
           internName: student.name,
           internEmail: student.email,
           certificateNames: [resolvedCertificateName],
@@ -1302,23 +1303,22 @@ exports.uploadStudentDocument = async (req, res) => {
             filename: docData.filename,
             filepath: docData.filepath
           }]
+        }))
+        .then((emailResult) => {
+          if (!emailResult?.success) {
+            console.error(`Certificate assignment email failed for student ${student._id}:`, emailResult?.error || 'Unknown email error');
+          }
+        })
+        .catch((error) => {
+          console.error(`Certificate assignment email error for student ${student._id}:`, error);
         });
-
-        if (!emailResult?.success) {
-          emailError = emailResult?.error || 'Unknown email error';
-          console.error(`Certificate assignment email failed for student ${student._id}:`, emailError);
-        }
-      } catch (error) {
-        emailError = error.message;
-        console.error(`Certificate assignment email error for student ${student._id}:`, error);
-      }
     }
 
     res.status(200).json({
       success: true,
       message: 'Document uploaded successfully',
       document: docData,
-      emailError
+      emailQueued
     });
 
   } catch (error) {
