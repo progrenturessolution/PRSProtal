@@ -54,25 +54,49 @@ const buildEmailShell = ({
   `;
 };
 
-// Create transporter with detailed configuration
-const transporter = nodemailer.createTransport({
-  host: smtpHost,
-  port: smtpPort,
-  secure: smtpSecure, // true for 465, false for STARTTLS (587)
-  pool: smtpPoolEnabled,
+const emailAuth = {
+  user: process.env.EMAIL_USER,
+  pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s/g, '') : ''
+};
+
+const createTransporter = ({ host, port, secure, pool }) => nodemailer.createTransport({
+  host,
+  port,
+  secure,
+  pool,
   maxConnections: smtpMaxConnections,
   maxMessages: smtpMaxMessages,
   connectionTimeout: smtpConnectionTimeout,
   greetingTimeout: smtpGreetingTimeout,
   socketTimeout: smtpSocketTimeout,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s/g, '') : ''
-  },
+  auth: emailAuth,
   tls: {
     rejectUnauthorized: false
   }
 });
+
+const transporterCandidates = [
+  createTransporter({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpSecure,
+    pool: smtpPoolEnabled
+  })
+];
+
+const alternatePort = smtpPort === 465 ? 587 : 465;
+const alternateSecure = !smtpSecure;
+
+if (alternatePort !== smtpPort) {
+  transporterCandidates.push(
+    createTransporter({
+      host: smtpHost,
+      port: alternatePort,
+      secure: alternateSecure,
+      pool: false
+    })
+  );
+}
 
 // Log email configuration status
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
@@ -107,23 +131,34 @@ const sendMailWithRetry = async (mailOptions) => {
   let lastError;
 
   for (let attempt = 1; attempt <= emailMaxRetries + 1; attempt++) {
-    try {
-      return await transporter.sendMail(mailOptions);
-    } catch (error) {
-      lastError = error;
-      const retryable = isRetryableEmailError(error);
-      const hasNextAttempt = attempt <= emailMaxRetries;
+    for (let transporterIndex = 0; transporterIndex < transporterCandidates.length; transporterIndex++) {
+      const activeTransporter = transporterCandidates[transporterIndex];
+      try {
+        return await activeTransporter.sendMail(mailOptions);
+      } catch (error) {
+        lastError = error;
+        const retryable = isRetryableEmailError(error);
+        const isLastTransporter = transporterIndex === transporterCandidates.length - 1;
 
-      console.error(`❌ Email send attempt ${attempt} failed for ${mailOptions?.to}:`, error.message);
+        console.error(
+          `❌ Email send attempt ${attempt} via transport ${transporterIndex + 1}/${transporterCandidates.length} failed for ${mailOptions?.to}:`,
+          error.message
+        );
 
-      if (!retryable || !hasNextAttempt) {
-        throw error;
+        if (!retryable || !isLastTransporter) {
+          continue;
+        }
       }
-
-      const delayMs = emailRetryDelayMs * attempt;
-      console.log(`⏳ Retrying email to ${mailOptions?.to} in ${delayMs}ms...`);
-      await sleep(delayMs);
     }
+
+    const hasNextAttempt = attempt <= emailMaxRetries;
+    if (!hasNextAttempt) {
+      throw lastError;
+    }
+
+    const delayMs = emailRetryDelayMs * attempt;
+    console.log(`⏳ Retrying email to ${mailOptions?.to} in ${delayMs}ms...`);
+    await sleep(delayMs);
   }
 
   throw lastError;
