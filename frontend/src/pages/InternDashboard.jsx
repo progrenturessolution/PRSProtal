@@ -126,6 +126,20 @@ function InternDashboard() {
     }
   };
 
+  const fetchAssignedCertificates = async () => {
+    try {
+      const certResp = await internAPI.getMyAssignedCertificates();
+      if (certResp.data && certResp.data.success) {
+        setAssignedCerts(certResp.data.certificates || []);
+      } else {
+        setAssignedCerts([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch assigned certs:', err);
+      setAssignedCerts([]);
+    }
+  };
+
   const handleSectionClick = async (section) => {
     setActiveSection(section);
     setSidebarOpen(false);
@@ -134,16 +148,18 @@ function InternDashboard() {
     try {
       switch (section) {
         case "documents":
-          const docResp = await internAPI.getMyDocuments();
-          if (docResp.data && docResp.data.success) {
-            setDocuments(docResp.data.documents || null);
-          }
           try {
-            const certResp = await internAPI.getMyAssignedCertificates();
-            if (certResp.data && certResp.data.success) {
-              setAssignedCerts(certResp.data.certificates || []);
+            const docResp = await internAPI.getMyDocuments();
+            if (docResp.data && docResp.data.success) {
+              setDocuments(docResp.data.documents || null);
+            } else {
+              setDocuments(null);
             }
-          } catch (e) { console.error('Failed to fetch assigned certs:', e); }
+          } catch (e) {
+            console.error('Failed to fetch documents:', e);
+            setDocuments(null);
+          }
+          await fetchAssignedCertificates();
           break;
         case "interviews":
           const intResp = await internAPI.getMyInterviews();
