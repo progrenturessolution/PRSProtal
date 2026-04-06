@@ -2,17 +2,27 @@ const nodemailer = require('nodemailer');
 const path = require('path');
 require('dotenv').config();
 
-const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-const smtpPort = Number(process.env.SMTP_PORT || 587);
-const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
-const smtpPoolEnabled = String(process.env.SMTP_POOL || 'true').toLowerCase() !== 'false';
-const smtpMaxConnections = Number(process.env.SMTP_MAX_CONNECTIONS || 5);
-const smtpMaxMessages = Number(process.env.SMTP_MAX_MESSAGES || 100);
-const smtpConnectionTimeout = Number(process.env.SMTP_CONNECTION_TIMEOUT || 30000);
-const smtpGreetingTimeout = Number(process.env.SMTP_GREETING_TIMEOUT || 30000);
-const smtpSocketTimeout = Number(process.env.SMTP_SOCKET_TIMEOUT || 60000);
-const emailMaxRetries = Number(process.env.EMAIL_MAX_RETRIES || 2);
-const emailRetryDelayMs = Number(process.env.EMAIL_RETRY_DELAY_MS || 1500);
+const pickEnv = (...keys) => {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value && String(value).trim()) {
+      return String(value).trim();
+    }
+  }
+  return '';
+};
+
+const smtpHost = pickEnv('SMTP_HOST', 'EMAIL_HOST', 'MAIL_HOST') || 'smtp.gmail.com';
+const smtpPort = Number(pickEnv('SMTP_PORT', 'EMAIL_PORT', 'MAIL_PORT') || 587);
+const smtpSecure = String(pickEnv('SMTP_SECURE', 'EMAIL_SECURE', 'MAIL_SECURE') || 'false').toLowerCase() === 'true';
+const smtpPoolEnabled = String(pickEnv('SMTP_POOL', 'EMAIL_POOL', 'MAIL_POOL') || 'true').toLowerCase() !== 'false';
+const smtpMaxConnections = Number(pickEnv('SMTP_MAX_CONNECTIONS', 'EMAIL_MAX_CONNECTIONS') || 5);
+const smtpMaxMessages = Number(pickEnv('SMTP_MAX_MESSAGES', 'EMAIL_MAX_MESSAGES') || 100);
+const smtpConnectionTimeout = Number(pickEnv('SMTP_CONNECTION_TIMEOUT', 'EMAIL_CONNECTION_TIMEOUT') || 30000);
+const smtpGreetingTimeout = Number(pickEnv('SMTP_GREETING_TIMEOUT', 'EMAIL_GREETING_TIMEOUT') || 30000);
+const smtpSocketTimeout = Number(pickEnv('SMTP_SOCKET_TIMEOUT', 'EMAIL_SOCKET_TIMEOUT') || 60000);
+const emailMaxRetries = Number(pickEnv('EMAIL_MAX_RETRIES', 'SMTP_MAX_RETRIES') || 2);
+const emailRetryDelayMs = Number(pickEnv('EMAIL_RETRY_DELAY_MS', 'SMTP_RETRY_DELAY_MS') || 1500);
 const PRS_LOGIN_URL = 'https://prs-protal.vercel.app/';
 const PRS_COMPANY_NAME = 'Progrentures™ Solution Pvt. Ltd.';
 
@@ -55,8 +65,8 @@ const buildEmailShell = ({
 };
 
 const emailAuth = {
-  user: process.env.EMAIL_USER,
-  pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s/g, '') : ''
+  user: pickEnv('EMAIL_USER', 'SMTP_USER', 'MAIL_USER'),
+  pass: pickEnv('EMAIL_PASS', 'SMTP_PASS', 'EMAIL_PASSWORD', 'SMTP_PASSWORD', 'MAIL_PASS', 'MAIL_PASSWORD').replace(/\s/g, '')
 };
 
 const createTransporter = ({ host, port, secure, pool }) => nodemailer.createTransport({
@@ -99,13 +109,13 @@ if (alternatePort !== smtpPort) {
 }
 
 // Log email configuration status
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  console.log('📧 Email service configured for:', process.env.EMAIL_USER, `via ${smtpHost}:${smtpPort}`);
+if (emailAuth.user && emailAuth.pass) {
+  console.log('📧 Email service configured for:', emailAuth.user, `via ${smtpHost}:${smtpPort}`);
   console.log(`📧 SMTP pool: ${smtpPoolEnabled ? 'enabled' : 'disabled'} | maxConnections=${smtpMaxConnections} | retries=${emailMaxRetries}`);
 } else {
   console.log('⚠️ Email credentials not configured in .env file');
-  console.log('   EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'MISSING');
-  console.log('   EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'MISSING');
+  console.log('   EMAIL_USER/SMTP_USER:', emailAuth.user ? 'SET' : 'MISSING');
+  console.log('   EMAIL_PASS/SMTP_PASS:', emailAuth.pass ? 'SET' : 'MISSING');
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -164,7 +174,7 @@ const sendMailWithRetry = async (mailOptions) => {
   throw lastError;
 };
 
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+if (emailAuth.user && emailAuth.pass) {
   transporterCandidates.forEach((candidate, index) => {
     candidate.verify((error) => {
       if (error) {
