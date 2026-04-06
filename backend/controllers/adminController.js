@@ -118,6 +118,7 @@ exports.addIntern = async (req, res) => {
   try {
     const {
       studentType,
+      internId,
       name,
       email,
       password,
@@ -138,7 +139,20 @@ exports.addIntern = async (req, res) => {
       completedFees,
       pendingFees,
       lastPaymentDate,
-      currentDesignation
+      currentDesignation,
+      suggestedDomain,
+      currentQualification,
+      instituteName,
+      instituteLocation,
+      enrolmentDate,
+      enrolBatchMonth,
+      totalFees,
+      firstPaymentAmount,
+      firstPaymentDate,
+      secondPaymentAmount,
+      secondPaymentDate,
+      finalPaymentAmount,
+      finalPaymentDate
     } = req.body;
 
     // Validation
@@ -150,10 +164,20 @@ exports.addIntern = async (req, res) => {
     }
 
     // Type-specific validation
-    if (studentType === 'Internship' && (!domain || !joiningDate || !duration || !collegeName || !branch || !yearOfStudy)) {
+    if (studentType === 'Internship' && (!internId || !domain || !joiningDate || !duration || !collegeName || !branch || !yearOfStudy)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide all internship required fields'
+      });
+    }
+
+    if (
+      studentType === 'SMS Program' &&
+      (!internId || !suggestedDomain || !instituteName || !yearOfStudy || !enrolmentDate || !enrolBatchMonth || !totalFees)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all SMS required fields'
       });
     }
 
@@ -166,8 +190,23 @@ exports.addIntern = async (req, res) => {
       });
     }
 
-    // Generate intern ID based on type and name
-    const internId = await generateInternId(studentType, name);
+    // Use admin-provided ID for both Internship (PIID) and SMS Program (PSMS ID).
+    const resolvedInternId = String(internId || '').trim();
+
+    if (!resolvedInternId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid intern ID'
+      });
+    }
+
+    const existingInternId = await Intern.findOne({ internId: resolvedInternId });
+    if (existingInternId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student with this intern ID already exists'
+      });
+    }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -178,7 +217,7 @@ exports.addIntern = async (req, res) => {
       name,
       email,
       mobile,
-      internId,
+      internId: resolvedInternId,
       password: hashedPassword,
       role: 'intern'
     };
@@ -204,6 +243,20 @@ exports.addIntern = async (req, res) => {
       internData.pendingFees = pendingFees || '0';
       internData.lastPaymentDate = lastPaymentDate || dateOfPayment || null;
       internData.currentDesignation = currentDesignation || 'Student';
+      internData.suggestedDomain = suggestedDomain;
+      internData.currentQualification = currentQualification;
+      internData.instituteName = instituteName;
+      internData.instituteLocation = instituteLocation;
+      internData.yearOfStudy = yearOfStudy;
+      internData.enrolmentDate = enrolmentDate;
+      internData.enrolBatchMonth = enrolBatchMonth;
+      internData.totalFees = totalFees;
+      internData.firstPaymentAmount = firstPaymentAmount;
+      internData.firstPaymentDate = firstPaymentDate;
+      internData.secondPaymentAmount = secondPaymentAmount;
+      internData.secondPaymentDate = secondPaymentDate;
+      internData.finalPaymentAmount = finalPaymentAmount;
+      internData.finalPaymentDate = finalPaymentDate;
     }
 
     // If files were uploaded via multipart/form-data (welcomeLetter, offerLetter, paymentReceipt), attach to documents
@@ -215,6 +268,14 @@ exports.addIntern = async (req, res) => {
         internData.documents.welcomeLetter = {
           filename: files.welcomeLetter[0].filename,
           filepath: files.welcomeLetter[0].path,
+          uploadedAt: new Date()
+        };
+      }
+
+      if (files.smsProgramEnrollmentLetter && files.smsProgramEnrollmentLetter[0]) {
+        internData.documents.smsProgramEnrollmentLetter = {
+          filename: files.smsProgramEnrollmentLetter[0].filename,
+          filepath: files.smsProgramEnrollmentLetter[0].path,
           uploadedAt: new Date()
         };
       }
@@ -240,7 +301,7 @@ exports.addIntern = async (req, res) => {
     await intern.save();
 
     // Send email in background so API responds immediately
-    sendInternCredentials(name, email, internId, password)
+    sendInternCredentials(name, email, resolvedInternId, password)
       .then((emailResult) => {
         if (!emailResult.success) {
           console.error(`Background credential email failed for ${email}:`, emailResult.error);
@@ -874,6 +935,12 @@ exports.assignGroupsToTrainer = async (req, res) => {
     trainer.assignedGroups = [...new Set([...trainer.assignedGroups.map((id) => String(id)), ...groupIds.map((id) => String(id))])];
     await trainer.save();
 
+    // Keep group-level assigned employee names in sync for Group Management UI.
+    await StudentGroup.updateMany(
+      { _id: { $in: groupIds } },
+      { $addToSet: { assignedEmployees: trainer.name } },
+    );
+
     res.status(200).json({ success: true, message: `${groupIds.length} group(s) assigned successfully` });
   } catch (error) {
     console.error('Assign groups error:', error);
@@ -1129,7 +1196,7 @@ exports.uploadStudentDocument = async (req, res) => {
   try {
     // Support studentId from either body or route param
     const studentId = req.body.studentId || req.params.studentId;
-    const { documentType } = req.body;
+    const { documentType, certificateName } = req.body;
 
     if (!req.file) {
       return res.status(400).json({
@@ -1159,9 +1226,20 @@ exports.uploadStudentDocument = async (req, res) => {
     } else if (documentType === 'welcomeLetter') {
       student.documents = student.documents || {};
       student.documents.welcomeLetter = docData;
+    } else if (documentType === 'smsProgramEnrollmentLetter') {
+      student.documents = student.documents || {};
+      student.documents.smsProgramEnrollmentLetter = docData;
     } else if (documentType === 'paymentReceipt') {
       student.documents = student.documents || {};
       student.documents.paymentReceipt = docData;
+    } else if (documentType === 'completionCertificate' || documentType === 'completionLetter') {
+      student.documents = student.documents || {};
+      // Keep compatibility with existing UI keys.
+      student.documents.completionLetter = docData;
+      student.documents.completionCertificate = docData;
+    } else if (documentType === 'experienceLetter') {
+      student.documents = student.documents || {};
+      student.documents.experienceLetter = docData;
     } else {
       // Other certificates
       student.documents = student.documents || {};
@@ -1169,7 +1247,7 @@ exports.uploadStudentDocument = async (req, res) => {
         student.documents.otherCertificates = [];
       }
       student.documents.otherCertificates.push({
-        name: documentType,
+        name: certificateName || documentType,
         ...docData
       });
     }
@@ -1710,7 +1788,24 @@ exports.getStudentGroupDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Group not found' });
     }
 
-    return res.status(200).json({ success: true, group });
+    // Derive assigned employees from trainer-to-group assignment mapping as fallback.
+    const assignedTrainers = await Trainer.find({ assignedGroups: group._id })
+      .select('name email role customRole')
+      .lean();
+
+    const assignedFromGroup = Array.isArray(group.assignedEmployees)
+      ? group.assignedEmployees
+      : [];
+    const assignedFromTrainer = assignedTrainers
+      .map((trainer) => trainer.name)
+      .filter(Boolean);
+
+    const mergedAssignedEmployees = [...new Set([...assignedFromGroup, ...assignedFromTrainer])];
+    const groupPayload = group.toObject();
+    groupPayload.assignedEmployees = mergedAssignedEmployees;
+    groupPayload.assignedEmployeeDetails = assignedTrainers;
+
+    return res.status(200).json({ success: true, group: groupPayload });
   } catch (error) {
     console.error('Get student group details error:', error);
     return res.status(500).json({ success: false, message: 'Server error' });

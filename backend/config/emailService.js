@@ -8,6 +8,44 @@ const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 
 const PRS_LOGIN_URL = 'https://prs-protal.vercel.app/';
 const PRS_COMPANY_NAME = 'Progrentures™ Solution Pvt. Ltd.';
 
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const buildEmailShell = ({
+  title,
+  subtitle = 'PRS Portal',
+  intro = [],
+  detailRows = [],
+  noticeBlocks = [],
+  bodyHtml = '',
+  closing = `Regards,<br><strong>${PRS_COMPANY_NAME}</strong>`,
+  footerNote = 'This is an automated service email. Please do not reply to this message.',
+}) => {
+  const introHtml = intro.map((item) => `<p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.75;">${item}</p>`).join('');
+  const rowsHtml = detailRows.length > 0
+    ? `<div style="margin:0 0 16px;">${detailRows.map(({ label, value }) => `<p style="margin:0 0 8px;color:#374151;font-size:14px;line-height:1.75;"><strong>${label}:</strong> ${value}</p>`).join('')}</div>`
+    : '';
+  const noticesHtml = noticeBlocks.map((block) => `<p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">${block.html}</p>`).join('');
+
+  return `
+    <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.75;max-width:640px;margin:0 auto;padding:20px;">
+      <p style="margin:0 0 4px;color:#111827;font-size:18px;font-weight:700;">${PRS_COMPANY_NAME}</p>
+      <p style="margin:0 0 14px;color:#6b7280;font-size:13px;">${subtitle}</p>
+      <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">${title}</h1>
+      ${introHtml}
+      ${rowsHtml}
+      ${noticesHtml}
+      ${bodyHtml}
+      <p style="margin:16px 0 0;color:#374151;font-size:14px;line-height:1.75;">${closing}</p>
+      <p style="margin:18px 0 0;color:#6b7280;font-size:12px;line-height:1.5;">${footerNote}</p>
+    </div>
+  `;
+};
+
 // Create transporter with detailed configuration
 const transporter = nodemailer.createTransport({
   host: smtpHost,
@@ -38,28 +76,38 @@ exports.sendInternCredentials = async (internName, internEmail, internId, passwo
       from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
       to: internEmail,
       subject: 'Your PRS Account Credentials – PRS Portal',
-      text: `
-Dear ${internName},
+      text: `Dear ${internName},
 
-This is to inform you that your account has been successfully created.
-You can now log in to your dashboard using the credentials below:
+Welcome to ${PRS_COMPANY_NAME}.
+
+Your account has been created successfully.
 
 User ID: ${internId}
 Temporary Password: ${password}
-
 Login Here: ${PRS_LOGIN_URL}
-Please use the above link to access your account.
+
+Security Notice: Keep your credentials confidential and update your password after your first login.
+
+Next Step: After logging in, please explore your dashboard and access your assigned program details, certifications, and resources.
       `.trim(),
-      html: `
-        <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;max-width:640px;margin:0 auto;padding:20px;">
-          <p>Dear ${internName},</p>
-          <p>This is to inform you that your account has been successfully created.</p>
-          <p>You can now log in to your dashboard using the credentials below:</p>
-          <p><strong>User ID:</strong> ${internId}<br/><strong>Temporary Password:</strong> ${password}</p>
-          <p><strong>Login Here:</strong> <a href="${PRS_LOGIN_URL}">${PRS_LOGIN_URL}</a></p>
-          <p>Please use the above link to access your account.</p>
-        </div>
-      `.trim()
+      html: buildEmailShell({
+        subtitle: 'Internship Account Credentials',
+        title: 'Your PRS Account Credentials – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(internName)},`,
+          'This is to inform you that your account has been successfully created.',
+          'You can now log in to your dashboard using the credentials below:',
+        ],
+        detailRows: [
+          { label: 'User ID', value: escapeHtml(internId) },
+          { label: 'Temporary Password', value: escapeHtml(password) },
+          { label: 'Login Here', value: `<a href="${PRS_LOGIN_URL}" style="color:#2563eb;text-decoration:none;">${PRS_LOGIN_URL}</a>` },
+        ],
+        noticeBlocks: [
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1e40af', html: '<strong>Security Notice:</strong> Keep your credentials confidential and update your password after your first login.' },
+          { background: '#f0fdf4', border: '#bbf7d0', color: '#166534', html: 'Next Step: After logging in, please explore your dashboard and access your assigned program details, certifications, and resources.' },
+        ],
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -88,34 +136,37 @@ exports.sendRepresentativeCredentials = async ({
     const mailOptions = {
       from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
       to: repEmail,
-      subject: 'Your PRS Representative Account Credentials - PRS Portal',
-      text: `
-Dear ${repName},
+      subject: 'Your PRS Account Credentials – PRS Portal',
+      text: `Dear ${repName},
 
 This is to inform you that your account has been successfully created.
-You can now log in to your dashboard using the credentials below:
 
 User ID: ${repEmail}
 Temporary Password: ${password}
-
 Login Here: ${PRS_LOGIN_URL}
-Please use the above link to access your account.
 
-Regards,
-${PRS_COMPANY_NAME}
+Security Notice: Keep your credentials confidential and update your password after your first login.
+
+Next Step: After logging in, please explore your dashboard and access your assigned program details, certifications, and resources.
       `.trim(),
-      html: `
-        <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;max-width:640px;margin:0 auto;padding:20px;">
-          <h2 style="margin:0 0 12px;">Representative Account Credentials</h2>
-          <p>Dear ${repName},</p>
-          <p>This is to inform you that your account has been successfully created.</p>
-          <p>You can now log in to your dashboard using the credentials below:</p>
-          <p><strong>User ID:</strong> ${repEmail}<br/><strong>Temporary Password:</strong> ${password}</p>
-          <p><strong>Login Here:</strong> <a href="${PRS_LOGIN_URL}">${PRS_LOGIN_URL}</a></p>
-          <p>Please use the above link to access your account.</p>
-          <p>Regards,<br/><strong>${PRS_COMPANY_NAME}</strong></p>
-        </div>
-      `.trim()
+      html: buildEmailShell({
+        subtitle: 'Representative Account Credentials',
+        title: 'Your PRS Account Credentials – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(repName)},`,
+          'This is to inform you that your account has been successfully created.',
+          'You can now log in to your dashboard using the credentials below:',
+        ],
+        detailRows: [
+          { label: 'User ID', value: escapeHtml(repEmail) },
+          { label: 'Temporary Password', value: escapeHtml(password) },
+          { label: 'Login Here', value: `<a href="${PRS_LOGIN_URL}" style="color:#2563eb;text-decoration:none;">${PRS_LOGIN_URL}</a>` },
+        ],
+        noticeBlocks: [
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1e40af', html: '<strong>Security Notice:</strong> Keep your credentials confidential and update your password after your first login.' },
+          { background: '#f0fdf4', border: '#bbf7d0', color: '#166534', html: 'Next Step: After logging in, please explore your dashboard and access your assigned program details, certifications, and resources.' },
+        ],
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -137,34 +188,37 @@ exports.sendTrainerCredentials = async ({
     const mailOptions = {
       from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
       to: trainerEmail,
-      subject: 'Your PRS Trainer Account Credentials - PRS Portal',
-      text: `
-Dear ${trainerName},
+      subject: 'Your PRS Account Credentials – PRS Portal',
+      text: `Dear ${trainerName},
 
 This is to inform you that your account has been successfully created.
-You can now log in to your dashboard using the credentials below:
 
 User ID: ${trainerEmail}
 Temporary Password: ${password}
-
 Login Here: ${PRS_LOGIN_URL}
-Please use the above link to access your account.
 
-Regards,
-${PRS_COMPANY_NAME}
+Security Notice: Keep your credentials confidential and update your password after your first login.
+
+Next Step: After logging in, please explore your dashboard and access your assigned program details, certifications, and resources.
       `.trim(),
-      html: `
-        <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;line-height:1.6;max-width:640px;margin:0 auto;padding:20px;">
-          <h2 style="margin:0 0 12px;">Trainer Account Credentials</h2>
-          <p>Dear ${trainerName},</p>
-          <p>This is to inform you that your account has been successfully created.</p>
-          <p>You can now log in to your dashboard using the credentials below:</p>
-          <p><strong>User ID:</strong> ${trainerEmail}<br/><strong>Temporary Password:</strong> ${password}</p>
-          <p><strong>Login Here:</strong> <a href="${PRS_LOGIN_URL}">${PRS_LOGIN_URL}</a></p>
-          <p>Please use the above link to access your account.</p>
-          <p>Regards,<br/><strong>${PRS_COMPANY_NAME}</strong></p>
-        </div>
-      `.trim()
+      html: buildEmailShell({
+        subtitle: 'Trainer Account Credentials',
+        title: 'Your PRS Account Credentials – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(trainerName)},`,
+          'This is to inform you that your account has been successfully created.',
+          'You can now log in to your dashboard using the credentials below:',
+        ],
+        detailRows: [
+          { label: 'User ID', value: escapeHtml(trainerEmail) },
+          { label: 'Temporary Password', value: escapeHtml(password) },
+          { label: 'Login Here', value: `<a href="${PRS_LOGIN_URL}" style="color:#2563eb;text-decoration:none;">${PRS_LOGIN_URL}</a>` },
+        ],
+        noticeBlocks: [
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1e40af', html: '<strong>Security Notice:</strong> Keep your credentials confidential and update your password after your first login.' },
+          { background: '#f0fdf4', border: '#bbf7d0', color: '#166534', html: 'Next Step: After logging in, please explore your dashboard and access your assigned program details, certifications, and resources.' },
+        ],
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -200,21 +254,17 @@ exports.sendCertificateAssignmentEmail = async ({
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: internEmail,
-      subject: 'Progrentures Internship Program: Certificate Assignment Notice',
-      text: `
-Dear ${internName},
+      subject: 'Certificate Assignment Notice – PRS Portal',
+      text: `Dear ${internName},
 
 This is to inform you that certificate(s) have been assigned to your account.
 
 Assigned Certificates:
 ${namesListText}
 
-Please login to your dashboard and open the Certifications section to view and download your certificates.
+Please login to your dashboard and open the Certificates section to view and download your certificates.
 ${formattedExpiry ? `\nNote: Access may expire on ${formattedExpiry}.` : ''}
-
-Best regards,
-Progrentures Team
-      `,
+      `.trim(),
       attachments: Array.isArray(certificateFiles)
         ? certificateFiles
             .filter((file) => file && file.filepath && file.filename)
@@ -224,47 +274,22 @@ Progrentures Team
               contentDisposition: 'attachment'
             }))
         : [],
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#111827;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
-                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Internship Management</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Certificate Assignment Notice</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${internName},</p>
-                    <p style="margin:0 0 14px;color:#374151;font-size:14px;line-height:1.6;">Certificate(s) have been assigned to your account.</p>
-
-                    <div style="border:1px solid #d1d5db;background:#f9fafb;padding:12px 14px;margin:0 0 16px;">
-                      <p style="margin:0;color:#4b5563;font-size:13px;font-weight:600;">Assigned Certificates</p>
-                      ${namesListHtml}
-                    </div>
-
-                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 16px;">
-                      <p style="margin:0;color:#1d4ed8;font-size:13px;line-height:1.6;"><strong>Action Required:</strong> Please login and open the Certifications section to view and download your certificates.${certificateFiles.length > 0 ? ' The assigned certificate file(s) are also attached with this email for direct download.' : ''}</p>
-                    </div>
-
-                    ${formattedExpiry ? `<p style="margin:0 0 14px;color:#9a3412;font-size:13px;line-height:1.6;"><strong>Note:</strong> Access may expire on ${formattedExpiry}.</p>` : ''}
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Team</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+      html: buildEmailShell({
+        subtitle: 'Certificate Assignment Notice',
+        title: 'Your Certificates Are Ready – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(internName)},`,
+          'This is to inform you that certificate(s) have been assigned to your account.',
+        ],
+        bodyHtml: `
+          <p style="margin:0 0 8px;color:#374151;font-size:14px;line-height:1.75;"><strong>Assigned Certificates:</strong></p>
+          ${certificateNames.length > 0 ? certificateNames.map((name, index) => `<p style="margin:0 0 6px;color:#374151;font-size:14px;line-height:1.75;">${index + 1}. ${escapeHtml(name)}</p>`).join('') : '<p style="margin:0 0 6px;color:#374151;font-size:14px;line-height:1.75;">Your assigned certificate(s) are now available in your account.</p>'}
+        `,
+        noticeBlocks: [
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8', html: `<strong>Action Required:</strong> Please login and open the Certificates section to view and download your certificates.${certificateFiles.length > 0 ? ' The assigned certificate file(s) are also attached with this email for direct download.' : ''}` },
+          formattedExpiry ? { background: '#fff7ed', border: '#fed7aa', color: '#9a3412', html: `<strong>Note:</strong> Access may expire on ${formattedExpiry}.` } : null,
+        ].filter(Boolean),
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -304,99 +329,48 @@ exports.sendTaskAssignmentEmail = async ({
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: internEmail,
-      subject: 'Progrentures Internship: New Task Assignment',
-      text: `
-Dear ${internName},
+      subject: 'New Task Assignment – PRS Portal',
+      text: `Dear ${internName},
 
 You have been assigned a new internship task.
 
 Task Title: ${taskTitle}
-
 Description: ${taskDescription}
-
 Deadline: ${formattedDeadline}
-
 Task Type: ${isTeamTask ? 'Team Task' : 'Individual Task'}
 
 ${isTeamTask ? `Team Members:\n${teamListText}\n` : ''}
 
 Please sign in to your dashboard to review details and update progress.
 ${taskDocument ? '\nThe task PDF/document has been attached to this email.' : ''}
-
-Best regards,
-Progrentures Team
-      `,
+      `.trim(),
       attachments: taskDocument ? [{
         filename: taskDocument.filename,
         path: path.resolve(taskDocument.filepath),
         contentDisposition: 'attachment'
       }] : [],
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#111827;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
-                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Internship Management</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">New Task Assignment</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${internName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">A new task has been assigned to you. Please review the details below.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Task Title</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${taskTitle}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;vertical-align:top;">Description</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#374151;font-size:14px;line-height:1.6;">${taskDescription}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Deadline</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#991b1b;font-size:14px;font-weight:700;">${formattedDeadline}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Task Type</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${isTeamTask ? 'Team Task' : 'Individual Task'}</td>
-                      </tr>
-                    </table>
-
-                    ${isTeamTask ? `
-                      <div style="border:1px solid #d1d5db;background:#f9fafb;padding:12px 14px;margin:0 0 16px;">
-                        <p style="margin:0;color:#4b5563;font-size:13px;font-weight:600;">Team Members</p>
-                        ${teamListHtml}
-                      </div>
-                    ` : ''}
-
-                    <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#065f46;font-size:13px;line-height:1.6;"><strong>Action Required:</strong> Please sign in to your dashboard and update progress regularly.</p>
-                    </div>
-
-                    ${taskDocument ? `
-                      <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
-                        <p style="margin:0;color:#1d4ed8;font-size:13px;line-height:1.6;"><strong>Attachment:</strong> Task PDF/document is attached with this email.</p>
-                      </div>
-                    ` : ''}
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Team</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+      html: buildEmailShell({
+        subtitle: 'Task Assignment',
+        title: 'New Task Assignment – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(internName)},`,
+          'You have been assigned a new internship task.',
+        ],
+        detailRows: [
+          { label: 'Task Title', value: escapeHtml(taskTitle) },
+          { label: 'Description', value: escapeHtml(taskDescription) },
+          { label: 'Deadline', value: escapeHtml(formattedDeadline) },
+          { label: 'Task Type', value: escapeHtml(isTeamTask ? 'Team Task' : 'Individual Task') },
+        ],
+        bodyHtml: isTeamTask ? `
+          <p style="margin:0 0 8px;color:#374151;font-size:14px;line-height:1.75;"><strong>Team Members:</strong></p>
+          ${teamMembers.length > 0 ? teamMembers.map((member, index) => `<p style="margin:0 0 6px;color:#374151;font-size:14px;line-height:1.75;">${index + 1}. ${escapeHtml(member.name)}${member.internId ? ` (${escapeHtml(member.internId)})` : ''}</p>`).join('') : '<p style="margin:0 0 6px;color:#374151;font-size:14px;line-height:1.75;">No additional team members listed.</p>'}
+        ` : '',
+        noticeBlocks: [
+          { background: '#ecfdf5', border: '#a7f3d0', color: '#065f46', html: '<strong>Action Required:</strong> Please sign in to your dashboard and update progress regularly.' },
+          taskDocument ? { background: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8', html: '<strong>Attachment:</strong> Task PDF/document is attached with this email.' } : null,
+        ].filter(Boolean),
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -415,7 +389,11 @@ exports.sendEmail = async (to, subject, html) => {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      html
+      html: buildEmailShell({
+        title: subject,
+        subtitle: 'PRS Portal Notification',
+        bodyHtml: html,
+      })
     });
     console.log(`✅ Email sent to ${to}`);
     return { success: true };
@@ -444,69 +422,26 @@ exports.sendTrainerAssignmentNotification = async ({
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: trainerEmail,
-      subject: 'Students Assigned to You - Progrentures Trainer Panel',
-      text: `
-Dear ${trainerName},
+      subject: 'Students Assigned to You – PRS Portal',
+      text: `Dear ${trainerName},
 
-Greetings from Team Progrentures.
+This is to inform you that ${studentsList.length} student(s) have been assigned to you for mentoring and training.
 
-You have been assigned ${studentsList.length} student(s) for mentoring and training.
-
-Student Details:
-${studentsList.map((s) => `- ${s.name} (${s.internId}) - ${s.email}`).join('\n')}
-
-Please login to your Trainer Panel to view more details and start mentoring.
-
-Best regards,
-Team Progrentures
-      `,
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#111827;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
-                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Trainer Assignment</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">New Students Assigned</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${trainerName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">You have been assigned ${studentsList.length} student(s) for mentoring and training. Please review their details below.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <thead>
-                        <tr style="background:#f9fafb;">
-                          <th style="padding:12px;border:1px solid #d1d5db;text-align:left;color:#4b5563;font-size:13px;font-weight:600;">Student Name</th>
-                          <th style="padding:12px;border:1px solid #d1d5db;text-align:left;color:#4b5563;font-size:13px;font-weight:600;">Email</th>
-                          <th style="padding:12px;border:1px solid #d1d5db;text-align:left;color:#4b5563;font-size:13px;font-weight:600;">Intern ID</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${studentListHtml}
-                      </tbody>
-                    </table>
-
-                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#1e40af;font-size:13px;line-height:1.6;"><strong>Action Required:</strong> Login to your Trainer Panel to view complete student details and start mentoring.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+Please login to your Trainer Portal to view complete student details and start mentoring.
+      `.trim(),
+      html: buildEmailShell({
+        subtitle: 'Trainer Assignment',
+        title: 'Students Assigned to You – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(trainerName)},`,
+          `This is to inform you that ${studentsList.length} student(s) have been assigned to you for mentoring and training.`,
+        ],
+        detailRows: [],
+        bodyHtml: studentsList.length > 0 ? `<p style="margin:0 0 8px;color:#374151;font-size:14px;line-height:1.75;"><strong>Student Details:</strong></p>${studentsList.map((student, index) => `<p style="margin:0 0 6px;color:#374151;font-size:14px;line-height:1.75;">${index + 1}. ${escapeHtml(student.name || 'N/A')}${student.internId ? ` (${escapeHtml(student.internId)})` : ''}${student.email ? ` - ${escapeHtml(student.email)}` : ''}</p>`).join('')}` : '<p style="margin:0 0 6px;color:#374151;font-size:14px;line-height:1.75;">No student details available.</p>',
+        noticeBlocks: [
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1e40af', html: '<strong>Action Required:</strong> Login to your Trainer Portal to view complete student details and start mentoring.' },
+        ],
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -530,11 +465,8 @@ exports.sendStudentAssignmentNotification = async ({
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
-      subject: 'Trainer Assignment - Your Mentor Details - Progrentures',
-      text: `
-Dear ${studentName},
-
-Greetings from Team Progrentures.
+      subject: 'Trainer Assignment – PRS Portal',
+      text: `Dear ${studentName},
 
 You have been assigned a dedicated trainer/mentor for your internship journey.
 
@@ -543,60 +475,24 @@ Name: ${trainerName}
 Email: ${trainerEmail}
 Mobile: ${trainerMobile || 'N/A'}
 
-Please feel free to reach out to your trainer for guidance and support.
-
-Best regards,
-Team Progrentures
-      `,
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#111827;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Progrentures</p>
-                    <p style="margin:6px 0 0;color:#d1d5db;font-size:13px;">Trainer Assignment</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#111827;font-size:22px;line-height:1.35;">Trainer Assigned</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${studentName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Great news! You have been assigned a dedicated trainer/mentor for your internship journey. Here are their contact details.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:140px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Trainer Name</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${trainerName}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:140px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Email</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#0078d4;font-size:14px;word-break:break-all;">${trainerEmail}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:140px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Mobile</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:15px;font-weight:700;">${trainerMobile || 'N/A'}</td>
-                      </tr>
-                    </table>
-
-                    <div style="background:#ecfdf5;border:1px solid #bbf7d0;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#166534;font-size:13px;line-height:1.6;"><strong>Next Steps:</strong> Reach out to your trainer to introduce yourself and understand your training plan.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Team Progrentures</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+Next Step: Reach out to your trainer to introduce yourself and understand your training plan.
+      `.trim(),
+      html: buildEmailShell({
+        subtitle: 'Trainer Assignment',
+        title: 'Your Trainer Has Been Assigned – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(studentName)},`,
+          'You have been assigned a dedicated trainer/mentor for your internship journey.',
+        ],
+        detailRows: [
+          { label: 'Trainer Name', value: escapeHtml(trainerName) },
+          { label: 'Email', value: escapeHtml(trainerEmail) },
+          { label: 'Mobile', value: escapeHtml(trainerMobile || 'N/A') },
+        ],
+        noticeBlocks: [
+          { background: '#ecfdf5', border: '#bbf7d0', color: '#166534', html: '<strong>Next Steps:</strong> Reach out to your trainer to introduce yourself and understand your training plan.' },
+        ],
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -623,79 +519,33 @@ exports.sendInterviewResultEmail = async ({
   remarks
 }) => {
   try {
+    const levelSummary = [
+      { label: 'Interview Type', value: interviewType },
+      { label: 'Attempt Number', value: attemptNumber },
+      { label: 'Communication Level', value: `${communicationLevel}/10` },
+      { label: 'Confidence Level', value: `${confidenceLevel}/10` },
+      { label: 'Clarity Level', value: `${clarityLevel}/10` },
+      { label: 'Overall Level', value: `${overallLevel}/10` },
+      { label: 'Level Crossed', value: levelCrossed ? 'YES' : 'NO' },
+    ];
+
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
-      subject: `Interview Result - ${interviewType} (Attempt ${attemptNumber}) - Progrentures`,
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#1e40af;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Interview Results</p>
-                    <p style="margin:6px 0 0;color:#bfdbfe;font-size:13px;">Progrentures Assessment</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#1e40af;font-size:22px;line-height:1.35;">Interview Result: ${interviewType}</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${studentName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Your interview has been evaluated by ${trainerName}. Please find your detailed feedback below.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Interview Type</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;">${interviewType}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Attempt Number</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;">${attemptNumber}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Communication Level</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${communicationLevel}/10</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Confidence Level</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${confidenceLevel}/10</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Clarity Level</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${clarityLevel}/10</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Overall Level</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:600;">${overallLevel}/10</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Level Crossed</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:700;">${levelCrossed ? '✓ YES' : '✗ NO'}</td>
-                      </tr>
-                    </table>
-
-                    ${remarks ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#166534;font-size:13px;line-height:1.6;"><strong>Trainer's Remarks:</strong> ${remarks}</p>
-                    </div>` : ''}
-
-                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#1e40af;font-size:13px;line-height:1.6;"><strong>Next Steps:</strong> Review the feedback and prepare for your next interview round.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Training Team</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+      subject: `Interview Result - ${interviewType} (Attempt ${attemptNumber}) - PRS Portal`,
+      html: buildEmailShell({
+        subtitle: 'Interview Results',
+        title: `Interview Result: ${interviewType} – PRS Portal`,
+        intro: [
+          `Dear ${escapeHtml(studentName)},`,
+          `Your interview has been evaluated by ${escapeHtml(trainerName)}. Please find your detailed feedback below.`,
+        ],
+        detailRows: levelSummary.map((item) => ({ label: item.label, value: escapeHtml(item.value) })),
+        noticeBlocks: [
+          remarks ? { background: '#f0fdf4', border: '#bbf7d0', color: '#166534', html: `<strong>Trainer's Remarks:</strong> ${escapeHtml(remarks)}` } : null,
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1e40af', html: '<strong>Next Steps:</strong> Review the feedback and prepare for your next interview round.' },
+        ].filter(Boolean),
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -725,62 +575,24 @@ exports.sendAptitudeResultEmail = async ({
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
-      subject: `Aptitude Test Result - Round ${roundNumber} - Progrentures`,
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#7c3aed;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Aptitude Test Results</p>
-                    <p style="margin:6px 0 0;color:#ede9fe;font-size:13px;">Progrentures Assessment</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#7c3aed;font-size:22px;line-height:1.35;">Aptitude Test - Round ${roundNumber}</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${studentName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Your aptitude test has been evaluated. Here are your results.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Round Number</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;">${roundNumber}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Score</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:700;font-size:16px;">${score}/100</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Status</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;">
-                          <span style="display:inline-block;padding:4px 12px;background:${statusBg};color:${statusColor};border-radius:6px;font-size:12px;font-weight:700;">${resultText}</span>
-                        </td>
-                      </tr>
-                    </table>
-
-                    ${remarks ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#166534;font-size:13px;line-height:1.6;"><strong>Trainer's Remarks:</strong> ${remarks}</p>
-                    </div>` : ''}
-
-                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#1e40af;font-size:13px;line-height:1.6;"><strong>Feedback:</strong> Continue practicing aptitude problems to improve your speed and accuracy.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Training Team</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+      subject: `Aptitude Test Result - Round ${roundNumber} - PRS Portal`,
+      html: buildEmailShell({
+        subtitle: 'Aptitude Test Results',
+        title: `Aptitude Test - Round ${roundNumber} – PRS Portal`,
+        intro: [
+          `Dear ${escapeHtml(studentName)},`,
+          'Your aptitude test has been evaluated. Here are your results.',
+        ],
+        detailRows: [
+          { label: 'Round Number', value: escapeHtml(roundNumber) },
+          { label: 'Score', value: `${escapeHtml(score)}/100` },
+          { label: 'Status', value: `<span style="display:inline-block;padding:4px 12px;background:${statusBg};color:${statusColor};border-radius:6px;font-size:12px;font-weight:700;">${resultText}</span>` },
+        ],
+        noticeBlocks: [
+          remarks ? { background: '#f0fdf4', border: '#bbf7d0', color: '#166534', html: `<strong>Trainer's Remarks:</strong> ${escapeHtml(remarks)}` } : null,
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1e40af', html: '<strong>Feedback:</strong> Continue practicing aptitude problems to improve your speed and accuracy.' },
+        ].filter(Boolean),
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -810,66 +622,25 @@ exports.sendAssessmentResultEmail = async ({
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
-      subject: `Assessment Result - ${assessmentType} - Progrentures`,
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#2563eb;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Assessment Results</p>
-                    <p style="margin:6px 0 0;color:#bfdbfe;font-size:13px;">Progrentures Evaluation</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#2563eb;font-size:22px;line-height:1.35;">Assessment: ${assessmentType}</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${studentName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Your assessment has been completed and evaluated. Please review your results below.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Assessment Type</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;">${assessmentType}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Score</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:700;font-size:16px;">${score}%</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Status</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;">
-                          <span style="display:inline-block;padding:4px 12px;background:${statusBg};color:${statusColor};border-radius:6px;font-size:12px;font-weight:700;">${statusText}</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Evaluated By</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;">${trainerName}</td>
-                      </tr>
-                    </table>
-
-                    ${feedback ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#166534;font-size:13px;line-height:1.6;"><strong>Feedback:</strong> ${feedback}</p>
-                    </div>` : ''}
-
-                    <div style="background:#fef3c7;border:1px solid #fcd34d;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;"><strong>Note:</strong> Your trainer will review your progress and provide guidance for improvement.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Training Team</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+      subject: `Assessment Result - ${assessmentType} - PRS Portal`,
+      html: buildEmailShell({
+        subtitle: 'Assessment Results',
+        title: `Assessment: ${assessmentType} – PRS Portal`,
+        intro: [
+          `Dear ${escapeHtml(studentName)},`,
+          'Your assessment has been completed and evaluated. Please review your results below.',
+        ],
+        detailRows: [
+          { label: 'Assessment Type', value: escapeHtml(assessmentType) },
+          { label: 'Score', value: `${escapeHtml(score)}%` },
+          { label: 'Status', value: `<span style="display:inline-block;padding:4px 12px;background:${statusBg};color:${statusColor};border-radius:6px;font-size:12px;font-weight:700;">${statusText}</span>` },
+          { label: 'Evaluated By', value: escapeHtml(trainerName) },
+        ],
+        noticeBlocks: [
+          feedback ? { background: '#f0fdf4', border: '#bbf7d0', color: '#166534', html: `<strong>Feedback:</strong> ${escapeHtml(feedback)}` } : null,
+          { background: '#fef3c7', border: '#fcd34d', color: '#92400e', html: '<strong>Note:</strong> Your trainer will review your progress and provide guidance for improvement.' },
+        ].filter(Boolean),
+      })
     };
 
     await transporter.sendMail(mailOptions);
@@ -900,70 +671,26 @@ exports.sendTrainingResultEmail = async ({
     const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to: studentEmail,
-      subject: `Training Session Report - Progrentures`,
-      html: `
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;font-family:Arial,Helvetica,sans-serif;">
-          <tr>
-            <td align="center">
-              <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;">
-                <tr>
-                  <td style="background:#059669;padding:20px 28px;">
-                    <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:.3px;">Training Session Report</p>
-                    <p style="margin:6px 0 0;color:#d1fae5;font-size:13px;">Progrentures Training Program</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:28px;">
-                    <h1 style="margin:0 0 16px;color:#059669;font-size:22px;line-height:1.35;">Your Training Session Report</h1>
-                    <p style="margin:0 0 12px;color:#374151;font-size:14px;line-height:1.6;">Dear ${studentName},</p>
-                    <p style="margin:0 0 20px;color:#374151;font-size:14px;line-height:1.6;">Here is your training session report evaluated by ${trainerName}.</p>
-
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d1d5db;border-collapse:collapse;margin:0 0 20px;">
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Session Date</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;">${new Date(date).toLocaleDateString('en-IN')}</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Attendance</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;">
-                          <span style="display:inline-block;padding:4px 12px;background:${attendanceBg};color:${attendanceColor};border-radius:6px;font-size:12px;font-weight:700;">${attendanceStatus}</span>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Engagement Level</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;font-weight:700;">${engagementLevel}/10</td>
-                      </tr>
-                      <tr>
-                        <td style="width:180px;padding:12px 14px;border:1px solid #d1d5db;background:#f9fafb;color:#4b5563;font-size:13px;font-weight:600;">Trainer</td>
-                        <td style="padding:12px 14px;border:1px solid #d1d5db;color:#111827;font-size:14px;">${trainerName}</td>
-                      </tr>
-                    </table>
-
-                    ${skillImprovementNote ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#166534;font-size:13px;line-height:1.6;"><strong>Skill Improvement:</strong> ${skillImprovementNote}</p>
-                    </div>` : ''}
-
-                    ${trainerRemarks ? `<div style="background:#fef3c7;border:1px solid #fcd34d;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#92400e;font-size:13px;line-height:1.6;"><strong>Trainer's Remarks:</strong> ${trainerRemarks}</p>
-                    </div>` : ''}
-
-                    <div style="background:#eff6ff;border:1px solid #bfdbfe;padding:12px 14px;margin:0 0 20px;">
-                      <p style="margin:0;color:#1e40af;font-size:13px;line-height:1.6;"><strong>Keep Learning:</strong> Continue to engage actively in training sessions for better skill development.</p>
-                    </div>
-
-                    <p style="margin:0;color:#374151;font-size:14px;line-height:1.6;">Regards,<br><strong>Progrentures Training Team</strong></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 28px;border-top:1px solid #e5e7eb;background:#f9fafb;">
-                    <p style="margin:0;color:#6b7280;font-size:12px;line-height:1.5;">This is an automated service email. Please do not reply to this message.</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `
+      subject: `Training Session Report - PRS Portal`,
+      html: buildEmailShell({
+        subtitle: 'Training Session Report',
+        title: 'Your Training Session Report – PRS Portal',
+        intro: [
+          `Dear ${escapeHtml(studentName)},`,
+          `Here is your training session report evaluated by ${escapeHtml(trainerName)}.`,
+        ],
+        detailRows: [
+          { label: 'Session Date', value: new Date(date).toLocaleDateString('en-IN') },
+          { label: 'Attendance', value: `<span style="display:inline-block;padding:4px 12px;background:${attendanceBg};color:${attendanceColor};border-radius:6px;font-size:12px;font-weight:700;">${attendanceStatus}</span>` },
+          { label: 'Engagement Level', value: `${escapeHtml(engagementLevel)}/10` },
+          { label: 'Trainer', value: escapeHtml(trainerName) },
+        ],
+        noticeBlocks: [
+          skillImprovementNote ? { background: '#f0fdf4', border: '#bbf7d0', color: '#166534', html: `<strong>Skill Improvement:</strong> ${escapeHtml(skillImprovementNote)}` } : null,
+          trainerRemarks ? { background: '#fef3c7', border: '#fcd34d', color: '#92400e', html: `<strong>Trainer's Remarks:</strong> ${escapeHtml(trainerRemarks)}` } : null,
+          { background: '#eff6ff', border: '#bfdbfe', color: '#1e40af', html: '<strong>Keep Learning:</strong> Continue to engage actively in training sessions for better skill development.' },
+        ].filter(Boolean),
+      })
     };
 
     await transporter.sendMail(mailOptions);

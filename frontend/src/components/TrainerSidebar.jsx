@@ -38,9 +38,9 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
     <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo-container">
-          <img src={logo} alt="Progrentures" className="sidebar-logo" />
+          <img src={logo} alt="PRS Portal" className="sidebar-logo" />
         </div>
-        <h2>PROGRENTURES</h2>
+        <h2>PRS PORTAL</h2>
         <p>Trainer Portal</p>
       </div>
 
@@ -62,8 +62,6 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
       </div>
 
       <ul className="sidebar-menu">
-        <li className="menu-section-header">MAIN MENU</li>
-
         <li
           className={activeTab === "overview" ? "active" : ""}
           onClick={() => handleMenuClick("overview")}
@@ -111,8 +109,6 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
 
         
 
-        <li className="menu-section-header">COMMUNICATION</li>
-
         <li
           className={activeTab === "notifications" ? "active" : ""}
           onClick={() => handleMenuClick("notifications")}
@@ -130,7 +126,6 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
 
         {selectedStudent && (
           <>
-            <li className="menu-section-header" style={{ color: '#667eea', marginTop: '16px' }}>SELECTED STUDENT</li>
             <li 
               style={{ 
                 padding: '12px 16px', 
@@ -324,8 +319,6 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             </li>
           </>
         )}
-
-        <li className="menu-section-header">SETTINGS</li>
 
         <li
           className={activeTab === "profile" ? "active" : ""}

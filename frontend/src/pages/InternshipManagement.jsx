@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { adminAPI, UPLOADS_BASE } from "../services/api";
 
-function InternshipManagement() {
+function InternshipManagement({ onAddStudentClick }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, active, completed
@@ -207,9 +207,39 @@ function InternshipManagement() {
 
   return (
     <>
-      <div className="content-header">
-        <h1>Internship Management</h1>
-        <p>Manage all internship programs and students</p>
+      <div
+        className="content-header"
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "16px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <h1>Internship Management</h1>
+          <p>Manage all internship programs and students</p>
+        </div>
+        {onAddStudentClick && (
+          <button
+            type="button"
+            onClick={onAddStudentClick}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "10px",
+              border: "none",
+              background: "#324158",
+              color: "#fff",
+              fontWeight: "600",
+              fontSize: "14px",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Add Student
+          </button>
+        )}
       </div>
 
       {/* Statistics Cards */}

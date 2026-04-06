@@ -64,6 +64,8 @@ function TrainerDashboard() {
     name: "",
     email: "",
     mobile: "",
+    joiningDate: "",
+    customRole: "",
     password: "",
     confirmPassword: "",
   });
@@ -298,6 +300,8 @@ function TrainerDashboard() {
       name: user?.name || "",
       email: user?.email || "",
       mobile: user?.mobile || "",
+      joiningDate: user?.joiningDate ? new Date(user.joiningDate).toISOString().split("T")[0] : "",
+      customRole: user?.customRole || "",
       password: "",
       confirmPassword: "",
     });
@@ -354,6 +358,8 @@ function TrainerDashboard() {
         name: editFormData.name,
         email: editFormData.email,
         mobile: editFormData.mobile,
+        joiningDate: editFormData.joiningDate,
+        customRole: editFormData.customRole,
       };
 
       // Only include password if provided
@@ -367,6 +373,10 @@ function TrainerDashboard() {
         // Update user in local state
         const updatedUser = response.data.user;
         setUser(updatedUser);
+        setTrainerProfile((prev) => ({
+          ...(prev || {}),
+          ...updatedUser,
+        }));
 
         // Update localStorage with new user data
         localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -390,6 +400,8 @@ function TrainerDashboard() {
       name: "",
       email: "",
       mobile: "",
+      joiningDate: "",
+      customRole: "",
       password: "",
       confirmPassword: "",
     });
@@ -1709,13 +1721,47 @@ function TrainerDashboard() {
                       </span>
                     </div>
                   </div>
+                  <div className="profile-field">
+                    <label>Custom Role</label>
+                    <div className="field-value">{user?.customRole || "Not available"}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Joining Date</label>
+                    <div className="field-value">{user?.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : "Not available"}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Account Status</label>
+                    <div className="field-value">
+                      <span className="badge-neutral">{user?.status || "active"}</span>
+                    </div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Total Students</label>
+                    <div className="field-value">{students.length}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Assigned Groups</label>
+                    <div className="field-value">{assignedGroups.length}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Work Assignments</label>
+                    <div className="field-value">{workAssignments.length}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Profile Created</label>
+                    <div className="field-value">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Not available"}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Last Updated</label>
+                    <div className="field-value">{user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : "Not available"}</div>
+                  </div>
                 </div>
 
                 <div className="info-banner">
                   <strong>Update Your Information</strong>
                   <p>
                     Click the "Edit Profile" button above to update your name,
-                    email, mobile number, or password.
+                    email, mobile, joining date, custom role, or password.
                   </p>
                 </div>
               </div>
@@ -1782,6 +1828,29 @@ function TrainerDashboard() {
                           value={editFormData.mobile}
                           onChange={handleEditInputChange}
                           placeholder="Enter your mobile number"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="edit-joining-date">Joining Date</label>
+                        <input
+                          id="edit-joining-date"
+                          type="date"
+                          name="joiningDate"
+                          value={editFormData.joiningDate}
+                          onChange={handleEditInputChange}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="edit-custom-role">Custom Role</label>
+                        <input
+                          id="edit-custom-role"
+                          type="text"
+                          name="customRole"
+                          value={editFormData.customRole}
+                          onChange={handleEditInputChange}
+                          placeholder="e.g. Senior Trainer"
                         />
                       </div>
 

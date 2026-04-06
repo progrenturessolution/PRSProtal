@@ -385,7 +385,13 @@ function AdminDashboard() {
         return <AddIntern key="add-intern" onInternAdded={fetchStats} />;
 
       case "view-interns":
-        return <ViewInterns key="view-interns" onInternDeleted={fetchStats} />;
+        return (
+          <ViewInterns
+            key="view-interns"
+            onInternDeleted={fetchStats}
+            onAddStudentClick={() => setActiveMenu("add-intern")}
+          />
+        );
 
       case "group-management":
         return <GroupManagement key="group-management" />;
@@ -413,7 +419,12 @@ function AdminDashboard() {
         return <CompletedTasks key="completed-tasks" />;
 
       case "internship-management":
-        return <InternshipManagement key="internship-management" />;
+        return (
+          <InternshipManagement
+            key="internship-management"
+            onAddStudentClick={() => setActiveMenu("add-intern")}
+          />
+        );
 
       case "sms-management":
         return <SMSProgramManagement key="sms-management" />;
@@ -434,7 +445,12 @@ function AdminDashboard() {
         return <Reports key="reports" />;
 
       case "representatives":
-        return <ManageRepresentatives key="representatives" />;
+        return (
+          <ManageRepresentatives
+            key="representatives"
+            onOpenPayout={() => setActiveMenu("representative-payout")}
+          />
+        );
 
       case "representative-payout":
         return <RepresentativePayoutManagement key="representative-payout" />;
@@ -488,15 +504,13 @@ function AdminDashboard() {
       <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo-container">
-            <img src={logo} alt="Progrentures" className="sidebar-logo" />
+            <img src={logo} alt="PRS Portal" className="sidebar-logo" />
           </div>
-          <h2>PROGRENTURES</h2>
-          <p>Admin Panel</p>
+          <h2>PRS PORTAL</h2>
+          <p>Admin Pannel</p>
         </div>
 
         <ul className="sidebar-menu">
-          {/* Main Options */}
-          <li className="menu-section-header">OVERVIEW</li>
           <li
             className={activeMenu === "dashboard" ? "active" : ""}
             onClick={() => {
@@ -515,25 +529,6 @@ function AdminDashboard() {
             Dashboard Overview
           </li>
 
-          {/* Student Management Section */}
-          <li className="menu-section-header">STUDENT MANAGEMENT</li>
-          <li
-            className={activeMenu === "add-intern" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("add-intern");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-              />
-            </svg>
-            Add Student
-          </li>
           <li
             className={activeMenu === "view-interns" ? "active" : ""}
             onClick={() => {
@@ -551,43 +546,7 @@ function AdminDashboard() {
             </svg>
             View All Students
           </li>
-          <li
-            className={activeMenu === "group-management" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("group-management");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h10v10H7zM3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4z"
-              />
-            </svg>
-            Group Management
-          </li>
-          <li
-            className={activeMenu === "archived-students" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("archived-students");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-              />
-            </svg>
-            Archived Students
-          </li>
 
-          {/* Internship Management */}
-          <li className="menu-section-header">PROGRAM MANAGEMENT</li>
           <li
             className={activeMenu === "internship-management" ? "active" : ""}
             onClick={() => {
@@ -622,6 +581,77 @@ function AdminDashboard() {
             </svg>
             SMS Program Management
           </li>
+          <li
+            className={activeMenu === "group-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("group-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 7h10v10H7zM3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4z"
+              />
+            </svg>
+            Group Management
+          </li>
+
+          <li
+            className={activeMenu === "representatives" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("representatives");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+            Representatives
+          </li>
+
+          <li
+            className={activeMenu === "access-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("access-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
+            Employee Management
+          </li>
+
+          <li
+            className={activeMenu === "archived-students" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("archived-students");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+              />
+            </svg>
+            Archived Students
+          </li>
 
           {/* Certificates */}
           <li
@@ -642,45 +672,6 @@ function AdminDashboard() {
             Certificates
           </li>
 
-          {/* Representatives */}
-          <li className="menu-section-header">REPRESENTATIVES</li>
-          <li
-            className={activeMenu === "representatives" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("representatives");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z"
-              />
-            </svg>
-            Representatives
-          </li>
-          <li
-            className={activeMenu === "representative-payout" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("representative-payout");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1m0-1a9 9 0 110-18 9 9 0 010 18z"
-              />
-            </svg>
-            Representative Payout
-          </li>
-
-          {/* Tasks & Projects */}
-          <li className="menu-section-header">TASKS & PROJECTS</li>
           <li
             className={activeMenu === "create-task" ? "active" : ""}
             onClick={() => {
@@ -765,8 +756,6 @@ function AdminDashboard() {
             Completed Tasks
           </li>
 
-          {/* Communication */}
-          <li className="menu-section-header">COMMUNICATION</li>
           <li
             className={activeMenu === "notifications" ? "active" : ""}
             onClick={() => {
@@ -800,26 +789,6 @@ function AdminDashboard() {
               />
             </svg>
             Jobs & Internship Updates
-          </li>
-
-          {/* Employee Management */}
-          <li className="menu-section-header">SETTINGS</li>
-          <li
-            className={activeMenu === "access-management" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("access-management");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-            Employee Management
           </li>
 
           {/* Reports */}

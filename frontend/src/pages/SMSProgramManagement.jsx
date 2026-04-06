@@ -131,6 +131,8 @@ function SMSProgramManagement() {
         student.name.toLowerCase().includes(query) ||
         student.email.toLowerCase().includes(query) ||
         student.internId.toLowerCase().includes(query) ||
+        (student.addedByRepresentative?.name && student.addedByRepresentative.name.toLowerCase().includes(query)) ||
+        (!student.addedByRepresentative && 'admin'.includes(query)) ||
         (student.currentDesignation && student.currentDesignation.toLowerCase().includes(query)) ||
         (student.paymentDoneBy && student.paymentDoneBy.toLowerCase().includes(query)) ||
         (student.transactionId && student.transactionId.toLowerCase().includes(query))
@@ -329,18 +331,16 @@ function SMSProgramManagement() {
         ) : filteredStudents.length === 0 ? (
           <p>{searchQuery ? `No students found matching "${searchQuery}". Try another search.` : 'No SMS program students found.'}</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-container">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
                   <th>Email</th>
-                  <th>Current Designation</th>
-                  <th>Payment By</th>
-                  <th>Payment Date</th>
-                  <th>Amount (₹)</th>
+                  <th>Mobile</th>
                   <th>Status</th>
+                  <th>Added By</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -351,16 +351,7 @@ function SMSProgramManagement() {
                       <td>{student.internId}</td>
                       <td>{student.name}</td>
                       <td>{student.email}</td>
-                      <td>{student.currentDesignation || 'N/A'}</td>
-                      <td>{student.paymentDoneBy || 'N/A'}</td>
-                      <td>
-                        {student.dateOfPayment
-                          ? new Date(student.dateOfPayment).toLocaleDateString()
-                          : 'N/A'}
-                      </td>
-                      <td style={{ fontWeight: '600', color: '#059669' }}>
-                        {student.paymentAmount ? `₹${student.paymentAmount}` : 'N/A'}
-                      </td>
+                      <td>{student.mobile || 'N/A'}</td>
                       <td>
                         <span
                           className={`status-badge ${
@@ -372,6 +363,23 @@ function SMSProgramManagement() {
                           }`}
                         >
                           {student.status ? student.status.charAt(0).toUpperCase() + student.status.slice(1) : 'N/A'}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            padding: '4px 10px',
+                            background: student.addedByRepresentative ? '#fef3c7' : '#dbeafe',
+                            color: student.addedByRepresentative ? '#b45309' : '#1e40af',
+                            borderRadius: '6px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {student.addedByRepresentative
+                            ? `Added by ${student.addedByRepresentative.name}`
+                            : 'Added by Admin'}
                         </span>
                       </td>
                       <td style={{ position: 'relative' }}>
@@ -836,6 +844,14 @@ function SMSProgramManagement() {
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#6b7280', fontSize: '14px' }}>Current Designation</span>
                         <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.currentDesignation || 'N/A'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Added By</span>
+                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
+                          {selectedStudent.addedByRepresentative
+                            ? selectedStudent.addedByRepresentative.name
+                            : 'Admin'}
+                        </span>
                       </div>
                     </>
                   ) : (

@@ -162,6 +162,7 @@ export const taskAPI = {
 export const internAPI = {
   getMyDocuments: () => api.get("/task/intern/my-documents"),
   getMyProfile: () => api.get("/task/intern/my-profile"),
+  updateMyProfile: (data) => api.patch("/task/intern/my-profile", data),
   getMyInterviews: () => api.get("/task/intern/my-interviews"),
   getMyAptitude: () => api.get("/task/intern/my-aptitude"),
   getMyAssessments: () => api.get("/task/intern/my-assessments"),

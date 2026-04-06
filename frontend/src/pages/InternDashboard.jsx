@@ -20,6 +20,42 @@ function InternDashboard() {
   const [assignedCerts, setAssignedCerts] = useState([]);
   const [taskView, setTaskView] = useState('individual');
   const [error, setError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    studentType: "Internship",
+    internId: "",
+    name: "",
+    email: "",
+    mobile: "",
+    currentDesignation: "",
+    domain: "",
+    joiningDate: "",
+    endingDate: "",
+    duration: "",
+    collegeName: "",
+    branch: "",
+    yearOfStudy: "",
+    suggestedDomain: "",
+    currentQualification: "",
+    instituteName: "",
+    instituteLocation: "",
+    enrolmentDate: "",
+    enrolBatchMonth: "",
+    totalFees: "",
+    firstPaymentAmount: "",
+    firstPaymentDate: "",
+    secondPaymentAmount: "",
+    secondPaymentDate: "",
+    finalPaymentAmount: "",
+    finalPaymentDate: "",
+    completedFees: "",
+    pendingFees: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -149,6 +185,167 @@ function InternDashboard() {
     navigate("/");
   };
 
+  const handleEditClick = () => {
+    setEditFormData({
+      studentType: user?.studentType || "Internship",
+      internId: user?.internId || "",
+      name: user?.name || "",
+      email: user?.email || "",
+      mobile: user?.mobile || "",
+      currentDesignation: user?.currentDesignation || "",
+      domain: user?.domain || "",
+      joiningDate: user?.joiningDate ? new Date(user.joiningDate).toISOString().split("T")[0] : "",
+      endingDate: user?.endingDate ? new Date(user.endingDate).toISOString().split("T")[0] : "",
+      duration: user?.duration || "",
+      collegeName: user?.collegeName || "",
+      branch: user?.branch || "",
+      yearOfStudy: user?.yearOfStudy || "",
+      suggestedDomain: user?.suggestedDomain || "",
+      currentQualification: user?.currentQualification || "",
+      instituteName: user?.instituteName || "",
+      instituteLocation: user?.instituteLocation || "",
+      enrolmentDate: user?.enrolmentDate ? new Date(user.enrolmentDate).toISOString().split("T")[0] : "",
+      enrolBatchMonth: user?.enrolBatchMonth || "",
+      totalFees: user?.totalFees || "",
+      firstPaymentAmount: user?.firstPaymentAmount || "",
+      firstPaymentDate: user?.firstPaymentDate ? new Date(user.firstPaymentDate).toISOString().split("T")[0] : "",
+      secondPaymentAmount: user?.secondPaymentAmount || "",
+      secondPaymentDate: user?.secondPaymentDate ? new Date(user.secondPaymentDate).toISOString().split("T")[0] : "",
+      finalPaymentAmount: user?.finalPaymentAmount || "",
+      finalPaymentDate: user?.finalPaymentDate ? new Date(user.finalPaymentDate).toISOString().split("T")[0] : "",
+      completedFees: user?.completedFees || "",
+      pendingFees: user?.pendingFees || "",
+      password: "",
+      confirmPassword: "",
+    });
+    setEditError("");
+    setShowEditModal(true);
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setEditError("");
+    setEditFormData({
+      studentType: "Internship",
+      internId: "",
+      name: "",
+      email: "",
+      mobile: "",
+      currentDesignation: "",
+      domain: "",
+      joiningDate: "",
+      endingDate: "",
+      duration: "",
+      collegeName: "",
+      branch: "",
+      yearOfStudy: "",
+      suggestedDomain: "",
+      currentQualification: "",
+      instituteName: "",
+      instituteLocation: "",
+      enrolmentDate: "",
+      enrolBatchMonth: "",
+      totalFees: "",
+      firstPaymentAmount: "",
+      firstPaymentDate: "",
+      secondPaymentAmount: "",
+      secondPaymentDate: "",
+      finalPaymentAmount: "",
+      finalPaymentDate: "",
+      completedFees: "",
+      pendingFees: "",
+      password: "",
+      confirmPassword: "",
+    });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditError("");
+    setEditLoading(true);
+
+    if (!editFormData.name.trim()) {
+      setEditError("Name is required");
+      setEditLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!editFormData.email.trim() || !emailRegex.test(editFormData.email)) {
+      setEditError("Please enter a valid email address");
+      setEditLoading(false);
+      return;
+    }
+
+    if (
+      editFormData.password &&
+      editFormData.password !== editFormData.confirmPassword
+    ) {
+      setEditError("Passwords do not match");
+      setEditLoading(false);
+      return;
+    }
+
+    try {
+      const payload = {
+        studentType: editFormData.studentType,
+        internId: editFormData.internId,
+        name: editFormData.name,
+        email: editFormData.email,
+        mobile: editFormData.mobile,
+        currentDesignation: editFormData.currentDesignation,
+        domain: editFormData.domain,
+        joiningDate: editFormData.joiningDate,
+        endingDate: editFormData.endingDate,
+        duration: editFormData.duration,
+        collegeName: editFormData.collegeName,
+        branch: editFormData.branch,
+        yearOfStudy: editFormData.yearOfStudy,
+        suggestedDomain: editFormData.suggestedDomain,
+        currentQualification: editFormData.currentQualification,
+        instituteName: editFormData.instituteName,
+        instituteLocation: editFormData.instituteLocation,
+        enrolmentDate: editFormData.enrolmentDate,
+        enrolBatchMonth: editFormData.enrolBatchMonth,
+        totalFees: editFormData.totalFees,
+        firstPaymentAmount: editFormData.firstPaymentAmount,
+        firstPaymentDate: editFormData.firstPaymentDate,
+        secondPaymentAmount: editFormData.secondPaymentAmount,
+        secondPaymentDate: editFormData.secondPaymentDate,
+        finalPaymentAmount: editFormData.finalPaymentAmount,
+        finalPaymentDate: editFormData.finalPaymentDate,
+        completedFees: editFormData.completedFees,
+        pendingFees: editFormData.pendingFees,
+      };
+
+      if (editFormData.password) {
+        payload.password = editFormData.password;
+      }
+
+      const response = await internAPI.updateMyProfile(payload);
+      if (response.data.success) {
+        const updatedUser = response.data.user;
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setProfileSuccess("Profile updated successfully!");
+        setTimeout(() => setProfileSuccess(""), 4000);
+        setShowEditModal(false);
+      }
+    } catch (err) {
+      setEditError(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "Assigned":
@@ -269,9 +466,9 @@ function InternDashboard() {
       <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo-container">
-            <img src={logo} alt="Progrentures" className="sidebar-logo" />
+            <img src={logo} alt="PRS Portal" className="sidebar-logo" />
           </div>
-          <h2>PROGRENTURES</h2>
+          <h2>PRS PORTAL</h2>
           <p>Intern Portal</p>
         </div>
 
@@ -358,50 +555,477 @@ function InternDashboard() {
         {/* My Profile Section */}
         {activeSection === "profile" && (
           <>
-            <div className="content-header">
-              <h1>My Profile</h1>
-              <p>Your personal and professional information</p>
-            </div>
-
-            <div className="card" style={{ marginBottom: "30px" }}>
-              <h2 className="intern-profile-section-title">Personal Details</h2>
-              <div className="intern-profile-grid">
-                <div className="intern-profile-card intern-profile-card-accent-slate">
-                  <div className="intern-profile-label">Name</div>
-                  <div className="intern-profile-value">{user.name}</div>
-                </div>
-                <div className="intern-profile-card intern-profile-card-accent-blue">
-                  <div className="intern-profile-label">PIID</div>
-                  <div className="intern-profile-value">{user.internId}</div>
-                </div>
-                <div className="intern-profile-card intern-profile-card-accent-cyan">
-                  <div className="intern-profile-label">Email</div>
-                  <div className="intern-profile-value intern-profile-value-break">{user.email}</div>
-                </div>
-                <div className="intern-profile-card intern-profile-card-accent-amber">
-                  <div className="intern-profile-label">Mobile</div>
-                  <div className="intern-profile-value">{user.mobile}</div>
-                </div>
+            <div className="premium-page-header">
+              <div className="header-left">
+                <h1>My Profile</h1>
+                <p className="header-subtitle">Manage your personal information</p>
+              </div>
+              <div className="header-right">
+                <button
+                  className="premium-btn-secondary"
+                  onClick={handleEditClick}
+                >
+                  Edit Profile
+                </button>
               </div>
             </div>
 
-            <div className="card">
-              <h2 className="intern-profile-section-title">Current Designation & Program</h2>
-              <div className="intern-profile-grid intern-profile-grid-compact">
-                <div className="intern-profile-card intern-profile-card-light intern-profile-card-accent-indigo">
-                  <div className="intern-profile-label">Current Designation</div>
-                  <div className="intern-profile-value">{user.currentDesignation || "Not Set"}</div>
+            {profileSuccess && (
+              <div className="success-message" style={{ marginBottom: "20px" }}>
+                {profileSuccess}
+              </div>
+            )}
+
+            <div className="premium-card">
+              <div className="premium-card-header">
+                <h2>Personal Information</h2>
+              </div>
+
+              <div className="profile-info-grid">
+                <div className="profile-field">
+                  <label>Full Name</label>
+                  <div className="field-value">{user.name}</div>
                 </div>
-                <div className="intern-profile-card intern-profile-card-light intern-profile-card-accent-violet">
-                  <div className="intern-profile-label">Student Type</div>
-                  <div className="intern-profile-value">{user.studentType}</div>
+                <div className="profile-field">
+                  <label>Email Address</label>
+                  <div className="field-value mono-text">{user.email}</div>
                 </div>
-                <div className="intern-profile-card intern-profile-card-light intern-profile-card-accent-emerald">
-                  <div className="intern-profile-label">Status</div>
-                  <div className="intern-profile-value">{user.status || "Active"}</div>
+                <div className="profile-field">
+                  <label>Mobile Number</label>
+                  <div className="field-value mono-text">{user.mobile || "Not available"}</div>
                 </div>
+                <div className="profile-field">
+                  <label>Student ID</label>
+                  <div className="field-value mono-text">{user.internId || "Not available"}</div>
+                </div>
+                <div className="profile-field">
+                  <label>Student Type</label>
+                  <div className="field-value">
+                    <span className="badge-neutral">{user.studentType || "Internship"}</span>
+                  </div>
+                </div>
+                <div className="profile-field">
+                  <label>Current Designation</label>
+                  <div className="field-value">{user.currentDesignation || "Not Set"}</div>
+                </div>
+                <div className="profile-field">
+                  <label>Status</label>
+                  <div className="field-value">
+                    <span className="badge-neutral">{user.status || "active"}</span>
+                  </div>
+                </div>
+                <div className="profile-field">
+                  <label>Joined On</label>
+                  <div className="field-value">{user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : "Not set"}</div>
+                </div>
+                <div className="profile-field">
+                  <label>Ending Date</label>
+                  <div className="field-value">{user.endingDate ? new Date(user.endingDate).toLocaleDateString() : "Not set"}</div>
+                </div>
+                <div className="profile-field">
+                  <label>Duration</label>
+                  <div className="field-value">{user.duration || "Not set"}</div>
+                </div>
+
+                {user.studentType === "Internship" ? (
+                  <>
+                    <div className="profile-field">
+                      <label>Domain</label>
+                      <div className="field-value">{user.domain || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>College Name</label>
+                      <div className="field-value">{user.collegeName || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Branch</label>
+                      <div className="field-value">{user.branch || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Year of Study</label>
+                      <div className="field-value">{user.yearOfStudy || "Not set"}</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="profile-field">
+                      <label>Suggested Domain</label>
+                      <div className="field-value">{user.suggestedDomain || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Current Qualification</label>
+                      <div className="field-value">{user.currentQualification || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Institute Name</label>
+                      <div className="field-value">{user.instituteName || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Institute Location</label>
+                      <div className="field-value">{user.instituteLocation || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Enrolment Date</label>
+                      <div className="field-value">{user.enrolmentDate ? new Date(user.enrolmentDate).toLocaleDateString() : "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Batch Month</label>
+                      <div className="field-value">{user.enrolBatchMonth || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Total Fees</label>
+                      <div className="field-value">{user.totalFees || "0"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Completed Fees</label>
+                      <div className="field-value">{user.completedFees || "0"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Pending Fees</label>
+                      <div className="field-value">{user.pendingFees || "0"}</div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="info-banner">
+                <strong>Update Your Information</strong>
+                <p>
+                  Click the "Edit Profile" button above to update your name,
+                  email, mobile number, or password.
+                </p>
               </div>
             </div>
+
+            {showEditModal && (
+              <div className="modal-overlay" onClick={handleCloseModal}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h2>Edit Profile</h2>
+                    <button className="modal-close-btn" onClick={handleCloseModal}>✕</button>
+                  </div>
+
+                  <form onSubmit={handleEditSubmit}>
+                    {editError && (
+                      <div className="error-message" style={{ marginBottom: "15px" }}>
+                        {editError}
+                      </div>
+                    )}
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-studentType">Student Type</label>
+                      <select
+                        id="intern-edit-studentType"
+                        name="studentType"
+                        value={editFormData.studentType}
+                        onChange={handleEditInputChange}
+                      >
+                        <option value="Internship">Internship</option>
+                        <option value="SMS Program">SMS Program</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-internId">{editFormData.studentType === "SMS Program" ? "PSMS ID" : "PIID"}</label>
+                      <input
+                        id="intern-edit-internId"
+                        type="text"
+                        name="internId"
+                        value={editFormData.internId}
+                        onChange={handleEditInputChange}
+                        placeholder="Enter student ID"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-name">Full Name *</label>
+                      <input
+                        id="intern-edit-name"
+                        type="text"
+                        name="name"
+                        value={editFormData.name}
+                        onChange={handleEditInputChange}
+                        placeholder="Enter your full name"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-email">Email Address *</label>
+                      <input
+                        id="intern-edit-email"
+                        type="email"
+                        name="email"
+                        value={editFormData.email}
+                        onChange={handleEditInputChange}
+                        placeholder="Enter your email address"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-mobile">Mobile Number</label>
+                      <input
+                        id="intern-edit-mobile"
+                        type="tel"
+                        name="mobile"
+                        value={editFormData.mobile}
+                        onChange={handleEditInputChange}
+                        placeholder="Enter your mobile number"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-designation">Current Designation</label>
+                      <input
+                        id="intern-edit-designation"
+                        type="text"
+                        name="currentDesignation"
+                        value={editFormData.currentDesignation}
+                        onChange={handleEditInputChange}
+                        placeholder="Current designation"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-joiningDate">Joining Date</label>
+                      <input
+                        id="intern-edit-joiningDate"
+                        type="date"
+                        name="joiningDate"
+                        value={editFormData.joiningDate}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-endingDate">Ending Date</label>
+                      <input
+                        id="intern-edit-endingDate"
+                        type="date"
+                        name="endingDate"
+                        value={editFormData.endingDate}
+                        onChange={handleEditInputChange}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-duration">Duration</label>
+                      <input
+                        id="intern-edit-duration"
+                        type="text"
+                        name="duration"
+                        value={editFormData.duration}
+                        onChange={handleEditInputChange}
+                        placeholder="e.g. 3 months"
+                      />
+                    </div>
+
+                    {editFormData.studentType === "Internship" ? (
+                      <>
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-domain">Domain</label>
+                          <input
+                            id="intern-edit-domain"
+                            type="text"
+                            name="domain"
+                            value={editFormData.domain}
+                            onChange={handleEditInputChange}
+                            placeholder="Enter domain"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-collegeName">College Name</label>
+                          <input
+                            id="intern-edit-collegeName"
+                            type="text"
+                            name="collegeName"
+                            value={editFormData.collegeName}
+                            onChange={handleEditInputChange}
+                            placeholder="Enter college name"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-branch">Branch</label>
+                          <input
+                            id="intern-edit-branch"
+                            type="text"
+                            name="branch"
+                            value={editFormData.branch}
+                            onChange={handleEditInputChange}
+                            placeholder="Enter branch"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-yearOfStudy">Year of Study</label>
+                          <input
+                            id="intern-edit-yearOfStudy"
+                            type="text"
+                            name="yearOfStudy"
+                            value={editFormData.yearOfStudy}
+                            onChange={handleEditInputChange}
+                            placeholder="e.g. 2nd Year"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-suggestedDomain">Suggested Domain</label>
+                          <input
+                            id="intern-edit-suggestedDomain"
+                            type="text"
+                            name="suggestedDomain"
+                            value={editFormData.suggestedDomain}
+                            onChange={handleEditInputChange}
+                            placeholder="Suggested domain"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-currentQualification">Current Qualification</label>
+                          <input
+                            id="intern-edit-currentQualification"
+                            type="text"
+                            name="currentQualification"
+                            value={editFormData.currentQualification}
+                            onChange={handleEditInputChange}
+                            placeholder="Current qualification"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-instituteName">Institute Name</label>
+                          <input
+                            id="intern-edit-instituteName"
+                            type="text"
+                            name="instituteName"
+                            value={editFormData.instituteName}
+                            onChange={handleEditInputChange}
+                            placeholder="Institute name"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlF
+                          or="intern-edit-instituteLocation">Institute Location</label>
+                          <input
+                            id="intern-edit-instituteLocation"
+                            type="text"
+                            name="instituteLocation"
+                            value={editFormData.instituteLocation}
+                            onChange={handleEditInputChange}
+                            placeholder="Institute location"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-enrolmentDate">Enrolment Date</label>
+                          <input
+                            id="intern-edit-enrolmentDate"
+                            type="date"
+                            name="enrolmentDate"
+                            value={editFormData.enrolmentDate}
+                            onChange={handleEditInputChange}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-enrolBatchMonth">Batch Month</label>
+                          <input
+                            id="intern-edit-enrolBatchMonth"
+                            type="month"
+                            name="enrolBatchMonth"
+                            value={editFormData.enrolBatchMonth}
+                            onChange={handleEditInputChange}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-totalFees">Total Fees</label>
+                          <input
+                            id="intern-edit-totalFees"
+                            type="number"
+                            name="totalFees"
+                            value={editFormData.totalFees}
+                            onChange={handleEditInputChange}
+                            placeholder="Total fees"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-completedFees">Completed Fees</label>
+                          <input
+                            id="intern-edit-completedFees"
+                            type="number"
+                            name="completedFees"
+                            value={editFormData.completedFees}
+                            onChange={handleEditInputChange}
+                            placeholder="Completed fees"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="intern-edit-pendingFees">Pending Fees</label>
+                          <input
+                            id="intern-edit-pendingFees"
+                            type="number"
+                            name="pendingFees"
+                            value={editFormData.pendingFees}
+                            onChange={handleEditInputChange}
+                            placeholder="Pending fees"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-password">New Password (Optional)</label>
+                      <input
+                        id="intern-edit-password"
+                        type="password"
+                        name="password"
+                        value={editFormData.password}
+                        onChange={handleEditInputChange}
+                        placeholder="Leave blank to keep current password"
+                      />
+                    </div>
+
+                    {editFormData.password && (
+                      <div className="form-group">
+                        <label htmlFor="intern-edit-confirm-password">Confirm Password *</label>
+                        <input
+                          id="intern-edit-confirm-password"
+                          type="password"
+                          name="confirmPassword"
+                          value={editFormData.confirmPassword}
+                          onChange={handleEditInputChange}
+                          placeholder="Confirm your new password"
+                          required={!!editFormData.password}
+                        />
+                      </div>
+                    )}
+
+                    <div className="modal-actions">
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={handleCloseModal}
+                        disabled={editLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="btn-primary" disabled={editLoading}>
+                        {editLoading ? "Updating..." : "Update Profile"}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </>
         )}
 

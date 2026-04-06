@@ -61,12 +61,12 @@ function InternLogin() {
     <div className="login-container">
       <div className="login-left">
         <div className="logo">PROGRENTURES</div>
-        <p className="tagline">Student Portal</p>
+        <p className="tagline">Aspirants Portal</p>
       </div>
 
       <div className="login-right">
         <form className="form-container" onSubmit={handleSubmit}>
-          <h2>Student Login</h2>
+          <h2>Aspirants Login</h2>
 
           {error && (
             <div
@@ -103,7 +103,7 @@ function InternLogin() {
           )}
 
           <div className="form-group">
-            <label>Student ID</label>
+            <label>Aspirant ID</label>
             <input
               type="text"
               name="internId"

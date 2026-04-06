@@ -4,6 +4,39 @@ import { representativeAPI, UPLOADS_BASE } from '../services/api';
 import logo from '../assets/logo.png';
 import LoadingSpinner from '../components/LoadingSpinner';
 
+const initialStudentForm = {
+  studentType: 'Internship',
+  internId: '',
+  name: '',
+  email: '',
+  mobile: '',
+  password: '',
+  domain: '',
+  customDomain: '',
+  joiningDate: '',
+  endingDate: '',
+  duration: '',
+  collegeName: '',
+  branch: '',
+  yearOfStudy: '',
+  suggestedDomain: '',
+  currentQualification: '',
+  instituteName: '',
+  instituteLocation: '',
+  enrolmentDate: '',
+  enrolBatchMonth: '',
+  totalFees: '',
+  firstPaymentAmount: '',
+  firstPaymentDate: '',
+  secondPaymentAmount: '',
+  secondPaymentDate: '',
+  finalPaymentAmount: '',
+  finalPaymentDate: '',
+  completedFees: '',
+  pendingFees: '',
+  currentDesignation: '',
+};
+
 /* ─────────────── Sidebar ─────────────── */
 function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
   const items = [
@@ -41,9 +74,9 @@ function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
     <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo-container">
-          <img src={logo} alt="Progrentures" className="sidebar-logo" />
+          <img src={logo} alt="PRS Portal" className="sidebar-logo" />
         </div>
-        <h2>PROGRENTURES</h2>
+        <h2>PRS PORTAL</h2>
         <p>Representative Panel</p>
       </div>
       <ul className="sidebar-menu">
@@ -73,35 +106,20 @@ function RepresentativeDashboard() {
   const [loading, setLoading] = useState(true);
 
   // Profile edit state
-  const [editMode, setEditMode] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editData, setEditData] = useState({});
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
   const [editSuccess, setEditSuccess] = useState('');
 
   // Add student state
-  const [studentForm, setStudentForm] = useState({
-    studentType: 'Internship',
-    name: '',
-    email: '',
-    mobile: '',
-    password: '',
-    domain: '',
-    joiningDate: '',
-    endingDate: '',
-    duration: '',
-    paymentDoneBy: '',
-    dateOfPayment: '',
-    transactionId: '',
-    paymentAmount: '',
-    completedFees: '',
-    pendingFees: '',
-    lastPaymentDate: '',
-    currentDesignation: ''
-  });
+  const [studentForm, setStudentForm] = useState(initialStudentForm);
   const [studentFormLoading, setStudentFormLoading] = useState(false);
   const [studentFormError, setStudentFormError] = useState('');
   const [studentFormSuccess, setStudentFormSuccess] = useState('');
+  const [smsEnrollmentFile, setSmsEnrollmentFile] = useState(null);
+  const [smsOfferFile, setSmsOfferFile] = useState(null);
+  const [smsPaymentFile, setSmsPaymentFile] = useState(null);
   const [studentStats, setStudentStats] = useState({
     totalStudents: 0,
     weeklyStudents: 0,
@@ -187,6 +205,8 @@ function RepresentativeDashboard() {
   /* ── Profile Edit ── */
   const startEdit = () => {
     setEditData({
+      name: profile?.name || '',
+      designation: profile?.designation || '',
       college: profile?.college || '',
       course: profile?.course || '',
       department: profile?.department || '',
@@ -194,11 +214,25 @@ function RepresentativeDashboard() {
       mobile: profile?.mobile || '',
       email: profile?.email || '',
       upiId: profile?.upiId || '',
+      upiMobileNumber: profile?.upiMobileNumber || '',
+      instagramProfile: profile?.instagramProfile || '',
+      linkedinProfile: profile?.linkedinProfile || '',
+      joiningDate: profile?.joiningDate ? new Date(profile.joiningDate).toISOString().split('T')[0] : '',
+      sheetLinks: profile?.sheetLinks || '',
+      internshipApplicationFormLink: profile?.internshipApplicationFormLink || '',
+      internshipSheetLink: profile?.internshipSheetLink || '',
+      internshipPromotionalMessage: profile?.internshipPromotionalMessage || '',
+      smsPromotionalMessage: profile?.smsPromotionalMessage || '',
       password: ''
     });
     setEditError('');
-    setEditSuccess('');
-    setEditMode(true);
+    setShowEditModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setEditError('');
+    setEditData({});
   };
 
   const handleEditChange = (e) => {
@@ -214,11 +248,18 @@ function RepresentativeDashboard() {
       const res = await representativeAPI.updateProfile(editData);
       if (res.data.success) {
         setProfile(res.data.representative);
-        const updatedUser = { ...user, email: res.data.representative.email };
+        const updatedUser = {
+          ...user,
+          name: res.data.representative.name,
+          email: res.data.representative.email,
+        };
         setUser(updatedUser);
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setEditSuccess('Profile updated successfully!');
-        setTimeout(() => { setEditMode(false); setEditSuccess(''); }, 1800);
+        setTimeout(() => {
+          setShowEditModal(false);
+          setEditSuccess('');
+        }, 1800);
       }
     } catch (err) {
       setEditError(err.response?.data?.message || 'Update failed');
@@ -230,7 +271,23 @@ function RepresentativeDashboard() {
   /* ── Add Student ── */
   const handleStudentChange = (e) => {
     const { name, value } = e.target;
-    setStudentForm(prev => ({ ...prev, [name]: value }));
+    setStudentForm((prev) => {
+      const next = { ...prev, [name]: value };
+
+      if (
+        ['totalFees', 'firstPaymentAmount', 'secondPaymentAmount', 'finalPaymentAmount'].includes(name)
+      ) {
+        const total = Number(next.totalFees || 0);
+        const first = Number(next.firstPaymentAmount || 0);
+        const second = Number(next.secondPaymentAmount || 0);
+        const final = Number(next.finalPaymentAmount || 0);
+        const pending = Math.max(total - (first + second + final), 0);
+        next.completedFees = String(first + second + final);
+        next.pendingFees = String(pending);
+      }
+
+      return next;
+    });
   };
 
   const handleAddStudent = async (e) => {
@@ -245,15 +302,39 @@ function RepresentativeDashboard() {
 
     if (
       studentForm.studentType === 'Internship' &&
-      (!studentForm.domain || !studentForm.joiningDate || !studentForm.duration)
+      (!studentForm.internId || !studentForm.domain || !studentForm.joiningDate || !studentForm.duration || !studentForm.collegeName || !studentForm.branch || !studentForm.yearOfStudy)
     ) {
-      setStudentFormError('For internship, domain, joining date and duration are required');
+      setStudentFormError('For internship, PIID, domain, joining date, duration, college, branch and year of study are required');
       return;
+    }
+
+    if (
+      studentForm.studentType === 'SMS Program' &&
+      (!studentForm.internId || !studentForm.suggestedDomain || !studentForm.instituteName || !studentForm.yearOfStudy || !studentForm.enrolmentDate || !studentForm.enrolBatchMonth || !studentForm.totalFees)
+    ) {
+      setStudentFormError('For SMS Program, PSMS ID, suggested domain, institute name, year, enrolment date, enrol batch month and total fees are required');
+      return;
+    }
+
+    const payload = { ...studentForm };
+    if (payload.studentType === 'Internship' && payload.domain === 'Other') {
+      payload.domain = payload.customDomain;
+    }
+
+    const submitData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      submitData.append(key, value || '');
+    });
+
+    if (payload.studentType === 'SMS Program') {
+      if (smsEnrollmentFile) submitData.append('smsProgramEnrollmentLetter', smsEnrollmentFile);
+      if (smsOfferFile) submitData.append('offerLetter', smsOfferFile);
+      if (smsPaymentFile) submitData.append('paymentReceipt', smsPaymentFile);
     }
 
     try {
       setStudentFormLoading(true);
-      const res = await representativeAPI.addStudent(studentForm);
+      const res = await representativeAPI.addStudent(submitData);
       if (res.data.success) {
         const intern = res.data.intern;
         const emailSent = res.data.emailSent;
@@ -265,25 +346,10 @@ function RepresentativeDashboard() {
             : 'Email not sent, please share credentials manually.');
 
         setStudentFormSuccess(`Student added successfully! ID: ${intern.internId}. ${emailMsg}`);
-        setStudentForm({
-          studentType: 'Internship',
-          name: '',
-          email: '',
-          mobile: '',
-          password: '',
-          domain: '',
-          joiningDate: '',
-          endingDate: '',
-          duration: '',
-          paymentDoneBy: '',
-          dateOfPayment: '',
-          transactionId: '',
-          paymentAmount: '',
-          completedFees: '',
-          pendingFees: '',
-          lastPaymentDate: '',
-          currentDesignation: ''
-        });
+        setStudentForm(initialStudentForm);
+        setSmsEnrollmentFile(null);
+        setSmsOfferFile(null);
+        setSmsPaymentFile(null);
         fetchStudents();
         fetchStudentStats();
         setTimeout(() => { setStudentFormSuccess(''); setActiveTab('my-students'); }, 1800);
@@ -547,217 +613,371 @@ function RepresentativeDashboard() {
               <div className="premium-page-header">
                 <div className="header-left">
                   <h1>My Profile</h1>
-                  <p className="header-subtitle">Your identity, assignments and account details in one structured view</p>
+                  <p className="header-subtitle">Manage your personal information</p>
+                </div>
+                <div className="header-right">
+                  <button className="premium-btn-secondary" onClick={startEdit}>
+                    Edit Profile
+                  </button>
                 </div>
               </div>
 
-              {editMode ? (
-                <div className="rep-profile-shell">
-                  <div className="premium-card rep-profile-edit-card">
-                    <div className="premium-card-header rep-profile-edit-header">
-                      <h2>Edit Your Profile</h2>
+              {editSuccess && (
+                <div className="success-message" style={{ marginBottom: '20px' }}>
+                  {editSuccess}
+                </div>
+              )}
+
+              <div className="premium-card">
+                <div className="premium-card-header">
+                  <h2>Personal Information</h2>
+                </div>
+
+                <div className="profile-info-grid">
+                  <div className="profile-field">
+                    <label>Full Name</label>
+                    <div className="field-value">{profileName}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Email Address</label>
+                    <div className="field-value mono-text">{profileEmail}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Mobile Number</label>
+                    <div className="field-value mono-text">{profileMobile}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Role</label>
+                    <div className="field-value">
+                      <span className="badge-neutral">{profileDesignation}</span>
                     </div>
-                    <form onSubmit={handleEditSubmit} className="rep-profile-edit-form">
-                      {editError && <div className="error-message" style={{ marginBottom: '16px' }}>{editError}</div>}
-                      {editSuccess && <div className="success-message" style={{ marginBottom: '16px' }}>{editSuccess}</div>}
+                  </div>
+                  <div className="profile-field">
+                    <label>PGIR ID</label>
+                    <div className="field-value mono-text">{profile?.pgirId || 'Not available'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>College</label>
+                    <div className="field-value">{profile?.college || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Course</label>
+                    <div className="field-value">{profile?.course || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Department</label>
+                    <div className="field-value">{profile?.department || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Year</label>
+                    <div className="field-value">{profile?.year || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>UPI ID</label>
+                    <div className="field-value mono-text">{profile?.upiId || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>UPI Mobile Number</label>
+                    <div className="field-value mono-text">{profile?.upiMobileNumber || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Joining Date</label>
+                    <div className="field-value">{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Instagram Profile</label>
+                    <div className="field-value">{profile?.instagramProfile || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>LinkedIn Profile</label>
+                    <div className="field-value">{profile?.linkedinProfile || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Application Form Link</label>
+                    <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.internshipApplicationFormLink || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Internship Sheet Link</label>
+                    <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.internshipSheetLink || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Sheet Links</label>
+                    <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.sheetLinks || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Internship Promo Message</label>
+                    <div className="field-value" style={{ whiteSpace: 'pre-wrap' }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
+                  </div>
+                  <div className="profile-field">
+                    <label>SMS Promo Message</label>
+                    <div className="field-value" style={{ whiteSpace: 'pre-wrap' }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
+                  </div>
+                </div>
 
-                      <div className="rep-profile-note">
-                        <strong>Note:</strong> Name, designation and sheet links are managed by admin only.
-                      </div>
+                <div className="info-banner">
+                  <strong>Update Your Information</strong>
+                  <p>
+                    Click the "Edit Profile" button above to update your academic,
+                    contact, links, social and promotional details from one place.
+                  </p>
+                </div>
+              </div>
 
-                      <div className="rep-profile-form-section">
-                        <h3>Academic Information</h3>
-                        <div className="rep-profile-form-grid">
-                          <div className="form-group">
-                            <label>College</label>
-                            <input type="text" name="college" value={editData.college} onChange={handleEditChange} placeholder="Enter college name" />
-                          </div>
-                          <div className="form-group">
-                            <label>Course</label>
-                            <input type="text" name="course" value={editData.course} onChange={handleEditChange} placeholder="e.g. B.Tech" />
-                          </div>
-                          <div className="form-group">
-                            <label>Department</label>
-                            <input type="text" name="department" value={editData.department} onChange={handleEditChange} placeholder="e.g. CSE" />
-                          </div>
-                          <div className="form-group">
-                            <label>Year</label>
-                            <select name="year" value={editData.year} onChange={handleEditChange}>
-                              <option value="">Select Year</option>
-                              <option>1st Year</option>
-                              <option>2nd Year</option>
-                              <option>3rd Year</option>
-                              <option>4th Year</option>
-                            </select>
-                          </div>
+              {showEditModal && (
+                <div className="modal-overlay" onClick={handleCloseModal}>
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="modal-header">
+                      <h2>Edit Profile</h2>
+                      <button className="modal-close-btn" onClick={handleCloseModal}>✕</button>
+                    </div>
+
+                    <form onSubmit={handleEditSubmit}>
+                      {editError && (
+                        <div className="error-message" style={{ marginBottom: '15px' }}>
+                          {editError}
                         </div>
+                      )}
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-name">Full Name</label>
+                        <input
+                          id="rep-edit-name"
+                          type="text"
+                          name="name"
+                          value={editData.name || ''}
+                          onChange={handleEditChange}
+                          placeholder="Full name"
+                        />
                       </div>
 
-                      <div className="rep-profile-form-section">
-                        <h3>Contact Information</h3>
-                        <div className="rep-profile-form-grid">
-                          <div className="form-group">
-                            <label>Mobile Number</label>
-                            <input type="tel" name="mobile" value={editData.mobile} onChange={handleEditChange} placeholder="Mobile number" />
-                          </div>
-                          <div className="form-group">
-                            <label>Email Address</label>
-                            <input type="email" name="email" value={editData.email} onChange={handleEditChange} placeholder="Email address" />
-                          </div>
-                        </div>
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-designation">Designation</label>
+                        <input
+                          id="rep-edit-designation"
+                          type="text"
+                          name="designation"
+                          value={editData.designation || ''}
+                          onChange={handleEditChange}
+                          placeholder="Designation"
+                        />
                       </div>
 
-                      <div className="rep-profile-form-section">
-                        <h3>Payment and Security</h3>
-                        <div className="rep-profile-form-grid">
-                          <div className="form-group">
-                            <label>UPI ID</label>
-                            <input type="text" name="upiId" value={editData.upiId} onChange={handleEditChange} placeholder="name@upi" />
-                          </div>
-                          <div className="form-group">
-                            <label>New Password (optional)</label>
-                            <input type="password" name="password" value={editData.password} onChange={handleEditChange} placeholder="Leave blank to keep current" />
-                          </div>
-                        </div>
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-college">College</label>
+                        <input
+                          id="rep-edit-college"
+                          type="text"
+                          name="college"
+                          value={editData.college || ''}
+                          onChange={handleEditChange}
+                          placeholder="Enter college name"
+                        />
                       </div>
 
-                      <div className="rep-profile-actions">
-                        <button type="submit" className="rep-profile-btn rep-profile-btn-primary" disabled={editLoading}>
-                          {editLoading ? 'Saving...' : 'Save Changes'}
-                        </button>
-                        <button type="button" className="rep-profile-btn rep-profile-btn-ghost" onClick={() => setEditMode(false)}>
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-course">Course</label>
+                        <input
+                          id="rep-edit-course"
+                          type="text"
+                          name="course"
+                          value={editData.course || ''}
+                          onChange={handleEditChange}
+                          placeholder="e.g. B.Tech"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-department">Department</label>
+                        <input
+                          id="rep-edit-department"
+                          type="text"
+                          name="department"
+                          value={editData.department || ''}
+                          onChange={handleEditChange}
+                          placeholder="e.g. CSE"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-year">Year</label>
+                        <select id="rep-edit-year" name="year" value={editData.year || ''} onChange={handleEditChange}>
+                          <option value="">Select Year</option>
+                          <option>1st Year</option>
+                          <option>2nd Year</option>
+                          <option>3rd Year</option>
+                          <option>4th Year</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-mobile">Mobile Number</label>
+                        <input
+                          id="rep-edit-mobile"
+                          type="tel"
+                          name="mobile"
+                          value={editData.mobile || ''}
+                          onChange={handleEditChange}
+                          placeholder="Mobile number"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-email">Email Address</label>
+                        <input
+                          id="rep-edit-email"
+                          type="email"
+                          name="email"
+                          value={editData.email || ''}
+                          onChange={handleEditChange}
+                          placeholder="Email address"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-upi">UPI ID</label>
+                        <input
+                          id="rep-edit-upi"
+                          type="text"
+                          name="upiId"
+                          value={editData.upiId || ''}
+                          onChange={handleEditChange}
+                          placeholder="name@upi"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-upiMobileNumber">UPI Mobile Number</label>
+                        <input
+                          id="rep-edit-upiMobileNumber"
+                          type="text"
+                          name="upiMobileNumber"
+                          value={editData.upiMobileNumber || ''}
+                          onChange={handleEditChange}
+                          placeholder="UPI linked mobile number"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-joiningDate">Joining Date</label>
+                        <input
+                          id="rep-edit-joiningDate"
+                          type="date"
+                          name="joiningDate"
+                          value={editData.joiningDate || ''}
+                          onChange={handleEditChange}
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-instagramProfile">Instagram Profile</label>
+                        <input
+                          id="rep-edit-instagramProfile"
+                          type="text"
+                          name="instagramProfile"
+                          value={editData.instagramProfile || ''}
+                          onChange={handleEditChange}
+                          placeholder="Instagram URL or handle"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-linkedinProfile">LinkedIn Profile</label>
+                        <input
+                          id="rep-edit-linkedinProfile"
+                          type="text"
+                          name="linkedinProfile"
+                          value={editData.linkedinProfile || ''}
+                          onChange={handleEditChange}
+                          placeholder="LinkedIn profile URL"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-sheetLinks">Sheet Links</label>
+                        <input
+                          id="rep-edit-sheetLinks"
+                          type="text"
+                          name="sheetLinks"
+                          value={editData.sheetLinks || ''}
+                          onChange={handleEditChange}
+                          placeholder="Google sheet link"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-internshipApplicationFormLink">Application Form Link</label>
+                        <input
+                          id="rep-edit-internshipApplicationFormLink"
+                          type="text"
+                          name="internshipApplicationFormLink"
+                          value={editData.internshipApplicationFormLink || ''}
+                          onChange={handleEditChange}
+                          placeholder="Internship application form link"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-internshipSheetLink">Internship Sheet Link</label>
+                        <input
+                          id="rep-edit-internshipSheetLink"
+                          type="text"
+                          name="internshipSheetLink"
+                          value={editData.internshipSheetLink || ''}
+                          onChange={handleEditChange}
+                          placeholder="Internship sheet link"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-internshipPromotionalMessage">Internship Promo Message</label>
+                        <textarea
+                          id="rep-edit-internshipPromotionalMessage"
+                          name="internshipPromotionalMessage"
+                          value={editData.internshipPromotionalMessage || ''}
+                          onChange={handleEditChange}
+                          rows={3}
+                          placeholder="Internship promotional message"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-smsPromotionalMessage">SMS Promo Message</label>
+                        <textarea
+                          id="rep-edit-smsPromotionalMessage"
+                          name="smsPromotionalMessage"
+                          value={editData.smsPromotionalMessage || ''}
+                          onChange={handleEditChange}
+                          rows={3}
+                          placeholder="SMS program promotional message"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-password">New Password (Optional)</label>
+                        <input
+                          id="rep-edit-password"
+                          type="password"
+                          name="password"
+                          value={editData.password || ''}
+                          onChange={handleEditChange}
+                          placeholder="Leave blank to keep current password"
+                        />
+                      </div>
+
+                      <div className="modal-actions">
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          onClick={handleCloseModal}
+                          disabled={editLoading}
+                        >
                           Cancel
+                        </button>
+                        <button type="submit" className="btn-primary" disabled={editLoading}>
+                          {editLoading ? 'Updating...' : 'Update Profile'}
                         </button>
                       </div>
                     </form>
-                  </div>
-                </div>
-              ) : (
-                <div className="rep-profile-shell" style={{ display: 'grid', gap: '16px' }}>
-                  <section
-                    style={{
-                      position: 'relative',
-                      overflow: 'hidden',
-                      borderRadius: '22px',
-                      padding: '22px',
-                      background: 'linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #38bdf8 100%)',
-                      color: '#fff',
-                      boxShadow: '0 18px 50px rgba(15, 23, 42, 0.18)',
-                    }}
-                  >
-                    <div style={{ position: 'absolute', inset: 'auto -60px -80px auto', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', filter: 'blur(10px)' }} />
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '16px', alignItems: 'center', position: 'relative' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                        <div className="rep-profile-avatar" style={{ width: '84px', height: '84px', fontSize: '28px', border: '2px solid rgba(255,255,255,0.35)', boxShadow: '0 10px 26px rgba(15, 23, 42, 0.15)' }}>{profileInitials}</div>
-                        <div style={{ minWidth: '240px' }}>
-                          <div style={{ fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.82 }}>Representative Profile</div>
-                          <h2 style={{ margin: '6px 0 4px', fontSize: '30px', lineHeight: 1.1 }}>{profileName}</h2>
-                          <p style={{ margin: 0, opacity: 0.92, fontSize: '16px' }}>{profileDesignation}</p>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
-                            <span style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '999px', padding: '6px 10px', fontSize: '12px', fontWeight: 700 }}>PGIR: {profile?.pgirId || '-'}</span>
-                            <span style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '999px', padding: '6px 10px', fontSize: '12px', fontWeight: 700 }}>{profileMobile}</span>
-                            <span style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '999px', padding: '6px 10px', fontSize: '12px', fontWeight: 700 }}>{profileEmail}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-                        {profileHighlights.map((item) => (
-                          <div key={item.label} style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '16px', padding: '12px 14px', backdropFilter: 'blur(6px)' }}>
-                            <div style={{ fontSize: '12px', opacity: 0.85 }}>{item.label}</div>
-                            <div style={{ fontSize: '20px', fontWeight: 800, marginTop: '4px' }}>{item.value}</div>
-                            <div style={{ fontSize: '12px', opacity: 0.82, marginTop: '2px' }}>{item.note}</div>
-                          </div>
-                        ))}
-                        <button className="rep-profile-btn rep-profile-btn-light" onClick={startEdit} style={{ gridColumn: '1 / -1', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)' }}>Edit Profile</button>
-                      </div>
-                    </div>
-                  </section>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(280px, 0.8fr)', gap: '16px', alignItems: 'start' }}>
-                    <div style={{ display: 'grid', gap: '16px' }}>
-                      <article className="premium-card" style={{ padding: '18px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                          <h3 style={{ margin: 0 }}>Profile Details</h3>
-                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#334155', background: '#e2e8f0', padding: '6px 10px', borderRadius: '999px' }}>Identity & Contact</span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px' }}>
-                          {profileInfoRows.map((item) => (
-                            <div key={item.label} style={{ padding: '12px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                              <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '6px', fontWeight: 800 }}>{item.label}</div>
-                              <div style={{ color: '#0f172a', fontWeight: 600, wordBreak: 'break-word' }}>{item.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </article>
-
-                      <article className="premium-card" style={{ padding: '18px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                          <h3 style={{ margin: 0 }}>Assigned Documents</h3>
-                          <span style={{ fontSize: '12px', fontWeight: 800, color: '#334155', background: '#e2e8f0', padding: '6px 10px', borderRadius: '999px' }}>{certificateCount} ready</span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-                          {assignedDocs.map((doc) => {
-                            const isReady = Boolean(doc.filepath);
-                            return (
-                              <div key={doc.key} style={{ borderRadius: '16px', border: `1px solid ${isReady ? '#cbd5e1' : '#fecaca'}`, background: isReady ? 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' : 'linear-gradient(180deg, #fff5f5 0%, #ffffff 100%)', padding: '14px', boxShadow: '0 10px 24px rgba(15, 23, 42, 0.05)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'start' }}>
-                                  <div>
-                                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned file</div>
-                                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>{doc.label}</div>
-                                  </div>
-                                  <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 9px', borderRadius: '999px', background: isReady ? '#dcfce7' : '#fee2e2', color: isReady ? '#166534' : '#991b1b' }}>{isReady ? 'READY' : 'MISSING'}</span>
-                                </div>
-                                <div style={{ marginTop: '12px', display: 'grid', gap: '8px', color: '#334155', fontSize: '13px' }}>
-                                  <div><strong>File:</strong> {doc.filename || 'Not uploaded'}</div>
-                                  <div><strong>Uploaded:</strong> {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '-'}</div>
-                                  {isReady ? (
-                                    <a href={resolveFileUrl(doc.filepath)} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', width: 'fit-content', marginTop: '4px', alignItems: 'center', justifyContent: 'center', padding: '9px 14px', borderRadius: '10px', background: '#0f172a', color: '#fff', textDecoration: 'none', fontWeight: 700 }}>Open Document</a>
-                                  ) : (
-                                    <div style={{ marginTop: '4px', color: '#64748b' }}>This document has not been assigned yet.</div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </article>
-                    </div>
-
-                    <aside style={{ display: 'grid', gap: '16px' }}>
-                      <article className="premium-card" style={{ padding: '18px' }}>
-                        <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links</h3>
-                        <div style={{ display: 'grid', gap: '10px' }}>
-                          {profileLinkRows.map((item) => (
-                            <div key={item.label} style={{ padding: '12px', borderRadius: '14px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                              <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.label}</div>
-                              {item.href ? <a href={item.href} target="_blank" rel="noreferrer">Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
-                            </div>
-                          ))}
-                        </div>
-                      </article>
-
-                      <article className="premium-card" style={{ padding: '18px' }}>
-                        <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Promotional Messages</h3>
-                        <div style={{ display: 'grid', gap: '12px' }}>
-                          {profilePromoRows.map((item) => (
-                            <div key={item.label} style={{ padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0', background: '#fff' }}>
-                              <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748b', marginBottom: '6px', fontWeight: 800 }}>{item.label}</div>
-                              <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{item.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </article>
-
-                      <article className="premium-card" style={{ padding: '18px' }}>
-                        <h3 style={{ marginTop: 0, marginBottom: '12px' }}>At a Glance</h3>
-                        <div style={{ display: 'grid', gap: '10px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span>Instagram</span><strong style={{ textAlign: 'right' }}>{profile?.instagramProfile || 'Not provided'}</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span>LinkedIn</span><strong style={{ textAlign: 'right' }}>{profile?.linkedinProfile || 'Not provided'}</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span>Sheet Links</span><strong style={{ textAlign: 'right' }}>{profileSheetLink ? 'Available' : 'Not available'}</strong></div>
-                        </div>
-                      </article>
-                    </aside>
                   </div>
                 </div>
               )}
@@ -798,83 +1018,186 @@ function RepresentativeDashboard() {
                   {studentFormError && <div className="error-message" style={{ marginBottom: '16px' }}>{studentFormError}</div>}
                   {studentFormSuccess && <div className="success-message" style={{ marginBottom: '16px' }}>{studentFormSuccess}</div>}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                    <div className="form-group">
+                  <div className="rep-add-student-grid">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
                       <label>Student Type *</label>
                       <select name="studentType" value={studentForm.studentType} onChange={handleStudentChange}>
                         <option value="Internship">Internship</option>
                         <option value="SMS Program">SMS Program</option>
                       </select>
                     </div>
-                    <div className="form-group">
-                      <label>Student Name *</label>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>{studentForm.studentType === 'SMS Program' ? 'PSMS ID *' : 'PIID *'}</label>
+                      <input
+                        type="text"
+                        name="internId"
+                        value={studentForm.internId}
+                        onChange={handleStudentChange}
+                        placeholder={studentForm.studentType === 'SMS Program' ? 'Enter PSMS ID' : 'Enter PIID'}
+                        required
+                      />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Full Name *</label>
                       <input type="text" name="name" value={studentForm.name} onChange={handleStudentChange} placeholder="Full name" required />
                     </div>
-                    <div className="form-group">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label>Mobile Number (WhatsApp preferred) *</label>
+                      <input type="tel" name="mobile" value={studentForm.mobile} onChange={handleStudentChange} placeholder="Mobile number" required />
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
                       <label>Email *</label>
                       <input type="email" name="email" value={studentForm.email} onChange={handleStudentChange} placeholder="Email address" required />
                     </div>
-                    <div className="form-group">
-                      <label>Mobile Number *</label>
-                      <input type="tel" name="mobile" value={studentForm.mobile} onChange={handleStudentChange} placeholder="Mobile number" />
-                    </div>
-                    <div className="form-group">
+                    <div className="form-group" style={{ marginBottom: 0 }}>
                       <label>Password *</label>
                       <input type="password" name="password" value={studentForm.password} onChange={handleStudentChange} placeholder="Set login password" min="6" required />
                     </div>
 
                     {studentForm.studentType === 'Internship' ? (
                       <>
-                        <div className="form-group">
-                          <label>Domain *</label>
-                          <input type="text" name="domain" value={studentForm.domain} onChange={handleStudentChange} placeholder="e.g. Web Development" />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Internship Domain *</label>
+                          <select name="domain" value={studentForm.domain} onChange={handleStudentChange} required>
+                            <option value="">Select Domain</option>
+                            <option value="Web Development">Web Development</option>
+                            <option value="App Development">App Development</option>
+                            <option value="Data Science">Data Science</option>
+                            <option value="Machine Learning">Machine Learning</option>
+                            <option value="Artificial Intelligence">Artificial Intelligence</option>
+                            <option value="UI/UX Design">UI/UX Design</option>
+                            <option value="Graphic Design">Graphic Design</option>
+                            <option value="Digital Marketing">Digital Marketing</option>
+                            <option value="Content Writing">Content Writing</option>
+                            <option value="Business Development">Business Development</option>
+                            <option value="Human Resources">Human Resources</option>
+                            <option value="Sales & Marketing">Sales & Marketing</option>
+                            <option value="Finance">Finance</option>
+                            <option value="Cybersecurity">Cybersecurity</option>
+                            <option value="Cloud Computing">Cloud Computing</option>
+                            <option value="DevOps">DevOps</option>
+                            <option value="Full Stack Development">Full Stack Development</option>
+                            <option value="Frontend Development">Frontend Development</option>
+                            <option value="Backend Development">Backend Development</option>
+                            <option value="Mobile App Development">Mobile App Development</option>
+                            <option value="Game Development">Game Development</option>
+                            <option value="Quality Assurance">Quality Assurance</option>
+                            <option value="Project Management">Project Management</option>
+                            <option value="Business Analytics">Business Analytics</option>
+                            <option value="Other">Other (Type Manually)</option>
+                          </select>
                         </div>
-                        <div className="form-group">
+                        {studentForm.domain === 'Other' && (
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>Enter Custom Domain *</label>
+                            <input type="text" name="customDomain" value={studentForm.customDomain} onChange={handleStudentChange} placeholder="Enter custom domain" required />
+                          </div>
+                        )}
+                        <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Joining Date *</label>
-                          <input type="date" name="joiningDate" value={studentForm.joiningDate} onChange={handleStudentChange} />
+                          <input type="date" name="joiningDate" value={studentForm.joiningDate} onChange={handleStudentChange} required />
                         </div>
-                        <div className="form-group">
-                          <label>Duration *</label>
-                          <input type="text" name="duration" value={studentForm.duration} onChange={handleStudentChange} placeholder="e.g. 3 months" />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Internship Duration *</label>
+                          <input type="text" name="duration" value={studentForm.duration} onChange={handleStudentChange} placeholder="e.g. 3 months" required />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>College Name *</label>
+                          <input type="text" name="collegeName" value={studentForm.collegeName} onChange={handleStudentChange} placeholder="Enter college name" required />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Branch *</label>
+                          <input type="text" name="branch" value={studentForm.branch} onChange={handleStudentChange} placeholder="Enter branch" required />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Year of Study *</label>
+                          <input type="text" name="yearOfStudy" value={studentForm.yearOfStudy} onChange={handleStudentChange} placeholder="e.g. 2nd Year" required />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Ending Date</label>
                           <input type="date" name="endingDate" value={studentForm.endingDate} onChange={handleStudentChange} />
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="form-group">
-                          <label>Payment Done By</label>
-                          <input type="text" name="paymentDoneBy" value={studentForm.paymentDoneBy} onChange={handleStudentChange} placeholder="Student / Parent" />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Suggested Domain (required) *</label>
+                          <input type="text" name="suggestedDomain" value={studentForm.suggestedDomain} onChange={handleStudentChange} placeholder="Enter suggested domain" required />
                         </div>
-                        <div className="form-group">
-                          <label>Date Of Payment</label>
-                          <input type="date" name="dateOfPayment" value={studentForm.dateOfPayment} onChange={handleStudentChange} />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Current Qualification (e.g., 12th Pass, Diploma, BCA, BTech, etc.)</label>
+                          <input type="text" name="currentQualification" value={studentForm.currentQualification} onChange={handleStudentChange} placeholder="e.g. Diploma, BCA" />
                         </div>
-                        <div className="form-group">
-                          <label>Transaction ID</label>
-                          <input type="text" name="transactionId" value={studentForm.transactionId} onChange={handleStudentChange} placeholder="Transaction reference" />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Full Name of College/Institute/School (required) *</label>
+                          <input type="text" name="instituteName" value={studentForm.instituteName} onChange={handleStudentChange} placeholder="Enter institute name" required />
                         </div>
-                        <div className="form-group">
-                          <label>Payment Amount</label>
-                          <input type="text" name="paymentAmount" value={studentForm.paymentAmount} onChange={handleStudentChange} placeholder="e.g. 5000" />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Year of Study (required) *</label>
+                          <input type="text" name="yearOfStudy" value={studentForm.yearOfStudy} onChange={handleStudentChange} placeholder="e.g. 1st Year" required />
                         </div>
-                        <div className="form-group">
-                          <label>Completed Fees</label>
-                          <input type="text" name="completedFees" value={studentForm.completedFees} onChange={handleStudentChange} placeholder="e.g. 3000" />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>City/Location of your College/Institute</label>
+                          <input type="text" name="instituteLocation" value={studentForm.instituteLocation} onChange={handleStudentChange} placeholder="Enter city/location" />
                         </div>
-                        <div className="form-group">
-                          <label>Pending Fees</label>
-                          <input type="text" name="pendingFees" value={studentForm.pendingFees} onChange={handleStudentChange} placeholder="e.g. 2000" />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Enrolment date (required) *</label>
+                          <input type="date" name="enrolmentDate" value={studentForm.enrolmentDate} onChange={handleStudentChange} required />
                         </div>
-                        <div className="form-group">
-                          <label>Last Payment Date</label>
-                          <input type="date" name="lastPaymentDate" value={studentForm.lastPaymentDate} onChange={handleStudentChange} />
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Enrol Batch Month (required) *</label>
+                          <input type="month" name="enrolBatchMonth" value={studentForm.enrolBatchMonth} onChange={handleStudentChange} required />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Total Fees (required) *</label>
+                          <input type="number" name="totalFees" value={studentForm.totalFees} onChange={handleStudentChange} placeholder="Enter total fees" required />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>First Payment Amount</label>
+                          <input type="number" name="firstPaymentAmount" value={studentForm.firstPaymentAmount} onChange={handleStudentChange} placeholder="Enter first payment" />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>First Payment Date</label>
+                          <input type="date" name="firstPaymentDate" value={studentForm.firstPaymentDate} onChange={handleStudentChange} />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Second Payment Amount</label>
+                          <input type="number" name="secondPaymentAmount" value={studentForm.secondPaymentAmount} onChange={handleStudentChange} placeholder="Enter second payment" />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Second Payment Date</label>
+                          <input type="date" name="secondPaymentDate" value={studentForm.secondPaymentDate} onChange={handleStudentChange} />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Final Payment Amount</label>
+                          <input type="number" name="finalPaymentAmount" value={studentForm.finalPaymentAmount} onChange={handleStudentChange} placeholder="Enter final payment" />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Final Payment Date</label>
+                          <input type="date" name="finalPaymentDate" value={studentForm.finalPaymentDate} onChange={handleStudentChange} />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Pending Fees (auto-calculated)</label>
+                          <input type="number" name="pendingFees" value={studentForm.pendingFees} readOnly placeholder="Auto-calculated" />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Current Designation</label>
                           <input type="text" name="currentDesignation" value={studentForm.currentDesignation} onChange={handleStudentChange} placeholder="e.g. Student" />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>SMS Program Enrollment Letter</label>
+                          <input type="file" accept="application/pdf,image/*" onChange={(e) => setSmsEnrollmentFile(e.target.files?.[0] || null)} />
+                          <small>(Optional)</small>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Internship Offer Letter</label>
+                          <input type="file" accept="application/pdf,image/*" onChange={(e) => setSmsOfferFile(e.target.files?.[0] || null)} />
+                          <small>(Optional)</small>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Payment Recipt</label>
+                          <input type="file" accept="application/pdf,image/*" onChange={(e) => setSmsPaymentFile(e.target.files?.[0] || null)} />
+                          <small>(Optional)</small>
                         </div>
                       </>
                     )}
@@ -1375,11 +1698,11 @@ function RepresentativeDashboard() {
                   style={{
                     padding: '0',
                     overflow: 'hidden',
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid #111111',
                     background: '#fff',
                   }}
                 >
-                  <div style={{ padding: '18px 18px 14px', background: 'linear-gradient(135deg, #0f172a 0%, #334155 55%, #0ea5e9 100%)', color: '#fff' }}>
+                  <div style={{ padding: '18px 18px 14px', background: 'linear-gradient(135deg, #000000 0%, #171717 60%, #262626 100%)', color: '#fff' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85 }}>Certificates Hub</div>
@@ -1387,11 +1710,11 @@ function RepresentativeDashboard() {
                         <p style={{ margin: 0, opacity: 0.9 }}>Everything assigned by admin in one organized view.</p>
                       </div>
                       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
                           <div style={{ fontSize: '12px', opacity: 0.85 }}>Assigned</div>
                           <div style={{ fontSize: '22px', fontWeight: 800 }}>{certificateCount}</div>
                         </div>
-                        <div style={{ background: 'rgba(255,255,255,0.14)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
                           <div style={{ fontSize: '12px', opacity: 0.85 }}>Total Docs</div>
                           <div style={{ fontSize: '22px', fontWeight: 800 }}>{assignedDocs.length}</div>
                         </div>
@@ -1408,10 +1731,10 @@ function RepresentativeDashboard() {
                             key={doc.key}
                             style={{
                               borderRadius: '16px',
-                              border: `1px solid ${isReady ? '#cbd5e1' : '#fecaca'}`,
-                              background: isReady ? 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)' : 'linear-gradient(180deg, #fff5f5 0%, #ffffff 100%)',
+                              border: `1px solid ${isReady ? '#d4d4d8' : '#a1a1aa'}`,
+                              background: '#ffffff',
                               padding: '14px',
-                              boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)',
+                              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.05)',
                             }}
                           >
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '10px' }}>
@@ -1419,7 +1742,7 @@ function RepresentativeDashboard() {
                                 <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned File</div>
                                 <h3 style={{ margin: 0, color: '#0f172a', fontSize: '16px' }}>{doc.label}</h3>
                               </div>
-                              <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 9px', borderRadius: '999px', background: isReady ? '#dcfce7' : '#fee2e2', color: isReady ? '#166534' : '#991b1b' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 9px', borderRadius: '999px', background: isReady ? '#000000' : '#e4e4e7', color: isReady ? '#ffffff' : '#3f3f46' }}>
                                 {isReady ? 'READY' : 'MISSING'}
                               </span>
                             </div>
@@ -1446,7 +1769,7 @@ function RepresentativeDashboard() {
                                     width: 'fit-content',
                                     padding: '9px 14px',
                                     borderRadius: '10px',
-                                    background: '#0f172a',
+                                    background: '#000000',
                                     color: '#fff',
                                     textDecoration: 'none',
                                     fontWeight: 700,
@@ -1467,40 +1790,40 @@ function RepresentativeDashboard() {
                 </section>
 
                 <aside style={{ display: 'grid', gap: '16px' }}>
-                  <section className="premium-card" style={{ padding: '16px' }}>
+                  <section className="premium-card" style={{ padding: '16px', border: '1px solid #111111' }}>
                     <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Certification Metadata</h2>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>PGIR ID</strong><div style={{ marginTop: '6px' }}>{profile?.pgirId || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>Designation</strong><div style={{ marginTop: '6px' }}>{profile?.designation || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>Joining Date</strong><div style={{ marginTop: '6px' }}>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>UPI ID</strong><div style={{ marginTop: '6px' }}>{profile?.upiId || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>UPI/Mobile</strong><div style={{ marginTop: '6px' }}>{profile?.upiMobileNumber || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}><strong>LinkedIn</strong><div style={{ marginTop: '6px' }}>{profile?.linkedinProfile || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>PGIR ID</strong><div style={{ marginTop: '6px' }}>{profile?.pgirId || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>Designation</strong><div style={{ marginTop: '6px' }}>{profile?.designation || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>Joining Date</strong><div style={{ marginTop: '6px' }}>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>UPI ID</strong><div style={{ marginTop: '6px' }}>{profile?.upiId || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>UPI/Mobile</strong><div style={{ marginTop: '6px' }}>{profile?.upiMobileNumber || '-'}</div></div>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>LinkedIn</strong><div style={{ marginTop: '6px' }}>{profile?.linkedinProfile || '-'}</div></div>
                     </div>
                   </section>
 
-                  <section className="premium-card" style={{ padding: '16px' }}>
+                  <section className="premium-card" style={{ padding: '16px', border: '1px solid #111111' }}>
                     <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links</h2>
                     <div style={{ display: 'grid', gap: '10px' }}>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}>
                         <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Application Form</div>
-                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer">Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
+                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#000000', fontWeight: 700 }}>Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
                       </div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}>
                         <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Internship Sheet</div>
-                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer">Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
+                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#000000', fontWeight: 700 }}>Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
                       </div>
                     </div>
                   </section>
 
-                  <section className="premium-card" style={{ padding: '16px' }}>
+                  <section className="premium-card" style={{ padding: '16px', border: '1px solid #111111' }}>
                     <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Promotional Messages</h2>
                     <div style={{ display: 'grid', gap: '12px' }}>
-                      <div style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '12px' }}>
+                      <div style={{ background: '#ffffff', border: '1px solid #d4d4d8', borderRadius: '14px', padding: '12px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Internship</div>
                         <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
                       </div>
-                      <div style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '12px' }}>
+                      <div style={{ background: '#ffffff', border: '1px solid #d4d4d8', borderRadius: '14px', padding: '12px' }}>
                         <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>SMS Program</div>
                         <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
                       </div>

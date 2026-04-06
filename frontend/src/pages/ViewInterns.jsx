@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { adminAPI, UPLOADS_BASE } from "../services/api";
 
-function ViewInterns({ onInternDeleted }) {
+function ViewInterns({ onInternDeleted, onAddStudentClick }) {
   const [interns, setInterns] = useState([]);
   const [filteredInterns, setFilteredInterns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,10 +17,57 @@ function ViewInterns({ onInternDeleted }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [filterAddedBy, setFilterAddedBy] = useState("All");
   const [certificateFile, setCertificateFile] = useState(null);
   const [certificateType, setCertificateType] = useState("offerLetter");
   const [certificateName, setCertificateName] = useState("");
   const [uploadingCert, setUploadingCert] = useState(false);
+  const [certificateUploadStatus, setCertificateUploadStatus] = useState(null);
+
+  const certificateTypeOptions = [
+    { value: "offerLetter", label: "Internship Offer letter" },
+    { value: "smsProgramEnrollmentLetter", label: "SMS Enrollment letter" },
+    { value: "paymentReceipt", label: "Fees Receipt" },
+    { value: "completionCertificate", label: "Completion Certificate" },
+    { value: "experienceLetter", label: "Experience Certificate" },
+    {
+      value: "designationLevel1Foundation",
+      label: "Designation Certificate - Level 1 - Foundation level Certificate",
+    },
+    {
+      value: "designationLevel2Competent",
+      label: "Designation Certificate - Level 2 - Competent level Certificate",
+    },
+    {
+      value: "designationLevel3Proficient",
+      label: "Designation Certificate - Level 3 - Proficient level Certificate",
+    },
+    {
+      value: "designationLevel4Expert",
+      label: "Designation Certificate - Level 4 - Expert-level Certificate",
+    },
+    { value: "programCompletionCertificate", label: "Program Completion Certificate" },
+    {
+      value: "domainTrainingCourseCompletion",
+      label: "Domain Training / Course Completion Certificate",
+    },
+    { value: "recommendationsLetter", label: "Recommendations Letter" },
+    { value: "appreciationLetter", label: "Appreciation Letter" },
+    { value: "finalDesignationCertificate", label: "Final Designation Certificate" },
+    {
+      value: "representativeDesignationCertificate",
+      label: "Representative Designation Certificate",
+    },
+    { value: "other", label: "Other" },
+  ];
+
+  const directCertificateTypes = [
+    "offerLetter",
+    "smsProgramEnrollmentLetter",
+    "paymentReceipt",
+    "completionCertificate",
+    "experienceLetter",
+  ];
 
   useEffect(() => {
     fetchInterns();
@@ -28,7 +75,7 @@ function ViewInterns({ onInternDeleted }) {
 
   useEffect(() => {
     applyFilters();
-  }, [interns, searchQuery, filterType, filterStatus]);
+  }, [interns, searchQuery, filterType, filterStatus, filterAddedBy]);
 
   const fetchInterns = async () => {
     try {
@@ -65,7 +112,12 @@ function ViewInterns({ onInternDeleted }) {
           intern.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           intern.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           intern.internId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          intern.mobile?.includes(searchQuery),
+          intern.mobile?.includes(searchQuery) ||
+          intern.addedByRepresentative?.name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          ((searchQuery || "").toLowerCase() === "admin" &&
+            !intern.addedByRepresentative),
       );
     }
 
@@ -80,6 +132,13 @@ function ViewInterns({ onInternDeleted }) {
         (intern) =>
           (intern.status || "").toLowerCase() === filterStatus.toLowerCase(),
       );
+    }
+
+    // Added-by filter
+    if (filterAddedBy === "Admin") {
+      filtered = filtered.filter((intern) => !intern.addedByRepresentative);
+    } else if (filterAddedBy === "Representative") {
+      filtered = filtered.filter((intern) => !!intern.addedByRepresentative);
     }
 
     setFilteredInterns(filtered);
@@ -208,6 +267,7 @@ function ViewInterns({ onInternDeleted }) {
     setCertificateType("offerLetter");
     setCertificateFile(null);
     setCertificateName("");
+    setCertificateUploadStatus(null);
     setOpenMenuId(null);
   };
 
@@ -219,24 +279,29 @@ function ViewInterns({ onInternDeleted }) {
     }
 
     if (certificateType === "other" && !certificateName.trim()) {
-      setError("Please provide a name for the certificate");
+      setError("Please enter certificate name for Other type");
       setTimeout(() => setError(""), 3000);
       return;
     }
 
-    if (certificateFile.type !== "application/pdf") {
-      setError("Only PDF files are allowed");
-      setTimeout(() => setError(""), 3000);
-      return;
-    }
+    const selectedOption = certificateTypeOptions.find(
+      (item) => item.value === certificateType,
+    );
+    const isDirectType = directCertificateTypes.includes(certificateType);
+    const uploadDocumentType = isDirectType ? certificateType : "other";
 
     setUploadingCert(true);
     try {
       const formData = new FormData();
       formData.append("file", certificateFile);
-      formData.append("documentType", certificateType);
-      if (certificateType === "other") {
-        formData.append("certificateName", certificateName);
+      formData.append("documentType", uploadDocumentType);
+      if (!isDirectType) {
+        formData.append(
+          "certificateName",
+          certificateType === "other"
+            ? certificateName.trim()
+            : selectedOption?.label || "Other Certificate",
+        );
       }
 
       const response = await adminAPI.uploadStudentDocument(
@@ -251,7 +316,7 @@ function ViewInterns({ onInternDeleted }) {
             if (intern._id === selectedStudent._id) {
               let updatedDocuments = { ...(intern.documents || {}) };
 
-              if (certificateType === "other") {
+              if (!isDirectType) {
                 // Add to otherCertificates array
                 const existingOther = updatedDocuments.otherCertificates || [];
                 updatedDocuments.otherCertificates = [
@@ -276,7 +341,7 @@ function ViewInterns({ onInternDeleted }) {
         setSelectedStudent((prev) => {
           let updatedDocuments = { ...(prev.documents || {}) };
 
-          if (certificateType === "other") {
+          if (!isDirectType) {
             const existingOther = updatedDocuments.otherCertificates || [];
             updatedDocuments.otherCertificates = [
               ...existingOther,
@@ -294,16 +359,26 @@ function ViewInterns({ onInternDeleted }) {
 
         setInfoMessage("Certificate uploaded successfully");
         setTimeout(() => setInfoMessage(""), 4000);
+        setCertificateUploadStatus({
+          success: true,
+          label: !isDirectType
+            ? certificateType === "other"
+              ? certificateName.trim()
+              : selectedOption?.label || "Other Certificate"
+            : selectedOption?.label || "Certificate",
+        });
         setCertificateFile(null);
         setCertificateName("");
       } else {
         setError("Failed to upload certificate");
         setTimeout(() => setError(""), 4000);
+        setCertificateUploadStatus({ success: false, label: "" });
       }
     } catch (err) {
       console.error("Certificate upload error:", err);
       setError(err.response?.data?.message || "Failed to upload certificate");
       setTimeout(() => setError(""), 4000);
+      setCertificateUploadStatus({ success: false, label: "" });
     } finally {
       setUploadingCert(false);
     }
@@ -343,14 +418,44 @@ function ViewInterns({ onInternDeleted }) {
 
   return (
     <>
-      <div className="content-header">
-        <div>
+      <div
+        className="content-header"
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "16px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ minWidth: 0, flex: "1 1 320px" }}>
           <h1>All Students</h1>
           <p>
             Manage and view all registered students - {filteredInterns.length}{" "}
             of {interns.length} students
           </p>
         </div>
+        {onAddStudentClick && (
+          <button
+            type="button"
+            onClick={onAddStudentClick}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "10px",
+              border: "none",
+              background: "#324158",
+              color: "#fff",
+              fontWeight: "600",
+              fontSize: "14px",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+              flex: "0 0 auto",
+              alignSelf: "flex-start",
+            }}
+          >
+            + Add Student
+          </button>
+        )}
       </div>
 
       {error && (
@@ -379,13 +484,13 @@ function ViewInterns({ onInternDeleted }) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
             gap: "16px",
             alignItems: "end",
           }}
         >
           {/* Search */}
-          <div style={{ gridColumn: "span 2" }}>
+          <div style={{ gridColumn: "1 / -1" }}>
             <label
               style={{
                 display: "block",
@@ -399,7 +504,7 @@ function ViewInterns({ onInternDeleted }) {
             </label>
             <input
               type="text"
-              placeholder="Search by name, email, ID, or mobile..."
+              placeholder="Search by name, email, ID, mobile, representative..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -480,10 +585,43 @@ function ViewInterns({ onInternDeleted }) {
               <option value="completed">Completed</option>
             </select>
           </div>
+
+          {/* Added By Filter */}
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#0f172a",
+              }}
+            >
+              Added By
+            </label>
+            <select
+              value={filterAddedBy}
+              onChange={(e) => setFilterAddedBy(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                border: "2px solid #e2e8f0",
+                borderRadius: "10px",
+                fontSize: "15px",
+                background: "#f8fafc",
+                cursor: "pointer",
+                fontWeight: "500",
+              }}
+            >
+              <option value="All">All</option>
+              <option value="Admin">Admin</option>
+              <option value="Representative">Representative</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Students Table */}
+      {/* Students List */}
       <div className="card">
         {filteredInterns.length === 0 ? (
           <div
@@ -493,7 +631,6 @@ function ViewInterns({ onInternDeleted }) {
               color: "#64748b",
             }}
           >
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}></div>
             <h3 style={{ color: "#0f172a", marginBottom: "8px" }}>
               No Students Found
             </h3>
@@ -501,7 +638,7 @@ function ViewInterns({ onInternDeleted }) {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table className="data-table">
+            <table className="data-table" style={{ minWidth: "860px" }}>
               <thead>
                 <tr>
                   <th>#</th>
@@ -511,7 +648,6 @@ function ViewInterns({ onInternDeleted }) {
                   <th>Mobile</th>
                   <th>Type</th>
                   <th>Added By</th>
-                  <th>Domain / Role</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -519,98 +655,29 @@ function ViewInterns({ onInternDeleted }) {
               <tbody>
                 {filteredInterns.map((student, index) => (
                   <tr key={student._id}>
-                    <td style={{ color: "#94a3b8", fontSize: "13px" }}>
-                      {index + 1}
-                    </td>
+                    <td>{index + 1}</td>
+                    <td>{student.internId || "—"}</td>
+                    <td>{student.name || "—"}</td>
+                    <td style={{ wordBreak: "break-word" }}>{student.email || "—"}</td>
+                    <td>{student.mobile || "—"}</td>
+                    <td>{student.studentType || "—"}</td>
                     <td>
-                      <span
-                        style={{
-                          padding: "3px 10px",
-                          background:
-                            student.studentType === "Internship"
-                              ? "#eff6ff"
-                              : "#f0fdf4",
-                          color:
-                            student.studentType === "Internship"
-                              ? "#1e40af"
-                              : "#15803d",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          fontWeight: "700",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {student.internId}
-                      </span>
-                    </td>
-                    <td style={{ fontWeight: "600", color: "#0f172a" }}>
-                      {student.name}
-                    </td>
-                    <td style={{ color: "#475569", fontSize: "13px" }}>
-                      {student.email}
-                    </td>
-                    <td style={{ color: "#475569", fontSize: "13px" }}>
-                      {student.mobile || "—"}
-                    </td>
-                    <td>
-                      <span
-                        style={{
-                          padding: "3px 10px",
-                          background:
-                            student.studentType === "Internship"
-                              ? "#eff6ff"
-                              : "#fdf4ff",
-                          color:
-                            student.studentType === "Internship"
-                              ? "#2563eb"
-                              : "#7c3aed",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {student.studentType || "—"}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        style={{
-                          padding: "4px 10px",
-                          background: student.addedByRepresentative
-                            ? "#fef3c7"
-                            : "#dbeafe",
-                          color: student.addedByRepresentative
-                            ? "#b45309"
-                            : "#1e40af",
-                          borderRadius: "6px",
-                          fontSize: "11px",
-                          fontWeight: "600",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {student.addedByRepresentative
-                          ? `Added by ${student.addedByRepresentative.name}`
-                          : "Added by Admin"}
-                      </span>
-                    </td>
-                    <td style={{ color: "#475569", fontSize: "13px" }}>
-                      {student.domain || student.currentDesignation || "—"}
+                      {student.addedByRepresentative
+                        ? `Representative: ${student.addedByRepresentative.name}`
+                        : "Admin"}
                     </td>
                     <td>
                       <span
                         className={`status-badge ${
                           (student.status || "").toLowerCase() === "active"
                             ? "status-active"
-                            : (student.status || "").toLowerCase() ===
-                                "completed"
+                            : (student.status || "").toLowerCase() === "completed"
                               ? "status-completed"
                               : "status-inactive"
                         }`}
                       >
                         {student.status
-                          ? student.status.charAt(0).toUpperCase() +
-                            student.status.slice(1)
+                          ? student.status.charAt(0).toUpperCase() + student.status.slice(1)
                           : "Active"}
                       </span>
                     </td>
@@ -622,8 +689,9 @@ function ViewInterns({ onInternDeleted }) {
                           toggleMenu(student._id);
                         }}
                         style={{
-                          background: "#f8fafc",
-                          border: "none",
+                          background: "transparent",
+                          color: "#0f172a",
+                          border: "1px solid #d1d5db",
                           borderRadius: "8px",
                           width: "36px",
                           height: "36px",
@@ -632,14 +700,7 @@ function ViewInterns({ onInternDeleted }) {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          transition: "all 0.2s",
                         }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.background = "#e2e8f0")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.background = "#f8fafc")
-                        }
                       >
                         ⋮
                       </button>
@@ -649,8 +710,8 @@ function ViewInterns({ onInternDeleted }) {
                           data-menu
                           style={{
                             position: "absolute",
-                            right: "40px",
-                            top: "0",
+                            right: 0,
+                            top: "42px",
                             background: "white",
                             border: "1px solid #e5e7eb",
                             borderRadius: "12px",
@@ -661,7 +722,10 @@ function ViewInterns({ onInternDeleted }) {
                           }}
                         >
                           <button
-                            onClick={() => handleViewProfile(student)}
+                            onClick={() => {
+                              handleViewProfile(student);
+                              setOpenMenuId(null);
+                            }}
                             style={{
                               width: "100%",
                               padding: "12px 16px",
@@ -672,20 +736,17 @@ function ViewInterns({ onInternDeleted }) {
                               fontSize: "14px",
                               fontWeight: "500",
                               color: "#0f172a",
-                              transition: "background 0.2s",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.target.style.background = "#f9fafb")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.target.style.background = "white")
-                            }
+                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                            onMouseLeave={(e) => (e.target.style.background = "white")}
                           >
                             View Profile
                           </button>
-
                           <button
-                            onClick={() => handleEdit(student)}
+                            onClick={() => {
+                              handleEdit(student);
+                              setOpenMenuId(null);
+                            }}
                             style={{
                               width: "100%",
                               padding: "12px 16px",
@@ -696,19 +757,27 @@ function ViewInterns({ onInternDeleted }) {
                               fontSize: "14px",
                               fontWeight: "500",
                               color: "#0f172a",
-                              transition: "background 0.2s",
                               borderTop: "1px solid #f3f4f6",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.target.style.background = "#f9fafb")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.target.style.background = "white")
-                            }
+                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                            onMouseLeave={(e) => (e.target.style.background = "white")}
                           >
                             Edit Details
                           </button>
-
+                          <div
+                            style={{
+                              padding: "10px 16px",
+                              fontSize: "12px",
+                              fontWeight: "700",
+                              letterSpacing: "0.06em",
+                              textTransform: "uppercase",
+                              color: "#64748b",
+                              borderTop: "1px solid #f3f4f6",
+                              background: "#f8fafc",
+                            }}
+                          >
+                            More
+                          </div>
                           <button
                             onClick={() => handleViewCertificates(student)}
                             style={{
@@ -721,19 +790,12 @@ function ViewInterns({ onInternDeleted }) {
                               fontSize: "14px",
                               fontWeight: "500",
                               color: "#0f172a",
-                              transition: "background 0.2s",
-                              borderTop: "1px solid #f3f4f6",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.target.style.background = "#f9fafb")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.target.style.background = "white")
-                            }
+                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                            onMouseLeave={(e) => (e.target.style.background = "white")}
                           >
                             Certificates
                           </button>
-
                           <button
                             onClick={() => handleStatusToggle(student)}
                             style={{
@@ -746,29 +808,20 @@ function ViewInterns({ onInternDeleted }) {
                               fontSize: "14px",
                               fontWeight: "500",
                               color:
-                                (student.status || "").toLowerCase() ===
-                                "active"
+                                (student.status || "").toLowerCase() === "active"
                                   ? "#dc2626"
                                   : "#059669",
-                              transition: "background 0.2s",
                               borderTop: "1px solid #f3f4f6",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.target.style.background = "#f9fafb")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.target.style.background = "white")
-                            }
+                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                            onMouseLeave={(e) => (e.target.style.background = "white")}
                           >
                             {(student.status || "").toLowerCase() === "active"
                               ? "Mark Inactive"
                               : "Mark Active"}
                           </button>
-
                           <button
-                            onClick={() =>
-                              handleDelete(student._id, student.name)
-                            }
+                            onClick={() => handleDelete(student._id, student.name)}
                             style={{
                               width: "100%",
                               padding: "12px 16px",
@@ -779,15 +832,10 @@ function ViewInterns({ onInternDeleted }) {
                               fontSize: "14px",
                               fontWeight: "500",
                               color: "#dc2626",
-                              transition: "background 0.2s",
                               borderTop: "1px solid #f3f4f6",
                             }}
-                            onMouseEnter={(e) =>
-                              (e.target.style.background = "#fef2f2")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.target.style.background = "white")
-                            }
+                            onMouseEnter={(e) => (e.target.style.background = "#fef2f2")}
+                            onMouseLeave={(e) => (e.target.style.background = "white")}
                           >
                             Delete
                           </button>
@@ -1967,6 +2015,40 @@ function ViewInterns({ onInternDeleted }) {
                 Upload New Certificate
               </h3>
 
+              {certificateUploadStatus?.success && (
+                <div
+                  style={{
+                    marginBottom: "12px",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    background: "#dcfce7",
+                    border: "1px solid #86efac",
+                    color: "#166534",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Certificate assigned successfully: {certificateUploadStatus.label}
+                </div>
+              )}
+
+              {certificateUploadStatus && !certificateUploadStatus.success && (
+                <div
+                  style={{
+                    marginBottom: "12px",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    background: "#fee2e2",
+                    border: "1px solid #fca5a5",
+                    color: "#991b1b",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Certificate assignment failed. Please retry.
+                </div>
+              )}
+
               <div style={{ marginBottom: "12px" }}>
                 <label
                   style={{
@@ -1990,14 +2072,11 @@ function ViewInterns({ onInternDeleted }) {
                     fontSize: "14px",
                   }}
                 >
-                  <option value="offerLetter">Offer Letter</option>
-                  <option value="welcomeLetter">Welcome Letter</option>
-                  <option value="paymentReceipt">Payment Receipt</option>
-                  <option value="completionCertificate">
-                    Completion Certificate
-                  </option>
-                  <option value="experienceLetter">Experience Letter</option>
-                  <option value="other">Other Certificate</option>
+                  {certificateTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -2087,7 +2166,7 @@ function ViewInterns({ onInternDeleted }) {
                   fontWeight: 600,
                 }}
               >
-                {uploadingCert ? "Uploading..." : "Upload Certificate"}
+                {uploadingCert ? "Assigning Certificate..." : "Assign Certificate"}
               </button>
             </div>
 
@@ -2167,7 +2246,7 @@ function ViewInterns({ onInternDeleted }) {
                   </div>
                 </div>
 
-                {/* Welcome Letter */}
+                {/* SMS Enrollment Letter */}
                 <div
                   style={{
                     padding: "12px",
@@ -2186,9 +2265,9 @@ function ViewInterns({ onInternDeleted }) {
                         color: "#0f172a",
                       }}
                     >
-                      Welcome Letter
+                      SMS Enrollment letter
                     </div>
-                    {selectedStudent.documents?.welcomeLetter && (
+                    {selectedStudent.documents?.smsProgramEnrollmentLetter && (
                       <div
                         style={{
                           fontSize: "12px",
@@ -2198,16 +2277,16 @@ function ViewInterns({ onInternDeleted }) {
                       >
                         Uploaded:{" "}
                         {new Date(
-                          selectedStudent.documents.welcomeLetter.uploadedAt ||
-                            Date.now(),
+                          selectedStudent.documents.smsProgramEnrollmentLetter
+                            .uploadedAt || Date.now(),
                         ).toLocaleDateString()}
                       </div>
                     )}
                   </div>
                   <div>
-                    {selectedStudent.documents?.welcomeLetter ? (
+                    {selectedStudent.documents?.smsProgramEnrollmentLetter ? (
                       <a
-                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.welcomeLetter.filename}`}
+                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.smsProgramEnrollmentLetter.filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
@@ -2314,7 +2393,8 @@ function ViewInterns({ onInternDeleted }) {
                     >
                       Completion Certificate
                     </div>
-                    {selectedStudent.documents?.completionCertificate && (
+                    {(selectedStudent.documents?.completionCertificate ||
+                      selectedStudent.documents?.completionLetter) && (
                       <div
                         style={{
                           fontSize: "12px",
@@ -2324,16 +2404,18 @@ function ViewInterns({ onInternDeleted }) {
                       >
                         Uploaded:{" "}
                         {new Date(
-                          selectedStudent.documents.completionCertificate
-                            .uploadedAt || Date.now(),
+                          (selectedStudent.documents.completionCertificate ||
+                            selectedStudent.documents.completionLetter)
+                            ?.uploadedAt || Date.now(),
                         ).toLocaleDateString()}
                       </div>
                     )}
                   </div>
                   <div>
-                    {selectedStudent.documents?.completionCertificate ? (
+                    {(selectedStudent.documents?.completionCertificate ||
+                      selectedStudent.documents?.completionLetter) ? (
                       <a
-                        href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents.completionCertificate.filename}`}
+                        href={`${UPLOADS_BASE}/uploads/students/${(selectedStudent.documents.completionCertificate || selectedStudent.documents.completionLetter).filename}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{

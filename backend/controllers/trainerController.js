@@ -469,7 +469,7 @@ exports.updateStudentStatus = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { name, email, mobile, password } = req.body;
+    const { name, email, mobile, joiningDate, customRole, password } = req.body;
 
     // Find the trainer
     const trainer = await Trainer.findById(trainerId);
@@ -481,14 +481,19 @@ exports.updateProfile = async (req, res) => {
     }
 
     // Update fields
-    if (name) trainer.name = name;
-    if (mobile) trainer.mobile = mobile;
+    if (name !== undefined) trainer.name = String(name).trim();
+    if (mobile !== undefined) trainer.mobile = String(mobile).trim();
+    if (customRole !== undefined) trainer.customRole = String(customRole).trim();
+    if (joiningDate !== undefined) {
+      trainer.joiningDate = joiningDate ? new Date(joiningDate) : null;
+    }
     
     // Update email if provided
-    if (email) {
+    if (email !== undefined) {
+      const normalizedEmail = String(email).trim().toLowerCase();
       // Check if email already exists (and it's not the same trainer's current email)
       const existingTrainer = await Trainer.findOne({ 
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         _id: { $ne: trainerId }
       });
       
@@ -499,7 +504,7 @@ exports.updateProfile = async (req, res) => {
         });
       }
       
-      trainer.email = email.toLowerCase();
+      trainer.email = normalizedEmail;
     }
     
     // Update password if provided
@@ -518,7 +523,12 @@ exports.updateProfile = async (req, res) => {
         name: trainer.name,
         email: trainer.email,
         mobile: trainer.mobile,
-        role: trainer.role
+        role: trainer.role,
+        customRole: trainer.customRole,
+        joiningDate: trainer.joiningDate,
+        status: trainer.status,
+        createdAt: trainer.createdAt,
+        updatedAt: trainer.updatedAt
       }
     });
   } catch (error) {
@@ -680,6 +690,99 @@ exports.getMyProfile = async (req, res) => {
 
   } catch (error) {
     console.error('Get profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Update Intern's Profile (for intern dashboard)
+exports.updateMyProfile = async (req, res) => {
+  try {
+    if (req.user.role !== 'intern') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    const updateData = {};
+    const editableFields = [
+      'name',
+      'email',
+      'mobile',
+      'internId',
+      'studentType',
+      'domain',
+      'joiningDate',
+      'endingDate',
+      'duration',
+      'collegeName',
+      'branch',
+      'yearOfStudy',
+      'gender',
+      'paymentDoneBy',
+      'dateOfPayment',
+      'transactionId',
+      'paymentAmount',
+      'completedFees',
+      'pendingFees',
+      'lastPaymentDate',
+      'currentDesignation',
+      'suggestedDomain',
+      'currentQualification',
+      'instituteName',
+      'instituteLocation',
+      'enrolmentDate',
+      'enrolBatchMonth',
+      'totalFees',
+      'firstPaymentAmount',
+      'firstPaymentDate',
+      'secondPaymentAmount',
+      'secondPaymentDate',
+      'finalPaymentAmount',
+      'finalPaymentDate'
+    ];
+
+    editableFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        const value = req.body[field];
+        if (typeof value === 'string') {
+          updateData[field] = value.trim();
+        } else {
+          updateData[field] = value;
+        }
+      }
+    });
+
+    if (updateData.email) {
+      updateData.email = updateData.email.toLowerCase();
+    }
+
+    if (req.body.password && String(req.body.password).trim()) {
+      updateData.password = await bcrypt.hash(String(req.body.password), 10);
+    }
+
+    const intern = await Intern.findByIdAndUpdate(
+      req.user.id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password').populate('assignedTrainer', 'name email mobile');
+
+    if (!intern) {
+      return res.status(404).json({
+        success: false,
+        message: 'Profile not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: intern
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

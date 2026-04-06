@@ -118,16 +118,47 @@ exports.getProfile = async (req, res) => {
 // Update profile (editable fields only)
 exports.updateProfile = async (req, res) => {
   try {
-    const { college, course, department, year, mobile, email, upiId, password } = req.body;
+    const {
+      name,
+      email,
+      mobile,
+      college,
+      course,
+      department,
+      year,
+      upiId,
+      upiMobileNumber,
+      designation,
+      sheetLinks,
+      internshipApplicationFormLink,
+      internshipSheetLink,
+      internshipPromotionalMessage,
+      smsPromotionalMessage,
+      instagramProfile,
+      linkedinProfile,
+      joiningDate,
+      password
+    } = req.body;
 
     const updateData = {};
+    if (name !== undefined) updateData.name = String(name).trim();
     if (college !== undefined) updateData.college = college;
     if (course !== undefined) updateData.course = course;
     if (department !== undefined) updateData.department = department;
     if (year !== undefined) updateData.year = year;
     if (mobile !== undefined) updateData.mobile = mobile;
-    if (email !== undefined) updateData.email = email;
+    if (email !== undefined) updateData.email = String(email).trim().toLowerCase();
     if (upiId !== undefined) updateData.upiId = upiId;
+    if (upiMobileNumber !== undefined) updateData.upiMobileNumber = upiMobileNumber;
+    if (designation !== undefined) updateData.designation = designation;
+    if (sheetLinks !== undefined) updateData.sheetLinks = sheetLinks;
+    if (internshipApplicationFormLink !== undefined) updateData.internshipApplicationFormLink = internshipApplicationFormLink;
+    if (internshipSheetLink !== undefined) updateData.internshipSheetLink = internshipSheetLink;
+    if (internshipPromotionalMessage !== undefined) updateData.internshipPromotionalMessage = internshipPromotionalMessage;
+    if (smsPromotionalMessage !== undefined) updateData.smsPromotionalMessage = smsPromotionalMessage;
+    if (instagramProfile !== undefined) updateData.instagramProfile = instagramProfile;
+    if (linkedinProfile !== undefined) updateData.linkedinProfile = linkedinProfile;
+    if (joiningDate !== undefined) updateData.joiningDate = joiningDate;
 
     if (password && password.trim()) {
       updateData.password = await bcrypt.hash(password, 10);
@@ -153,6 +184,7 @@ exports.addStudent = async (req, res) => {
   try {
     const {
       studentType,
+      internId,
       name,
       email,
       password,
@@ -161,6 +193,9 @@ exports.addStudent = async (req, res) => {
       joiningDate,
       endingDate,
       duration,
+      collegeName,
+      branch,
+      yearOfStudy,
       paymentDoneBy,
       dateOfPayment,
       transactionId,
@@ -168,17 +203,40 @@ exports.addStudent = async (req, res) => {
       completedFees,
       pendingFees,
       lastPaymentDate,
-      currentDesignation
+      currentDesignation,
+      suggestedDomain,
+      currentQualification,
+      instituteName,
+      instituteLocation,
+      enrolmentDate,
+      enrolBatchMonth,
+      totalFees,
+      firstPaymentAmount,
+      firstPaymentDate,
+      secondPaymentAmount,
+      secondPaymentDate,
+      finalPaymentAmount,
+      finalPaymentDate
     } = req.body;
 
     if (!studentType || !name || !email || !password || !mobile) {
       return res.status(400).json({ success: false, message: 'Please provide all required fields' });
     }
 
-    if (studentType === 'Internship' && (!domain || !joiningDate || !duration)) {
+    if (studentType === 'Internship' && (!internId || !domain || !joiningDate || !duration || !collegeName || !branch || !yearOfStudy)) {
       return res.status(400).json({
         success: false,
         message: 'Please provide all internship required fields'
+      });
+    }
+
+    if (
+      studentType === 'SMS Program' &&
+      (!internId || !suggestedDomain || !instituteName || !yearOfStudy || !enrolmentDate || !enrolBatchMonth || !totalFees)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all SMS required fields'
       });
     }
 
@@ -187,7 +245,15 @@ exports.addStudent = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Student with this email already exists' });
     }
 
-    const internId = await generateInternId(studentType, name);
+    const resolvedInternId = String(internId || '').trim();
+    if (!resolvedInternId) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid student ID' });
+    }
+
+    const existingInternId = await Intern.findOne({ internId: resolvedInternId });
+    if (existingInternId) {
+      return res.status(400).json({ success: false, message: 'Student with this intern ID already exists' });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const internData = {
@@ -195,7 +261,7 @@ exports.addStudent = async (req, res) => {
       name,
       email,
       mobile,
-      internId,
+      internId: resolvedInternId,
       password: hashedPassword,
       role: 'intern',
       addedByRepresentative: req.user.id
@@ -205,6 +271,9 @@ exports.addStudent = async (req, res) => {
       internData.domain = domain;
       internData.joiningDate = joiningDate;
       internData.duration = duration;
+      internData.collegeName = collegeName;
+      internData.branch = branch;
+      internData.yearOfStudy = yearOfStudy;
       if (endingDate) {
         internData.endingDate = endingDate;
       }
@@ -217,13 +286,56 @@ exports.addStudent = async (req, res) => {
       internData.pendingFees = pendingFees || '0';
       internData.lastPaymentDate = lastPaymentDate || dateOfPayment || null;
       internData.currentDesignation = currentDesignation || 'Student';
+      internData.suggestedDomain = suggestedDomain;
+      internData.currentQualification = currentQualification;
+      internData.instituteName = instituteName;
+      internData.instituteLocation = instituteLocation;
+      internData.yearOfStudy = yearOfStudy;
+      internData.enrolmentDate = enrolmentDate;
+      internData.enrolBatchMonth = enrolBatchMonth;
+      internData.totalFees = totalFees;
+      internData.firstPaymentAmount = firstPaymentAmount;
+      internData.firstPaymentDate = firstPaymentDate;
+      internData.secondPaymentAmount = secondPaymentAmount;
+      internData.secondPaymentDate = secondPaymentDate;
+      internData.finalPaymentAmount = finalPaymentAmount;
+      internData.finalPaymentDate = finalPaymentDate;
+    }
+
+    const files = req.files || {};
+    if (Object.keys(files).length > 0) {
+      internData.documents = internData.documents || {};
+
+      if (files.smsProgramEnrollmentLetter && files.smsProgramEnrollmentLetter[0]) {
+        internData.documents.smsProgramEnrollmentLetter = {
+          filename: files.smsProgramEnrollmentLetter[0].filename,
+          filepath: files.smsProgramEnrollmentLetter[0].path,
+          uploadedAt: new Date()
+        };
+      }
+
+      if (files.offerLetter && files.offerLetter[0]) {
+        internData.documents.offerLetter = {
+          filename: files.offerLetter[0].filename,
+          filepath: files.offerLetter[0].path,
+          uploadedAt: new Date()
+        };
+      }
+
+      if (files.paymentReceipt && files.paymentReceipt[0]) {
+        internData.documents.paymentReceipt = {
+          filename: files.paymentReceipt[0].filename,
+          filepath: files.paymentReceipt[0].path,
+          uploadedAt: new Date()
+        };
+      }
     }
 
     const intern = new Intern(internData);
     await intern.save();
 
     // Send email in background so API responds immediately
-    sendInternCredentials(name, email, internId, password)
+    sendInternCredentials(name, email, resolvedInternId, password)
       .then((emailResult) => {
         if (!emailResult.success) {
           console.error(`Background credential email failed for ${email}:`, emailResult.error);
@@ -254,7 +366,7 @@ exports.addStudent = async (req, res) => {
         return res.status(409).json({ success: false, message: 'Student with this email already exists' });
       }
       if (error?.keyPattern?.internId) {
-        return res.status(409).json({ success: false, message: 'Could not generate unique intern ID. Please retry.' });
+        return res.status(409).json({ success: false, message: 'Student with this intern ID already exists' });
       }
     }
 

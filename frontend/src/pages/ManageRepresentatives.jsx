@@ -34,8 +34,9 @@ function toPublicFilePath(filepath) {
   return `${UPLOADS_BASE}/uploads/${String(filepath).replace(/\\/g, "/").split("uploads/")[1] || ""}`;
 }
 
-function ManageRepresentatives() {
+function ManageRepresentatives({ onOpenPayout }) {
   const [activeTab, setActiveTab] = useState("list");
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [representatives, setRepresentatives] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -183,12 +184,49 @@ function ManageRepresentatives() {
     }
   };
 
+  const toggleMenu = (id) => {
+    setOpenMenuId(openMenuId === id ? null : id);
+  };
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (!openMenuId) return;
+      const clickedInsideMenu = e.target.closest("[data-menu]") || e.target.closest("[data-menu-toggle]");
+      if (!clickedInsideMenu) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [openMenuId]);
+
   return (
     <div>
       <div className="premium-page-header">
         <div className="header-left">
           <h1>Representative Management</h1>
           <p className="header-subtitle">Manage PGIR profiles, onboarding docs and filters</p>
+        </div>
+        <div className="header-right">
+          {onOpenPayout && (
+            <button
+              type="button"
+              onClick={onOpenPayout}
+              style={{
+                padding: "10px 18px",
+                border: "none",
+                borderRadius: "10px",
+                background: "#324158",
+                color: "#fff",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              Representative Payout
+            </button>
+          )}
         </div>
       </div>
 
@@ -279,10 +317,10 @@ function ManageRepresentatives() {
                 />
               </div>
               <div style={{ display: "flex", gap: "8px", alignItems: "end" }}>
-                <button className="table-action-btn" style={{ background: "#324158" }} onClick={applyFilters}>
+                <button className="table-action-btn" style={{ background: "#000", color: "#fff" }} onClick={applyFilters}>
                   Apply
                 </button>
-                <button className="table-action-btn" style={{ background: "#94a3b8" }} onClick={clearFilters}>
+                <button className="table-action-btn" style={{ background: "#000", color: "#fff" }} onClick={clearFilters}>
                   Clear
                 </button>
               </div>
@@ -298,8 +336,8 @@ function ManageRepresentatives() {
                 <p className="empty-subtitle">Add a representative to get started</p>
               </div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table className="premium-table">
+              <div className="table-container">
+                <table className="data-table">
                   <thead>
                     <tr>
                       <th>PGIR ID</th>
@@ -307,8 +345,7 @@ function ManageRepresentatives() {
                       <th>Email</th>
                       <th>WhatsApp</th>
                       <th>College</th>
-                      <th>Designation</th>
-                      <th>Joining Date</th>
+                      <th>Joining</th>
                       <th>Students</th>
                       <th>Actions</th>
                     </tr>
@@ -317,30 +354,122 @@ function ManageRepresentatives() {
                     {representatives.map((rep) => (
                       <tr key={rep._id}>
                         <td className="mono-text">{rep.pgirId || "-"}</td>
-                        <td>{rep.name}</td>
-                        <td>{rep.email}</td>
+                        <td>{rep.name || "-"}</td>
+                        <td>{rep.email || "-"}</td>
                         <td>{rep.mobile || "-"}</td>
                         <td>{rep.college || "-"}</td>
-                        <td>{rep.designation || "-"}</td>
                         <td>{formatDate(rep.joiningDate)}</td>
                         <td>{rep.totalStudents || 0}</td>
                         <td>
-                          <div style={{ display: "flex", gap: "8px" }}>
+                          <div style={{ position: "relative", display: "inline-block" }}>
                             <button
-                              className="table-action-btn"
-                              style={{ background: "#0ea5e9" }}
-                              onClick={() => handleViewDetails(rep._id)}
-                              disabled={detailsLoading}
+                              data-menu-toggle
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleMenu(rep._id);
+                              }}
+                              style={{
+                                background: "transparent",
+                                color: "#0f172a",
+                                border: "1px solid #d1d5db",
+                                borderRadius: "8px",
+                                width: "36px",
+                                height: "36px",
+                                cursor: "pointer",
+                                fontSize: "20px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
                             >
-                              {detailsLoading ? "Loading..." : "View"}
+                              ⋮
                             </button>
-                            <button
-                              className="table-action-btn"
-                              style={{ background: "#ef4444" }}
-                              onClick={() => handleDelete(rep._id, rep.name)}
-                            >
-                              Delete
-                            </button>
+
+                            {openMenuId === rep._id && (
+                              <div
+                                data-menu
+                                style={{
+                                  position: "absolute",
+                                  right: 0,
+                                  top: "42px",
+                                  background: "white",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "12px",
+                                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                  zIndex: 1000,
+                                  minWidth: "180px",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <button
+                                  onClick={() => {
+                                    handleViewDetails(rep._id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#0f172a",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  View Details
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (onOpenPayout) {
+                                      onOpenPayout();
+                                    }
+                                    setOpenMenuId(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#0f172a",
+                                    borderTop: "1px solid #f3f4f6",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Open Payout
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    handleDelete(rep._id, rep.name);
+                                    setOpenMenuId(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#dc2626",
+                                    borderTop: "1px solid #f3f4f6",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#fef2f2")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -405,37 +534,95 @@ function ManageRepresentatives() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(15, 23, 42, 0.58)",
+            background: "rgba(0, 0, 0, 0.72)",
             zIndex: 1200,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "16px",
+            padding: "20px",
           }}
           onClick={() => setSelectedRepDetails(null)}
         >
-          <div className="premium-card" style={{ width: "min(1100px, 100%)", maxHeight: "92vh", overflow: "auto" }} onClick={(e) => e.stopPropagation()}>
-            <div className="premium-card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div
+            style={{
+              width: "min(1120px, 100%)",
+              maxHeight: "92vh",
+              overflow: "auto",
+              background: "#ffffff",
+              border: "1px solid #111111",
+              borderRadius: "16px",
+              boxShadow: "0 24px 60px rgba(0, 0, 0, 0.35)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "18px 22px",
+                borderBottom: "1px solid #d4d4d4",
+                background: "#0a0a0a",
+                color: "#ffffff",
+              }}
+            >
               <div>
-                <h2 style={{ margin: 0 }}>{selectedRepDetails.representative.name} Profile</h2>
-                <p style={{ margin: 0, color: "#64748b", fontSize: "13px" }}>{selectedRepDetails.representative.email}</p>
+                <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 700 }}>
+                  {selectedRepDetails.representative.name} Profile
+                </h2>
+                <p style={{ margin: "6px 0 0 0", color: "#e5e5e5", fontSize: "13px" }}>
+                  {selectedRepDetails.representative.email}
+                </p>
               </div>
-              <button className="table-action-btn" style={{ background: "#64748b" }} onClick={() => setSelectedRepDetails(null)}>Close</button>
+              <button
+                className="table-action-btn"
+                style={{ background: "#ffffff", color: "#000000", border: "1px solid #000000" }}
+                onClick={() => setSelectedRepDetails(null)}
+              >
+                Close
+              </button>
             </div>
 
-            <div style={{ padding: "18px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px", marginBottom: "18px" }}>
-                <div className="premium-stat-card accent-blue"><div className="stat-content"><div className="stat-label">PGIR ID</div><div className="stat-value" style={{ fontSize: "18px" }}>{selectedRepDetails.representative.pgirId || "-"}</div></div></div>
-                <div className="premium-stat-card accent-teal"><div className="stat-content"><div className="stat-label">Total Students</div><div className="stat-value">{selectedRepDetails.stats.totalStudents}</div></div></div>
-                <div className="premium-stat-card accent-indigo"><div className="stat-content"><div className="stat-label">This Week</div><div className="stat-value">{selectedRepDetails.stats.weeklyStudents}</div></div></div>
-                <div className="premium-stat-card accent-slate"><div className="stat-content"><div className="stat-label">This Month</div><div className="stat-value">{selectedRepDetails.stats.monthlyStudents}</div></div></div>
+            <div style={{ padding: "20px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+                  gap: "12px",
+                  marginBottom: "18px",
+                }}
+              >
+                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
+                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>PGIR ID</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.representative.pgirId || "-"}</div>
+                </div>
+                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
+                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>Total Students</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.stats.totalStudents}</div>
+                </div>
+                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
+                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>This Week</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.stats.weeklyStudents}</div>
+                </div>
+                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
+                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>This Month</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.stats.monthlyStudents}</div>
+                </div>
               </div>
 
-              <div className="premium-card" style={{ marginBottom: "16px" }}>
-                <div style={{ padding: "14px 16px", borderBottom: "1px solid #e5e7eb", fontWeight: 700, color: "#0f172a" }}>
-                  PGIR Profile Details
+              <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", marginBottom: "16px", overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#0a0a0a", color: "#ffffff" }}>
+                  Professional Details
                 </div>
-                <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
+                <div
+                  style={{
+                    padding: "16px",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+                    gap: "12px",
+                    color: "#171717",
+                  }}
+                >
                   <div><strong>WhatsApp:</strong> {selectedRepDetails.representative.mobile || "-"}</div>
                   <div><strong>Designation:</strong> {selectedRepDetails.representative.designation || "-"}</div>
                   <div><strong>Joining Date:</strong> {formatDate(selectedRepDetails.representative.joiningDate)}</div>
@@ -447,37 +634,58 @@ function ManageRepresentatives() {
                   <div><strong>LinkedIn:</strong> {selectedRepDetails.representative.linkedinProfile || "-"}</div>
                   <div><strong>UPI ID:</strong> {selectedRepDetails.representative.upiId || "-"}</div>
                   <div><strong>UPI / Mobile:</strong> {selectedRepDetails.representative.upiMobileNumber || "-"}</div>
-                  <div><strong>Application Link:</strong> {selectedRepDetails.representative.internshipApplicationFormLink || "-"}</div>
-                  <div><strong>Internship Sheet:</strong> {selectedRepDetails.representative.internshipSheetLink || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><strong>Application Link:</strong> {selectedRepDetails.representative.internshipApplicationFormLink || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><strong>Internship Sheet:</strong> {selectedRepDetails.representative.internshipSheetLink || "-"}</div>
                   <div style={{ gridColumn: "1 / -1" }}><strong>Internship Promotional Message:</strong> {selectedRepDetails.representative.internshipPromotionalMessage || "-"}</div>
                   <div style={{ gridColumn: "1 / -1" }}><strong>SMS Promotional Message:</strong> {selectedRepDetails.representative.smsPromotionalMessage || "-"}</div>
                   <div>
                     <strong>UPI Scanner:</strong>{" "}
                     {selectedRepDetails.representative.docs?.upiScanner?.filepath ? (
-                      <a href={toPublicFilePath(selectedRepDetails.representative.docs.upiScanner.filepath)} target="_blank" rel="noreferrer">Open</a>
+                      <a
+                        href={toPublicFilePath(selectedRepDetails.representative.docs.upiScanner.filepath)}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "#000000", fontWeight: 700, textDecoration: "underline" }}
+                      >
+                        Open
+                      </a>
                     ) : "-"}
                   </div>
                   <div>
                     <strong>Selection Letter:</strong>{" "}
                     {selectedRepDetails.representative.docs?.pgirSelectionLetter?.filepath ? (
-                      <a href={toPublicFilePath(selectedRepDetails.representative.docs.pgirSelectionLetter.filepath)} target="_blank" rel="noreferrer">Open</a>
+                      <a
+                        href={toPublicFilePath(selectedRepDetails.representative.docs.pgirSelectionLetter.filepath)}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "#000000", fontWeight: 700, textDecoration: "underline" }}
+                      >
+                        Open
+                      </a>
                     ) : "-"}
                   </div>
                   <div>
                     <strong>Offer Letter:</strong>{" "}
                     {selectedRepDetails.representative.docs?.internshipOfferLetter?.filepath ? (
-                      <a href={toPublicFilePath(selectedRepDetails.representative.docs.internshipOfferLetter.filepath)} target="_blank" rel="noreferrer">Open</a>
+                      <a
+                        href={toPublicFilePath(selectedRepDetails.representative.docs.internshipOfferLetter.filepath)}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "#000000", fontWeight: 700, textDecoration: "underline" }}
+                      >
+                        Open
+                      </a>
                     ) : "-"}
                   </div>
                 </div>
               </div>
 
-              <div className="premium-card" style={{ marginBottom: "16px" }}>
-                <div style={{ padding: "14px 16px", borderBottom: "1px solid #e5e7eb", fontWeight: 700, color: "#0f172a" }}>
+              <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#0a0a0a", color: "#ffffff" }}>
                   Recent Payouts
                 </div>
                 <div style={{ overflowX: "auto" }}>
-                  <table className="premium-table">
+                  <table className="data-table" style={{ margin: 0 }}>
                     <thead>
                       <tr>
                         <th>Month</th>

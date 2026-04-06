@@ -5,6 +5,7 @@ import LoadingSpinner from "../components/LoadingSpinner";
 function AddIntern({ onInternAdded }) {
   const [studentType, setStudentType] = useState("Internship");
   const [formData, setFormData] = useState({
+    internId: "",
     name: "",
     email: "",
     mobile: "",
@@ -16,6 +17,19 @@ function AddIntern({ onInternAdded }) {
     collegeName: "",
     branch: "",
     yearOfStudy: "",
+    suggestedDomain: "",
+    currentQualification: "",
+    instituteName: "",
+    instituteLocation: "",
+    enrolmentDate: "",
+    enrolBatchMonth: "",
+    totalFees: "",
+    firstPaymentAmount: "",
+    firstPaymentDate: "",
+    secondPaymentAmount: "",
+    secondPaymentDate: "",
+    finalPaymentAmount: "",
+    finalPaymentDate: "",
     paymentDoneBy: "",
     dateOfPayment: "",
     transactionId: "",
@@ -33,10 +47,32 @@ function AddIntern({ onInternAdded }) {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
+    const { name, value } = e.target;
+
+    const nextData = {
       ...formData,
-      [e.target.name]: e.target.value,
-    });
+      [name]: value,
+    };
+
+    // SMS pending fees = total fees - (first + second + final payment amounts)
+    if (
+      [
+        "totalFees",
+        "firstPaymentAmount",
+        "secondPaymentAmount",
+        "finalPaymentAmount",
+      ].includes(name)
+    ) {
+      const total = Number(nextData.totalFees || 0);
+      const first = Number(nextData.firstPaymentAmount || 0);
+      const second = Number(nextData.secondPaymentAmount || 0);
+      const final = Number(nextData.finalPaymentAmount || 0);
+      const pending = Math.max(total - (first + second + final), 0);
+      nextData.pendingFees = String(pending);
+      nextData.completedFees = String(first + second + final);
+    }
+
+    setFormData(nextData);
     setError("");
     setSuccess("");
   };
@@ -77,6 +113,7 @@ function AddIntern({ onInternAdded }) {
           formData.domain === "Other" ? formData.customDomain : formData.domain;
 
         if (
+          !formData.internId ||
           !selectedDomain ||
           !formData.joiningDate ||
           !formData.duration ||
@@ -85,12 +122,13 @@ function AddIntern({ onInternAdded }) {
           !formData.yearOfStudy
         ) {
           setError(
-            "Please fill all required internship fields: Domain, Joining Date, Duration, College Name, Branch, and Year of Study",
+            "Please fill all required internship fields: PIID, Domain, Joining Date, Duration, College Name, Branch, and Year of Study",
           );
           setLoading(false);
           return;
         }
 
+        submitData.internId = formData.internId;
         submitData.domain = selectedDomain;
         submitData.joiningDate = formData.joiningDate;
         submitData.duration = formData.duration;
@@ -107,13 +145,39 @@ function AddIntern({ onInternAdded }) {
           yearOfStudy: submitData.yearOfStudy,
         });
       } else if (studentType === "SMS Program") {
-        submitData.paymentDoneBy = formData.paymentDoneBy;
-        submitData.dateOfPayment = formData.dateOfPayment;
-        submitData.transactionId = formData.transactionId;
-        submitData.paymentAmount = formData.paymentAmount;
+        if (
+          !formData.internId ||
+          !formData.suggestedDomain ||
+          !formData.instituteName ||
+          !formData.yearOfStudy ||
+          !formData.enrolmentDate ||
+          !formData.enrolBatchMonth ||
+          !formData.totalFees
+        ) {
+          setError(
+            "Please fill all required SMS fields: PSMS ID, Suggested Domain, Institute Name, Year of Study, Enrolment Date, Enrol Batch Month, and Total Fees",
+          );
+          setLoading(false);
+          return;
+        }
+
+        submitData.internId = formData.internId;
+        submitData.suggestedDomain = formData.suggestedDomain;
+        submitData.currentQualification = formData.currentQualification;
+        submitData.instituteName = formData.instituteName;
+        submitData.instituteLocation = formData.instituteLocation;
+        submitData.yearOfStudy = formData.yearOfStudy;
+        submitData.enrolmentDate = formData.enrolmentDate;
+        submitData.enrolBatchMonth = formData.enrolBatchMonth;
+        submitData.totalFees = formData.totalFees;
+        submitData.firstPaymentAmount = formData.firstPaymentAmount;
+        submitData.firstPaymentDate = formData.firstPaymentDate;
+        submitData.secondPaymentAmount = formData.secondPaymentAmount;
+        submitData.secondPaymentDate = formData.secondPaymentDate;
+        submitData.finalPaymentAmount = formData.finalPaymentAmount;
+        submitData.finalPaymentDate = formData.finalPaymentDate;
         submitData.completedFees = formData.completedFees;
         submitData.pendingFees = formData.pendingFees;
-        submitData.lastPaymentDate = formData.lastPaymentDate;
         submitData.currentDesignation = formData.currentDesignation;
       }
 
@@ -128,7 +192,7 @@ function AddIntern({ onInternAdded }) {
 
       if (studentType === "SMS Program") {
         // Documents are optional for SMS Program - attach if provided
-        if (welcomeFile) fd.append("welcomeLetter", welcomeFile);
+        if (welcomeFile) fd.append("smsProgramEnrollmentLetter", welcomeFile);
         if (offerFile) fd.append("offerLetter", offerFile);
         if (paymentFile) fd.append("paymentReceipt", paymentFile);
       } else if (studentType === "Internship" && offerFile) {
@@ -156,6 +220,7 @@ function AddIntern({ onInternAdded }) {
         setSuccess(successMsg);
 
         setFormData({
+          internId: "",
           name: "",
           email: "",
           mobile: "",
@@ -168,6 +233,19 @@ function AddIntern({ onInternAdded }) {
           collegeName: "",
           branch: "",
           yearOfStudy: "",
+          suggestedDomain: "",
+          currentQualification: "",
+          instituteName: "",
+          instituteLocation: "",
+          enrolmentDate: "",
+          enrolBatchMonth: "",
+          totalFees: "",
+          firstPaymentAmount: "",
+          firstPaymentDate: "",
+          secondPaymentAmount: "",
+          secondPaymentDate: "",
+          finalPaymentAmount: "",
+          finalPaymentDate: "",
           paymentDoneBy: "",
           dateOfPayment: "",
           transactionId: "",
@@ -200,58 +278,92 @@ function AddIntern({ onInternAdded }) {
 
   return (
     <>
-      <div className="content-header">
-        <h1>Add New Student</h1>
-        <p>Register a new student to the system</p>
+      <div className="premium-page-header">
+        <div className="header-left">
+          <h1>Add New Student</h1>
+          <p className="header-subtitle">Register a new student to the system</p>
+        </div>
       </div>
 
-      <div className="card">
-        <form onSubmit={handleSubmit}>
+      <div className="premium-card">
+        <div className="premium-card-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div
+              style={{
+                width: "42px",
+                height: "42px",
+                borderRadius: "10px",
+                background: "#324158",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg fill="none" stroke="#fff" viewBox="0 0 24 24" style={{ width: "22px", height: "22px" }}>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h2 style={{ margin: 0 }}>Student Details</h2>
+              <p style={{ margin: 0, fontSize: "13px", color: "#9ca3af" }}>Fill in the student information</p>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ padding: "24px" }}>
           {error && <div className="error-message">{error}</div>}
           {success && <div className="success-message">{success}</div>}
 
+          <div className="admin-add-student-grid">
           <div className="form-group">
             <label>Student Type *</label>
-            <div style={{ display: "flex", gap: "20px", marginTop: "10px" }}>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="radio"
-                  name="studentType"
-                  value="Internship"
-                  checked={studentType === "Internship"}
-                  onChange={(e) => setStudentType(e.target.value)}
-                  style={{ marginRight: "8px" }}
-                />
-                Internship
-              </label>
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="radio"
-                  name="studentType"
-                  value="SMS Program"
-                  checked={studentType === "SMS Program"}
-                  onChange={(e) => setStudentType(e.target.value)}
-                  style={{ marginRight: "8px" }}
-                />
-                SMS Program
-              </label>
-            </div>
+            <select
+              name="studentType"
+              value={studentType}
+              onChange={(e) => setStudentType(e.target.value)}
+            >
+              <option value="Internship">Internship</option>
+              <option value="SMS Program">SMS Program</option>
+            </select>
           </div>
 
+          {studentType === "SMS Program" && (
+            <div className="form-group">
+              <label>PSMS ID (required) *</label>
+              <input
+                type="text"
+                name="internId"
+                value={formData.internId}
+                onChange={handleChange}
+                placeholder="Enter PSMS ID"
+                required
+              />
+              <small>This ID will be used for SMS Student login.</small>
+            </div>
+          )}
+
+          {studentType === "Internship" && (
+            <div className="form-group">
+              <label>PIID (required) *</label>
+              <input
+                type="text"
+                name="internId"
+                value={formData.internId}
+                onChange={handleChange}
+                placeholder="Enter PIID"
+                required
+              />
+              <small>This ID will be used for Internship student login.</small>
+            </div>
+          )}
+
           <div className="form-group">
-            <label>Full Name *</label>
+            <label>Full Name (required) *</label>
             <input
               type="text"
               name="name"
@@ -263,25 +375,25 @@ function AddIntern({ onInternAdded }) {
           </div>
 
           <div className="form-group">
-            <label>Email Address *</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter email address"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Mobile Number *</label>
+            <label>Mobile Number (WhatsApp preferred) (required) *</label>
             <input
               type="tel"
               name="mobile"
               value={formData.mobile}
               onChange={handleChange}
               placeholder="Enter mobile number"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Email Address (required) *</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter email address"
               required
             />
           </div>
@@ -370,7 +482,7 @@ function AddIntern({ onInternAdded }) {
               )}
 
               <div className="form-group">
-                <label>Joining Date *</label>
+                <label>Enrolment Date *</label>
                 <input
                   type="date"
                   name="joiningDate"
@@ -381,7 +493,7 @@ function AddIntern({ onInternAdded }) {
               </div>
 
               <div className="form-group">
-                <label>Duration *</label>
+                <label>Internship Duration *</label>
                 <input
                   type="text"
                   name="duration"
@@ -428,7 +540,7 @@ function AddIntern({ onInternAdded }) {
                 />
               </div>
 
-              <div className="form-group">
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                 <label>Internship Offer Letter (PDF)</label>
                 <input
                   type="file"
@@ -436,8 +548,7 @@ function AddIntern({ onInternAdded }) {
                   onChange={handleOfferFile}
                 />
                 <small>
-                  Upload the internship offer letter (PDF). This will sync with
-                  the student profile and certificates. (Optional)
+                  Upload internship offer letter (optional).
                 </small>
               </div>
             </>
@@ -445,6 +556,172 @@ function AddIntern({ onInternAdded }) {
 
           {studentType === "SMS Program" && (
             <>
+              <div className="form-group">
+                <label>Suggested Domain (required) *</label>
+                <input
+                  type="text"
+                  name="suggestedDomain"
+                  value={formData.suggestedDomain}
+                  onChange={handleChange}
+                  placeholder="Enter suggested domain"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Current Qualification (e.g., 12th Pass, Diploma, BCA, BTech, etc.)</label>
+                <input
+                  type="text"
+                  name="currentQualification"
+                  value={formData.currentQualification}
+                  onChange={handleChange}
+                  placeholder="Enter current qualification"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Full Name of College/Institute/School (required) *</label>
+                <input
+                  type="text"
+                  name="instituteName"
+                  value={formData.instituteName}
+                  onChange={handleChange}
+                  placeholder="Enter full institute name"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Year of Study (required) *</label>
+                <input
+                  type="text"
+                  name="yearOfStudy"
+                  value={formData.yearOfStudy}
+                  onChange={handleChange}
+                  placeholder="e.g., 1st Year, 2nd Year"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>City/Location of your College/Institute</label>
+                <input
+                  type="text"
+                  name="instituteLocation"
+                  value={formData.instituteLocation}
+                  onChange={handleChange}
+                  placeholder="Enter city/location"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Enrolment date (required) *</label>
+                <input
+                  type="date"
+                  name="enrolmentDate"
+                  value={formData.enrolmentDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Enrol Batch Month (required) *</label>
+                <input
+                  type="month"
+                  name="enrolBatchMonth"
+                  value={formData.enrolBatchMonth}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Total Fees (required) *</label>
+                <input
+                  type="number"
+                  name="totalFees"
+                  value={formData.totalFees}
+                  onChange={handleChange}
+                  placeholder="Enter total fees"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>First Payment Amount</label>
+                <input
+                  type="number"
+                  name="firstPaymentAmount"
+                  value={formData.firstPaymentAmount}
+                  onChange={handleChange}
+                  placeholder="Enter first payment amount"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>First Payment Date</label>
+                <input
+                  type="date"
+                  name="firstPaymentDate"
+                  value={formData.firstPaymentDate}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Second Payment Amount</label>
+                <input
+                  type="number"
+                  name="secondPaymentAmount"
+                  value={formData.secondPaymentAmount}
+                  onChange={handleChange}
+                  placeholder="Enter second payment amount"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Second Payment Date</label>
+                <input
+                  type="date"
+                  name="secondPaymentDate"
+                  value={formData.secondPaymentDate}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Final Payment Amount</label>
+                <input
+                  type="number"
+                  name="finalPaymentAmount"
+                  value={formData.finalPaymentAmount}
+                  onChange={handleChange}
+                  placeholder="Enter final payment amount"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Final Payment Date</label>
+                <input
+                  type="date"
+                  name="finalPaymentDate"
+                  value={formData.finalPaymentDate}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Pending fees (auto-calculated)</label>
+                <input
+                  type="number"
+                  name="pendingFees"
+                  value={formData.pendingFees}
+                  readOnly
+                  placeholder="Auto-calculated"
+                />
+              </div>
+
               <div className="form-group">
                 <label>Current Designation</label>
                 <input
@@ -457,106 +734,38 @@ function AddIntern({ onInternAdded }) {
               </div>
 
               <div className="form-group">
-                <label>Payment Done By</label>
-                <input
-                  type="text"
-                  name="paymentDoneBy"
-                  value={formData.paymentDoneBy}
-                  onChange={handleChange}
-                  placeholder="Name of person who made payment"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Date of Payment</label>
-                <input
-                  type="date"
-                  name="dateOfPayment"
-                  value={formData.dateOfPayment}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Transaction ID</label>
-                <input
-                  type="text"
-                  name="transactionId"
-                  value={formData.transactionId}
-                  onChange={handleChange}
-                  placeholder="Enter transaction/payment ID"
-                />
-              </div>
-              <div className="form-group">
-                <label>Payment Amount (₹)</label>
-                <input
-                  type="number"
-                  name="paymentAmount"
-                  value={formData.paymentAmount}
-                  onChange={handleChange}
-                  placeholder="e.g. 5000"
-                />
-              </div>
-              <div className="form-group">
-                <label>Completed Fees (₹)</label>
-                <input
-                  type="number"
-                  name="completedFees"
-                  value={formData.completedFees}
-                  onChange={handleChange}
-                  placeholder="e.g. 3000"
-                />
-              </div>
-              <div className="form-group">
-                <label>Pending Fees (₹)</label>
-                <input
-                  type="number"
-                  name="pendingFees"
-                  value={formData.pendingFees}
-                  onChange={handleChange}
-                  placeholder="e.g. 2000"
-                />
-              </div>
-              <div className="form-group">
-                <label>Last Payment Date</label>
-                <input
-                  type="date"
-                  name="lastPaymentDate"
-                  value={formData.lastPaymentDate}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label>Upload Welcome Letter (PDF)</label>
+                <label>SMS Program Enrollment Letter</label>
                 <input
                   type="file"
-                  accept="application/pdf"
+                  accept="application/pdf,image/*"
                   onChange={handleWelcomeFile}
                 />
                 <small>(Optional)</small>
               </div>
 
               <div className="form-group">
-                <label>Upload Internship Offer Letter (PDF)</label>
+                <label>Internship Offer Letter</label>
                 <input
                   type="file"
-                  accept="application/pdf"
+                  accept="application/pdf,image/*"
                   onChange={handleOfferFile}
                 />
                 <small>(Optional)</small>
               </div>
 
               <div className="form-group">
-                <label>Upload Payment Receipt (PDF)</label>
+                <label>Payment Recipt</label>
                 <input
                   type="file"
-                  accept="application/pdf"
+                  accept="application/pdf,image/*"
                   onChange={handlePaymentFile}
                 />
                 <small>(Optional)</small>
               </div>
             </>
           )}
+
+          </div>
 
           <button type="submit" className="submit-btn" disabled={loading}>
             {loading ? (

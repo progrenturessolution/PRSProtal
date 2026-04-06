@@ -234,16 +234,9 @@ exports.approveTask = async (req, res) => {
           recipient.email,
           'Task Approved',
           `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 20px;">
-              <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 28px; text-align: center; border-radius: 10px 10px 0 0;">
-                <h1 style="color: white; margin: 0; font-size: 26px;">Task Approved</h1>
-              </div>
-              <div style="padding: 30px; background-color: #ffffff; border-radius: 0 0 10px 10px;">
-                <p style="font-size: 16px; color: #334155;">Hi <strong>${recipient.name}</strong>,</p>
-                <p style="font-size: 15px; color: #475569;">Your task <strong>${task.title}</strong> has been approved by the admin.</p>
-                <p style="font-size: 15px; color: #475569;">You can view the approval note inside your dashboard timeline.</p>
-              </div>
-            </div>
+            <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">Hi <strong>${recipient.name}</strong>,</p>
+            <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">Your task <strong>${task.title}</strong> has been approved by the admin.</p>
+            <p style="margin:0;color:#374151;font-size:14px;line-height:1.75;">You can view the approval note inside your dashboard timeline.</p>
           `
         )
       )
@@ -318,22 +311,11 @@ exports.sendTaskFeedback = async (req, res) => {
         task.assignedTo.email,
         'Task Feedback - Changes Requested',
         `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f5f5f5; padding: 20px;">
-            <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-              <h1 style="color: white; margin: 0; font-size: 26px;">⚠️ Changes Requested</h1>
-            </div>
-            <div style="padding: 30px; background-color: #ffffff; border-radius: 0 0 10px 10px;">
-              <p style="font-size: 16px; color: #333;">Hi <strong>${task.assignedTo.name}</strong>,</p>
-              <p style="font-size: 15px; color: #555;">The admin has reviewed your task and requested some changes:</p>
-              <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <h3 style="margin-top: 0; color: #92400e;">Task: ${task.title}</h3>
-                <p style="font-weight: bold; color: #78350f;">Admin Feedback:</p>
-                <p style="color: #334155;">${message}</p>
-              </div>
-              <p style="font-size: 15px; color: #555;">Please review the feedback and make the necessary changes in your dashboard.</p>
-              <p style="margin-top: 30px; color: #666;">Best regards,<br><strong>Progrentures Team</strong></p>
-            </div>
-          </div>
+          <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">Hi <strong>${task.assignedTo.name}</strong>,</p>
+          <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">The admin has reviewed your task and requested some changes.</p>
+          <p style="margin:0 0 10px;color:#92400e;font-size:14px;line-height:1.75;"><strong>Task:</strong> ${task.title}</p>
+          <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;"><strong>Admin Feedback:</strong> ${message}</p>
+          <p style="margin:0;color:#374151;font-size:14px;line-height:1.75;">Please review the feedback and make the necessary changes in your dashboard.</p>
         `
       ))
       .then((emailResult) => {

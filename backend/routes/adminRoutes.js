@@ -95,6 +95,7 @@ router.post(
 	verifyAdmin,
 	upload.fields([
 		{ name: 'welcomeLetter', maxCount: 1 },
+		{ name: 'smsProgramEnrollmentLetter', maxCount: 1 },
 		{ name: 'offerLetter', maxCount: 1 },
 		{ name: 'paymentReceipt', maxCount: 1 }
 	]),

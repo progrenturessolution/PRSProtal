@@ -15,6 +15,8 @@ function GroupManagement() {
   const [groups, setGroups] = useState([]);
   const [students, setStudents] = useState([]);
   const [form, setForm] = useState(defaultForm);
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [detailsGroup, setDetailsGroup] = useState(null);
@@ -46,6 +48,26 @@ function GroupManagement() {
     if (form.studentType === "All") return students;
     return students.filter((item) => item.studentType === form.studentType);
   }, [students, form.studentType]);
+
+  const visibleStudents = useMemo(() => {
+    const query = studentSearchQuery.trim().toLowerCase();
+    if (!query) return filteredStudents;
+    const matches = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .includes(query);
+
+    return filteredStudents.filter((item) => {
+      return (
+        matches(item.name) ||
+        matches(item.email) ||
+        matches(item.internId) ||
+        matches(item.studentId) ||
+        matches(item.mobile) ||
+        matches(item.studentType)
+      );
+    });
+  }, [filteredStudents, studentSearchQuery]);
 
   const handleInput = (e) => {
     const { name, value } = e.target;
@@ -147,7 +169,12 @@ function GroupManagement() {
   const selectAllFilteredStudents = () => {
     setForm((prev) => ({
       ...prev,
-      selectedStudents: [...new Set([...prev.selectedStudents, ...filteredStudents.map((item) => item._id)])],
+      selectedStudents: [
+        ...new Set([
+          ...prev.selectedStudents,
+          ...visibleStudents.map((item) => item._id),
+        ]),
+      ],
     }));
   };
 
@@ -217,27 +244,57 @@ function GroupManagement() {
                   <button type="button" className="gm-link-btn" onClick={clearSelectedStudents}>Clear</button>
                 </div>
               </div>
-              <div className="gm-students-box">
-                {filteredStudents.length === 0 ? (
-                  <div className="gm-empty-inline">No students found for selected type</div>
-                ) : (
-                  filteredStudents.map((student) => (
-                    <button
-                      key={student._id}
-                      type="button"
-                      className={`gm-student-row ${form.selectedStudents.includes(student._id) ? "is-selected" : ""}`}
-                      onClick={() => toggleStudentSelection(student._id)}
-                      aria-pressed={form.selectedStudents.includes(student._id)}
-                    >
-                      <span className="gm-student-content">
-                        <strong>{student.name}</strong>
-                        <small>{student.internId}</small>
-                        <span className="gm-type-chip">{student.studentType}</span>
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
+              <button
+                type="button"
+                className="gm-students-trigger"
+                onClick={() => setIsStudentDropdownOpen((prev) => !prev)}
+                aria-expanded={isStudentDropdownOpen}
+              >
+                <span>
+                  {form.selectedStudents.length > 0
+                    ? `${form.selectedStudents.length} students selected`
+                    : "Select students"}
+                </span>
+                <span className={`gm-trigger-arrow ${isStudentDropdownOpen ? "is-open" : ""}`}>▾</span>
+              </button>
+
+              {isStudentDropdownOpen && (
+                <div className="gm-students-dropdown">
+                  <input
+                    type="text"
+                    className="gm-student-search"
+                    placeholder="Search by name, email, ID, or type..."
+                    value={studentSearchQuery}
+                    onChange={(e) => setStudentSearchQuery(e.target.value)}
+                  />
+                  <div className="gm-students-box">
+                    {visibleStudents.length === 0 ? (
+                      <div className="gm-empty-inline">No students found for selected filters</div>
+                    ) : (
+                      visibleStudents.map((student) => {
+                        const selected = form.selectedStudents.includes(student._id);
+                        return (
+                          <label
+                            key={student._id}
+                            className={`gm-student-check-row ${selected ? "is-selected" : ""}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleStudentSelection(student._id)}
+                            />
+                            <span className="gm-student-content">
+                              <strong>{student.name}</strong>
+                              <small>{student.email} • {student.internId}</small>
+                              <span className="gm-type-chip">{student.studentType}</span>
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -259,43 +316,35 @@ function GroupManagement() {
         {loading ? (
           <div className="gm-loading">Loading groups...</div>
         ) : (
-          <div className="gm-table-wrap">
-            <table className="premium-table gm-table">
-              <thead>
-                <tr>
-                  <th>Group Number</th>
-                  <th>Group Name</th>
-                  <th>Description</th>
-                  <th>Student Type</th>
-                  <th>Assigned Employees</th>
-                  <th>Students</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.length === 0 ? (
-                  <tr><td colSpan={7} style={{ textAlign: "center" }}>No groups created</td></tr>
-                ) : (
-                  groups.map((group) => (
-                    <tr key={group._id}>
-                      <td>{group.groupNumber}</td>
-                      <td>{group.groupName}</td>
-                      <td>{group.groupDescription || "-"}</td>
-                      <td>{group.studentType}</td>
-                      <td>{(group.assignedEmployees || []).join(", ") || "-"}</td>
-                      <td>{(group.students || []).length}</td>
-                      <td>
-                        <div className="gm-row-actions">
-                          <button className="gm-btn gm-btn-sky" onClick={() => openDetails(group._id)}>View</button>
-                          <button className="gm-btn gm-btn-blue" onClick={() => editGroup(group)}>Edit</button>
-                          <button className="gm-btn gm-btn-danger" onClick={() => removeGroup(group._id)}>Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          <div className="gm-group-list">
+            {groups.length === 0 ? (
+              <div className="gm-empty-inline" style={{ textAlign: "center" }}>
+                No groups created
+              </div>
+            ) : (
+              groups.map((group) => (
+                <div key={group._id} className="gm-group-row">
+                  <div className="gm-group-main">
+                    <div className="gm-group-title-row">
+                      <strong>{group.groupName}</strong>
+                      <span className="gm-type-chip">{group.studentType}</span>
+                    </div>
+                    <div className="gm-group-meta">
+                      <span>Group No: {group.groupNumber || "-"}</span>
+                      <span>Students: {(group.students || []).length}</span>
+                    </div>
+                    <div className="gm-group-desc">
+                      {group.groupDescription || "No description"}
+                    </div>
+                  </div>
+                  <div className="gm-group-action">
+                    <button className="gm-btn gm-btn-primary" onClick={() => openDetails(group._id)}>
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
@@ -309,8 +358,10 @@ function GroupManagement() {
             </div>
             <div className="gm-modal-body">
               <p><strong>Group Number:</strong> {detailsGroup.groupNumber}</p>
+              <p><strong>Group Name:</strong> {detailsGroup.groupName}</p>
               <p><strong>Description:</strong> {detailsGroup.groupDescription || "-"}</p>
               <p><strong>Student Type:</strong> {detailsGroup.studentType}</p>
+              <p><strong>Total Students:</strong> {(detailsGroup.students || []).length}</p>
               <p><strong>Assigned Employees:</strong> {(detailsGroup.assignedEmployees || []).join(", ") || "-"}</p>
 
               <h3 style={{ marginTop: "14px" }}>Student Details</h3>
