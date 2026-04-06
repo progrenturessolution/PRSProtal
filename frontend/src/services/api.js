@@ -23,7 +23,12 @@ api.interceptors.request.use(
     }
     // Let axios auto-set Content-Type for FormData (multipart/form-data with boundary)
     if (config.data instanceof FormData) {
+      if (typeof config.headers?.set === "function") {
+        config.headers.set("Content-Type", undefined);
+        config.headers.set("content-type", undefined);
+      }
       delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
     }
     return config;
   },
@@ -180,7 +185,7 @@ export const representativeAPI = {
 
 // Admin representative management APIs (added to adminAPI)
 export const adminRepAPI = {
-  addRepresentative: (data) => api.post("/admin/add-representative", data),
+  addRepresentative: (data) => api.post("/admin/add-representative", data, { timeout: 60000 }),
   getAllRepresentatives: (params) => api.get("/admin/representatives", { params }),
   getRepresentativeDetails: (id) => api.get(`/admin/representatives/${id}/details`),
   deleteRepresentative: (id) => api.delete(`/admin/representative/${id}`),
