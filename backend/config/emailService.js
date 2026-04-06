@@ -155,7 +155,8 @@ const sendMailWithRetry = async (mailOptions) => {
 
         console.error(
           `❌ Email send attempt ${attempt} via transport ${transporterIndex + 1}/${transporterCandidates.length} failed for ${mailOptions?.to}:`,
-          error.message
+          error.message,
+          `(Code: ${error.code}, ResponseCode: ${error.responseCode})`
         );
 
         if (!retryable || !isLastTransporter) {
@@ -192,8 +193,9 @@ if (emailAuth.user && emailAuth.pass) {
 // Send welcome email to new intern
 exports.sendInternCredentials = async (internName, internEmail, internId, password) => {
   try {
+    console.log(`🚀 [sendInternCredentials] Starting email send to ${internEmail} for intern ${internId}`);
     const mailOptions = {
-      from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
+      from: `"${PRS_COMPANY_NAME}" <${emailAuth.user}>`,
       to: internEmail,
       subject: 'Your PRS Account Credentials – PRS Portal',
       text: `Dear ${internName},
@@ -253,8 +255,9 @@ exports.sendRepresentativeCredentials = async ({
   password
 }) => {
   try {
+    console.log(`🚀 [sendRepresentativeCredentials] Starting email send to ${repEmail}`);
     const mailOptions = {
-      from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
+      from: `"${PRS_COMPANY_NAME}" <${emailAuth.user}>`,
       to: repEmail,
       subject: 'Your PRS Account Credentials – PRS Portal',
       text: `Dear ${repName},
@@ -305,8 +308,9 @@ exports.sendTrainerCredentials = async ({
   password
 }) => {
   try {
+    console.log(`🚀 [sendTrainerCredentials] Starting email send to ${trainerEmail}`);
     const mailOptions = {
-      from: `"${PRS_COMPANY_NAME}" <${process.env.EMAIL_USER}>`,
+      from: `"${PRS_COMPANY_NAME}" <${emailAuth.user}>`,
       to: trainerEmail,
       subject: 'Your PRS Account Credentials – PRS Portal',
       text: `Dear ${trainerName},
@@ -382,7 +386,7 @@ exports.sendCertificateAssignmentEmail = async ({
       : [];
 
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to: internEmail,
       subject: 'Certificate Assignment Notice – PRS Portal',
       text: `Dear ${internName},
@@ -466,7 +470,7 @@ exports.sendTaskAssignmentEmail = async ({
       : '<p style="margin:10px 0 0;color:#374151;font-size:14px;line-height:1.6;">No additional team members listed.</p>';
 
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to: internEmail,
       subject: 'New Task Assignment – PRS Portal',
       text: `Dear ${internName},
@@ -524,8 +528,9 @@ ${taskDocument ? '\nThe task PDF/document has been attached to this email.' : ''
 // Generic email sender (used for feedback and other notifications)
 exports.sendEmail = async (to, subject, html) => {
   try {
+    console.log(`🚀 [sendEmail] Starting email send to ${to}`);
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to,
       subject,
       html: buildEmailShell({
@@ -561,7 +566,7 @@ exports.sendTrainerAssignmentNotification = async ({
       .join('');
 
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to: trainerEmail,
       subject: 'Students Assigned to You – PRS Portal',
       text: `Dear ${trainerName},
@@ -604,7 +609,7 @@ exports.sendStudentAssignmentNotification = async ({
 }) => {
   try {
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to: studentEmail,
       subject: 'Trainer Assignment – PRS Portal',
       text: `Dear ${studentName},
@@ -671,7 +676,7 @@ exports.sendInterviewResultEmail = async ({
     ];
 
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to: studentEmail,
       subject: `Interview Result - ${interviewType} (Attempt ${attemptNumber}) - PRS Portal`,
       html: buildEmailShell({
@@ -714,7 +719,7 @@ exports.sendAptitudeResultEmail = async ({
     const resultText = result === 'pass' ? 'PASSED' : 'RESULTS PENDING';
 
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to: studentEmail,
       subject: `Aptitude Test Result - Round ${roundNumber} - PRS Portal`,
       html: buildEmailShell({
@@ -761,7 +766,7 @@ exports.sendAssessmentResultEmail = async ({
     const statusText = status === 'pass' ? 'PASSED' : 'NEEDS IMPROVEMENT';
 
     const mailOptions = {
-      from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
+      from: `"Team Progrentures" <${emailAuth.user}>`,
       to: studentEmail,
       subject: `Assessment Result - ${assessmentType} - PRS Portal`,
       html: buildEmailShell({
