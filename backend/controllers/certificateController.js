@@ -55,21 +55,33 @@ const assignCertificates = async (req, res) => {
 
     const created = await Certificate.insertMany(docs);
 
-    let emailSent = false;
+    let emailQueued = false;
     let emailError = null;
     if (student.email) {
-      const emailResult = await sendCertificateAssignmentEmail({
-        internName: student.name,
-        internEmail: student.email,
-        certificateNames: created.map((cert) => cert.name),
-        expiresAt,
-        certificateFiles: created.map((cert) => ({
-          filename: cert.filename,
-          filepath: cert.filepath
+      emailQueued = true;
+
+      Promise.resolve()
+        .then(() => sendCertificateAssignmentEmail({
+          internName: student.name,
+          internEmail: student.email,
+          certificateNames: created.map((cert) => cert.name),
+          expiresAt,
+          certificateFiles: created.map((cert) => ({
+            filename: cert.filename,
+            filepath: cert.filepath
+          }))
         }))
-      });
-      emailSent = !!emailResult.success;
-      emailError = emailResult.success ? null : emailResult.error;
+        .then((emailResult) => {
+          if (!emailResult?.success) {
+            console.error(
+              `Certificate notification failed for student ${student._id}:`,
+              emailResult?.error || 'Unknown email error'
+            );
+          }
+        })
+        .catch((emailError) => {
+          console.error(`Certificate notification error for student ${student._id}:`, emailError);
+        });
     } else {
       emailError = 'Student email not found';
       console.error(`Certificate notification skipped: no email for student ${student._id}`);
@@ -79,7 +91,7 @@ const assignCertificates = async (req, res) => {
       success: true,
       message: `${created.length} certificate(s) assigned successfully`,
       certificates: created,
-      emailSent,
+      emailQueued,
       emailError
     });
   } catch (err) {

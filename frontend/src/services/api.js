@@ -110,7 +110,7 @@ export const adminAPI = {
 
   // Assigned Certificates (5-day expiry)
   assignCertificates: (formData) =>
-    api.post("/admin/certificates/assign", formData),
+    api.post("/admin/certificates/assign", formData, { timeout: 60000 }),
   getCertificates: () => api.get("/admin/certificates"),
   deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`),
 };
