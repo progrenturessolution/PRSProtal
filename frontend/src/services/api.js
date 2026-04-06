@@ -49,7 +49,7 @@ api.interceptors.response.use(
     const shouldRetryOnce =
       isAuthRequest &&
       !originalRequest.__isRetryRequest &&
-      (!error.response || error.code === "ECONNABORTED" || isRetryableStatus);
+      isRetryableStatus;
 
     if (shouldRetryOnce) {
       originalRequest.__isRetryRequest = true;
@@ -62,9 +62,9 @@ api.interceptors.response.use(
 
 // Authentication APIs
 export const authAPI = {
-  adminLogin: (credentials) => api.post("/auth/admin-login", credentials),
-  internLogin: (credentials) => api.post("/auth/intern-login", credentials),
-  trainerLogin: (credentials) => api.post("/auth/trainer-login", credentials),
+  adminLogin: (credentials) => api.post("/auth/admin-login", credentials, { timeout: 60000 }),
+  internLogin: (credentials) => api.post("/auth/intern-login", credentials, { timeout: 60000 }),
+  trainerLogin: (credentials) => api.post("/auth/trainer-login", credentials, { timeout: 60000 }),
 };
 
 // Admin APIs
@@ -174,7 +174,7 @@ export const internAPI = {
 
 // Representative APIs
 export const representativeAPI = {
-  login: (credentials) => api.post("/auth/representative-login", credentials),
+  login: (credentials) => api.post("/auth/representative-login", credentials, { timeout: 60000 }),
   getProfile: () => api.get("/representative/profile"),
   updateProfile: (data) => api.patch("/representative/profile", data),
   addStudent: (data) => api.post("/representative/students", data),
