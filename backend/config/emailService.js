@@ -165,12 +165,14 @@ const sendMailWithRetry = async (mailOptions) => {
 };
 
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter.verify((error) => {
-    if (error) {
-      console.error('❌ SMTP verify failed:', error.message);
-      return;
-    }
-    console.log('✅ SMTP server is ready to accept emails');
+  transporterCandidates.forEach((candidate, index) => {
+    candidate.verify((error) => {
+      if (error) {
+        console.error(`❌ SMTP verify failed for transport ${index + 1}:`, error.message);
+        return;
+      }
+      console.log(`✅ SMTP transport ${index + 1} is ready to accept emails`);
+    });
   });
 }
 
