@@ -15,7 +15,10 @@ const pickEnv = (...keys) => {
 const smtpHost = pickEnv('SMTP_HOST', 'EMAIL_HOST', 'MAIL_HOST') || 'smtp.gmail.com';
 const smtpPort = Number(pickEnv('SMTP_PORT', 'EMAIL_PORT', 'MAIL_PORT') || 587);
 const smtpSecure = String(pickEnv('SMTP_SECURE', 'EMAIL_SECURE', 'MAIL_SECURE') || 'false').toLowerCase() === 'true';
-const smtpPoolEnabled = String(pickEnv('SMTP_POOL', 'EMAIL_POOL', 'MAIL_POOL') || 'true').toLowerCase() !== 'false';
+const smtpPoolEnabled = String(
+  pickEnv('SMTP_POOL', 'EMAIL_POOL', 'MAIL_POOL')
+  || (process.env.NODE_ENV === 'production' ? 'false' : 'true')
+).toLowerCase() !== 'false';
 const smtpMaxConnections = Number(pickEnv('SMTP_MAX_CONNECTIONS', 'EMAIL_MAX_CONNECTIONS') || 5);
 const smtpMaxMessages = Number(pickEnv('SMTP_MAX_MESSAGES', 'EMAIL_MAX_MESSAGES') || 100);
 const smtpConnectionTimeout = Number(pickEnv('SMTP_CONNECTION_TIMEOUT', 'EMAIL_CONNECTION_TIMEOUT') || 30000);
