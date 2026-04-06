@@ -563,717 +563,110 @@ function InternshipManagement({ onAddStudentClick }) {
       {/* Student Details Modal */}
       {selectedStudent && (
         <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1100,
+          className="profile-modal-overlay"
+          onClick={() => {
+            setSelectedStudent(null);
+            setIsEditing(false);
           }}
-          onClick={() => setSelectedStudent(null)}
         >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "16px",
-              minWidth: "400px",
-              maxWidth: "650px",
-              width: "90%",
-              maxHeight: "85vh",
-              overflow: "hidden",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header with Gradient */}
-            <div
-              style={{
-                background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-                padding: "24px",
-                color: "white",
-                position: "relative",
-              }}
-            >
+          <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-header">
               <button
-                onClick={() => setSelectedStudent(null)}
-                style={{
-                  position: "absolute",
-                  top: "16px",
-                  right: "16px",
-                  border: "none",
-                  background: "rgba(255,255,255,0.2)",
-                  color: "white",
-                  width: "32px",
-                  height: "32px",
-                  borderRadius: "50%",
-                  cursor: "pointer",
-                  fontSize: "18px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.2s",
+                className="profile-close-btn"
+                onClick={() => {
+                  setSelectedStudent(null);
+                  setIsEditing(false);
                 }}
-                onMouseEnter={(e) =>
-                  (e.target.style.background = "rgba(255,255,255,0.3)")
-                }
-                onMouseLeave={(e) =>
-                  (e.target.style.background = "rgba(255,255,255,0.2)")
-                }
               >
-                ✕
+                ×
               </button>
-              <h2
-                style={{
-                  margin: "0 0 8px 0",
-                  fontSize: "24px",
-                  fontWeight: "600",
-                }}
-              >
-                {selectedStudent.name}
-              </h2>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "16px",
-                  fontSize: "14px",
-                  opacity: 0.95,
-                }}
-              >
-                <span>PIID: {selectedStudent.internId}</span>
-                <span>•</span>
-                <span>Type: {selectedStudent.studentType}</span>
+
+              <div className="profile-avatar">
+                {String(selectedStudent.name || "S")
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join("")
+                  .toUpperCase()}
+              </div>
+              <h2 className="profile-name">{selectedStudent.name}</h2>
+              <div className="profile-badges">
+                <span className="profile-badge">PIID: {selectedStudent.internId || "-"}</span>
+                <span className="profile-badge">{selectedStudent.studentType || "Internship"}</span>
+                <span
+                  className={`profile-badge ${selectedStudent.status?.toLowerCase() === "active" ? "status-active" : "status-inactive"}`}
+                >
+                  {selectedStudent.status || "Active"}
+                </span>
               </div>
             </div>
 
-            {/* Content */}
-            <div
-              style={{
-                padding: "24px",
-                maxHeight: "calc(85vh - 120px)",
-                overflowY: "auto",
-              }}
-            >
-              {/* Contact Information */}
-              <div style={{ marginBottom: "24px" }}>
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#1f2937",
-                    marginBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
+            <div className="profile-body">
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
                   Contact Information
                 </h3>
-                <div
-                  style={{
-                    background: "#f9fafb",
-                    padding: "16px",
-                    borderRadius: "8px",
-                    display: "grid",
-                    gap: "10px",
-                  }}
-                >
-                  {!isEditing ? (
-                    <>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Name
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.name}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Email
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.email}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          PIID
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.internId}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Mobile
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.mobile}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Name
-                        </label>
-                        <input
-                          type="text"
-                          name="name"
-                          value={editForm.name}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          value={editForm.email}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Mobile
-                        </label>
-                        <input
-                          type="tel"
-                          name="mobile"
-                          value={editForm.mobile}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
+                {!isEditing ? (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Name</label><div className="field-value">{selectedStudent.name || "-"}</div></div>
+                    <div className="profile-field"><label>Email</label><div className="field-value">{selectedStudent.email || "-"}</div></div>
+                    <div className="profile-field"><label>PIID</label><div className="field-value">{selectedStudent.internId || "-"}</div></div>
+                    <div className="profile-field"><label>Mobile</label><div className="field-value">{selectedStudent.mobile || "-"}</div></div>
+                    <div className="profile-field"><label>Added By</label><div className="field-value">{selectedStudent.addedByRepresentative?.name || "Admin"}</div></div>
+                    <div className="profile-field"><label>Registered On</label><div className="field-value">{selectedStudent.createdAt ? new Date(selectedStudent.createdAt).toLocaleDateString("en-IN") : "-"}</div></div>
+                  </div>
+                ) : (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Name</label><input type="text" name="name" value={editForm.name} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Email</label><input type="email" name="email" value={editForm.email} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Mobile</label><input type="tel" name="mobile" value={editForm.mobile} onChange={handleInputChange} /></div>
+                  </div>
+                )}
               </div>
 
-              {/* Internship Details */}
-              <div style={{ marginBottom: "24px" }}>
-                <h3
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#1f2937",
-                    marginBottom: "12px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
                   Internship Details
                 </h3>
-                <div
-                  style={{
-                    background: "#f9fafb",
-                    padding: "16px",
-                    borderRadius: "8px",
-                    display: "grid",
-                    gap: "10px",
-                  }}
-                >
-                  {!isEditing ? (
-                    <>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Domain
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.domain || "Not specified"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Duration
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.duration || "Not specified"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          College Name
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.collegeName || "Not specified"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Branch
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.branch || "Not specified"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Year of Study
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.yearOfStudy || "Not specified"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Joining Date
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color: "#111827",
-                          }}
-                        >
-                          {selectedStudent.joiningDate
-                            ? new Date(
-                                selectedStudent.joiningDate,
-                              ).toLocaleDateString()
-                            : "Not specified"}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span style={{ color: "#6b7280", fontSize: "14px" }}>
-                          Status
-                        </span>
-                        <span
-                          style={{
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            color:
-                              selectedStudent.status?.toLowerCase() === "active"
-                                ? "#059669"
-                                : "#d97706",
-                            background:
-                              selectedStudent.status?.toLowerCase() === "active"
-                                ? "#d1fae5"
-                                : "#fef3c7",
-                            padding: "4px 12px",
-                            borderRadius: "12px",
-                          }}
-                        >
-                          {selectedStudent.status || "Active"}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Domain
-                        </label>
-                        <input
-                          type="text"
-                          name="domain"
-                          value={editForm.domain}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Duration
-                        </label>
-                        <input
-                          type="text"
-                          name="duration"
-                          value={editForm.duration}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          College Name
-                        </label>
-                        <input
-                          type="text"
-                          name="collegeName"
-                          value={editForm.collegeName}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Branch
-                        </label>
-                        <input
-                          type="text"
-                          name="branch"
-                          value={editForm.branch}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Year of Study
-                        </label>
-                        <input
-                          type="text"
-                          name="yearOfStudy"
-                          value={editForm.yearOfStudy}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Joining Date
-                        </label>
-                        <input
-                          type="date"
-                          name="joiningDate"
-                          value={editForm.joiningDate}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Status
-                        </label>
-                        <select
-                          name="status"
-                          value={editForm.status}
-                          onChange={handleInputChange}
-                          style={{
-                            width: "100%",
-                            padding: "8px",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                          }}
-                        >
-                          <option value="active">Active</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
-                </div>
+                {!isEditing ? (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Domain</label><div className="field-value">{selectedStudent.domain || "Not specified"}</div></div>
+                    <div className="profile-field"><label>Duration</label><div className="field-value">{selectedStudent.duration || "Not specified"}</div></div>
+                    <div className="profile-field"><label>College Name</label><div className="field-value">{selectedStudent.collegeName || "Not specified"}</div></div>
+                    <div className="profile-field"><label>Branch</label><div className="field-value">{selectedStudent.branch || "Not specified"}</div></div>
+                    <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || "Not specified"}</div></div>
+                    <div className="profile-field"><label>Joining Date</label><div className="field-value">{selectedStudent.joiningDate ? new Date(selectedStudent.joiningDate).toLocaleDateString("en-IN") : "Not specified"}</div></div>
+                    <div className="profile-field"><label>Status</label><div className="field-value">{selectedStudent.status || "Active"}</div></div>
+                  </div>
+                ) : (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Domain</label><input type="text" name="domain" value={editForm.domain} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Duration</label><input type="text" name="duration" value={editForm.duration} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>College Name</label><input type="text" name="collegeName" value={editForm.collegeName} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Branch</label><input type="text" name="branch" value={editForm.branch} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Year of Study</label><input type="text" name="yearOfStudy" value={editForm.yearOfStudy} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Joining Date</label><input type="date" name="joiningDate" value={editForm.joiningDate} onChange={handleInputChange} /></div>
+                    <div className="profile-field">
+                      <label>Status</label>
+                      <select name="status" value={editForm.status} onChange={handleInputChange}>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Action Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  justifyContent: "flex-end",
-                  borderTop: "1px solid #e5e7eb",
-                  paddingTop: "16px",
-                }}
-              >
+              <div className="profile-actions">
                 {!isEditing ? (
-                  <button
-                    onClick={handleEditClick}
-                    style={{
-                      padding: "10px 24px",
-                      background:
-                        "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      transition: "transform 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.transform = "scale(1.02)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.target.style.transform = "scale(1)")
-                    }
-                  >
-                    Edit Details
-                  </button>
+                  <button onClick={handleEditClick} className="profile-btn profile-btn-primary">Edit Profile</button>
                 ) : (
                   <>
-                    <button
-                      onClick={handleCancelEdit}
-                      style={{
-                        padding: "10px 24px",
-                        background: "#e5e7eb",
-                        color: "#374151",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleUpdateStudent}
-                      style={{
-                        padding: "10px 24px",
-                        background:
-                          "linear-gradient(135deg, #059669 0%, #10b981 100%)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        transition: "transform 0.2s",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.target.style.transform = "scale(1.02)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.target.style.transform = "scale(1)")
-                      }
-                    >
-                      Save Changes
-                    </button>
+                    <button onClick={handleCancelEdit} className="profile-btn profile-btn-ghost">Cancel</button>
+                    <button onClick={handleUpdateStudent} className="profile-btn profile-btn-primary">Save Changes</button>
                   </>
                 )}
               </div>

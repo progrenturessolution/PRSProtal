@@ -205,6 +205,7 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
     setSelectedStudent(student);
     // initialize edit form with allowed fields
     setEditForm({
+      internId: student.internId || "",
       name: student.name || "",
       email: student.email || "",
       mobile: student.mobile || "",
@@ -212,18 +213,43 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
       currentDesignation: student.currentDesignation || "",
       domain: student.domain || "",
       duration: student.duration || "",
+      collegeName: student.collegeName || "",
+      branch: student.branch || "",
+      yearOfStudy: student.yearOfStudy || "",
+      suggestedDomain: student.suggestedDomain || "",
+      currentQualification: student.currentQualification || "",
+      instituteName: student.instituteName || "",
+      instituteLocation: student.instituteLocation || "",
+      enrolmentDate: student.enrolmentDate
+        ? new Date(student.enrolmentDate).toISOString().slice(0, 10)
+        : "",
+      enrolBatchMonth: student.enrolBatchMonth || "",
+      totalFees: student.totalFees || "",
       joiningDate: student.joiningDate
         ? new Date(student.joiningDate).toISOString().slice(0, 10)
         : "",
       endingDate: student.endingDate
         ? new Date(student.endingDate).toISOString().slice(0, 10)
         : "",
+      gender: student.gender || "",
       paymentDoneBy: student.paymentDoneBy || "",
       transactionId: student.transactionId || "",
       dateOfPayment: student.dateOfPayment
         ? new Date(student.dateOfPayment).toISOString().slice(0, 10)
         : "",
       paymentAmount: student.paymentAmount || "",
+      firstPaymentAmount: student.firstPaymentAmount || "",
+      firstPaymentDate: student.firstPaymentDate
+        ? new Date(student.firstPaymentDate).toISOString().slice(0, 10)
+        : "",
+      secondPaymentAmount: student.secondPaymentAmount || "",
+      secondPaymentDate: student.secondPaymentDate
+        ? new Date(student.secondPaymentDate).toISOString().slice(0, 10)
+        : "",
+      finalPaymentAmount: student.finalPaymentAmount || "",
+      finalPaymentDate: student.finalPaymentDate
+        ? new Date(student.finalPaymentDate).toISOString().slice(0, 10)
+        : "",
       completedFees: student.completedFees || "",
       pendingFees: student.pendingFees || "",
       lastPaymentDate: student.lastPaymentDate
@@ -383,6 +409,9 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
       setUploadingCert(false);
     }
   };
+
+  const formatDateValue = (value) =>
+    value ? new Date(value).toLocaleDateString() : "Not set";
 
   const toggleMenu = (id) => {
     setOpenMenuId(openMenuId === id ? null : id);
@@ -850,451 +879,220 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
         )}
       </div>
 
-      {/* View Profile Modal - Enhanced */}
+      {/* View Profile Modal */}
       {showProfileModal &&
         selectedStudent &&
         createPortal(
           <div className="profile-modal-overlay">
             <div className="profile-modal-container">
-              <div className="profile-header">
-                <button
-                  className="profile-close-btn"
-                  onClick={() => setShowProfileModal(false)}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-
-                <div>
-                  <div className="profile-avatar">
-                    {selectedStudent.name.charAt(0).toUpperCase()}
-                  </div>
-                  <h2 className="profile-name">{selectedStudent.name}</h2>
-                  <div className="profile-badges">
-                    <span className="profile-badge">
-                      PIID: {selectedStudent.internId}
-                    </span>
-                    <span
-                      className={`profile-badge ${
-                        (selectedStudent.status || "").toLowerCase() ===
-                        "active"
-                          ? "status-active"
-                          : "status-inactive"
-                      }`}
-                    >
-                      {selectedStudent.status || "Active"}
-                    </span>
-                    <span className="profile-badge">
-                      {selectedStudent.studentType}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Content Body */}
               <div className="profile-body">
-                {/* Contact Information */}
-                <div className="profile-section">
-                  <h3 className="profile-section-title">
-                    <span className="profile-section-bar"></span>
-                    Contact Information
-                  </h3>
-                  <div className="profile-info-grid">
-                    <div className="profile-info-card">
-                      <div className="profile-info-label">Email Address</div>
-                      <div className="profile-info-value">
-                        {selectedStudent.email}
-                      </div>
-                    </div>
-                    <div className="profile-info-card">
-                      <div className="profile-info-label">Mobile Number</div>
-                      <div className="profile-info-value">
-                        {selectedStudent.mobile || "Not provided"}
-                      </div>
-                    </div>
-                    <div className="profile-info-card">
-                      <div className="profile-info-label">PIID</div>
-                      <div className="profile-info-value">
-                        {selectedStudent.internId}
-                      </div>
-                    </div>
-                    <div className="profile-info-card">
-                      <div className="profile-info-label">Registered On</div>
-                      <div className="profile-info-value">
-                        {selectedStudent.createdAt
-                          ? new Date(
-                              selectedStudent.createdAt,
-                            ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })
-                          : "—"}
-                      </div>
-                    </div>
+                <div className="premium-page-header" style={{ marginBottom: "16px" }}>
+                  <div className="header-left">
+                    <h1 style={{ marginBottom: "4px" }}>Student Profile</h1>
+                    <p className="header-subtitle">{selectedStudent.name}</p>
+                  </div>
+                  <div className="header-right">
+                    <button
+                      className="premium-btn-secondary"
+                      onClick={() => setShowProfileModal(false)}
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
 
-                {/* Assigned Trainer */}
-                {selectedStudent.assignedTrainer && (
-                  <div className="profile-section">
-                    <h3 className="profile-section-title">
-                      <span className="profile-section-bar"></span>
-                      Assigned Trainer
-                    </h3>
-                    <div className="profile-info-grid">
-                      <div className="profile-info-card">
-                        <div className="profile-info-label">Trainer Name</div>
-                        <div
-                          className="profile-info-value"
-                          style={{ color: "#059669", fontWeight: "700" }}
-                        >
-                          {selectedStudent.assignedTrainer.name ||
-                            selectedStudent.assignedTrainer}
-                        </div>
-                      </div>
-                      {selectedStudent.assignedTrainer.email && (
-                        <div className="profile-info-card">
-                          <div className="profile-info-label">
-                            Trainer Email
-                          </div>
-                          <div className="profile-info-value">
-                            {selectedStudent.assignedTrainer.email}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                <div className="premium-card" style={{ marginBottom: "16px" }}>
+                  <div className="premium-card-header">
+                    <h2>Personal Information</h2>
                   </div>
-                )}
 
-                {/* Internship Details */}
-                {selectedStudent.studentType === "Internship" && (
-                  <div className="profile-section">
-                    <h3 className="profile-section-title">
-                      <span className="profile-section-bar"></span>
-                      Internship Details
-                    </h3>
-                    <div className="profile-details-grid">
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Domain
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.domain || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Duration
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.duration || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Joining Date
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.joiningDate
-                            ? new Date(
-                                selectedStudent.joiningDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : "Not set"}
-                        </div>
-                      </div>
-                        <div className="profile-detail-card type-domain">
-                          <div className="profile-detail-label color-indigo">
-                            College Name
-                          </div>
-                          <div className="profile-detail-value">
-                            {selectedStudent.collegeName || "Not specified"}
-                          </div>
-                        </div>
-                        <div className="profile-detail-card type-domain">
-                          <div className="profile-detail-label color-indigo">
-                            Branch
-                          </div>
-                          <div className="profile-detail-value">
-                            {selectedStudent.branch || "Not specified"}
-                          </div>
-                        </div>
-                        <div className="profile-detail-card type-domain">
-                          <div className="profile-detail-label color-indigo">
-                            Year of Study
-                          </div>
-                          <div className="profile-detail-value">
-                            {selectedStudent.yearOfStudy || "Not specified"}
-                          </div>
-                        </div>
-                      <div className="profile-detail-card type-warning">
-                        <div className="profile-detail-label color-warning">
-                          Ending Date
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.endingDate
-                            ? new Date(
-                                selectedStudent.endingDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : "Not set"}
-                        </div>
+                  <div className="profile-info-grid">
+                    <div className="profile-field">
+                      <label>Full Name</label>
+                      <div className="field-value">{selectedStudent.name || "Not available"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Email Address</label>
+                      <div className="field-value mono-text">{selectedStudent.email || "Not available"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Mobile Number</label>
+                      <div className="field-value mono-text">{selectedStudent.mobile || "Not available"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Student ID</label>
+                      <div className="field-value mono-text">{selectedStudent.internId || "Not available"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Student Type</label>
+                      <div className="field-value">
+                        <span className="badge-neutral">{selectedStudent.studentType || "Not set"}</span>
                       </div>
                     </div>
-                  </div>
-                )}
+                    <div className="profile-field">
+                      <label>Status</label>
+                      <div className="field-value">
+                        <span className="badge-neutral">{selectedStudent.status || "active"}</span>
+                      </div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Current Designation</label>
+                      <div className="field-value">{selectedStudent.currentDesignation || "Not set"}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Registered On</label>
+                      <div className="field-value">{formatDateValue(selectedStudent.createdAt)}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Joining Date</label>
+                      <div className="field-value">{formatDateValue(selectedStudent.joiningDate)}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Ending Date</label>
+                      <div className="field-value">{formatDateValue(selectedStudent.endingDate)}</div>
+                    </div>
+                    <div className="profile-field">
+                      <label>Duration</label>
+                      <div className="field-value">{selectedStudent.duration || "Not set"}</div>
+                    </div>
 
-                {/* SMS Program Details */}
-                {selectedStudent.studentType === "SMS Program" && (
-                  <div className="profile-section">
-                    <h3 className="profile-section-title">
-                      <span className="profile-section-bar"></span>
-                      SMS Program Details
-                    </h3>
-                    <div className="profile-details-grid">
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Suggested Domain
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.suggestedDomain || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Current Qualification
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.currentQualification ||
-                            "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          College/Institute Name
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.instituteName || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Year of Study
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.yearOfStudy || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          College/Institute Location
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.instituteLocation ||
-                            "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Enrolment Date
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.enrolmentDate
-                            ? new Date(
-                                selectedStudent.enrolmentDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })
-                            : "Not set"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Enrol Batch Month
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.enrolBatchMonth || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Total Fees
-                        </div>
-                        <div className="profile-detail-value">
-                          ₹{selectedStudent.totalFees || 0}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          First Payment
-                        </div>
-                        <div className="profile-detail-value">
-                          ₹{selectedStudent.firstPaymentAmount || 0}
-                          {selectedStudent.firstPaymentDate
-                            ? ` on ${new Date(
-                                selectedStudent.firstPaymentDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}`
-                            : ""}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Second Payment
-                        </div>
-                        <div className="profile-detail-value">
-                          ₹{selectedStudent.secondPaymentAmount || 0}
-                          {selectedStudent.secondPaymentDate
-                            ? ` on ${new Date(
-                                selectedStudent.secondPaymentDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}`
-                            : ""}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Final Payment
-                        </div>
-                        <div className="profile-detail-value">
-                          ₹{selectedStudent.finalPaymentAmount || 0}
-                          {selectedStudent.finalPaymentDate
-                            ? ` on ${new Date(
-                                selectedStudent.finalPaymentDate,
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              })}`
-                            : ""}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-pink">
-                        <div className="profile-detail-label color-pink">
-                          Gender
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.gender || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-pink">
-                        <div className="profile-detail-label color-pink">
-                          Current Designation
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.currentDesignation ||
-                            "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Payment Done By
-                        </div>
-                        <div className="profile-detail-value">
-                          {selectedStudent.paymentDoneBy || "Not specified"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-domain">
-                        <div className="profile-detail-label color-indigo">
-                          Transaction ID
-                        </div>
-                        <div
-                          className="profile-detail-value"
-                          style={{ fontFamily: "monospace", fontSize: "13px" }}
-                        >
-                          {selectedStudent.transactionId || "Not provided"}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Payment Amount
-                        </div>
-                        <div className="profile-detail-value">
-                          ₹{selectedStudent.paymentAmount || 0}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-success">
-                        <div className="profile-detail-label color-success">
-                          Completed Fees
-                        </div>
-                        <div className="profile-detail-value">
-                          ₹{selectedStudent.completedFees || 0}
-                        </div>
-                      </div>
-                      <div className="profile-detail-card type-warning">
-                        <div className="profile-detail-label color-warning">
-                          Pending Fees
-                        </div>
-                        <div className="profile-detail-value">
-                          ₹{selectedStudent.pendingFees || 0}
-                        </div>
-                      </div>
-                      {selectedStudent.dateOfPayment && (
-                        <div className="profile-detail-card type-success">
-                          <div className="profile-detail-label color-success">
-                            Date of Payment
-                          </div>
-                          <div className="profile-detail-value">
-                            {new Date(
-                              selectedStudent.dateOfPayment,
-                            ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                    {selectedStudent.assignedTrainer && (
+                      <>
+                        <div className="profile-field">
+                          <label>Assigned Trainer</label>
+                          <div className="field-value">
+                            {selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}
                           </div>
                         </div>
-                      )}
-                      {selectedStudent.lastPaymentDate && (
-                        <div className="profile-detail-card type-warning">
-                          <div className="profile-detail-label color-warning">
-                            Last Payment Date
-                          </div>
-                          <div className="profile-detail-value">
-                            {new Date(
-                              selectedStudent.lastPaymentDate,
-                            ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                        <div className="profile-field">
+                          <label>Trainer Email</label>
+                          <div className="field-value mono-text">
+                            {selectedStudent.assignedTrainer.email || "Not available"}
                           </div>
                         </div>
-                      )}
-                      {selectedStudent.joiningDate && (
-                        <div className="profile-detail-card type-warning">
-                          <div className="profile-detail-label color-warning">
-                            Joining Date
-                          </div>
-                          <div className="profile-detail-value">
-                            {new Date(
-                              selectedStudent.joiningDate,
-                            ).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                      </>
+                    )}
+
+                    {selectedStudent.studentType === "Internship" ? (
+                      <>
+                        <div className="profile-field">
+                          <label>Domain</label>
+                          <div className="field-value">{selectedStudent.domain || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>College Name</label>
+                          <div className="field-value">{selectedStudent.collegeName || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Branch</label>
+                          <div className="field-value">{selectedStudent.branch || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Year of Study</label>
+                          <div className="field-value">{selectedStudent.yearOfStudy || "Not set"}</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="profile-field">
+                          <label>Suggested Domain</label>
+                          <div className="field-value">{selectedStudent.suggestedDomain || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Current Qualification</label>
+                          <div className="field-value">{selectedStudent.currentQualification || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Institute Name</label>
+                          <div className="field-value">{selectedStudent.instituteName || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Institute Location</label>
+                          <div className="field-value">{selectedStudent.instituteLocation || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Enrolment Date</label>
+                          <div className="field-value">{formatDateValue(selectedStudent.enrolmentDate)}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Batch Month</label>
+                          <div className="field-value">{selectedStudent.enrolBatchMonth || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Total Fees</label>
+                          <div className="field-value">{selectedStudent.totalFees || "0"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Completed Fees</label>
+                          <div className="field-value">{selectedStudent.completedFees || "0"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Pending Fees</label>
+                          <div className="field-value">{selectedStudent.pendingFees || "0"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Gender</label>
+                          <div className="field-value">{selectedStudent.gender || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Payment Done By</label>
+                          <div className="field-value">{selectedStudent.paymentDoneBy || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Transaction ID</label>
+                          <div className="field-value mono-text">{selectedStudent.transactionId || "Not set"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Payment Amount</label>
+                          <div className="field-value">{selectedStudent.paymentAmount || "0"}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Date of Payment</label>
+                          <div className="field-value">{formatDateValue(selectedStudent.dateOfPayment)}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Last Payment Date</label>
+                          <div className="field-value">{formatDateValue(selectedStudent.lastPaymentDate)}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>First Payment</label>
+                          <div className="field-value">
+                            {(selectedStudent.firstPaymentAmount || "0") +
+                              (selectedStudent.firstPaymentDate
+                                ? ` on ${formatDateValue(selectedStudent.firstPaymentDate)}`
+                                : "")}
                           </div>
                         </div>
-                      )}
-                    </div>
+                        <div className="profile-field">
+                          <label>Second Payment</label>
+                          <div className="field-value">
+                            {(selectedStudent.secondPaymentAmount || "0") +
+                              (selectedStudent.secondPaymentDate
+                                ? ` on ${formatDateValue(selectedStudent.secondPaymentDate)}`
+                                : "")}
+                          </div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Final Payment</label>
+                          <div className="field-value">
+                            {(selectedStudent.finalPaymentAmount || "0") +
+                              (selectedStudent.finalPaymentDate
+                                ? ` on ${formatDateValue(selectedStudent.finalPaymentDate)}`
+                                : "")}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                )}
+
+                  <div className="info-banner">
+                    <strong>Profile Information</strong>
+                    <p>
+                      Is profile ka layout intern My Profile jaisa rakha gaya hai,
+                      jisme sab main details clearly visible hain.
+                    </p>
+                  </div>
+                </div>
 
                 {/* Documents / Certificates */}
                 <div className="profile-section">
@@ -1475,449 +1273,304 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
 
       {/* Edit Modal */}
       {showEditModal && selectedStudent && editForm && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2000,
-          }}
-        >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              padding: "20px",
-              maxWidth: "600px",
-              width: "95%",
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>Edit Student</h2>
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Profile</h2>
+              <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
+                ✕
+              </button>
+            </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "12px",
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSaveEdit();
               }}
             >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    marginBottom: "6px",
-                  }}
+              <div className="form-group">
+                <label>Student Type</label>
+                <select
+                  value={editForm.studentType}
+                  onChange={(e) => handleEditChange("studentType", e.target.value)}
                 >
-                  Full Name
-                </label>
+                  <option value="Internship">Internship</option>
+                  <option value="SMS Program">SMS Program</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Student ID</label>
+                <input value={editForm.internId} readOnly />
+              </div>
+
+              <div className="form-group">
+                <label>Full Name</label>
                 <input
                   value={editForm.name}
                   onChange={(e) => handleEditChange("name", e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #e5e7eb",
-                  }}
-                />
-              </div>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Email
-                </label>
-                <input
-                  value={editForm.email}
-                  onChange={(e) => handleEditChange("email", e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #e5e7eb",
-                  }}
+                  required
                 />
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Mobile
-                </label>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => handleEditChange("email", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Mobile</label>
                 <input
                   value={editForm.mobile}
                   onChange={(e) => handleEditChange("mobile", e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #e5e7eb",
-                  }}
                 />
               </div>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Current Designation
-                </label>
+
+              <div className="form-group">
+                <label>Current Designation</label>
                 <input
                   value={editForm.currentDesignation}
                   onChange={(e) =>
                     handleEditChange("currentDesignation", e.target.value)
                   }
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #e5e7eb",
-                  }}
                 />
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    marginBottom: "6px",
-                  }}
-                >
-                  Student Type
-                </label>
+              <div className="form-group">
+                <label>Joining Date</label>
                 <input
-                  value={editForm.studentType}
-                  disabled
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    borderRadius: "6px",
-                    border: "1px solid #e5e7eb",
-                    background: "#f8fafc",
-                  }}
+                  type="date"
+                  value={editForm.joiningDate}
+                  onChange={(e) => handleEditChange("joiningDate", e.target.value)}
                 />
               </div>
 
-              {editForm.studentType === "Internship" && (
+              <div className="form-group">
+                <label>Ending Date</label>
+                <input
+                  type="date"
+                  value={editForm.endingDate}
+                  onChange={(e) => handleEditChange("endingDate", e.target.value)}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Duration</label>
+                <input
+                  value={editForm.duration}
+                  onChange={(e) => handleEditChange("duration", e.target.value)}
+                />
+              </div>
+
+              {editForm.studentType === "Internship" ? (
                 <>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Domain
-                    </label>
+                  <div className="form-group">
+                    <label>Domain</label>
                     <input
                       value={editForm.domain}
-                      onChange={(e) =>
-                        handleEditChange("domain", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      onChange={(e) => handleEditChange("domain", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Duration
-                    </label>
+                  <div className="form-group">
+                    <label>College Name</label>
                     <input
-                      value={editForm.duration}
-                      onChange={(e) =>
-                        handleEditChange("duration", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      value={editForm.collegeName}
+                      onChange={(e) => handleEditChange("collegeName", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Joining Date
-                    </label>
+                  <div className="form-group">
+                    <label>Branch</label>
                     <input
-                      type="date"
-                      value={editForm.joiningDate}
-                      onChange={(e) =>
-                        handleEditChange("joiningDate", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      value={editForm.branch}
+                      onChange={(e) => handleEditChange("branch", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Ending Date
-                    </label>
+                  <div className="form-group">
+                    <label>Year of Study</label>
                     <input
-                      type="date"
-                      value={editForm.endingDate}
-                      onChange={(e) =>
-                        handleEditChange("endingDate", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      value={editForm.yearOfStudy}
+                      onChange={(e) => handleEditChange("yearOfStudy", e.target.value)}
                     />
                   </div>
                 </>
-              )}
-
-              {editForm.studentType === "SMS Program" && (
+              ) : (
                 <>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
+                  <div className="form-group">
+                    <label>Suggested Domain</label>
+                    <input
+                      value={editForm.suggestedDomain}
+                      onChange={(e) => handleEditChange("suggestedDomain", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Current Qualification</label>
+                    <input
+                      value={editForm.currentQualification}
+                      onChange={(e) => handleEditChange("currentQualification", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Institute Name</label>
+                    <input
+                      value={editForm.instituteName}
+                      onChange={(e) => handleEditChange("instituteName", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Institute Location</label>
+                    <input
+                      value={editForm.instituteLocation}
+                      onChange={(e) => handleEditChange("instituteLocation", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Enrolment Date</label>
+                    <input
+                      type="date"
+                      value={editForm.enrolmentDate}
+                      onChange={(e) => handleEditChange("enrolmentDate", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Batch Month</label>
+                    <input
+                      type="month"
+                      value={editForm.enrolBatchMonth}
+                      onChange={(e) => handleEditChange("enrolBatchMonth", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Total Fees</label>
+                    <input
+                      value={editForm.totalFees}
+                      onChange={(e) => handleEditChange("totalFees", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Completed Fees</label>
+                    <input
+                      value={editForm.completedFees}
+                      onChange={(e) => handleEditChange("completedFees", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Pending Fees</label>
+                    <input
+                      value={editForm.pendingFees}
+                      onChange={(e) => handleEditChange("pendingFees", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Gender</label>
+                    <select
+                      value={editForm.gender}
+                      onChange={(e) => handleEditChange("gender", e.target.value)}
                     >
-                      Payment Done By
-                    </label>
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Payment Done By</label>
                     <input
                       value={editForm.paymentDoneBy}
-                      onChange={(e) =>
-                        handleEditChange("paymentDoneBy", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      onChange={(e) => handleEditChange("paymentDoneBy", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Transaction ID
-                    </label>
+                  <div className="form-group">
+                    <label>Transaction ID</label>
                     <input
                       value={editForm.transactionId}
-                      onChange={(e) =>
-                        handleEditChange("transactionId", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      onChange={(e) => handleEditChange("transactionId", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Date of Payment
-                    </label>
+                  <div className="form-group">
+                    <label>Date of Payment</label>
                     <input
                       type="date"
                       value={editForm.dateOfPayment}
-                      onChange={(e) =>
-                        handleEditChange("dateOfPayment", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      onChange={(e) => handleEditChange("dateOfPayment", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Payment Amount
-                    </label>
+                  <div className="form-group">
+                    <label>Payment Amount</label>
                     <input
                       value={editForm.paymentAmount}
-                      onChange={(e) =>
-                        handleEditChange("paymentAmount", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      onChange={(e) => handleEditChange("paymentAmount", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Completed Fees
-                    </label>
+                  <div className="form-group">
+                    <label>First Payment Amount</label>
                     <input
-                      value={editForm.completedFees}
-                      onChange={(e) =>
-                        handleEditChange("completedFees", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      value={editForm.firstPaymentAmount}
+                      onChange={(e) => handleEditChange("firstPaymentAmount", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Pending Fees
-                    </label>
+                  <div className="form-group">
+                    <label>First Payment Date</label>
                     <input
-                      value={editForm.pendingFees}
-                      onChange={(e) =>
-                        handleEditChange("pendingFees", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      type="date"
+                      value={editForm.firstPaymentDate}
+                      onChange={(e) => handleEditChange("firstPaymentDate", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "12px",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Last Payment Date
-                    </label>
+                  <div className="form-group">
+                    <label>Second Payment Amount</label>
+                    <input
+                      value={editForm.secondPaymentAmount}
+                      onChange={(e) => handleEditChange("secondPaymentAmount", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Second Payment Date</label>
+                    <input
+                      type="date"
+                      value={editForm.secondPaymentDate}
+                      onChange={(e) => handleEditChange("secondPaymentDate", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Final Payment Amount</label>
+                    <input
+                      value={editForm.finalPaymentAmount}
+                      onChange={(e) => handleEditChange("finalPaymentAmount", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Final Payment Date</label>
+                    <input
+                      type="date"
+                      value={editForm.finalPaymentDate}
+                      onChange={(e) => handleEditChange("finalPaymentDate", e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Last Payment Date</label>
                     <input
                       type="date"
                       value={editForm.lastPaymentDate}
-                      onChange={(e) =>
-                        handleEditChange("lastPaymentDate", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        borderRadius: "6px",
-                        border: "1px solid #e5e7eb",
-                      }}
+                      onChange={(e) => handleEditChange("lastPaymentDate", e.target.value)}
                     />
                   </div>
                 </>
               )}
-            </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "18px" }}>
-              <button
-                onClick={handleSaveEdit}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  background: "#0f172a",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setShowEditModal(false)}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  background: "#ef4444",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@ const RepresentativePayout = require('../models/RepresentativePayout');
 const StudentGroup = require('../models/StudentGroup');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
-const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification } = require('../config/emailService');
+const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification, sendCertificateAssignmentEmail } = require('../config/emailService');
 
 const PASSWORD_SALT_ROUNDS = (() => {
   const defaultRounds = process.env.NODE_ENV === 'production' ? 10 : 4;
@@ -602,6 +602,20 @@ exports.updateIntern = async (req, res) => {
       'collegeName',
       'branch',
       'yearOfStudy',
+      'suggestedDomain',
+      'currentQualification',
+      'instituteName',
+      'instituteLocation',
+      'enrolmentDate',
+      'enrolBatchMonth',
+      'totalFees',
+      'firstPaymentAmount',
+      'firstPaymentDate',
+      'secondPaymentAmount',
+      'secondPaymentDate',
+      'finalPaymentAmount',
+      'finalPaymentDate',
+      'gender',
       'paymentDoneBy',
       'dateOfPayment',
       'transactionId',
@@ -1191,6 +1205,26 @@ exports.getAllJobPostings = async (req, res) => {
 
 // ========== CERTIFICATES & DOCUMENTS ==========
 
+const CERTIFICATE_TYPE_LABELS = {
+  offerLetter: 'Internship Offer Letter',
+  welcomeLetter: 'Welcome Letter',
+  smsProgramEnrollmentLetter: 'SMS Program Enrollment Letter',
+  paymentReceipt: 'Payment Receipt',
+  completionLetter: 'Completion Letter',
+  completionCertificate: 'Completion Certificate',
+  experienceLetter: 'Experience Letter',
+  designationLevel1Foundation: 'Designation Certificate - Level 1 (Foundation)',
+  designationLevel2Competent: 'Designation Certificate - Level 2 (Competent)',
+  designationLevel3Proficient: 'Designation Certificate - Level 3 (Proficient)',
+  designationLevel4Expert: 'Designation Certificate - Level 4 (Expert)',
+  programCompletionCertificate: 'Program Completion Certificate',
+  domainTrainingCourseCompletion: 'Domain Training / Course Completion Certificate',
+  recommendationsLetter: 'Recommendations Letter',
+  appreciationLetter: 'Appreciation Letter',
+  finalDesignationCertificate: 'Final Designation Certificate',
+  representativeDesignationCertificate: 'Representative Designation Certificate'
+};
+
 // Upload document for student
 exports.uploadStudentDocument = async (req, res) => {
   try {
@@ -1219,40 +1253,64 @@ exports.uploadStudentDocument = async (req, res) => {
       uploadedAt: new Date()
     };
 
+    const resolvedType = String(documentType || 'other').trim();
+    const resolvedCertificateName = (certificateName || CERTIFICATE_TYPE_LABELS[resolvedType] || resolvedType || 'Certificate').trim();
+
     // Update specific document type
-    if (documentType === 'offerLetter') {
+    if (resolvedType === 'offerLetter') {
       student.documents = student.documents || {};
       student.documents.offerLetter = docData;
-    } else if (documentType === 'welcomeLetter') {
+    } else if (resolvedType === 'welcomeLetter') {
       student.documents = student.documents || {};
       student.documents.welcomeLetter = docData;
-    } else if (documentType === 'smsProgramEnrollmentLetter') {
+    } else if (resolvedType === 'smsProgramEnrollmentLetter') {
       student.documents = student.documents || {};
       student.documents.smsProgramEnrollmentLetter = docData;
-    } else if (documentType === 'paymentReceipt') {
+    } else if (resolvedType === 'paymentReceipt') {
       student.documents = student.documents || {};
       student.documents.paymentReceipt = docData;
-    } else if (documentType === 'completionCertificate' || documentType === 'completionLetter') {
+    } else if (resolvedType === 'completionCertificate' || resolvedType === 'completionLetter') {
       student.documents = student.documents || {};
       // Keep compatibility with existing UI keys.
       student.documents.completionLetter = docData;
       student.documents.completionCertificate = docData;
-    } else if (documentType === 'experienceLetter') {
+    } else if (resolvedType === 'experienceLetter') {
       student.documents = student.documents || {};
       student.documents.experienceLetter = docData;
     } else {
-      // Other certificates
+      // Store every non-core certificate in otherCertificates so intern dashboard always shows it.
       student.documents = student.documents || {};
       if (!student.documents.otherCertificates) {
         student.documents.otherCertificates = [];
       }
       student.documents.otherCertificates.push({
-        name: certificateName || documentType,
+        name: resolvedCertificateName,
         ...docData
       });
     }
 
     await student.save();
+
+    if (student.email) {
+      Promise.resolve()
+        .then(() => sendCertificateAssignmentEmail({
+          internName: student.name,
+          internEmail: student.email,
+          certificateNames: [resolvedCertificateName],
+          certificateFiles: [{
+            filename: docData.filename,
+            filepath: docData.filepath
+          }]
+        }))
+        .then((emailResult) => {
+          if (!emailResult?.success) {
+            console.error(`Certificate assignment email failed for student ${student._id}:`, emailResult?.error || 'Unknown email error');
+          }
+        })
+        .catch((emailError) => {
+          console.error(`Certificate assignment email error for student ${student._id}:`, emailError);
+        });
+    }
 
     res.status(200).json({
       success: true,

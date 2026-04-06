@@ -5,6 +5,14 @@ require('dotenv').config();
 const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
 const smtpPort = Number(process.env.SMTP_PORT || 587);
 const smtpSecure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+const smtpPoolEnabled = String(process.env.SMTP_POOL || 'true').toLowerCase() !== 'false';
+const smtpMaxConnections = Number(process.env.SMTP_MAX_CONNECTIONS || 5);
+const smtpMaxMessages = Number(process.env.SMTP_MAX_MESSAGES || 100);
+const smtpConnectionTimeout = Number(process.env.SMTP_CONNECTION_TIMEOUT || 30000);
+const smtpGreetingTimeout = Number(process.env.SMTP_GREETING_TIMEOUT || 30000);
+const smtpSocketTimeout = Number(process.env.SMTP_SOCKET_TIMEOUT || 60000);
+const emailMaxRetries = Number(process.env.EMAIL_MAX_RETRIES || 2);
+const emailRetryDelayMs = Number(process.env.EMAIL_RETRY_DELAY_MS || 1500);
 const PRS_LOGIN_URL = 'https://prs-protal.vercel.app/';
 const PRS_COMPANY_NAME = 'Progrentures™ Solution Pvt. Ltd.';
 
@@ -51,6 +59,12 @@ const transporter = nodemailer.createTransport({
   host: smtpHost,
   port: smtpPort,
   secure: smtpSecure, // true for 465, false for STARTTLS (587)
+  pool: smtpPoolEnabled,
+  maxConnections: smtpMaxConnections,
+  maxMessages: smtpMaxMessages,
+  connectionTimeout: smtpConnectionTimeout,
+  greetingTimeout: smtpGreetingTimeout,
+  socketTimeout: smtpSocketTimeout,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s/g, '') : ''
@@ -63,10 +77,66 @@ const transporter = nodemailer.createTransport({
 // Log email configuration status
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   console.log('📧 Email service configured for:', process.env.EMAIL_USER, `via ${smtpHost}:${smtpPort}`);
+  console.log(`📧 SMTP pool: ${smtpPoolEnabled ? 'enabled' : 'disabled'} | maxConnections=${smtpMaxConnections} | retries=${emailMaxRetries}`);
 } else {
   console.log('⚠️ Email credentials not configured in .env file');
   console.log('   EMAIL_USER:', process.env.EMAIL_USER ? 'SET' : 'MISSING');
   console.log('   EMAIL_PASS:', process.env.EMAIL_PASS ? 'SET' : 'MISSING');
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const isRetryableEmailError = (error) => {
+  if (!error) return false;
+  const retryableCodes = new Set([
+    'ETIMEDOUT',
+    'ECONNECTION',
+    'ECONNRESET',
+    'EAI_AGAIN',
+    'ESOCKET',
+    'EMESSAGE'
+  ]);
+
+  if (retryableCodes.has(error.code)) return true;
+
+  const smtpResponseCode = Number(error.responseCode);
+  return Number.isFinite(smtpResponseCode) && smtpResponseCode >= 400 && smtpResponseCode < 500;
+};
+
+const sendMailWithRetry = async (mailOptions) => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= emailMaxRetries + 1; attempt++) {
+    try {
+      return await transporter.sendMail(mailOptions);
+    } catch (error) {
+      lastError = error;
+      const retryable = isRetryableEmailError(error);
+      const hasNextAttempt = attempt <= emailMaxRetries;
+
+      console.error(`❌ Email send attempt ${attempt} failed for ${mailOptions?.to}:`, error.message);
+
+      if (!retryable || !hasNextAttempt) {
+        throw error;
+      }
+
+      const delayMs = emailRetryDelayMs * attempt;
+      console.log(`⏳ Retrying email to ${mailOptions?.to} in ${delayMs}ms...`);
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError;
+};
+
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter.verify((error) => {
+    if (error) {
+      console.error('❌ SMTP verify failed:', error.message);
+      return;
+    }
+    console.log('✅ SMTP server is ready to accept emails');
+  });
 }
 
 // Send welcome email to new intern
@@ -110,7 +180,7 @@ Next Step: After logging in, please explore your dashboard and access your assig
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Email sent successfully to ${internEmail}`);
     return { success: true };
   } catch (error) {
@@ -169,7 +239,7 @@ Next Step: After logging in, please explore your dashboard and access your assig
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Representative credentials email sent to ${repEmail}`);
     return { success: true };
   } catch (error) {
@@ -221,7 +291,7 @@ Next Step: After logging in, please explore your dashboard and access your assig
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Trainer credentials email sent to ${trainerEmail}`);
     return { success: true };
   } catch (error) {
@@ -292,7 +362,7 @@ ${formattedExpiry ? `\nNote: Access may expire on ${formattedExpiry}.` : ''}
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Certificate assignment email sent to ${internEmail}`);
     return { success: true };
   } catch (error) {
@@ -373,7 +443,7 @@ ${taskDocument ? '\nThe task PDF/document has been attached to this email.' : ''
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Task assignment email sent to ${internEmail}`);
     return { success: true };
   } catch (error) {
@@ -385,7 +455,7 @@ ${taskDocument ? '\nThe task PDF/document has been attached to this email.' : ''
 // Generic email sender (used for feedback and other notifications)
 exports.sendEmail = async (to, subject, html) => {
   try {
-    await transporter.sendMail({
+    const mailOptions = {
       from: `"Team Progrentures" <${process.env.EMAIL_USER}>`,
       to,
       subject,
@@ -394,7 +464,9 @@ exports.sendEmail = async (to, subject, html) => {
         subtitle: 'PRS Portal Notification',
         bodyHtml: html,
       })
-    });
+    };
+
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Email sent to ${to}`);
     return { success: true };
   } catch (error) {
@@ -444,7 +516,7 @@ Please login to your Trainer Portal to view complete student details and start m
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`? Trainer assignment email sent to ${trainerEmail}`);
     return { success: true };
   } catch (error) {
@@ -495,7 +567,7 @@ Next Step: Reach out to your trainer to introduce yourself and understand your t
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`? Student assignment email sent to ${studentEmail}`);
     return { success: true };
   } catch (error) {
@@ -548,7 +620,7 @@ exports.sendInterviewResultEmail = async ({
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Interview result email sent to ${studentEmail}`);
     return { success: true };
   } catch (error) {
@@ -595,7 +667,7 @@ exports.sendAptitudeResultEmail = async ({
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Aptitude result email sent to ${studentEmail}`);
     return { success: true };
   } catch (error) {
@@ -643,7 +715,7 @@ exports.sendAssessmentResultEmail = async ({
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Assessment result email sent to ${studentEmail}`);
     return { success: true };
   } catch (error) {
@@ -693,7 +765,7 @@ exports.sendTrainingResultEmail = async ({
       })
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMailWithRetry(mailOptions);
     console.log(`✅ Training result email sent to ${studentEmail}`);
     return { success: true };
   } catch (error) {
@@ -701,3 +773,4 @@ exports.sendTrainingResultEmail = async ({
     return { success: false, error: error.message };
   }
 };
+

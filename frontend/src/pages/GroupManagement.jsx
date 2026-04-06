@@ -20,6 +20,7 @@ function GroupManagement() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [detailsGroup, setDetailsGroup] = useState(null);
+  const [activeGroupMenuId, setActiveGroupMenuId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -43,6 +44,17 @@ function GroupManagement() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!activeGroupMenuId) return;
+
+    const closeMenu = () => setActiveGroupMenuId(null);
+    document.addEventListener("click", closeMenu);
+
+    return () => {
+      document.removeEventListener("click", closeMenu);
+    };
+  }, [activeGroupMenuId]);
 
   const filteredStudents = useMemo(() => {
     if (form.studentType === "All") return students;
@@ -159,6 +171,8 @@ function GroupManagement() {
     try {
       await adminRepAPI.deleteGroup(groupId);
       setSuccess("Group deleted");
+      setDetailsGroup((prev) => (prev && prev._id === groupId ? null : prev));
+      setActiveGroupMenuId((prev) => (prev === groupId ? null : prev));
       loadData();
     } catch (err) {
       console.error("Delete group error", err);
@@ -183,6 +197,13 @@ function GroupManagement() {
       ...prev,
       selectedStudents: [],
     }));
+  };
+
+  const formatAssignedEmployees = (group) => {
+    const assignedEmployees = group.assignedEmployees || [];
+    if (assignedEmployees.length === 0) return "-";
+    if (assignedEmployees.length <= 2) return assignedEmployees.join(", ");
+    return `${assignedEmployees.slice(0, 2).join(", ")} +${assignedEmployees.length - 2}`;
   };
 
   return (
@@ -316,34 +337,69 @@ function GroupManagement() {
         {loading ? (
           <div className="gm-loading">Loading groups...</div>
         ) : (
-          <div className="gm-group-list">
+          <div className="gm-group-list gm-group-table">
             {groups.length === 0 ? (
               <div className="gm-empty-inline" style={{ textAlign: "center" }}>
                 No groups created
               </div>
             ) : (
-              groups.map((group) => (
-                <div key={group._id} className="gm-group-row">
-                  <div className="gm-group-main">
-                    <div className="gm-group-title-row">
+              <>
+                <div className="gm-group-header-row">
+                  <span>Group</span>
+                  <span>Group No</span>
+                  <span>Type</span>
+                  <span>Students</span>
+                  <span>Assigned Employees</span>
+                  <span>Action</span>
+                </div>
+                {groups.map((group) => (
+                  <div key={group._id} className="gm-group-row gm-group-data-row">
+                    <div className="gm-group-col gm-group-col-name" title={group.groupName}>
                       <strong>{group.groupName}</strong>
+                    </div>
+                    <div className="gm-group-col" title={group.groupNumber || "-"}>
+                      {group.groupNumber || "-"}
+                    </div>
+                    <div className="gm-group-col">
                       <span className="gm-type-chip">{group.studentType}</span>
                     </div>
-                    <div className="gm-group-meta">
-                      <span>Group No: {group.groupNumber || "-"}</span>
-                      <span>Students: {(group.students || []).length}</span>
+                    <div className="gm-group-col">{(group.students || []).length}</div>
+                    <div
+                      className="gm-group-col gm-group-col-employees"
+                      title={(group.assignedEmployees || []).join(", ") || "-"}
+                    >
+                      {formatAssignedEmployees(group)}
                     </div>
-                    <div className="gm-group-desc">
-                      {group.groupDescription || "No description"}
+                    <div className="gm-group-col gm-group-action">
+                      <button
+                        className="gm-menu-trigger"
+                        type="button"
+                        aria-label={`Open actions for ${group.groupName}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveGroupMenuId((prev) => (prev === group._id ? null : group._id))
+                        }}
+                      >
+                        ⋯
+                      </button>
+                      {activeGroupMenuId === group._id && (
+                        <div className="gm-action-menu" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            className="gm-action-menu-item"
+                            onClick={() => {
+                              setActiveGroupMenuId(null);
+                              openDetails(group._id);
+                            }}
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="gm-group-action">
-                    <button className="gm-btn gm-btn-primary" onClick={() => openDetails(group._id)}>
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              ))
+                ))}
+              </>
             )}
           </div>
         )}
@@ -354,7 +410,15 @@ function GroupManagement() {
           <div className="gm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="gm-modal-head">
               <h2>{detailsGroup.groupName}</h2>
-              <button className="gm-btn gm-btn-muted" onClick={() => setDetailsGroup(null)}>Close</button>
+              <div className="gm-row-actions">
+                <button
+                  className="gm-btn gm-btn-primary"
+                  onClick={() => removeGroup(detailsGroup._id)}
+                >
+                  Delete Group
+                </button>
+                <button className="gm-btn gm-btn-muted" onClick={() => setDetailsGroup(null)}>Close</button>
+              </div>
             </div>
             <div className="gm-modal-body">
               <p><strong>Group Number:</strong> {detailsGroup.groupNumber}</p>

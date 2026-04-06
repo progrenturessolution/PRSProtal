@@ -74,8 +74,13 @@ function InternDashboard() {
     }
 
     setUser(parsedUser);
-    fetchProfileDetails();
+    setLoading(false); // Show dashboard immediately
+    
+    // Load tasks in the background without blocking the UI
     fetchTasks();
+    
+    // Refresh profile in background (don't block UI)
+    fetchProfileDetails();
   }, [navigate]);
 
   const fetchProfileDetails = async () => {
@@ -92,12 +97,11 @@ function InternDashboard() {
 
   const fetchTasks = async () => {
     try {
-      setLoading(true);
       const response = await taskAPI.getInternTasks();
       setTasks(response.data.tasks);
+      setLoading(false);
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
-    } finally {
       setLoading(false);
     }
   };
@@ -2230,205 +2234,111 @@ function InternDashboard() {
 
             <div className="card">
               {(() => {
-                const hasAny = documents && (
-                  documents.offerLetter?.filename ||
-                  documents.welcomeLetter?.filename ||
-                  documents.paymentReceipt?.filename ||
-                  (documents.otherCertificates?.length > 0)
-                );
-                if (!hasAny) return (
-                  <div className="empty-state">
-                    <p>No documents available yet.</p>
-                  </div>
-                );
+                const coreLabelMap = {
+                  offerLetter: "Offer Letter",
+                  welcomeLetter: "Welcome Letter",
+                  paymentReceipt: "Payment Receipt",
+                  smsProgramEnrollmentLetter: "SMS Program Enrollment Letter",
+                  completionLetter: "Completion Letter",
+                  completionCertificate: "Completion Certificate",
+                  experienceLetter: "Experience Letter",
+                };
+
+                const directDocuments = Object.entries(documents || {})
+                  .filter(([key, value]) => key !== "otherCertificates" && value?.filename)
+                  .map(([key, value]) => ({
+                    key,
+                    label: coreLabelMap[key] || key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
+                    filename: value.filename,
+                  }));
+
+                const otherCertificates = documents?.otherCertificates || [];
+                const hasAny = directDocuments.length > 0 || otherCertificates.length > 0;
+
+                if (!hasAny) {
+                  return (
+                    <div className="empty-state">
+                      <p>No documents available yet.</p>
+                    </div>
+                  );
+                }
+
                 return (
-                <div style={{ display: "grid", gap: "16px" }}>
-                  {documents.offerLetter?.filename && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Offer Letter
-                        </strong>
-                        <span
-                          style={{
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginLeft: "8px",
-                          }}
-                        >
-                          Your official offer letter
-                        </span>
-                      </div>
-                      <a
-                        href={
-                          UPLOADS_BASE +
-                          "/uploads/students/" +
-                          documents.offerLetter.filename
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: "8px 16px",
-                          background: "#10b981",
-                          color: "white",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        View
-                      </a>
-                    </div>
-                  )}
-                  {documents.welcomeLetter?.filename && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Welcome Letter
-                        </strong>
-                        <span
-                          style={{
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginLeft: "8px",
-                          }}
-                        >
-                          Welcome to the organization
-                        </span>
-                      </div>
-                      <a
-                        href={
-                          UPLOADS_BASE +
-                          "/uploads/students/" +
-                          documents.welcomeLetter.filename
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: "8px 16px",
-                          background: "#10b981",
-                          color: "white",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        View
-                      </a>
-                    </div>
-                  )}
-                  {documents.paymentReceipt?.filename && (
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Payment Receipt
-                        </strong>
-                        <span
-                          style={{
-                            color: "#6b7280",
-                            fontSize: "13px",
-                            marginLeft: "8px",
-                          }}
-                        >
-                          Payment confirmation document
-                        </span>
-                      </div>
-                      <a
-                        href={
-                          UPLOADS_BASE +
-                          "/uploads/students/" +
-                          documents.paymentReceipt.filename
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: "8px 16px",
-                          background: "#10b981",
-                          color: "white",
-                          borderRadius: "6px",
-                          textDecoration: "none",
-                        }}
-                      >
-                        View
-                      </a>
-                    </div>
-                  )}
-                  {documents.otherCertificates?.length > 0 && (
-                    <div
-                      style={{
-                        padding: "16px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div style={{ marginBottom: "12px" }}>
-                        <strong style={{ color: "#374151", fontSize: "15px" }}>
-                          Other Certificates (
-                          {documents.otherCertificates.length})
-                        </strong>
-                      </div>
+                  <div style={{ display: "grid", gap: "16px" }}>
+                    {directDocuments.map((doc) => (
                       <div
+                        key={doc.key}
                         style={{
                           display: "flex",
-                          flexDirection: "column",
-                          gap: "8px",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "16px",
+                          background: "#f9fafb",
+                          borderRadius: "10px",
+                          border: "1px solid #e5e7eb",
                         }}
                       >
-                        {documents.otherCertificates.map((cert, idx) => (
-                          <a
-                            key={idx}
-                            href={
-                              UPLOADS_BASE +
-                              "/uploads/students/" +
-                              cert.filename
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              padding: "10px",
-                              background: "white",
-                              borderRadius: "6px",
-                              textDecoration: "none",
-                              color: "#4f46e5",
-                              border: "1px solid #e5e7eb",
-                            }}
-                          >
-                            {cert.name || cert.filename}
-                          </a>
-                        ))}
+                        <div>
+                          <strong style={{ color: "#374151", fontSize: "15px" }}>
+                            {doc.label}
+                          </strong>
+                        </div>
+                        <a
+                          href={UPLOADS_BASE + "/uploads/students/" + doc.filename}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            padding: "8px 16px",
+                            background: "#10b981",
+                            color: "white",
+                            borderRadius: "6px",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          View
+                        </a>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    ))}
+
+                    {otherCertificates.length > 0 && otherCertificates.map((cert, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "16px",
+                          background: "#f9fafb",
+                          borderRadius: "10px",
+                          border: "1px solid #e5e7eb",
+                        }}
+                      >
+                        <div>
+                          <strong style={{ color: "#374151", fontSize: "15px" }}>
+                            {cert.name || cert.filename}
+                          </strong>
+                        </div>
+                        <a
+                          href={UPLOADS_BASE + "/uploads/students/" + cert.filename}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            padding: "8px 16px",
+                            background: "#10b981",
+                            color: "white",
+                            borderRadius: "6px",
+                            textDecoration: "none",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
                 );
               })()}
 

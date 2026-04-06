@@ -756,443 +756,113 @@ function SMSProgramManagement() {
 
       {/* Student Details Modal for SMS */}
       {selectedStudent && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100
-        }} onClick={() => setSelectedStudent(null)}>
-          <div style={{ 
-            background: 'white', 
-            borderRadius: '16px', 
-            minWidth: '400px', 
-            maxWidth: '650px',
-            width: '90%',
-            maxHeight: '85vh',
-            overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
-          }} onClick={(e) => e.stopPropagation()}>
-            {/* Header with Gradient */}
-            <div style={{ 
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-              padding: '24px',
-              color: 'white',
-              position: 'relative'
-            }}>
-              <button 
-                onClick={() => setSelectedStudent(null)} 
-                style={{ 
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  border: 'none', 
-                  background: 'rgba(255,255,255,0.2)', 
-                  color: 'white',
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  cursor: 'pointer', 
-                  fontSize: '18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
+        <div
+          className="profile-modal-overlay"
+          onClick={() => {
+            setSelectedStudent(null);
+            setIsEditing(false);
+          }}
+        >
+          <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-header">
+              <button
+                className="profile-close-btn"
+                onClick={() => {
+                  setSelectedStudent(null);
+                  setIsEditing(false);
                 }}
-                onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
-                onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
-              >✕</button>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600' }}>{selectedStudent.name}</h2>
-              <div style={{ display: 'flex', gap: '16px', fontSize: '14px', opacity: 0.95 }}>
-                <span>ID: {selectedStudent.internId}</span>
-                <span>•</span>
-                <span>SMS Program</span>
+              >
+                ×
+              </button>
+
+              <div className="profile-avatar">
+                {String(selectedStudent.name || 'S')
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase()}
+              </div>
+              <h2 className="profile-name">{selectedStudent.name}</h2>
+              <div className="profile-badges">
+                <span className="profile-badge">PIID: {selectedStudent.internId || '-'}</span>
+                <span className="profile-badge">{selectedStudent.studentType || 'SMS Program'}</span>
+                <span
+                  className={`profile-badge ${selectedStudent.status?.toLowerCase() === 'active' ? 'status-active' : 'status-inactive'}`}
+                >
+                  {selectedStudent.status || 'Active'}
+                </span>
               </div>
             </div>
 
-            {/* Content */}
-            <div style={{ padding: '24px', maxHeight: 'calc(85vh - 120px)', overflowY: 'auto' }}>
-              {/* Contact Information */}
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ 
-                  fontSize: '16px', 
-                  fontWeight: '600', 
-                  color: '#1f2937',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>📧 Contact Information</h3>
-                <div style={{ 
-                  background: '#f9fafb',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  display: 'grid',
-                  gap: '10px'
-                }}>
-                  {!isEditing ? (
-                    <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Name</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.name}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Email</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.email}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Mobile</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.mobile}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Current Designation</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.currentDesignation || 'N/A'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Added By</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
-                          {selectedStudent.addedByRepresentative
-                            ? selectedStudent.addedByRepresentative.name
-                            : 'Admin'}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Name</label>
-                        <input 
-                          type="text" 
-                          name="name" 
-                          value={editForm.name} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Email</label>
-                        <input 
-                          type="email" 
-                          name="email" 
-                          value={editForm.email} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Mobile</label>
-                        <input 
-                          type="tel" 
-                          name="mobile" 
-                          value={editForm.mobile} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Current Designation</label>
-                        <input 
-                          type="text" 
-                          name="currentDesignation" 
-                          value={editForm.currentDesignation} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Payment Information */}
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ 
-                  fontSize: '16px', 
-                  fontWeight: '600', 
-                  color: '#1f2937',
-                  marginBottom: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>💳 Payment Details</h3>
-                <div style={{ 
-                  background: '#f9fafb',
-                  padding: '16px',
-                  borderRadius: '8px',
-                  display: 'grid',
-                  gap: '10px'
-                }}>
-                  {!isEditing ? (
-                    <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment By</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.paymentDoneBy || 'N/A'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Transaction ID</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>{selectedStudent.transactionId || 'N/A'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment Amount</span>
-                        <span style={{ fontWeight: '700', fontSize: '14px', color: '#059669' }}>{selectedStudent.paymentAmount ? `₹${selectedStudent.paymentAmount}` : 'N/A'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Completed Fees</span>
-                        <span style={{ fontWeight: '700', fontSize: '14px', color: '#059669' }}>{selectedStudent.completedFees ? `₹${selectedStudent.completedFees}` : '₹0'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Pending Fees</span>
-                        <span style={{ fontWeight: '700', fontSize: '14px', color: '#d97706' }}>{selectedStudent.pendingFees ? `₹${selectedStudent.pendingFees}` : '₹0'}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Payment Date</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
-                          {selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString() : 'N/A'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Last Payment Date</span>
-                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#111827' }}>
-                          {selectedStudent.lastPaymentDate ? new Date(selectedStudent.lastPaymentDate).toLocaleDateString() : 'N/A'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#6b7280', fontSize: '14px' }}>Status</span>
-                        <span style={{ 
-                          fontWeight: '500', 
-                          fontSize: '14px', 
-                          color: selectedStudent.status?.toLowerCase() === 'active' ? '#059669' : '#d97706',
-                          background: selectedStudent.status?.toLowerCase() === 'active' ? '#d1fae5' : '#fef3c7',
-                          padding: '4px 12px',
-                          borderRadius: '12px'
-                        }}>
-                          {selectedStudent.status || 'Active'}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Payment By</label>
-                        <input 
-                          type="text" 
-                          name="paymentDoneBy" 
-                          value={editForm.paymentDoneBy} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Transaction ID</label>
-                        <input 
-                          type="text" 
-                          name="transactionId" 
-                          value={editForm.transactionId} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Payment Amount (₹)</label>
-                        <input 
-                          type="number" 
-                          name="paymentAmount" 
-                          value={editForm.paymentAmount} 
-                          onChange={handleInputChange}
-                          placeholder="e.g. 5000"
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Completed Fees (₹)</label>
-                        <input 
-                          type="number" 
-                          name="completedFees" 
-                          value={editForm.completedFees} 
-                          onChange={handleInputChange}
-                          placeholder="e.g. 3000"
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Pending Fees (₹)</label>
-                        <input 
-                          type="number" 
-                          name="pendingFees" 
-                          value={editForm.pendingFees} 
-                          onChange={handleInputChange}
-                          placeholder="e.g. 2000"
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Payment Date</label>
-                        <input 
-                          type="date" 
-                          name="dateOfPayment" 
-                          value={editForm.dateOfPayment} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Last Payment Date</label>
-                        <input 
-                          type="date" 
-                          name="lastPaymentDate" 
-                          value={editForm.lastPaymentDate} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', color: '#6b7280', fontSize: '13px', marginBottom: '4px' }}>Status</label>
-                        <select 
-                          name="status" 
-                          value={editForm.status} 
-                          onChange={handleInputChange}
-                          style={{ 
-                            width: '100%', 
-                            padding: '8px', 
-                            border: '1px solid #d1d5db', 
-                            borderRadius: '6px',
-                            fontSize: '14px'
-                          }}
-                        >
-                          <option value="active">Active</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '12px', 
-                justifyContent: 'flex-end',
-                borderTop: '1px solid #e5e7eb',
-                paddingTop: '16px'
-              }}>
+            <div className="profile-body">
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Contact Information
+                </h3>
                 {!isEditing ? (
-                  <button
-                    onClick={handleEditClick}
-                    style={{
-                      padding: '10px 24px',
-                      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      transition: 'transform 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-                    onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                  >
-                    ✏️ Edit Details
-                  </button>
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Name</label><div className="field-value">{selectedStudent.name || '-'}</div></div>
+                    <div className="profile-field"><label>Email</label><div className="field-value">{selectedStudent.email || '-'}</div></div>
+                    <div className="profile-field"><label>Mobile</label><div className="field-value">{selectedStudent.mobile || '-'}</div></div>
+                    <div className="profile-field"><label>Current Designation</label><div className="field-value">{selectedStudent.currentDesignation || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Added By</label><div className="field-value">{selectedStudent.addedByRepresentative ? selectedStudent.addedByRepresentative.name : 'Admin'}</div></div>
+                  </div>
+                ) : (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Name</label><input type="text" name="name" value={editForm.name} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Email</label><input type="email" name="email" value={editForm.email} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Mobile</label><input type="tel" name="mobile" value={editForm.mobile} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Current Designation</label><input type="text" name="currentDesignation" value={editForm.currentDesignation} onChange={handleInputChange} /></div>
+                  </div>
+                )}
+              </div>
+
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Payment Details
+                </h3>
+                {!isEditing ? (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Payment By</label><div className="field-value">{selectedStudent.paymentDoneBy || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Transaction ID</label><div className="field-value">{selectedStudent.transactionId || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Payment Amount</label><div className="field-value">{selectedStudent.paymentAmount ? `Rs. ${selectedStudent.paymentAmount}` : 'N/A'}</div></div>
+                    <div className="profile-field"><label>Completed Fees</label><div className="field-value">Rs. {selectedStudent.completedFees || 0}</div></div>
+                    <div className="profile-field"><label>Pending Fees</label><div className="field-value">Rs. {selectedStudent.pendingFees || 0}</div></div>
+                    <div className="profile-field"><label>Payment Date</label><div className="field-value">{selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString('en-IN') : 'N/A'}</div></div>
+                    <div className="profile-field"><label>Last Payment Date</label><div className="field-value">{selectedStudent.lastPaymentDate ? new Date(selectedStudent.lastPaymentDate).toLocaleDateString('en-IN') : 'N/A'}</div></div>
+                    <div className="profile-field"><label>Status</label><div className="field-value">{selectedStudent.status || 'Active'}</div></div>
+                  </div>
+                ) : (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Payment By</label><input type="text" name="paymentDoneBy" value={editForm.paymentDoneBy} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Transaction ID</label><input type="text" name="transactionId" value={editForm.transactionId} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Payment Amount</label><input type="number" name="paymentAmount" value={editForm.paymentAmount} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Completed Fees</label><input type="number" name="completedFees" value={editForm.completedFees} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Pending Fees</label><input type="number" name="pendingFees" value={editForm.pendingFees} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Payment Date</label><input type="date" name="dateOfPayment" value={editForm.dateOfPayment} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Last Payment Date</label><input type="date" name="lastPaymentDate" value={editForm.lastPaymentDate} onChange={handleInputChange} /></div>
+                    <div className="profile-field">
+                      <label>Status</label>
+                      <select name="status" value={editForm.status} onChange={handleInputChange}>
+                        <option value="active">Active</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="profile-actions">
+                {!isEditing ? (
+                  <button onClick={handleEditClick} className="profile-btn profile-btn-primary">Edit Profile</button>
                 ) : (
                   <>
-                    <button
-                      onClick={handleCancelEdit}
-                      style={{
-                        padding: '10px 24px',
-                        background: '#e5e7eb',
-                        color: '#374151',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                      }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleUpdateStudent}
-                      style={{
-                        padding: '10px 24px',
-                        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        transition: 'transform 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-                      onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                    >
-                      💾 Save Changes
-                    </button>
+                    <button onClick={handleCancelEdit} className="profile-btn profile-btn-ghost">Cancel</button>
+                    <button onClick={handleUpdateStudent} className="profile-btn profile-btn-primary">Save Changes</button>
                   </>
                 )}
               </div>

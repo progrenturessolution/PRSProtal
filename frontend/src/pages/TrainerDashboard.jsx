@@ -90,6 +90,9 @@ function TrainerDashboard() {
     }
 
     setUser(JSON.parse(storedUser));
+    setLoading(false); // Show page immediately
+    
+    // Load data in background
     fetchDashboardData();
   }, [navigate]);
 
@@ -125,8 +128,6 @@ function TrainerDashboard() {
       }
     } catch (error) {
       console.error("Error fetching trainer dashboard data:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
