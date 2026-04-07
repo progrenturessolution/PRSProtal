@@ -24,6 +24,12 @@ const smtpMaxMessages = Number(pickEnv('SMTP_MAX_MESSAGES', 'EMAIL_MAX_MESSAGES'
 const smtpConnectionTimeout = Number(pickEnv('SMTP_CONNECTION_TIMEOUT', 'EMAIL_CONNECTION_TIMEOUT') || 30000);
 const smtpGreetingTimeout = Number(pickEnv('SMTP_GREETING_TIMEOUT', 'EMAIL_GREETING_TIMEOUT') || 30000);
 const smtpSocketTimeout = Number(pickEnv('SMTP_SOCKET_TIMEOUT', 'EMAIL_SOCKET_TIMEOUT') || 60000);
+const smtpVerifyOnStartup = String(pickEnv('SMTP_VERIFY_ON_STARTUP', 'EMAIL_VERIFY_ON_STARTUP') || (process.env.NODE_ENV === 'production' ? 'false' : 'true')).toLowerCase() === 'true';
+const smtpAltPorts = pickEnv('SMTP_ALT_PORTS', 'EMAIL_ALT_PORTS')
+  .split(',')
+  .map((value) => Number(String(value).trim()))
+  .filter((value) => Number.isFinite(value) && value > 0);
+const smtpTlsServername = pickEnv('SMTP_TLS_SERVERNAME', 'EMAIL_TLS_SERVERNAME') || smtpHost;
 const emailMaxRetries = Number(pickEnv('EMAIL_MAX_RETRIES', 'SMTP_MAX_RETRIES') || 2);
 const emailRetryDelayMs = Number(pickEnv('EMAIL_RETRY_DELAY_MS', 'SMTP_RETRY_DELAY_MS') || 1500);
 const PRS_LOGIN_URL = 'https://prs-protal.vercel.app/';
@@ -84,37 +90,53 @@ const createTransporter = ({ host, port, secure, pool }) => nodemailer.createTra
   socketTimeout: smtpSocketTimeout,
   auth: emailAuth,
   tls: {
+    servername: smtpTlsServername,
     rejectUnauthorized: false
   }
 });
 
-const transporterCandidates = [
-  createTransporter({
+const transportConfigCandidates = [];
+const registerTransportConfig = ({ port, secure, pool }) => {
+  if (!Number.isFinite(port) || port <= 0) return;
+  const key = `${port}-${secure ? 'secure' : 'starttls'}`;
+  if (transportConfigCandidates.some((item) => item.key === key)) return;
+  transportConfigCandidates.push({
+    key,
     host: smtpHost,
-    port: smtpPort,
-    secure: smtpSecure,
-    pool: smtpPoolEnabled
-  })
-];
+    port,
+    secure,
+    pool
+  });
+};
 
-const alternatePort = smtpPort === 465 ? 587 : 465;
-const alternateSecure = !smtpSecure;
+registerTransportConfig({
+  port: smtpPort,
+  secure: smtpSecure,
+  pool: smtpPoolEnabled
+});
 
-if (alternatePort !== smtpPort) {
-  transporterCandidates.push(
-    createTransporter({
-      host: smtpHost,
-      port: alternatePort,
-      secure: alternateSecure,
-      pool: false
-    })
-  );
+registerTransportConfig({
+  port: smtpPort === 465 ? 587 : 465,
+  secure: !smtpSecure,
+  pool: false
+});
+
+for (const altPort of smtpAltPorts) {
+  registerTransportConfig({
+    port: altPort,
+    secure: altPort === 465,
+    pool: false
+  });
 }
+
+const transporterCandidates = transportConfigCandidates.map((config) => createTransporter(config));
 
 // Log email configuration status
 if (emailAuth.user && emailAuth.pass) {
   console.log('📧 Email service configured for:', emailAuth.user, `via ${smtpHost}:${smtpPort}`);
   console.log(`📧 SMTP pool: ${smtpPoolEnabled ? 'enabled' : 'disabled'} | maxConnections=${smtpMaxConnections} | retries=${emailMaxRetries}`);
+  console.log(`📧 SMTP verify on startup: ${smtpVerifyOnStartup ? 'enabled' : 'disabled'}`);
+  console.log(`📧 SMTP candidates: ${transportConfigCandidates.map((item) => `${item.host}:${item.port} secure=${item.secure}`).join(' | ')}`);
 } else {
   console.log('⚠️ Email credentials not configured in .env file');
   console.log('   EMAIL_USER/SMTP_USER:', emailAuth.user ? 'SET' : 'MISSING');
@@ -179,15 +201,20 @@ const sendMailWithRetry = async (mailOptions) => {
 };
 
 if (emailAuth.user && emailAuth.pass) {
-  transporterCandidates.forEach((candidate, index) => {
-    candidate.verify((error) => {
-      if (error) {
-        console.error(`❌ SMTP verify failed for transport ${index + 1}:`, error.message);
-        return;
-      }
-      console.log(`✅ SMTP transport ${index + 1} is ready to accept emails`);
+  if (smtpVerifyOnStartup) {
+    transporterCandidates.forEach((candidate, index) => {
+      const transportMeta = transportConfigCandidates[index];
+      candidate.verify((error) => {
+        if (error) {
+          console.error(`❌ SMTP verify failed for transport ${index + 1} (${transportMeta.host}:${transportMeta.port}, secure=${transportMeta.secure}):`, error.message);
+          return;
+        }
+        console.log(`✅ SMTP transport ${index + 1} (${transportMeta.host}:${transportMeta.port}, secure=${transportMeta.secure}) is ready to accept emails`);
+      });
     });
-  });
+  } else {
+    console.log('ℹ️ SMTP verify on startup is disabled');
+  }
 }
 
 // Send welcome email to new intern
