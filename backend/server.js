@@ -10,6 +10,7 @@ const taskRoutes = require('./routes/taskRoutes');
 const trainerRoutes = require('./routes/trainerRoutes');
 const representativeRoutes = require('./routes/representativeRoutes');
 const { cleanupExpiredCertificates } = require('./controllers/certificateController');
+const mongoose = require('mongoose');
 
 // Load environment variables with explicit path
 dotenv.config({ path: path.join(__dirname, '.env') });
@@ -37,21 +38,30 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Connect to MongoDB
 const startServer = async () => {
-  try {
-    await connectDB();
+  const PORT = process.env.PORT || 5000;
+  let cleanupJobStarted = false;
 
-    // Run expired-certificate cleanup on startup then every hour.
-    await cleanupExpiredCertificates();
-    setInterval(cleanupExpiredCertificates, 60 * 60 * 1000);
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error.message);
-    process.exit(1);
-  }
+  const connectWithRetry = async () => {
+    try {
+      await connectDB();
+
+      if (!cleanupJobStarted) {
+        // Run expired-certificate cleanup on startup then every hour.
+        await cleanupExpiredCertificates();
+        setInterval(cleanupExpiredCertificates, 60 * 60 * 1000);
+        cleanupJobStarted = true;
+      }
+    } catch (error) {
+      console.error('Database unavailable. Retrying in 15 seconds:', error.message);
+      setTimeout(connectWithRetry, 15000);
+    }
+  };
+
+  await connectWithRetry();
 };
 
 // Routes
@@ -60,6 +70,16 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/task', taskRoutes);
 app.use('/api/trainer', trainerRoutes);
 app.use('/api/representative', representativeRoutes);
+
+// API health route with DB state for uptime checks
+app.get('/api/health', (req, res) => {
+  const dbConnected = mongoose.connection.readyState === 1;
+  res.status(dbConnected ? 200 : 503).json({
+    success: dbConnected,
+    status: dbConnected ? 'ok' : 'degraded',
+    database: dbConnected ? 'connected' : 'disconnected'
+  });
+});
 
 // Health check route
 app.get('/', (req, res) => {
