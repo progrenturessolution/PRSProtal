@@ -667,7 +667,7 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table className="data-table" style={{ minWidth: "860px" }}>
+            <table className="data-table view-students-table" style={{ minWidth: "860px" }}>
               <thead>
                 <tr>
                   <th>#</th>

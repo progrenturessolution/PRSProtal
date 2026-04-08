@@ -18,6 +18,8 @@ const emptyForm = {
 };
 
 function RepresentativePayoutManagement() {
+  const [activeTab, setActiveTab] = useState("list");
+  const [openMenuId, setOpenMenuId] = useState(null);
   const [representatives, setRepresentatives] = useState([]);
   const [payouts, setPayouts] = useState([]);
   const [filters, setFilters] = useState({ month: "", status: "", representativeId: "" });
@@ -53,6 +55,18 @@ function RepresentativePayoutManagement() {
     fetchPayouts();
   }, []);
 
+  useEffect(() => {
+    if (!openMenuId) return;
+
+    const handleOutsideClick = (event) => {
+      if (event.target.closest("[data-menu]") || event.target.closest("[data-menu-toggle]")) return;
+      setOpenMenuId(null);
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [openMenuId]);
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -87,6 +101,7 @@ function RepresentativePayoutManagement() {
       promotionalDocumentsLink: entry.promotionalDocumentsLink || "",
       notes: entry.notes || "",
     });
+    setActiveTab("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -105,6 +120,7 @@ function RepresentativePayoutManagement() {
       const payload = { ...formData };
       await adminRepAPI.upsertRepresentativePayout(payload);
       setSuccess("Payout record saved");
+        setActiveTab("list");
       setFormData(emptyForm);
       fetchPayouts(filters);
     } catch (err) {
@@ -122,135 +138,243 @@ function RepresentativePayoutManagement() {
           <h1>Representative Payout Management</h1>
           <p className="header-subtitle">Admin can edit payout records. PGIR can view in reward dashboard.</p>
         </div>
+        <div className="header-right">
+          {activeTab === "form" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setFormData(emptyForm);
+                setActiveTab("list");
+              }}
+              style={{
+                padding: "10px 18px",
+                border: "none",
+                borderRadius: "10px",
+                background: "#324158",
+                color: "#fff",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              Back
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("form");
+                setFormData(emptyForm);
+              }}
+              style={{
+                padding: "10px 18px",
+                border: "none",
+                borderRadius: "10px",
+                background: "#324158",
+                color: "#fff",
+                fontWeight: "600",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              Add Payout
+            </button>
+          )}
+        </div>
       </div>
 
       {success && <div className="success-message" style={{ marginBottom: "12px" }}>{success}</div>}
       {error && <div className="error-message" style={{ marginBottom: "12px" }}>{error}</div>}
 
-      <div className="premium-card" style={{ marginBottom: "16px" }}>
-        <div className="premium-card-header">
-          <h2>{formData.id ? "Edit Payout" : "Add Payout"}</h2>
-        </div>
-        <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
-            <div className="form-group">
-              <label>PGIR Name *</label>
-              <select name="representativeId" value={formData.representativeId} onChange={handleInput} required>
-                <option value="">Select representative</option>
-                {representatives.map((rep) => (
-                  <option key={rep._id} value={rep._id}>{rep.name} ({rep.pgirId || "-"})</option>
-                ))}
-              </select>
+      {activeTab === "form" ? (
+        <div className="premium-card" style={{ marginBottom: "16px" }}>
+          <div className="premium-card-header">
+            <h2>{formData.id ? "Edit Payout" : "Add Payout"}</h2>
+          </div>
+          <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
+              <div className="form-group">
+                <label>PGIR Name *</label>
+                <select name="representativeId" value={formData.representativeId} onChange={handleInput} required>
+                  <option value="">Select representative</option>
+                  {representatives.map((rep) => (
+                    <option key={rep._id} value={rep._id}>{rep.name} ({rep.pgirId || "-"})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group"><label>Month *</label><input name="monthLabel" value={formData.monthLabel} onChange={handleInput} placeholder="March / March-April" required /></div>
+              <div className="form-group"><label>Week *</label><input name="weekLabel" value={formData.weekLabel} onChange={handleInput} placeholder="Sunday-Saturday" required /></div>
+              <div className="form-group"><label>Week Start *</label><input type="date" name="weekStartDate" value={formData.weekStartDate} onChange={handleInput} required /></div>
+              <div className="form-group"><label>Week End *</label><input type="date" name="weekEndDate" value={formData.weekEndDate} onChange={handleInput} required /></div>
+              <div className="form-group"><label>UPI / QR Drive Link</label><input name="upiQrDriveLink" value={formData.upiQrDriveLink} onChange={handleInput} /></div>
+              <div className="form-group"><label>Total Enrollment Count</label><input type="number" min="0" name="totalEnrollmentCount" value={formData.totalEnrollmentCount} onChange={handleInput} /></div>
+              <div className="form-group"><label>Students with 3000 Paid</label><input type="number" min="0" name="studentsWith3000Paid" value={formData.studentsWith3000Paid} onChange={handleInput} /></div>
+              <div className="form-group">
+                <label>Payout Status</label>
+                <select name="payoutStatus" value={formData.payoutStatus} onChange={handleInput}>
+                  <option value="Hold">Hold</option>
+                  <option value="Paid">Paid</option>
+                </select>
+              </div>
+              <div className="form-group"><label>Payout Release Date</label><input type="date" name="payoutReleaseDate" value={formData.payoutReleaseDate} onChange={handleInput} /></div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Promotional Documents Link (Common)</label><input name="promotionalDocumentsLink" value={formData.promotionalDocumentsLink} onChange={handleInput} /></div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Notes</label><textarea name="notes" rows={2} value={formData.notes} onChange={handleInput} /></div>
             </div>
-            <div className="form-group"><label>Month *</label><input name="monthLabel" value={formData.monthLabel} onChange={handleInput} placeholder="March / March-April" required /></div>
-            <div className="form-group"><label>Week *</label><input name="weekLabel" value={formData.weekLabel} onChange={handleInput} placeholder="Sunday-Saturday" required /></div>
-            <div className="form-group"><label>Week Start *</label><input type="date" name="weekStartDate" value={formData.weekStartDate} onChange={handleInput} required /></div>
-            <div className="form-group"><label>Week End *</label><input type="date" name="weekEndDate" value={formData.weekEndDate} onChange={handleInput} required /></div>
-            <div className="form-group"><label>UPI / QR Drive Link</label><input name="upiQrDriveLink" value={formData.upiQrDriveLink} onChange={handleInput} /></div>
-            <div className="form-group"><label>Total Enrollment Count</label><input type="number" min="0" name="totalEnrollmentCount" value={formData.totalEnrollmentCount} onChange={handleInput} /></div>
-            <div className="form-group"><label>Students with 3000 Paid</label><input type="number" min="0" name="studentsWith3000Paid" value={formData.studentsWith3000Paid} onChange={handleInput} /></div>
-            <div className="form-group">
-              <label>Payout Status</label>
-              <select name="payoutStatus" value={formData.payoutStatus} onChange={handleInput}>
-                <option value="Hold">Hold</option>
-                <option value="Paid">Paid</option>
-              </select>
+            <div style={{ marginTop: "14px", display: "flex", gap: "10px" }}>
+              <button className="table-action-btn rep-form-submit-btn" disabled={saving} type="submit">
+                {saving ? "Saving..." : "Save Payout"}
+              </button>
+              <button className="table-action-btn rep-form-cancel-btn" type="button" onClick={() => { setFormData(emptyForm); setActiveTab("list"); }}>
+                Cancel
+              </button>
             </div>
-            <div className="form-group"><label>Payout Release Date</label><input type="date" name="payoutReleaseDate" value={formData.payoutReleaseDate} onChange={handleInput} /></div>
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Promotional Documents Link (Common)</label><input name="promotionalDocumentsLink" value={formData.promotionalDocumentsLink} onChange={handleInput} /></div>
-            <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Notes</label><textarea name="notes" rows={2} value={formData.notes} onChange={handleInput} /></div>
-          </div>
-          <div style={{ marginTop: "14px", display: "flex", gap: "10px" }}>
-            <button className="table-action-btn" style={{ background: "#324158" }} disabled={saving} type="submit">
-              {saving ? "Saving..." : "Save Payout"}
-            </button>
-            <button className="table-action-btn" style={{ background: "#94a3b8" }} type="button" onClick={() => setFormData(emptyForm)}>
-              Reset
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <div className="premium-card" style={{ marginBottom: "14px", padding: "14px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "10px" }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Month</label>
-            <input name="month" value={filters.month} onChange={handleFilterChange} placeholder="March" />
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>PGIR</label>
-            <select name="representativeId" value={filters.representativeId} onChange={handleFilterChange}>
-              <option value="">All</option>
-              {representatives.map((rep) => (
-                <option key={rep._id} value={rep._id}>{rep.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Status</label>
-            <select name="status" value={filters.status} onChange={handleFilterChange}>
-              <option value="">All</option>
-              <option value="Paid">Paid</option>
-              <option value="Hold">Hold</option>
-            </select>
-          </div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "end" }}>
-            <button className="table-action-btn" style={{ background: "#324158" }} onClick={applyFilters}>Apply</button>
-            <button className="table-action-btn" style={{ background: "#94a3b8" }} onClick={resetFilters}>Clear</button>
-          </div>
+          </form>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="premium-card" style={{ marginBottom: "14px", padding: "14px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "10px" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Month</label>
+                <input name="month" value={filters.month} onChange={handleFilterChange} placeholder="March" />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>PGIR</label>
+                <select name="representativeId" value={filters.representativeId} onChange={handleFilterChange}>
+                  <option value="">All</option>
+                  {representatives.map((rep) => (
+                    <option key={rep._id} value={rep._id}>{rep.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Status</label>
+                <select name="status" value={filters.status} onChange={handleFilterChange}>
+                  <option value="">All</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Hold">Hold</option>
+                </select>
+              </div>
+              <div style={{ display: "flex", gap: "8px", alignItems: "end" }}>
+                <button className="table-action-btn rep-payout-filter-btn" onClick={applyFilters}>Apply</button>
+                <button className="table-action-btn rep-payout-filter-btn" onClick={resetFilters}>Clear</button>
+              </div>
+            </div>
+          </div>
 
-      <div className="premium-card">
-        {loading ? (
-          <div style={{ padding: "36px", textAlign: "center" }}>Loading...</div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="premium-table">
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th>Week</th>
-                  <th>PGIR</th>
-                  <th>Enrollments</th>
-                  <th>3000 Paid</th>
-                  <th>Eligible</th>
-                  <th>Reward %</th>
-                  <th>Payout Amount</th>
-                  <th>Status</th>
-                  <th>Release Date</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payouts.length === 0 ? (
-                  <tr><td colSpan={11} style={{ textAlign: "center" }}>No payout records found</td></tr>
-                ) : (
-                  payouts.map((item) => (
-                    <tr key={item._id}>
-                      <td>{item.monthLabel}</td>
-                      <td>{item.weekLabel}</td>
-                      <td>{item.representative?.name || "-"}</td>
-                      <td>{item.totalEnrollmentCount}</td>
-                      <td>{item.studentsWith3000Paid}</td>
-                      <td>{item.payoutEligible}</td>
-                      <td>{item.rewardPercent}%</td>
-                      <td>₹{item.payoutAmount || 0}</td>
-                      <td>{item.payoutStatus}</td>
-                      <td>{item.payoutReleaseDate ? new Date(item.payoutReleaseDate).toLocaleDateString("en-IN") : "-"}</td>
-                      <td>
-                        <button className="table-action-btn" style={{ background: "#0ea5e9" }} onClick={() => editEntry(item)}>
-                          Edit
-                        </button>
-                      </td>
+          <div className="premium-card">
+            {loading ? (
+              <div style={{ padding: "36px", textAlign: "center" }}>Loading...</div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table className="premium-table rep-payout-table">
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Week</th>
+                      <th>PGIR</th>
+                      <th>Enrollments</th>
+                      <th>3000 Paid</th>
+                      <th>Eligible</th>
+                      <th>Reward %</th>
+                      <th>Payout Amount</th>
+                      <th>Status</th>
+                      <th>Release Date</th>
+                      <th>Action</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {payouts.length === 0 ? (
+                      <tr><td colSpan={11} style={{ textAlign: "center" }}>No payout records found</td></tr>
+                    ) : (
+                      payouts.map((item) => (
+                        <tr key={item._id}>
+                          <td>{item.monthLabel}</td>
+                          <td>{item.weekLabel}</td>
+                          <td>{item.representative?.name || "-"}</td>
+                          <td>{item.totalEnrollmentCount}</td>
+                          <td>{item.studentsWith3000Paid}</td>
+                          <td>{item.payoutEligible}</td>
+                          <td>{item.rewardPercent}%</td>
+                          <td>₹{item.payoutAmount || 0}</td>
+                          <td>{item.payoutStatus}</td>
+                          <td>{item.payoutReleaseDate ? new Date(item.payoutReleaseDate).toLocaleDateString("en-IN") : "-"}</td>
+                          <td style={{ position: "relative" }}>
+                            <button
+                              data-menu-toggle
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId(openMenuId === item._id ? null : item._id);
+                              }}
+                              style={{
+                                background: "transparent",
+                                color: "#0f172a",
+                                border: "1px solid #d1d5db",
+                                borderRadius: "8px",
+                                width: "36px",
+                                height: "36px",
+                                cursor: "pointer",
+                                fontSize: "20px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              ⋮
+                            </button>
+
+                            {openMenuId === item._id && (
+                              <div
+                                data-menu
+                                style={{
+                                  position: "absolute",
+                                  right: 0,
+                                  top: "42px",
+                                  background: "white",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "12px",
+                                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                  zIndex: 1000,
+                                  minWidth: "160px",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    editEntry(item);
+                                    setOpenMenuId(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#0f172a",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

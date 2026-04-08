@@ -416,7 +416,7 @@ function InternshipManagement({ onAddStudentClick }) {
           <p>No internship students found.</p>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table className="data-table">
+            <table className="data-table internship-students-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -570,7 +570,7 @@ function InternshipManagement({ onAddStudentClick }) {
           }}
         >
           <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-header">
+            <div className="profile-header" style={{ background: "#324158" }}>
               <button
                 className="profile-close-btn"
                 onClick={() => {
@@ -662,7 +662,13 @@ function InternshipManagement({ onAddStudentClick }) {
 
               <div className="profile-actions">
                 {!isEditing ? (
-                  <button onClick={handleEditClick} className="profile-btn profile-btn-primary">Edit Profile</button>
+                  <button
+                    onClick={handleEditClick}
+                    className="profile-btn profile-btn-primary"
+                    style={{ background: "#324158", borderColor: "#324158" }}
+                  >
+                    Edit Profile
+                  </button>
                 ) : (
                   <>
                     <button onClick={handleCancelEdit} className="profile-btn profile-btn-ghost">Cancel</button>

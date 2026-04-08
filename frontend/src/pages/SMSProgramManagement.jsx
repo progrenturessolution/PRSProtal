@@ -282,9 +282,9 @@ function SMSProgramManagement() {
               border: 'none',
               fontWeight: 700,
               fontSize: '14px',
-              background: filter === 'all' ? 'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)' : '#f8fafc',
+              background: filter === 'all' ? '#324158' : '#f8fafc',
               color: filter === 'all' ? 'white' : '#0f172a',
-              boxShadow: filter === 'all' ? '0 8px 20px rgba(59,130,246,0.12)' : 'none'
+              boxShadow: filter === 'all' ? '0 8px 20px rgba(50,65,88,0.25)' : 'none'
             }}
           >
             All ({students.length})
@@ -299,9 +299,9 @@ function SMSProgramManagement() {
               border: 'none',
               fontWeight: 700,
               fontSize: '14px',
-              background: filter === 'active' ? 'linear-gradient(90deg,#10b981,#059669)' : '#f8fafc',
+              background: filter === 'active' ? '#324158' : '#f8fafc',
               color: filter === 'active' ? 'white' : '#0f172a',
-              boxShadow: filter === 'active' ? '0 8px 20px rgba(5,150,105,0.12)' : 'none'
+              boxShadow: filter === 'active' ? '0 8px 20px rgba(50,65,88,0.25)' : 'none'
             }}
           >
             Active ({students.filter(s => s.status?.toLowerCase() === 'active').length})
@@ -316,9 +316,9 @@ function SMSProgramManagement() {
               border: 'none',
               fontWeight: 700,
               fontSize: '14px',
-              background: filter === 'completed' ? 'linear-gradient(90deg,#f59e0b,#f97316)' : '#f8fafc',
+              background: filter === 'completed' ? '#324158' : '#f8fafc',
               color: filter === 'completed' ? 'white' : '#0f172a',
-              boxShadow: filter === 'completed' ? '0 8px 20px rgba(249,115,22,0.12)' : 'none'
+              boxShadow: filter === 'completed' ? '0 8px 20px rgba(50,65,88,0.25)' : 'none'
             }}
           >
             Completed ({students.filter(s => s.status?.toLowerCase() === 'completed').length})
@@ -332,7 +332,7 @@ function SMSProgramManagement() {
           <p>{searchQuery ? `No students found matching "${searchQuery}". Try another search.` : 'No SMS program students found.'}</p>
         ) : (
           <div className="table-container">
-            <table className="data-table">
+            <table className="data-table sms-students-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -764,7 +764,7 @@ function SMSProgramManagement() {
           }}
         >
           <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-header">
+            <div className="profile-header" style={{ background: '#324158' }}>
               <button
                 className="profile-close-btn"
                 onClick={() => {
@@ -858,7 +858,13 @@ function SMSProgramManagement() {
 
               <div className="profile-actions">
                 {!isEditing ? (
-                  <button onClick={handleEditClick} className="profile-btn profile-btn-primary">Edit Profile</button>
+                  <button
+                    onClick={handleEditClick}
+                    className="profile-btn profile-btn-primary"
+                    style={{ background: '#324158', borderColor: '#324158' }}
+                  >
+                    Edit Profile
+                  </button>
                 ) : (
                   <>
                     <button onClick={handleCancelEdit} className="profile-btn profile-btn-ghost">Cancel</button>

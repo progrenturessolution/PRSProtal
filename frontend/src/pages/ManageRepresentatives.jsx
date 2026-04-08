@@ -34,7 +34,7 @@ function toPublicFilePath(filepath) {
   return `${UPLOADS_BASE}/uploads/${String(filepath).replace(/\\/g, "/").split("uploads/")[1] || ""}`;
 }
 
-function ManageRepresentatives({ onOpenPayout }) {
+function ManageRepresentatives() {
   const [activeTab, setActiveTab] = useState("list");
   const [openMenuId, setOpenMenuId] = useState(null);
   const [representatives, setRepresentatives] = useState([]);
@@ -209,24 +209,6 @@ function ManageRepresentatives({ onOpenPayout }) {
           <p className="header-subtitle">Manage PGIR profiles, onboarding docs and filters</p>
         </div>
         <div className="header-right">
-          {onOpenPayout && (
-            <button
-              type="button"
-              onClick={onOpenPayout}
-              style={{
-                padding: "10px 18px",
-                border: "none",
-                borderRadius: "10px",
-                background: "#324158",
-                color: "#fff",
-                fontWeight: "600",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              Representative Payout
-            </button>
-          )}
         </div>
       </div>
 
@@ -337,7 +319,7 @@ function ManageRepresentatives({ onOpenPayout }) {
               </div>
             ) : (
               <div className="table-container">
-                <table className="data-table">
+                <table className="data-table representatives-table">
                   <thead>
                     <tr>
                       <th>PGIR ID</th>
@@ -424,30 +406,6 @@ function ManageRepresentatives({ onOpenPayout }) {
                                 </button>
                                 <button
                                   onClick={() => {
-                                    if (onOpenPayout) {
-                                      onOpenPayout();
-                                    }
-                                    setOpenMenuId(null);
-                                  }}
-                                  style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
-                                    background: "white",
-                                    border: "none",
-                                    textAlign: "left",
-                                    cursor: "pointer",
-                                    fontSize: "14px",
-                                    fontWeight: "500",
-                                    color: "#0f172a",
-                                    borderTop: "1px solid #f3f4f6",
-                                  }}
-                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
-                                  onMouseLeave={(e) => (e.target.style.background = "white")}
-                                >
-                                  Open Payout
-                                </button>
-                                <button
-                                  onClick={() => {
                                     handleDelete(rep._id, rep.name);
                                     setOpenMenuId(null);
                                   }}
@@ -520,10 +478,10 @@ function ManageRepresentatives({ onOpenPayout }) {
             </div>
 
             <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
-              <button type="submit" disabled={submitting} className="table-action-btn" style={{ background: "#324158" }}>
+              <button type="submit" disabled={submitting} className="table-action-btn rep-form-submit-btn">
                 {submitting ? <LoadingSpinner text="Saving..." inline size="sm" /> : "Add Representative"}
               </button>
-              <button type="button" className="table-action-btn" style={{ background: "#94a3b8" }} onClick={() => setActiveTab("list")}>Cancel</button>
+              <button type="button" className="table-action-btn rep-form-cancel-btn" onClick={() => setActiveTab("list")}>Cancel</button>
             </div>
           </form>
         </div>

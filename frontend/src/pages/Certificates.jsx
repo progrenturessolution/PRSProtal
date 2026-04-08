@@ -115,13 +115,28 @@ function Certificates() {
     return { text: `${days}d ${hours}h left`, color, bg };
   };
 
+  const tableCellStyle = {
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#475569',
+    fontFamily: 'inherit',
+  };
+
+  const tableSubTextStyle = {
+    fontSize: '13px',
+    fontWeight: '500',
+    color: '#64748b',
+    marginTop: '2px',
+    fontFamily: 'inherit',
+  };
+
   const filteredStudents = students.filter(s => category === 'All' || s.studentType === category);
 
   return (
     <>
       <div className="content-header">
         <h1>Certificates</h1>
-        <p>Assign certificates to students â€” available for download for 5 days, then auto-deleted</p>
+        <p>Assign certificates to students - available for download for 5 days, then auto-deleted</p>
       </div>
 
       {/* â”€â”€ Assign Form â”€â”€ */}
@@ -161,7 +176,7 @@ function Certificates() {
                 <option value="">Choose a student...</option>
                 {filteredStudents.map(s => (
                   <option key={s._id} value={s._id}>
-                    {s.internId} â€” {s.name} ({s.email})
+                    {s.internId} - {s.name} ({s.email})
                   </option>
                 ))}
               </select>
@@ -240,7 +255,7 @@ function Certificates() {
                         cursor: 'pointer', fontWeight: '700', fontSize: '18px', lineHeight: '1'
                       }}
                     >
-                      Ã—
+                      X
                     </button>
                   ) : (
                     <div style={{ width: '34px' }} />
@@ -278,11 +293,11 @@ function Certificates() {
             disabled={submitting}
             style={{
               padding: '12px 32px',
-              background: submitting ? '#94a3b8' : 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+              background: submitting ? '#94a3b8' : '#324158',
               color: 'white', border: 'none', borderRadius: '9px',
               cursor: submitting ? 'not-allowed' : 'pointer',
               fontSize: '15px', fontWeight: '700',
-              boxShadow: submitting ? 'none' : '0 4px 12px rgba(37,99,235,0.25)'
+              boxShadow: submitting ? 'none' : '0 4px 12px rgba(50,65,88,0.25)'
             }}
           >
             {submitting ? (
@@ -327,16 +342,16 @@ function Certificates() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
+            <table className="data-table certificates-table">
               <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Student</th>
-                  <th>Certificate Name</th>
-                  <th>Assigned On</th>
-                  <th>Expires On</th>
-                  <th>Time Remaining</th>
-                  <th>Actions</th>
+                <tr style={{ background: '#324158' }}>
+                  <th style={{ background: '#324158', color: '#ffffff' }}>#</th>
+                  <th style={{ background: '#324158', color: '#ffffff' }}>Student</th>
+                  <th style={{ background: '#324158', color: '#ffffff' }}>Certificate Name</th>
+                  <th style={{ background: '#324158', color: '#ffffff' }}>Assigned On</th>
+                  <th style={{ background: '#324158', color: '#ffffff' }}>Expires On</th>
+                  <th style={{ background: '#324158', color: '#ffffff' }}>Time Remaining</th>
+                  <th style={{ background: '#324158', color: '#ffffff' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -344,24 +359,24 @@ function Certificates() {
                   const tr = getTimeRemaining(cert.expiresAt);
                   return (
                     <tr key={cert._id}>
-                      <td style={{ color: '#94a3b8', fontSize: '13px' }}>{index + 1}</td>
+                      <td style={tableCellStyle}>{index + 1}</td>
                       <td>
-                        <div style={{ fontWeight: '600', color: '#0f172a' }}>{cert.studentId?.name || 'â€”'}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                          {cert.studentId?.internId} Â· {cert.studentId?.studentType}
+                        <div style={tableCellStyle}>{cert.studentId?.name || '-'}</div>
+                        <div style={tableSubTextStyle}>
+                          {cert.studentId?.internId} | {cert.studentId?.studentType}
                         </div>
                       </td>
-                      <td style={{ fontWeight: '500', color: '#0f172a' }}>{cert.name}</td>
-                      <td style={{ fontSize: '13px', color: '#475569', whiteSpace: 'nowrap' }}>
+                      <td style={tableCellStyle}>{cert.name}</td>
+                      <td style={{ ...tableCellStyle, whiteSpace: 'nowrap' }}>
                         {new Date(cert.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
-                      <td style={{ fontSize: '13px', color: '#475569', whiteSpace: 'nowrap' }}>
+                      <td style={{ ...tableCellStyle, whiteSpace: 'nowrap' }}>
                         {new Date(cert.expiresAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </td>
                       <td>
                         <span style={{
                           padding: '4px 10px', borderRadius: '6px',
-                          fontSize: '12px', fontWeight: '700',
+                          fontSize: '14px', fontWeight: '500',
                           background: tr.bg, color: tr.color, whiteSpace: 'nowrap'
                         }}>
                           {tr.text}

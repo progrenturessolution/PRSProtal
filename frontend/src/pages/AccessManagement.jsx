@@ -359,6 +359,18 @@ function AccessManagement() {
     (sum, t) => sum + (t.assignedStudents?.length || 0),
     0,
   );
+  const formatAssignedGroups = (trainer) => {
+    const groupsList = trainer.assignedGroups || [];
+
+    if (groupsList.length === 0) {
+      return "No groups assigned";
+    }
+
+    return groupsList
+      .map((group) => group.groupName || group.name || `Group ${group.groupNumber || group.groupNo || ""}`.trim())
+      .filter(Boolean)
+      .join(", ");
+  };
   const activeCount = trainers.filter(
     (t) => (t.status || "").toLowerCase() === "active",
   ).length;
@@ -537,7 +549,7 @@ function AccessManagement() {
         ))}
       </div>
 
-      {/* ── ADD EMPLOYEE TAB ── */}
+      {/* ΓöÇΓöÇ ADD EMPLOYEE TAB ΓöÇΓöÇ */}
       {activeTab === "add" && (
         <div className="card">
           {/* Card header */}
@@ -693,7 +705,7 @@ function AccessManagement() {
         </div>
       )}
 
-      {/* ── ASSIGN STUDENTS TAB ── */}
+      {/* ΓöÇΓöÇ ASSIGN STUDENTS TAB ΓöÇΓöÇ */}
       {activeTab === "assign" && (
         <div className="card">
           {/* Card header */}
@@ -738,7 +750,7 @@ function AccessManagement() {
               <label>
                 Select Students *{" "}
                 <span style={{ color: "#64748b", fontWeight: 400 }}>
-                  — {selectedStudents.length} selected (
+                  ΓÇö {selectedStudents.length} selected (
                   {filteredStudents.length} shown)
                 </span>
               </label>
@@ -938,7 +950,7 @@ function AccessManagement() {
                           {student.name}
                         </div>
                         <div style={{ fontSize: "12px", color: "#64748b" }}>
-                          {student.internId} · {student.email}
+                          {student.internId} ┬╖ {student.email}
                         </div>
                       </div>
                     </label>
@@ -988,7 +1000,7 @@ function AccessManagement() {
         </div>
       )}
 
-      {/* ── ASSIGN GROUPS TAB ── */}
+      {/* ΓöÇΓöÇ ASSIGN GROUPS TAB ΓöÇΓöÇ */}
       {activeTab === "groups" && (
         <div className="card">
           <div
@@ -1085,7 +1097,7 @@ function AccessManagement() {
         </div>
       )}
 
-      {/* ── ASSIGN WORK TAB ── */}
+      {/* ΓöÇΓöÇ ASSIGN WORK TAB ΓöÇΓöÇ */}
       {activeTab === "work" && (
         <div className="card">
           <div
@@ -1159,7 +1171,7 @@ function AccessManagement() {
         </div>
       )}
 
-      {/* ── EMPLOYEE PORTAL TAB ── */}
+      {/* ΓöÇΓöÇ EMPLOYEE PORTAL TAB ΓöÇΓöÇ */}
       {activeTab === "portal" && (
         <div className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
@@ -1185,7 +1197,6 @@ function AccessManagement() {
                 <div><strong>Email:</strong> {portalEmployee.email}</div>
                 <div><strong>Role:</strong> {portalEmployee.role === "other" ? (portalEmployee.customRole || "Other") : portalEmployee.role}</div>
                 <div><strong>Joining Date:</strong> {portalEmployee.joiningDate ? new Date(portalEmployee.joiningDate).toLocaleDateString("en-IN") : "-"}</div>
-                <div><strong>Assigned Students:</strong> {portalEmployee.assignedStudents?.length || 0}</div>
                 <div><strong>Assigned Groups:</strong> {portalEmployee.assignedGroups?.length || 0}</div>
                 <div><strong>Work Items:</strong> {portalEmployee.workAssignments?.length || 0}</div>
               </div>
@@ -1228,7 +1239,7 @@ function AccessManagement() {
         </div>
       )}
 
-      {/* ── TRAINERS LIST TAB ── */}
+      {/* ΓöÇΓöÇ TRAINERS LIST TAB ΓöÇΓöÇ */}
       {activeTab === "list" && (
         <div className="card">
           {/* Card header */}
@@ -1285,7 +1296,7 @@ function AccessManagement() {
 
           {trainers.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 20px" }}>
-              <div style={{ fontSize: "52px", marginBottom: "12px" }}>−</div>
+              <div style={{ fontSize: "52px", marginBottom: "12px" }}>ΓêÆ</div>
               <h3
                 style={{
                   color: "#64748b",
@@ -1321,14 +1332,14 @@ function AccessManagement() {
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
-              <table className="data-table">
+              <table className="data-table access-employees-table">
                 <thead>
                   <tr>
                     <th>Employee</th>
                     <th>Email</th>
                     <th>Mobile</th>
                     <th>Role</th>
-                    <th>Assigned Students</th>
+                    <th>Assigned Groups</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -1340,28 +1351,22 @@ function AccessManagement() {
                       <td>
                         <span
                           style={{
-                            fontWeight: 600,
-                            color: "#0f172a",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: "#64748b",
                           }}
                         >
                           {trainer.name}
                         </span>
                       </td>
-                      <td style={{ color: "#64748b" }}>{trainer.email}</td>
-                      <td style={{ color: "#64748b" }}>{trainer.mobile}</td>
+                      <td style={{ fontSize: "14px", fontWeight: 500, color: "#64748b" }}>{trainer.email}</td>
+                      <td style={{ fontSize: "14px", fontWeight: 500, color: "#64748b" }}>{trainer.mobile}</td>
                       <td>
                         <span
                           style={{
-                            display: "inline-block",
-                            padding: "3px 10px",
-                            borderRadius: "12px",
-                            fontSize: "12px",
-                            fontWeight: 600,
-                            background:
-                              trainer.role === "hr" ? "#f1f5f9" : "#f1f5f9",
-                            color:
-                              trainer.role === "hr" ? "#475569" : "#475569",
-                            textTransform: "capitalize",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: "#64748b",
                           }}
                         >
                           {trainer.role === "hr" ? "HR" : trainer.role === "other" ? (trainer.customRole || "Other") : "Trainer"}
@@ -1370,14 +1375,12 @@ function AccessManagement() {
                       <td>
                         <span
                           style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            fontWeight: 600,
-                            color: "#0f172a",
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: "#64748b",
                           }}
                         >
-                          {trainer.assignedStudents?.length || 0}
+                          {formatAssignedGroups(trainer)}
                         </span>
                       </td>
                       <td>
@@ -1418,7 +1421,7 @@ function AccessManagement() {
                             (e.currentTarget.style.background = "#f8fafc")
                           }
                         >
-                          ⋮
+                          ...
                         </button>
 
                         {openMenuId === trainer._id && (
@@ -1581,7 +1584,7 @@ function AccessManagement() {
                     (e.target.style.background = "rgba(255, 255, 255, 0.2)")
                   }
                 >
-                  ×
+                  X
                 </button>
               </div>
               <p
@@ -1864,7 +1867,7 @@ function AccessManagement() {
                 <h2 style={{ margin: 0, fontSize: "22px", color: "#0f172a" }}>Edit Employee Profile</h2>
                 <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "14px" }}>Update contact details, role, and joining date.</p>
               </div>
-              <button onClick={() => setShowEditEmployeeModal(false)} style={{ border: "none", background: "#f1f5f9", width: "38px", height: "38px", borderRadius: "10px", cursor: "pointer", fontSize: "20px" }}>×</button>
+              <button onClick={() => setShowEditEmployeeModal(false)} style={{ border: "none", background: "#f1f5f9", width: "38px", height: "38px", borderRadius: "10px", cursor: "pointer", fontSize: "20px" }}>X</button>
             </div>
 
             <form onSubmit={handleSaveEmployee} style={{ padding: "24px" }}>
@@ -2016,7 +2019,7 @@ function AccessManagement() {
                       (e.target.style.background = "rgba(255, 255, 255, 0.2)")
                     }
                   >
-                    ×
+                    X
                   </button>
                 </div>
               </div>
@@ -2161,11 +2164,11 @@ function AccessManagement() {
                           marginBottom: "4px",
                         }}
                       >
-                        Assigned Students
+                        Assigned Groups
                       </label>
                       <div style={{ fontSize: "15px", color: "#14532d" }}>
-                        {selectedTrainerDetails.assignedStudents?.length || 0}{" "}
-                        students
+                        {selectedTrainerDetails.assignedGroups?.length || 0}{" "}
+                        groups
                       </div>
                     </div>
                     <div>

@@ -430,7 +430,7 @@ function GroupManagement() {
 
               <h3 style={{ marginTop: "14px" }}>Student Details</h3>
               <div className="gm-table-wrap">
-                <table className="premium-table">
+                <table className="premium-table group-students-table">
                   <thead>
                     <tr>
                       <th>Name</th>

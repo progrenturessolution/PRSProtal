@@ -2,7 +2,7 @@ import { useState } from "react";
 import { adminAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-function AddIntern({ onInternAdded }) {
+function AddIntern({ onInternAdded, onBack }) {
   const [studentType, setStudentType] = useState("Internship");
   const [formData, setFormData] = useState({
     internId: "",
@@ -54,7 +54,7 @@ function AddIntern({ onInternAdded }) {
       [name]: value,
     };
 
-    // SMS pending fees = total fees - (first + second + final payment amounts)
+    // SMS completed fees can still be derived from payment splits.
     if (
       [
         "totalFees",
@@ -63,12 +63,9 @@ function AddIntern({ onInternAdded }) {
         "finalPaymentAmount",
       ].includes(name)
     ) {
-      const total = Number(nextData.totalFees || 0);
       const first = Number(nextData.firstPaymentAmount || 0);
       const second = Number(nextData.secondPaymentAmount || 0);
       const final = Number(nextData.finalPaymentAmount || 0);
-      const pending = Math.max(total - (first + second + final), 0);
-      nextData.pendingFees = String(pending);
       nextData.completedFees = String(first + second + final);
     }
 
@@ -283,6 +280,18 @@ function AddIntern({ onInternAdded }) {
           <h1>Add New Student</h1>
           <p className="header-subtitle">Register a new student to the system</p>
         </div>
+        {onBack && (
+          <div className="header-right">
+            <button
+              type="button"
+              className="back-button back-button-primary"
+              onClick={onBack}
+            >
+              <span className="back-arrow">←</span>
+              Back to View All Students
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="premium-card">
@@ -712,13 +721,13 @@ function AddIntern({ onInternAdded }) {
               </div>
 
               <div className="form-group">
-                <label>Pending fees (auto-calculated)</label>
+                <label>Pending fees</label>
                 <input
                   type="number"
                   name="pendingFees"
                   value={formData.pendingFees}
-                  readOnly
-                  placeholder="Auto-calculated"
+                  onChange={handleChange}
+                  placeholder="Enter pending fees"
                 />
               </div>
 
@@ -767,7 +776,16 @@ function AddIntern({ onInternAdded }) {
 
           </div>
 
-          <button type="submit" className="submit-btn" disabled={loading}>
+          <button
+            type="submit"
+            className="submit-btn"
+            disabled={loading}
+            style={{
+              marginTop: "14px",
+              background: "#324158",
+              borderColor: "#324158",
+            }}
+          >
             {loading ? (
               <LoadingSpinner text="Adding Student..." inline size="sm" />
             ) : (
