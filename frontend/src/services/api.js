@@ -48,19 +48,15 @@ api.interceptors.response.use(
     const requestUrl = originalRequest.url || "";
     const isAuthRequest =
       typeof requestUrl === "string" && requestUrl.startsWith("/auth/");
-    const isNetworkError = !error.response;
-    const isTimeoutError = error.code === "ECONNABORTED";
     const isRetryableStatus =
       error.response && error.response.status >= 500 && error.response.status < 600;
     const shouldRetryOnce =
       isAuthRequest &&
       !originalRequest.__isRetryRequest &&
-      (isRetryableStatus || isNetworkError || isTimeoutError);
+      isRetryableStatus;
 
     if (shouldRetryOnce) {
       originalRequest.__isRetryRequest = true;
-      // Small delay gives backend a moment to wake up after cold starts.
-      await new Promise((resolve) => setTimeout(resolve, 800));
       return api(originalRequest);
     }
 
@@ -73,11 +69,6 @@ export const authAPI = {
   adminLogin: (credentials) => api.post("/auth/admin-login", credentials, { timeout: 60000 }),
   internLogin: (credentials) => api.post("/auth/intern-login", credentials, { timeout: 60000 }),
   trainerLogin: (credentials) => api.post("/auth/trainer-login", credentials, { timeout: 60000 }),
-};
-
-// Public system APIs
-export const systemAPI = {
-  healthCheck: () => api.get('/health', { timeout: 12000 }),
 };
 
 // Admin APIs

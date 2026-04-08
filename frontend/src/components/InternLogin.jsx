@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { authAPI, systemAPI } from "../services/api";
+import { authAPI } from "../services/api";
 import LoadingSpinner from "./LoadingSpinner";
 
 function InternLogin() {
@@ -12,10 +12,6 @@ function InternLogin() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    systemAPI.healthCheck().catch(() => {});
-  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -47,14 +43,14 @@ function InternLogin() {
         // Show success message
         setSuccess("Login successful! Redirecting...");
 
-        // Navigate immediately so login feels fast.
-        navigate("/intern-dashboard");
+        // Navigate to intern dashboard after short delay
+        setTimeout(() => {
+          navigate("/intern-dashboard");
+        }, 1000);
       }
     } catch (err) {
       setError(
-        err.code === "ECONNABORTED"
-          ? "Login timed out. Please try again."
-          : err.response?.data?.message || "Unable to reach backend. Please try again.",
+        err.response?.data?.message || "Login failed. Please try again.",
       );
     } finally {
       setLoading(false);

@@ -25,9 +25,7 @@ exports.trainerLogin = async (req, res) => {
     }
 
     // Check if trainer exists
-    const trainer = await Trainer.findOne({ email })
-      .select('_id name email role password')
-      .lean();
+    const trainer = await Trainer.findOne({ email }).lean();
     if (!trainer) {
       return res.status(401).json({
         success: false,
