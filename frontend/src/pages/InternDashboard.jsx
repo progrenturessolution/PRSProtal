@@ -1080,15 +1080,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0f9ff",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#0c4a6e",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1107,15 +1107,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0f9ff",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#0c4a6e",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1134,15 +1134,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0f9ff",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#0c4a6e",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1161,15 +1161,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0f9ff",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#0c4a6e",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1188,15 +1188,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0f9ff",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#0c4a6e",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1215,15 +1215,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0f9ff",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#0c4a6e",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1244,15 +1244,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0f9ff",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#0c4a6e",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1528,28 +1528,28 @@ function InternDashboard() {
               <div className="stats-grid">
                 <div
                   className="stat-card"
-                  style={{ borderLeft: "4px solid #0f172a" }}
+                  style={{ borderLeft: "4px solid #324158" }}
                 >
                   <div className="stat-value">{getTaskStats().total}</div>
                   <div className="stat-label">Total Tasks</div>
                 </div>
                 <div
                   className="stat-card"
-                  style={{ borderLeft: "4px solid #94a3b8" }}
+                  style={{ borderLeft: "4px solid #324158" }}
                 >
                   <div className="stat-value">{getTaskStats().assigned}</div>
                   <div className="stat-label">Assigned</div>
                 </div>
                 <div
                   className="stat-card"
-                  style={{ borderLeft: "4px solid #3b82f6" }}
+                  style={{ borderLeft: "4px solid #324158" }}
                 >
                   <div className="stat-value">{getTaskStats().inProgress}</div>
                   <div className="stat-label">In Progress</div>
                 </div>
                 <div
                   className="stat-card"
-                  style={{ borderLeft: "4px solid #f59e0b" }}
+                  style={{ borderLeft: "4px solid #324158" }}
                 >
                   <div className="stat-value">
                     {getTaskStats().pendingApproval}
@@ -1558,7 +1558,7 @@ function InternDashboard() {
                 </div>
                 <div
                   className="stat-card"
-                  style={{ borderLeft: "4px solid #10b981" }}
+                  style={{ borderLeft: "4px solid #324158" }}
                 >
                   <div className="stat-value">{getTaskStats().completed}</div>
                   <div className="stat-label">Completed</div>
@@ -1569,8 +1569,8 @@ function InternDashboard() {
             {/* Sub-tabs */}
             <div style={{ display: "flex", gap: "4px", marginBottom: "20px", background: "#f1f5f9", padding: "6px", borderRadius: "12px", width: "fit-content" }}>
               {[
-                { id: "individual", label: "👤 Individual Tasks", count: tasks.filter(t => !t.isTeamTask).length },
-                { id: "squad", label: "🤝 Squad Tasks", count: tasks.filter(t => t.isTeamTask).length }
+                { id: "individual", label: "Individual Tasks", count: tasks.filter(t => !t.isTeamTask).length },
+                { id: "squad", label: "Squad Tasks", count: tasks.filter(t => t.isTeamTask).length }
               ].map(({ id, label, count }) => (
                 <button
                   key={id}

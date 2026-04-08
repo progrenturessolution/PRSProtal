@@ -407,6 +407,85 @@ exports.getMyStudents = async (req, res) => {
   }
 };
 
+// Update a student added by current representative
+exports.updateStudent = async (req, res) => {
+  try {
+    const allowedFields = [
+      'name',
+      'email',
+      'mobile',
+      'studentType',
+      'currentDesignation',
+      'domain',
+      'duration',
+      'collegeName',
+      'branch',
+      'yearOfStudy',
+      'suggestedDomain',
+      'currentQualification',
+      'instituteName',
+      'instituteLocation',
+      'enrolmentDate',
+      'enrolBatchMonth',
+      'totalFees',
+      'joiningDate',
+      'endingDate',
+      'gender',
+      'paymentDoneBy',
+      'transactionId',
+      'dateOfPayment',
+      'paymentAmount',
+      'firstPaymentAmount',
+      'firstPaymentDate',
+      'secondPaymentAmount',
+      'secondPaymentDate',
+      'finalPaymentAmount',
+      'finalPaymentDate',
+      'completedFees',
+      'pendingFees',
+      'lastPaymentDate'
+    ];
+
+    const updates = {};
+    allowedFields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] = req.body[field];
+      }
+    });
+
+    const student = await Intern.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        addedByRepresentative: req.user.id,
+        isDeleted: { $ne: true }
+      },
+      updates,
+      { new: true, runValidators: true }
+    )
+      .select('-password')
+      .populate('addedByRepresentative', 'name');
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Student updated successfully', student });
+  } catch (error) {
+    console.error('Update student error:', error);
+
+    if (error?.code === 11000) {
+      if (error?.keyPattern?.email) {
+        return res.status(409).json({ success: false, message: 'Student with this email already exists' });
+      }
+      if (error?.keyPattern?.internId) {
+        return res.status(409).json({ success: false, message: 'Student with this intern ID already exists' });
+      }
+    }
+
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 // Delete a student
 exports.deleteStudent = async (req, res) => {
   try {

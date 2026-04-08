@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { representativeAPI, UPLOADS_BASE } from '../services/api';
 import logo from '../assets/logo.png';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -38,7 +39,7 @@ const initialStudentForm = {
 };
 
 /* ─────────────── Sidebar ─────────────── */
-function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
+function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, user, onLogout }) {
   const items = [
     { key: 'overview', label: 'Dashboard Overview', icon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -77,7 +78,13 @@ function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
           <img src={logo} alt="PRS Portal" className="sidebar-logo" />
         </div>
         <h2>PRS PORTAL</h2>
-        <p>Representative Panel</p>
+        <p>Representative Portal</p>
+      </div>
+
+      <div className="sidebar-user-summary">
+        <p className="sidebar-user-label">Welcome,</p>
+        <p className="sidebar-user-name">{user?.name || "Representative"}</p>
+        <p className="sidebar-user-role">Representative</p>
       </div>
       <ul className="sidebar-menu">
         {items.map(item => (
@@ -91,6 +98,24 @@ function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen }) {
           </li>
         ))}
       </ul>
+
+      <button
+        className="logout-btn"
+        onClick={() => {
+          if (onLogout) onLogout();
+          setSidebarOpen(false);
+        }}
+      >
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+          />
+        </svg>
+        Logout
+      </button>
     </aside>
   );
 }
@@ -134,6 +159,10 @@ function RepresentativeDashboard() {
   const [filters, setFilters] = useState({ name: '', mobile: '', dateFrom: '', dateTo: '' });
   const [deleteSuccess, setDeleteSuccess] = useState('');
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showStudentProfileModal, setShowStudentProfileModal] = useState(false);
+  const [showStudentEditModal, setShowStudentEditModal] = useState(false);
+  const [studentEditForm, setStudentEditForm] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
@@ -396,7 +425,96 @@ function RepresentativeDashboard() {
 
   const handleViewStudentDetails = (student) => {
     setSelectedStudent(student);
+    setShowStudentProfileModal(true);
+    setOpenMenuId(null);
   };
+
+  const handleEditStudent = (student) => {
+    setSelectedStudent(student);
+    setStudentEditForm({
+      internId: student.internId || '',
+      name: student.name || '',
+      email: student.email || '',
+      mobile: student.mobile || '',
+      studentType: student.studentType || '',
+      currentDesignation: student.currentDesignation || '',
+      domain: student.domain || '',
+      duration: student.duration || '',
+      collegeName: student.collegeName || '',
+      branch: student.branch || '',
+      yearOfStudy: student.yearOfStudy || '',
+      suggestedDomain: student.suggestedDomain || '',
+      currentQualification: student.currentQualification || '',
+      instituteName: student.instituteName || '',
+      instituteLocation: student.instituteLocation || '',
+      enrolmentDate: student.enrolmentDate ? new Date(student.enrolmentDate).toISOString().slice(0, 10) : '',
+      enrolBatchMonth: student.enrolBatchMonth || '',
+      totalFees: student.totalFees || '',
+      joiningDate: student.joiningDate ? new Date(student.joiningDate).toISOString().slice(0, 10) : '',
+      endingDate: student.endingDate ? new Date(student.endingDate).toISOString().slice(0, 10) : '',
+      gender: student.gender || '',
+      paymentDoneBy: student.paymentDoneBy || '',
+      transactionId: student.transactionId || '',
+      dateOfPayment: student.dateOfPayment ? new Date(student.dateOfPayment).toISOString().slice(0, 10) : '',
+      paymentAmount: student.paymentAmount || '',
+      firstPaymentAmount: student.firstPaymentAmount || '',
+      firstPaymentDate: student.firstPaymentDate ? new Date(student.firstPaymentDate).toISOString().slice(0, 10) : '',
+      secondPaymentAmount: student.secondPaymentAmount || '',
+      secondPaymentDate: student.secondPaymentDate ? new Date(student.secondPaymentDate).toISOString().slice(0, 10) : '',
+      finalPaymentAmount: student.finalPaymentAmount || '',
+      finalPaymentDate: student.finalPaymentDate ? new Date(student.finalPaymentDate).toISOString().slice(0, 10) : '',
+      completedFees: student.completedFees || '',
+      pendingFees: student.pendingFees || '',
+      lastPaymentDate: student.lastPaymentDate ? new Date(student.lastPaymentDate).toISOString().slice(0, 10) : '',
+    });
+    setShowStudentEditModal(true);
+    setOpenMenuId(null);
+  };
+
+  const handleStudentEditChange = (key, value) => {
+    setStudentEditForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveStudentEdit = async () => {
+    if (!selectedStudent || !studentEditForm) return;
+    try {
+      const response = await representativeAPI.updateStudent(selectedStudent._id, studentEditForm);
+      if (response.data && response.data.success) {
+        const updatedStudent = response.data.student;
+        setStudents((prev) => prev.map((item) => (item._id === updatedStudent._id ? updatedStudent : item)));
+        setSelectedStudent(updatedStudent);
+        setShowStudentEditModal(false);
+        setDeleteSuccess('Student updated successfully.');
+        setTimeout(() => setDeleteSuccess(''), 3000);
+      }
+    } catch (err) {
+      console.error('Update student error:', err);
+    }
+  };
+
+  const formatDateValue = (value) =>
+    value ? new Date(value).toLocaleDateString() : 'Not set';
+
+  const closeStudentProfileModal = () => {
+    setShowStudentProfileModal(false);
+    setSelectedStudent(null);
+  };
+
+  const toggleMenu = (id) => {
+    setOpenMenuId(openMenuId === id ? null : id);
+  };
+
+  // Close action menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!openMenuId) return;
+      if (e.target.closest('[data-menu]') || e.target.closest('[data-menu-toggle]')) return;
+      setOpenMenuId(null);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuId]);
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -498,6 +616,8 @@ function RepresentativeDashboard() {
         setActiveTab={setActiveTab}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        user={user}
+        onLogout={handleLogout}
       />
 
       <main className="main-content">
@@ -1353,90 +1473,157 @@ function RepresentativeDashboard() {
                       Showing <strong style={{ color: '#374151' }}>{students.length}</strong> student{students.length !== 1 ? 's' : ''}
                     </div>
                     <div style={{ overflowX: 'auto' }}>
-                      <table className="premium-table">
+                      <table className="data-table view-students-table" style={{ minWidth: '860px' }}>
                         <thead>
                           <tr>
-                            <th>Student Name</th>
-                            <th>Intern ID</th>
-                            <th>Mobile</th>
+                            <th>#</th>
+                            <th>ID</th>
+                            <th>Name</th>
                             <th>Email</th>
+                            <th>Mobile</th>
                             <th>Type</th>
                             <th>Added By</th>
-                            <th>Domain / Payment</th>
-                            <th>Added On</th>
-                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {students.map(student => {
+                          {students.map((student, index) => {
                             return (
                               <tr key={student._id}>
+                                <td>{index + 1}</td>
+                                <td>{student.internId || '—'}</td>
+                                <td>{student.name || '—'}</td>
+                                <td style={{ wordBreak: 'break-word' }}>{student.email || '—'}</td>
+                                <td>{student.mobile || '—'}</td>
+                                <td>{student.studentType || '—'}</td>
                                 <td>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span style={{ fontWeight: '600', color: '#1f2937' }}>{student.name}</span>
-                                  </div>
-                                </td>
-                                <td className="mono-text" style={{ fontSize: '13px' }}>{student.internId}</td>
-                                <td className="mono-text">{student.mobile || '—'}</td>
-                                <td style={{ fontSize: '13px' }}>{student.email || '—'}</td>
-                                <td>
-                                  <span style={{
-                                    padding: '3px 10px',
-                                    borderRadius: '999px',
-                                    fontSize: '12px',
-                                    fontWeight: '600',
-                                    background: student.studentType === 'SMS Program' ? '#ede9fe' : '#dcfce7',
-                                    color: student.studentType === 'SMS Program' ? '#6d28d9' : '#15803d'
-                                  }}>
-                                    {student.studentType}
-                                  </span>
+                                    {student.addedByRepresentative
+                                      ? `Representative: ${student.addedByRepresentative.name}`
+                                      : 'Admin'}
                                 </td>
                                 <td>
                                   <span
-                                    style={{
-                                      padding: "4px 10px",
-                                      background: student.addedByRepresentative
-                                        ? "#fef3c7"
-                                        : "#dbeafe",
-                                      color: student.addedByRepresentative
-                                        ? "#b45309"
-                                        : "#1e40af",
-                                      borderRadius: "6px",
-                                      fontSize: "11px",
-                                      fontWeight: "600",
-                                      whiteSpace: "nowrap",
-                                    }}
+                                    className={`status-badge ${
+                                      (student.status || '').toLowerCase() === 'active'
+                                        ? 'status-active'
+                                        : (student.status || '').toLowerCase() === 'completed'
+                                          ? 'status-completed'
+                                          : 'status-inactive'
+                                    }`}
                                   >
-                                    {student.addedByRepresentative
-                                      ? `Added by ${student.addedByRepresentative.name}`
-                                      : "Added by Admin"}
+                                    {student.status
+                                      ? student.status.charAt(0).toUpperCase() + student.status.slice(1)
+                                      : 'Active'}
                                   </span>
                                 </td>
-                                <td>
-                                  {student.studentType === 'SMS Program'
-                                    ? `₹${student.paymentAmount || 0}`
-                                    : (student.domain || '—')}
-                                </td>
-                                <td className="mono-text" style={{ fontSize: '13px' }}>
-                                  {student.createdAt ? new Date(student.createdAt).toLocaleDateString('en-IN') : '—'}
-                                </td>
-                                <td>
-                                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                    <button
-                                      onClick={() => handleViewStudentDetails(student)}
-                                      className="table-action-btn"
-                                      style={{ background: '#324158' }}
+                                <td style={{ position: 'relative' }}>
+                                  <button
+                                    data-menu-toggle
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleMenu(student._id);
+                                    }}
+                                    style={{
+                                      background: 'transparent',
+                                      color: '#0f172a',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '8px',
+                                      width: '36px',
+                                      height: '36px',
+                                      cursor: 'pointer',
+                                      fontSize: '20px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    ⋮
+                                  </button>
+
+                                  {openMenuId === student._id && (
+                                    <div
+                                      data-menu
+                                      style={{
+                                        position: 'absolute',
+                                        right: 0,
+                                        top: '42px',
+                                        background: 'white',
+                                        border: '1px solid #e5e7eb',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                                        zIndex: 1000,
+                                        minWidth: '180px',
+                                        overflow: 'hidden',
+                                      }}
                                     >
-                                      View Details
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteStudent(student._id, student.name)}
-                                      className="table-action-btn"
-                                      style={{ background: '#ef4444' }}
-                                    >
-                                      Delete
-                                    </button>
-                                  </div>
+                                      <button
+                                        onClick={() => {
+                                          handleViewStudentDetails(student);
+                                          setOpenMenuId(null);
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          padding: '12px 16px',
+                                          background: 'white',
+                                          border: 'none',
+                                          textAlign: 'left',
+                                          cursor: 'pointer',
+                                          fontSize: '14px',
+                                          fontWeight: '500',
+                                          color: '#0f172a',
+                                        }}
+                                        onMouseEnter={(e) => (e.target.style.background = '#f9fafb')}
+                                        onMouseLeave={(e) => (e.target.style.background = 'white')}
+                                      >
+                                        View Profile
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleEditStudent(student);
+                                          setOpenMenuId(null);
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          padding: '12px 16px',
+                                          background: 'white',
+                                          border: 'none',
+                                          textAlign: 'left',
+                                          cursor: 'pointer',
+                                          fontSize: '14px',
+                                          fontWeight: '500',
+                                          color: '#0f172a',
+                                          borderTop: '1px solid #f3f4f6',
+                                        }}
+                                        onMouseEnter={(e) => (e.target.style.background = '#f9fafb')}
+                                        onMouseLeave={(e) => (e.target.style.background = 'white')}
+                                      >
+                                        Edit Details
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleDeleteStudent(student._id, student.name);
+                                          setOpenMenuId(null);
+                                        }}
+                                        style={{
+                                          width: '100%',
+                                          padding: '12px 16px',
+                                          background: 'white',
+                                          border: 'none',
+                                          textAlign: 'left',
+                                          cursor: 'pointer',
+                                          fontSize: '14px',
+                                          fontWeight: '500',
+                                          color: '#dc2626',
+                                          borderTop: '1px solid #f3f4f6',
+                                        }}
+                                        onMouseEnter={(e) => (e.target.style.background = '#fef2f2')}
+                                        onMouseLeave={(e) => (e.target.style.background = 'white')}
+                                      >
+                                        Delete Student
+                                      </button>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -1450,151 +1637,517 @@ function RepresentativeDashboard() {
             </>
           )}
 
-          {selectedStudent && (
-            <div
-              style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(15, 23, 42, 0.58)',
-                zIndex: 1200,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '16px'
-              }}
-              onClick={() => setSelectedStudent(null)}
-            >
-              <div
-                style={{
-                  width: 'min(760px, 100%)',
-                  maxHeight: '90vh',
-                  overflow: 'auto',
-                  background: '#fff',
-                  borderRadius: '18px',
-                  boxShadow: '0 30px 80px rgba(15, 23, 42, 0.35)'
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div style={{ padding: '22px 24px', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', color: '#fff', position: 'relative' }}>
-                  <button
-                    onClick={() => setSelectedStudent(null)}
-                    style={{
-                      position: 'absolute',
-                      top: '16px',
-                      right: '16px',
-                      width: '34px',
-                      height: '34px',
-                      borderRadius: '50%',
-                      border: 'none',
-                      background: 'rgba(255,255,255,0.16)',
-                      color: '#fff',
-                      cursor: 'pointer',
-                      fontSize: '18px'
-                    }}
-                  >
+          {showStudentProfileModal &&
+            selectedStudent &&
+            createPortal(
+              <div className="profile-modal-overlay">
+                <div className="profile-modal-container">
+                  <div className="profile-body">
+                    <div className="premium-page-header" style={{ marginBottom: '16px' }}>
+                      <div className="header-left">
+                        <h1 style={{ marginBottom: '4px' }}>Student Profile</h1>
+                        <p className="header-subtitle">{selectedStudent.name}</p>
+                      </div>
+                      <div className="header-right">
+                        <button className="premium-btn-secondary" onClick={closeStudentProfileModal}>
+                          Close
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="premium-card" style={{ marginBottom: '16px' }}>
+                      <div className="premium-card-header">
+                        <h2>Personal Information</h2>
+                      </div>
+
+                      <div className="profile-info-grid">
+                        <div className="profile-field">
+                          <label>Full Name</label>
+                          <div className="field-value">{selectedStudent.name || 'Not available'}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Email Address</label>
+                          <div className="field-value mono-text">{selectedStudent.email || 'Not available'}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Mobile Number</label>
+                          <div className="field-value mono-text">{selectedStudent.mobile || 'Not available'}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Student ID</label>
+                          <div className="field-value mono-text">{selectedStudent.internId || 'Not available'}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Student Type</label>
+                          <div className="field-value">
+                            <span className="badge-neutral">{selectedStudent.studentType || 'Not set'}</span>
+                          </div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Status</label>
+                          <div className="field-value">
+                            <span className="badge-neutral">{selectedStudent.status || 'active'}</span>
+                          </div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Current Designation</label>
+                          <div className="field-value">{selectedStudent.currentDesignation || 'Not set'}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Registered On</label>
+                          <div className="field-value">{formatDateValue(selectedStudent.createdAt)}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Joining Date</label>
+                          <div className="field-value">{formatDateValue(selectedStudent.joiningDate)}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Ending Date</label>
+                          <div className="field-value">{formatDateValue(selectedStudent.endingDate)}</div>
+                        </div>
+                        <div className="profile-field">
+                          <label>Duration</label>
+                          <div className="field-value">{selectedStudent.duration || 'Not set'}</div>
+                        </div>
+
+                        {selectedStudent.studentType === 'Internship' ? (
+                          <>
+                            <div className="profile-field">
+                              <label>Domain</label>
+                              <div className="field-value">{selectedStudent.domain || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>College Name</label>
+                              <div className="field-value">{selectedStudent.collegeName || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Branch</label>
+                              <div className="field-value">{selectedStudent.branch || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Year of Study</label>
+                              <div className="field-value">{selectedStudent.yearOfStudy || 'Not set'}</div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="profile-field">
+                              <label>Suggested Domain</label>
+                              <div className="field-value">{selectedStudent.suggestedDomain || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Current Qualification</label>
+                              <div className="field-value">{selectedStudent.currentQualification || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Institute Name</label>
+                              <div className="field-value">{selectedStudent.instituteName || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Institute Location</label>
+                              <div className="field-value">{selectedStudent.instituteLocation || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Enrolment Date</label>
+                              <div className="field-value">{formatDateValue(selectedStudent.enrolmentDate)}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Batch Month</label>
+                              <div className="field-value">{selectedStudent.enrolBatchMonth || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Total Fees</label>
+                              <div className="field-value">{selectedStudent.totalFees || '0'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Completed Fees</label>
+                              <div className="field-value">{selectedStudent.completedFees || '0'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Pending Fees</label>
+                              <div className="field-value">{selectedStudent.pendingFees || '0'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Gender</label>
+                              <div className="field-value">{selectedStudent.gender || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Payment Done By</label>
+                              <div className="field-value">{selectedStudent.paymentDoneBy || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Transaction ID</label>
+                              <div className="field-value mono-text">{selectedStudent.transactionId || 'Not set'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Payment Amount</label>
+                              <div className="field-value">{selectedStudent.paymentAmount || '0'}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Date of Payment</label>
+                              <div className="field-value">{formatDateValue(selectedStudent.dateOfPayment)}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Last Payment Date</label>
+                              <div className="field-value">{formatDateValue(selectedStudent.lastPaymentDate)}</div>
+                            </div>
+                            <div className="profile-field">
+                              <label>First Payment</label>
+                              <div className="field-value">
+                                {(selectedStudent.firstPaymentAmount || '0') +
+                                  (selectedStudent.firstPaymentDate
+                                    ? ` on ${formatDateValue(selectedStudent.firstPaymentDate)}`
+                                    : '')}
+                              </div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Second Payment</label>
+                              <div className="field-value">
+                                {(selectedStudent.secondPaymentAmount || '0') +
+                                  (selectedStudent.secondPaymentDate
+                                    ? ` on ${formatDateValue(selectedStudent.secondPaymentDate)}`
+                                    : '')}
+                              </div>
+                            </div>
+                            <div className="profile-field">
+                              <label>Final Payment</label>
+                              <div className="field-value">
+                                {(selectedStudent.finalPaymentAmount || '0') +
+                                  (selectedStudent.finalPaymentDate
+                                    ? ` on ${formatDateValue(selectedStudent.finalPaymentDate)}`
+                                    : '')}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="info-banner">
+                        <strong>Profile Information</strong>
+                        <p>
+                          Is profile ka layout intern My Profile jaisa rakha gaya hai,
+                          jisme sab main details clearly visible hain.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="profile-actions">
+                      <button
+                        className="profile-btn profile-btn-primary"
+                        onClick={() => {
+                          setShowStudentProfileModal(false);
+                          handleEditStudent(selectedStudent);
+                        }}
+                      >
+                        Edit Profile
+                      </button>
+                      <button className="profile-btn profile-btn-ghost" onClick={closeStudentProfileModal}>
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>,
+              document.body,
+            )}
+
+          {showStudentEditModal && selectedStudent && studentEditForm && (
+            <div className="modal-overlay" onClick={() => setShowStudentEditModal(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>Edit Profile</h2>
+                  <button className="modal-close-btn" onClick={() => setShowStudentEditModal(false)}>
                     ✕
                   </button>
-                  <h2 style={{ margin: '0 0 8px 0' }}>{selectedStudent.name}</h2>
-                  <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: '14px', opacity: 0.95 }}>
-                    <span>ID: {selectedStudent.internId}</span>
-                    <span>•</span>
-                    <span>{selectedStudent.studentType}</span>
-                  </div>
                 </div>
 
-                <div style={{ padding: '24px' }}>
-                  <div style={{ display: 'grid', gap: '20px' }}>
-                    <section>
-                      <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Student Information</h3>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                          <div style={{ color: '#64748b', fontSize: '13px' }}>Email</div>
-                          <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.email || 'N/A'}</div>
-                        </div>
-                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                          <div style={{ color: '#64748b', fontSize: '13px' }}>Mobile</div>
-                          <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.mobile || 'N/A'}</div>
-                        </div>
-                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                          <div style={{ color: '#64748b', fontSize: '13px' }}>Designation</div>
-                          <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.currentDesignation || 'N/A'}</div>
-                        </div>
-                        <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                          <div style={{ color: '#64748b', fontSize: '13px' }}>Added On</div>
-                          <div style={{ color: '#0f172a', fontWeight: '600' }}>
-                            {selectedStudent.createdAt ? new Date(selectedStudent.createdAt).toLocaleDateString('en-IN') : 'N/A'}
-                          </div>
-                        </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSaveStudentEdit();
+                  }}
+                >
+                  <div className="form-group">
+                    <label>Student Type</label>
+                    <select
+                      value={studentEditForm.studentType}
+                      onChange={(e) => handleStudentEditChange('studentType', e.target.value)}
+                    >
+                      <option value="Internship">Internship</option>
+                      <option value="SMS Program">SMS Program</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Student ID</label>
+                    <input value={studentEditForm.internId} readOnly />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Full Name</label>
+                    <input
+                      value={studentEditForm.name}
+                      onChange={(e) => handleStudentEditChange('name', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input
+                      type="email"
+                      value={studentEditForm.email}
+                      onChange={(e) => handleStudentEditChange('email', e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Mobile</label>
+                    <input
+                      value={studentEditForm.mobile}
+                      onChange={(e) => handleStudentEditChange('mobile', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Current Designation</label>
+                    <input
+                      value={studentEditForm.currentDesignation}
+                      onChange={(e) => handleStudentEditChange('currentDesignation', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Joining Date</label>
+                    <input
+                      type="date"
+                      value={studentEditForm.joiningDate}
+                      onChange={(e) => handleStudentEditChange('joiningDate', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Ending Date</label>
+                    <input
+                      type="date"
+                      value={studentEditForm.endingDate}
+                      onChange={(e) => handleStudentEditChange('endingDate', e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Duration</label>
+                    <input
+                      value={studentEditForm.duration}
+                      onChange={(e) => handleStudentEditChange('duration', e.target.value)}
+                    />
+                  </div>
+
+                  {studentEditForm.studentType === 'Internship' ? (
+                    <>
+                      <div className="form-group">
+                        <label>Domain</label>
+                        <input
+                          value={studentEditForm.domain}
+                          onChange={(e) => handleStudentEditChange('domain', e.target.value)}
+                        />
                       </div>
-                    </section>
+                      <div className="form-group">
+                        <label>College Name</label>
+                        <input
+                          value={studentEditForm.collegeName}
+                          onChange={(e) => handleStudentEditChange('collegeName', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Branch</label>
+                        <input
+                          value={studentEditForm.branch}
+                          onChange={(e) => handleStudentEditChange('branch', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Year of Study</label>
+                        <input
+                          value={studentEditForm.yearOfStudy}
+                          onChange={(e) => handleStudentEditChange('yearOfStudy', e.target.value)}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="form-group">
+                        <label>Suggested Domain</label>
+                        <input
+                          value={studentEditForm.suggestedDomain}
+                          onChange={(e) => handleStudentEditChange('suggestedDomain', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Current Qualification</label>
+                        <input
+                          value={studentEditForm.currentQualification}
+                          onChange={(e) => handleStudentEditChange('currentQualification', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Institute Name</label>
+                        <input
+                          value={studentEditForm.instituteName}
+                          onChange={(e) => handleStudentEditChange('instituteName', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Institute Location</label>
+                        <input
+                          value={studentEditForm.instituteLocation}
+                          onChange={(e) => handleStudentEditChange('instituteLocation', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Enrolment Date</label>
+                        <input
+                          type="date"
+                          value={studentEditForm.enrolmentDate}
+                          onChange={(e) => handleStudentEditChange('enrolmentDate', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Batch Month</label>
+                        <input
+                          type="month"
+                          value={studentEditForm.enrolBatchMonth}
+                          onChange={(e) => handleStudentEditChange('enrolBatchMonth', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Total Fees</label>
+                        <input
+                          value={studentEditForm.totalFees}
+                          onChange={(e) => handleStudentEditChange('totalFees', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Completed Fees</label>
+                        <input
+                          value={studentEditForm.completedFees}
+                          onChange={(e) => handleStudentEditChange('completedFees', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Pending Fees</label>
+                        <input
+                          value={studentEditForm.pendingFees}
+                          onChange={(e) => handleStudentEditChange('pendingFees', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Gender</label>
+                        <select
+                          value={studentEditForm.gender}
+                          onChange={(e) => handleStudentEditChange('gender', e.target.value)}
+                        >
+                          <option value="">Select gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Payment Done By</label>
+                        <input
+                          value={studentEditForm.paymentDoneBy}
+                          onChange={(e) => handleStudentEditChange('paymentDoneBy', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Transaction ID</label>
+                        <input
+                          value={studentEditForm.transactionId}
+                          onChange={(e) => handleStudentEditChange('transactionId', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Date of Payment</label>
+                        <input
+                          type="date"
+                          value={studentEditForm.dateOfPayment}
+                          onChange={(e) => handleStudentEditChange('dateOfPayment', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Payment Amount</label>
+                        <input
+                          value={studentEditForm.paymentAmount}
+                          onChange={(e) => handleStudentEditChange('paymentAmount', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>First Payment Amount</label>
+                        <input
+                          value={studentEditForm.firstPaymentAmount}
+                          onChange={(e) => handleStudentEditChange('firstPaymentAmount', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>First Payment Date</label>
+                        <input
+                          type="date"
+                          value={studentEditForm.firstPaymentDate}
+                          onChange={(e) => handleStudentEditChange('firstPaymentDate', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Second Payment Amount</label>
+                        <input
+                          value={studentEditForm.secondPaymentAmount}
+                          onChange={(e) => handleStudentEditChange('secondPaymentAmount', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Second Payment Date</label>
+                        <input
+                          type="date"
+                          value={studentEditForm.secondPaymentDate}
+                          onChange={(e) => handleStudentEditChange('secondPaymentDate', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Final Payment Amount</label>
+                        <input
+                          value={studentEditForm.finalPaymentAmount}
+                          onChange={(e) => handleStudentEditChange('finalPaymentAmount', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Final Payment Date</label>
+                        <input
+                          type="date"
+                          value={studentEditForm.finalPaymentDate}
+                          onChange={(e) => handleStudentEditChange('finalPaymentDate', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Last Payment Date</label>
+                        <input
+                          type="date"
+                          value={studentEditForm.lastPaymentDate}
+                          onChange={(e) => handleStudentEditChange('lastPaymentDate', e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
 
-                    {selectedStudent.studentType === 'SMS Program' ? (
-                      <section>
-                        <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Payment & Fees</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Payment Done By</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.paymentDoneBy || 'N/A'}</div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Transaction ID</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600', fontFamily: 'monospace' }}>{selectedStudent.transactionId || 'N/A'}</div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Payment Amount</div>
-                            <div style={{ color: '#059669', fontWeight: '700' }}>{selectedStudent.paymentAmount ? `₹${selectedStudent.paymentAmount}` : '₹0'}</div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Completed Fees</div>
-                            <div style={{ color: '#059669', fontWeight: '700' }}>{selectedStudent.completedFees ? `₹${selectedStudent.completedFees}` : '₹0'}</div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Pending Fees</div>
-                            <div style={{ color: '#d97706', fontWeight: '700' }}>{selectedStudent.pendingFees ? `₹${selectedStudent.pendingFees}` : '₹0'}</div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Payment Date</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
-                              {selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString('en-IN') : 'N/A'}
-                            </div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Last Payment Date</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
-                              {selectedStudent.lastPaymentDate ? new Date(selectedStudent.lastPaymentDate).toLocaleDateString('en-IN') : 'N/A'}
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-                    ) : (
-                      <section>
-                        <h3 style={{ margin: '0 0 12px 0', color: '#0f172a' }}>Internship Details</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Domain</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.domain || 'N/A'}</div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Joining Date</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
-                              {selectedStudent.joiningDate ? new Date(selectedStudent.joiningDate).toLocaleDateString('en-IN') : 'N/A'}
-                            </div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Ending Date</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600' }}>
-                              {selectedStudent.endingDate ? new Date(selectedStudent.endingDate).toLocaleDateString('en-IN') : 'N/A'}
-                            </div>
-                          </div>
-                          <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '14px' }}>
-                            <div style={{ color: '#64748b', fontSize: '13px' }}>Duration</div>
-                            <div style={{ color: '#0f172a', fontWeight: '600' }}>{selectedStudent.duration || 'N/A'}</div>
-                          </div>
-                        </div>
-                      </section>
-                    )}
+                  <div className="modal-actions">
+                    <button type="button" className="btn-secondary" onClick={() => setShowStudentEditModal(false)}>
+                      Cancel
+                    </button>
+                    <button type="submit" className="btn-primary">
+                      Save Changes
+                    </button>
                   </div>
-                </div>
+                </form>
               </div>
             </div>
           )}
@@ -1692,144 +2245,131 @@ function RepresentativeDashboard() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.35fr 0.8fr', gap: '16px', alignItems: 'start' }}>
-                <section
+              <div style={{ display: 'grid', gap: '16px' }}>
+                <div
                   className="premium-card"
                   style={{
-                    padding: '0',
-                    overflow: 'hidden',
-                    border: '1px solid #111111',
-                    background: '#fff',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '12px',
+                    padding: '16px',
                   }}
                 >
-                  <div style={{ padding: '18px 18px 14px', background: 'linear-gradient(135deg, #000000 0%, #171717 60%, #262626 100%)', color: '#fff' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.85 }}>Certificates Hub</div>
-                        <h2 style={{ margin: '6px 0 4px' }}>Your Assigned Documents</h2>
-                        <p style={{ margin: 0, opacity: 0.9 }}>Everything assigned by admin in one organized view.</p>
-                      </div>
-                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                        <div style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
-                          <div style={{ fontSize: '12px', opacity: 0.85 }}>Assigned</div>
-                          <div style={{ fontSize: '22px', fontWeight: 800 }}>{certificateCount}</div>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '10px 12px', minWidth: '110px' }}>
-                          <div style={{ fontSize: '12px', opacity: 0.85 }}>Total Docs</div>
-                          <div style={{ fontSize: '22px', fontWeight: 800 }}>{assignedDocs.length}</div>
-                        </div>
-                      </div>
-                    </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>Assigned Documents</div>
+                    <div style={{ fontSize: '22px', fontWeight: '700', color: '#111827' }}>{certificateCount}</div>
+                  </div>
+                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '12px 14px' }}>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>Total Document Types</div>
+                    <div style={{ fontSize: '22px', fontWeight: '700', color: '#111827' }}>{assignedDocs.length}</div>
+                  </div>
+                </div>
+
+                <section className="premium-card" style={{ padding: '0', overflow: 'hidden' }}>
+                  <div style={{ padding: '16px 18px', borderBottom: '1px solid #eef2f7' }}>
+                    <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Your Assigned Documents</h2>
+                    <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '13px' }}>All assigned certificate files in a simple view.</p>
                   </div>
 
-                  <div style={{ padding: '18px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
-                      {assignedDocs.map((doc) => {
-                        const isReady = Boolean(doc.filepath);
-                        return (
-                          <div
-                            key={doc.key}
-                            style={{
-                              borderRadius: '16px',
-                              border: `1px solid ${isReady ? '#d4d4d8' : '#a1a1aa'}`,
-                              background: '#ffffff',
-                              padding: '14px',
-                              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.05)',
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: '10px' }}>
-                              <div>
-                                <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Assigned File</div>
-                                <h3 style={{ margin: 0, color: '#0f172a', fontSize: '16px' }}>{doc.label}</h3>
-                              </div>
-                              <span style={{ fontSize: '11px', fontWeight: 800, padding: '4px 9px', borderRadius: '999px', background: isReady ? '#000000' : '#e4e4e7', color: isReady ? '#ffffff' : '#3f3f46' }}>
-                                {isReady ? 'READY' : 'MISSING'}
-                              </span>
-                            </div>
-
-                            <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
-                              <div style={{ fontSize: '13px', color: '#334155' }}>
-                                <strong>File:</strong> {doc.filename || 'Not uploaded'}
-                              </div>
-                              <div style={{ fontSize: '13px', color: '#334155' }}>
-                                <strong>Uploaded:</strong> {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '-'}
-                              </div>
-
-                              {isReady ? (
-                                <a
-                                  href={resolveFileUrl(doc.filepath)}
-                                  target="_blank"
-                                  rel="noreferrer"
+                  <div style={{ overflowX: 'auto', padding: '0 12px 12px' }}>
+                    <table className="data-table view-students-table" style={{ minWidth: '760px' }}>
+                      <thead>
+                        <tr>
+                          <th>Document</th>
+                          <th>File Name</th>
+                          <th>Uploaded On</th>
+                          <th>Status</th>
+                          <th>Open File</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {assignedDocs.map((doc) => {
+                          const isReady = Boolean(doc.filepath);
+                          return (
+                            <tr key={doc.key}>
+                              <td>{doc.label}</td>
+                              <td style={{ wordBreak: 'break-word' }}>{doc.filename || 'Not uploaded'}</td>
+                              <td>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '-'}</td>
+                              <td>
+                                <span
                                   style={{
-                                    marginTop: '6px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '8px',
-                                    width: 'fit-content',
-                                    padding: '9px 14px',
-                                    borderRadius: '10px',
-                                    background: '#000000',
-                                    color: '#fff',
-                                    textDecoration: 'none',
-                                    fontWeight: 700,
-                                    fontSize: '13px',
+                                    padding: '4px 10px',
+                                    borderRadius: '999px',
+                                    fontSize: '11px',
+                                    fontWeight: '700',
+                                    background: isReady ? '#dcfce7' : '#f3f4f6',
+                                    color: isReady ? '#166534' : '#4b5563',
                                   }}
                                 >
-                                  Open Document
-                                </a>
-                              ) : (
-                                <div style={{ marginTop: '6px', color: '#64748b', fontSize: '13px' }}>This document has not been assigned yet.</div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                                  {isReady ? 'Ready' : 'Missing'}
+                                </span>
+                              </td>
+                              <td>
+                                {isReady ? (
+                                  <a
+                                    href={resolveFileUrl(doc.filepath)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      padding: '6px 12px',
+                                      borderRadius: '8px',
+                                      background: '#324158',
+                                      color: '#fff',
+                                      textDecoration: 'none',
+                                      fontSize: '12px',
+                                      fontWeight: '600',
+                                    }}
+                                  >
+                                    Open
+                                  </a>
+                                ) : (
+                                  <span style={{ color: '#9ca3af', fontSize: '12px' }}>Not available</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </section>
 
-                <aside style={{ display: 'grid', gap: '16px' }}>
-                  <section className="premium-card" style={{ padding: '16px', border: '1px solid #111111' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+                  <section className="premium-card" style={{ padding: '16px' }}>
                     <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Certification Metadata</h2>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>PGIR ID</strong><div style={{ marginTop: '6px' }}>{profile?.pgirId || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>Designation</strong><div style={{ marginTop: '6px' }}>{profile?.designation || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>Joining Date</strong><div style={{ marginTop: '6px' }}>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>UPI ID</strong><div style={{ marginTop: '6px' }}>{profile?.upiId || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>UPI/Mobile</strong><div style={{ marginTop: '6px' }}>{profile?.upiMobileNumber || '-'}</div></div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}><strong>LinkedIn</strong><div style={{ marginTop: '6px' }}>{profile?.linkedinProfile || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>PGIR ID</strong><div style={{ marginTop: '4px' }}>{profile?.pgirId || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>Designation</strong><div style={{ marginTop: '4px' }}>{profile?.designation || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>Joining Date</strong><div style={{ marginTop: '4px' }}>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>UPI ID</strong><div style={{ marginTop: '4px' }}>{profile?.upiId || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>UPI/Mobile</strong><div style={{ marginTop: '4px' }}>{profile?.upiMobileNumber || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>LinkedIn</strong><div style={{ marginTop: '4px' }}>{profile?.linkedinProfile || '-'}</div></div>
                     </div>
                   </section>
 
-                  <section className="premium-card" style={{ padding: '16px', border: '1px solid #111111' }}>
+                  <section className="premium-card" style={{ padding: '16px' }}>
                     <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links</h2>
                     <div style={{ display: 'grid', gap: '10px' }}>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Application Form</div>
-                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#000000', fontWeight: 700 }}>Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Application Form</div>
+                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
-                      <div style={{ padding: '12px', borderRadius: '12px', background: '#fafafa', border: '1px solid #d4d4d8' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#64748b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Internship Sheet</div>
-                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#000000', fontWeight: 700 }}>Open</a> : <span style={{ color: '#64748b' }}>Not available</span>}
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Sheet</div>
+                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
-                    </div>
-                  </section>
 
-                  <section className="premium-card" style={{ padding: '16px', border: '1px solid #111111' }}>
-                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Promotional Messages</h2>
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                      <div style={{ background: '#ffffff', border: '1px solid #d4d4d8', borderRadius: '14px', padding: '12px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Internship</div>
-                        <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Message</div>
+                        <div style={{ color: '#0f172a', lineHeight: 1.5, fontSize: '13px' }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
                       </div>
-                      <div style={{ background: '#ffffff', border: '1px solid #d4d4d8', borderRadius: '14px', padding: '12px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>SMS Program</div>
-                        <div style={{ color: '#0f172a', lineHeight: 1.55 }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Program Message</div>
+                        <div style={{ color: '#0f172a', lineHeight: 1.5, fontSize: '13px' }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
                       </div>
                     </div>
                   </section>
-                </aside>
+                </div>
               </div>
             </>
           )}
@@ -1861,11 +2401,6 @@ function RepresentativeDashboard() {
         </div>
       </main>
       
-
-      {/* Logout button in sidebar footer handled by sidebar */}
-      <style>{`
-        .rep-logout { display: none; }
-      `}</style>
     </div>
   );
 }

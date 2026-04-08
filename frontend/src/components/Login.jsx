@@ -127,6 +127,15 @@ function Login() {
               </div>
               <span>Team Collaboration</span>
             </div>
+
+            <div className="feature-item">
+              <div className="feature-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5h6m-6 4.5h6m-6 4.5h6m6-9l1.5-1.5a2.121 2.121 0 113 3L12 20.25H9v-3l6-9.75z" />
+                </svg>
+              </div>
+              <span>Smart Management</span>
+            </div>
           </div>
         </div>
       </div>

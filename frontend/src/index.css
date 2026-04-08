@@ -174,9 +174,10 @@ button, a, input, select, textarea {
 /* Features List */
 .features-list {
   margin-top: 48px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 26px;
+  row-gap: 14px;
 }
 
 .feature-item {
@@ -184,7 +185,7 @@ button, a, input, select, textarea {
   align-items: center;
   gap: 14px;
   background: rgba(255, 255, 255, 0.08);
-  padding: 12px 18px;
+  padding: 10px 14px;
   border-radius: 10px;
   backdrop-filter: blur(10px);
   border: 2px solid transparent;
@@ -193,6 +194,7 @@ button, a, input, select, textarea {
   transition: all 0.3s ease;
   animation: slideInLeft 0.6s ease-out forwards;
   opacity: 0;
+  min-width: 0;
 }
 
 .feature-item::before {
@@ -244,6 +246,10 @@ button, a, input, select, textarea {
   animation-delay: 0.6s;
 }
 
+.feature-item:nth-child(4) {
+  animation-delay: 0.8s;
+}
+
 @keyframes slideInLeft {
   from {
     opacity: 0;
@@ -285,10 +291,14 @@ button, a, input, select, textarea {
 }
 
 .feature-item span {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: white;
   letter-spacing: 0.3px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  min-width: 0;
 }
 
 .login-right {
@@ -1450,7 +1460,7 @@ button, a, input, select, textarea {
 .logout-btn {
   margin: 20px;
   padding: 12px;
-  background: rgba(239, 68, 68, 0.9);
+  background: #324158;
   border: none;
   border-radius: 8px;
   color: white;
@@ -1462,7 +1472,7 @@ button, a, input, select, textarea {
 }
 
 .logout-btn:hover {
-  background: #ef4444;
+  background: #3d5170;
 }
 
 .main-content {
@@ -4378,54 +4388,32 @@ form {
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
-/* Trainer Profile Mini in Sidebar */
-.trainer-profile-mini {
-  padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  margin: 0 10px 20px 10px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* Compact sidebar user summary used by trainer and representative portals */
+.sidebar-user-summary {
+  padding: 16px 20px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.trainer-profile-mini .profile-avatar {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+.sidebar-user-summary .sidebar-user-label {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
 }
 
-.trainer-profile-mini .profile-avatar svg {
-  width: 28px;
-  height: 28px;
-  color: white;
-}
-
-.trainer-profile-mini .profile-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.trainer-profile-mini .profile-name {
-  font-size: 14px;
+.sidebar-user-summary .sidebar-user-name {
+  font-size: 16px;
   font-weight: 600;
   color: white;
-  margin: 0 0 4px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin: 0;
+  word-break: break-word;
 }
 
-.trainer-profile-mini .profile-role {
+.sidebar-user-summary .sidebar-user-role {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);
-  margin: 0;
+  margin: 4px 0 0 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -4441,7 +4429,7 @@ form {
 .logout-btn {
   margin: 20px;
   padding: 12px;
-  background: rgba(239, 68, 68, 0.9);
+  background: #324158;
   border: none;
   border-radius: 8px;
   color: white;
@@ -4462,7 +4450,7 @@ form {
 }
 
 .logout-btn:hover {
-  background: #ef4444;
+  background: #3d5170;
 }
 
 /* Large Gradient Stat Cards */
@@ -4880,9 +4868,9 @@ form {
 }
 
 .premium-btn-secondary {
-  background: white;
-  color: #334155;
-  border: 1px solid #cbd5e1;
+  background: #324158;
+  color: white;
+  border: 1px solid #324158;
   padding: 10px 20px;
   border-radius: 8px;
   font-size: 14px;
@@ -4892,8 +4880,8 @@ form {
 }
 
 .premium-btn-secondary:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: #3d5170;
+  border-color: #3d5170;
 }
 
 /* Premium Stats Grid */

@@ -53,6 +53,7 @@ router.post(
 );
 router.get('/students', verifyToken, verifyRep, repController.getMyStudents);
 router.get('/students/stats', verifyToken, verifyRep, repController.getMyStudentStats);
+router.patch('/students/:id', verifyToken, verifyRep, repController.updateStudent);
 router.delete('/students/:id', verifyToken, verifyRep, repController.deleteStudent);
 router.get('/payouts', verifyToken, verifyRep, repController.getMyPayouts);
 

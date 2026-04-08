@@ -184,6 +184,7 @@ export const representativeAPI = {
   addStudent: (data) => api.post("/representative/students", data),
   getMyStudents: (params) => api.get("/representative/students", { params }),
   getMyStudentStats: () => api.get("/representative/students/stats"),
+  updateStudent: (id, data) => api.patch(`/representative/students/${id}`, data),
   deleteStudent: (id) => api.delete(`/representative/students/${id}`),
   getMyPayouts: () => api.get("/representative/payouts"),
 };

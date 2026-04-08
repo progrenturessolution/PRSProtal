@@ -41,7 +41,6 @@ function AccessManagement() {
   const [filterType, setFilterType] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
   const [filteredStudents, setFilteredStudents] = useState([]);
-  const [portalEmployeeId, setPortalEmployeeId] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -68,7 +67,6 @@ function AccessManagement() {
     // Type filter
     if (filterType !== "All") {
       filtered = filtered.filter(
-        (student) => student.studentType === filterType,
       );
     }
 
@@ -272,7 +270,6 @@ function AccessManagement() {
       )
     ) {
       try {
-        const response = await adminAPI.deleteTrainer(trainerId);
         if (response.data.success) {
           setTrainers(trainers.filter((t) => t._id !== trainerId));
           setOpenMenuId(null);
@@ -525,7 +522,6 @@ function AccessManagement() {
           { key: "assign", label: "Assign Students" },
           { key: "groups", label: "Assign Groups" },
           { key: "work", label: "Assign Work" },
-          { key: "portal", label: "Employee Portal" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -538,10 +534,10 @@ function AccessManagement() {
               fontSize: "14px",
               fontWeight: 600,
               transition: "all 0.2s",
-              background: activeTab === tab.key ? "white" : "transparent",
-              color: activeTab === tab.key ? "#0f172a" : "#64748b",
+              background: activeTab === tab.key ? "#324158" : "transparent",
+              color: activeTab === tab.key ? "#ffffff" : "#64748b",
               boxShadow:
-                activeTab === tab.key ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+                activeTab === tab.key ? "0 2px 8px rgba(50, 65, 88, 0.28)" : "none",
             }}
           >
             {tab.label}
@@ -1168,74 +1164,6 @@ function AccessManagement() {
               </button>
             </div>
           </form>
-        </div>
-      )}
-
-      {/* ΓöÇΓöÇ EMPLOYEE PORTAL TAB ΓöÇΓöÇ */}
-      {activeTab === "portal" && (
-        <div className="card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
-            <div>
-              <h3 style={{ margin: 0, color: "#0f172a", fontSize: "18px" }}>Employee Portal Preview</h3>
-              <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>View work, groups, students, and access summary from the employee record</p>
-            </div>
-            <select value={portalEmployeeId} onChange={(e) => setPortalEmployeeId(e.target.value)} style={{ minWidth: "260px" }}>
-              <option value="">Use selected employee</option>
-              {trainers.map((trainer) => (
-                <option key={trainer._id} value={trainer._id}>{trainer.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {!portalEmployee ? (
-            <div style={{ color: "#64748b" }}>No employee selected.</div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
-              <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#f8fafc" }}>
-                <h4 style={{ marginTop: 0 }}>Profile</h4>
-                <div><strong>Name:</strong> {portalEmployee.name}</div>
-                <div><strong>Email:</strong> {portalEmployee.email}</div>
-                <div><strong>Role:</strong> {portalEmployee.role === "other" ? (portalEmployee.customRole || "Other") : portalEmployee.role}</div>
-                <div><strong>Joining Date:</strong> {portalEmployee.joiningDate ? new Date(portalEmployee.joiningDate).toLocaleDateString("en-IN") : "-"}</div>
-                <div><strong>Assigned Groups:</strong> {portalEmployee.assignedGroups?.length || 0}</div>
-                <div><strong>Work Items:</strong> {portalEmployee.workAssignments?.length || 0}</div>
-              </div>
-              <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#fff" }}>
-                <h4 style={{ marginTop: 0 }}>Assigned Work</h4>
-                {(portalEmployee.workAssignments || []).length === 0 ? (
-                  <div style={{ color: "#64748b" }}>No work assigned yet.</div>
-                ) : (
-                  <div style={{ display: "grid", gap: "10px" }}>
-                    {portalEmployee.workAssignments.map((work) => (
-                      <div key={work._id} style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "12px", background: "#f8fafc" }}>
-                        <div style={{ fontWeight: 700 }}>{work.title}</div>
-                        <div style={{ fontSize: "13px", color: "#475569", marginTop: "4px" }}>{work.description}</div>
-                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "6px" }}>Work date: {work.workDate ? new Date(work.workDate).toLocaleDateString("en-IN") : "-"}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div style={{ padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#fff" }}>
-                <h4 style={{ marginTop: 0 }}>Assigned Groups</h4>
-                {(portalEmployee.assignedGroups || []).length === 0 ? (
-                  <div style={{ color: "#64748b" }}>No groups assigned yet.</div>
-                ) : (
-                  <ul style={{ margin: 0, paddingLeft: "18px" }}>
-                    {(portalEmployee.assignedGroups || []).map((group) => (
-                      <li key={group._id || group}>{group.groupName || `Group ${group.groupNumber || ""}`}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <div style={{ gridColumn: "1 / -1", padding: "16px", border: "1px solid #e2e8f0", borderRadius: "12px", background: "#f8fafc" }}>
-                <h4 style={{ marginTop: 0 }}>Student View Note</h4>
-                <p style={{ marginBottom: 0, color: "#475569" }}>
-                  Detailed day-wise attendance, progress history, and restricted HR / trainer sheets are already handled inside the employee dashboard. This preview helps admin see the linked access summary.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       )}
 

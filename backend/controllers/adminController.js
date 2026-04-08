@@ -783,8 +783,16 @@ exports.updateTrainer = async (req, res) => {
       .select('-password')
       .populate('assignedStudents', 'name email internId studentType status assignedTrainer')
       .populate('assignedGroups', 'groupName groupNumber students createdAt')
-      .populate('workAssignments.assignedStudents', 'name email internId')
-      .populate('workAssignments.assignedGroups', 'groupName groupNumber');
+      .populate({
+        path: 'workAssignments.assignedStudents',
+        select: '_id name email internId',
+        options: { lean: false }
+      })
+      .populate({
+        path: 'workAssignments.assignedGroups',
+        select: '_id groupName groupNumber',
+        options: { lean: false }
+      });
 
     res.status(200).json({ success: true, message: 'Employee updated successfully', trainer: updatedTrainer });
   } catch (error) {
@@ -1003,8 +1011,16 @@ exports.getAllTrainers = async (req, res) => {
       .select('-password')
       .populate('assignedStudents', 'name email internId studentType status')
       .populate('assignedGroups', 'groupName groupNumber students createdAt')
-      .populate('workAssignments.assignedStudents', 'name email internId')
-      .populate('workAssignments.assignedGroups', 'groupName groupNumber');
+      .populate({
+        path: 'workAssignments.assignedStudents',
+        select: '_id name email internId',
+        options: { lean: false }
+      })
+      .populate({
+        path: 'workAssignments.assignedGroups',
+        select: '_id groupName groupNumber',
+        options: { lean: false }
+      });
 
     res.status(200).json({
       success: true,

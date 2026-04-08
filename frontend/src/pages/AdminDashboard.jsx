@@ -531,7 +531,7 @@ function AdminDashboard() {
                 d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z"
               />
             </svg>
-            Dashboard Overview
+            Dashboard
           </li>
 
           <li
@@ -549,7 +549,25 @@ function AdminDashboard() {
                 d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
               />
             </svg>
-            View All Students
+            View all Aspirant
+          </li>
+
+          <li
+            className={activeMenu === "sms-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("sms-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+              />
+            </svg>
+            SMS program Mangemnet
           </li>
 
           <li
@@ -567,41 +585,7 @@ function AdminDashboard() {
                 d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
-            Internship Management
-          </li>
-          <li
-            className={activeMenu === "sms-management" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("sms-management");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-            SMS Program Management
-          </li>
-          <li
-            className={activeMenu === "group-management" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("group-management");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h10v10H7zM3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4z"
-              />
-            </svg>
-            Group Management
+            Internship Mangemnet
           </li>
 
           <li
@@ -619,7 +603,7 @@ function AdminDashboard() {
                 d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0z"
               />
             </svg>
-            Representatives
+            Representative
           </li>
 
           <li
@@ -655,13 +639,13 @@ function AdminDashboard() {
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
               />
             </svg>
-            Employee Management
+            Emoloyee Mangemnet
           </li>
 
           <li
-            className={activeMenu === "archived-students" ? "active" : ""}
+            className={activeMenu === "group-management" ? "active" : ""}
             onClick={() => {
-              setActiveMenu("archived-students");
+              setActiveMenu("group-management");
               setSidebarOpen(false);
             }}
           >
@@ -670,13 +654,12 @@ function AdminDashboard() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                d="M7 7h10v10H7zM3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4z"
               />
             </svg>
-            Archived Students
+            Group Mangemnet
           </li>
 
-          {/* Certificates */}
           <li
             className={activeMenu === "certificates" ? "active" : ""}
             onClick={() => {
@@ -692,7 +675,7 @@ function AdminDashboard() {
                 d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
               />
             </svg>
-            Certificates
+            Certificate Mangement
           </li>
 
           <li
@@ -710,8 +693,9 @@ function AdminDashboard() {
                 d="M12 6v6m0 0v6m0-6h6m-6 0H6"
               />
             </svg>
-            Create Task
+            Create task
           </li>
+
           <li
             className={activeMenu === "manage-tasks" ? "active" : ""}
             onClick={() => {
@@ -727,8 +711,9 @@ function AdminDashboard() {
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
               />
             </svg>
-            Manage Tasks
+            manage task
           </li>
+
           <li
             className={activeMenu === "pending-approvals" ? "active" : ""}
             onClick={() => {
@@ -744,7 +729,7 @@ function AdminDashboard() {
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            Pending Approvals
+            pending apporval
             {taskStats.pendingApprovalTasks > 0 && (
               <span
                 style={{
@@ -760,23 +745,6 @@ function AdminDashboard() {
                 {taskStats.pendingApprovalTasks}
               </span>
             )}
-          </li>
-          <li
-            className={activeMenu === "completed-tasks" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("completed-tasks");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Completed Tasks
           </li>
 
           <li
@@ -796,6 +764,7 @@ function AdminDashboard() {
             </svg>
             Notifications
           </li>
+
           <li
             className={activeMenu === "jobs-internships" ? "active" : ""}
             onClick={() => {
@@ -811,10 +780,27 @@ function AdminDashboard() {
                 d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
-            Jobs & Internship Updates
+            Jobs and internship updates
           </li>
 
-          {/* Reports */}
+          <li
+            className={activeMenu === "archived-students" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("archived-students");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+              />
+            </svg>
+            archived students
+          </li>
+
           <li
             className={activeMenu === "reports" ? "active" : ""}
             onClick={() => {
@@ -830,7 +816,7 @@ function AdminDashboard() {
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
               />
             </svg>
-            Reports
+            reports
           </li>
         </ul>
 

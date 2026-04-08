@@ -72,13 +72,14 @@ function TrainerDashboard() {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
 
+
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab");
     if (tab) {
       setActiveTab(tab);
     }
-  }, [location.search]);
+  }, [location.search, setActiveTab]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -95,13 +96,6 @@ function TrainerDashboard() {
     // Load data in background
     fetchDashboardData();
   }, [navigate]);
-
-  useEffect(() => {
-    if (!selectedStudent?._id) {
-      return;
-    }
-    fetchStudentRecords(selectedStudent._id);
-  }, [selectedStudent]);
 
   const fetchDashboardData = async () => {
     try {
@@ -683,24 +677,154 @@ function TrainerDashboard() {
                   </div>
                 ) : (
                   <div style={{ overflowX: "auto" }}>
-                    <table className="premium-table">
-                      <thead>
-                        <tr>
-                          <th>Group Name</th>
-                          <th>Group Number</th>
-                          <th>Students</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {assignedGroups.map((group) => (
-                          <tr key={group._id}>
-                            <td>{group.groupName || "-"}</td>
-                            <td>{group.groupNumber || "-"}</td>
-                            <td>{Array.isArray(group.students) ? group.students.length : 0}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    {assignedGroups.map((group) => {
+                      const students = Array.isArray(group.students) ? group.students : [];
+                      
+                      return (
+                        <div key={group._id} style={{ marginBottom: "16px", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+                          <div
+                            style={{
+                              padding: "16px",
+                              background: "#f9fafb",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              transition: "all 0.2s ease",
+                              borderBottom: "1px solid #e5e7eb"
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = "#f3f4f6"}
+                            onMouseLeave={(e) => e.currentTarget.style.background = "#f9fafb"}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
+                              <svg
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                style={{
+                                  width: "20px",
+                                  height: "20px",
+                                  color: "#667eea",
+                                  transform: "rotate(90deg)",
+                                  transition: "transform 0.2s ease"
+                                }}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                              <div>
+                                <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "15px" }}>
+                                  {group.groupName || "Unnamed Group"}
+                                </div>
+                                <div style={{ fontSize: "13px", color: "#9ca3af", marginTop: "2px" }}>
+                                  Group #: {group.groupNumber || "-"}
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "13px", color: "#6b7280" }}>
+                              <span style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: "999px", fontWeight: "600" }}>
+                                {students.length} Student{students.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div style={{ padding: "16px", background: "#fff" }}>
+                            {students.length === 0 ? (
+                              <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                                <p>No students in this group</p>
+                              </div>
+                            ) : (
+                              <div style={{ overflowX: "auto" }}>
+                                <table className="premium-table" style={{ marginBottom: 0 }}>
+                                  <thead>
+                                    <tr>
+                                      <th>Student</th>
+                                      <th>Student ID</th>
+                                      <th>Email</th>
+                                      <th>Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {students.map((student) => {
+                                      const initials = student.name
+                                        ? student.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+                                        : "S";
+                                      return (
+                                        <tr key={student._id}>
+                                          <td>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                              <div
+                                                style={{
+                                                  width: "36px",
+                                                  height: "36px",
+                                                  borderRadius: "50%",
+                                                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  justifyContent: "center",
+                                                  color: "#fff",
+                                                  fontWeight: "700",
+                                                  fontSize: "12px",
+                                                  flexShrink: 0,
+                                                }}
+                                              >
+                                                {initials}
+                                              </div>
+                                              <div>
+                                                <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "14px" }}>
+                                                  {student.name || "Unknown"}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </td>
+                                          <td>
+                                            <span style={{ fontSize: "13px", color: "#6b7280" }}>
+                                              {student.internId || "-"}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <span style={{ fontSize: "13px", color: "#6b7280" }}>
+                                              {student.email || "-"}
+                                            </span>
+                                          </td>
+                                          <td>
+                                            <button
+                                              onClick={() => {
+                                                setSelectedStudent(student);
+                                                setSelectedStudentTab('interviews');
+                                                setActiveTab('student-records');
+                                              }}
+                                              style={{
+                                                padding: "6px 14px",
+                                                borderRadius: "6px",
+                                                border: "none",
+                                                background: "linear-gradient(135deg, #667eea, #764ba2)",
+                                                color: "white",
+                                                fontSize: "12px",
+                                                fontWeight: "600",
+                                                cursor: "pointer",
+                                                transition: "all 0.2s ease"
+                                              }}
+                                              onMouseEnter={(e) => e.currentTarget.style.opacity = "0.8"}
+                                              onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                                            >
+                                              View Details
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -726,7 +850,7 @@ function TrainerDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {workAssignments.map((item) => (
+                        {workAssignments && workAssignments.map((item) => (
                           <tr key={item._id}>
                             <td>{item.title || "-"}</td>
                             <td>{item.description || "-"}</td>
