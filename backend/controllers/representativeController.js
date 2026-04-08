@@ -64,7 +64,9 @@ exports.representativeLogin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    const rep = await Representative.findOne({ email }).lean();
+    const rep = await Representative.findOne({ email })
+      .select('_id name email role college designation status password')
+      .lean();
     if (!rep) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }

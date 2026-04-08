@@ -109,7 +109,9 @@ exports.internLogin = async (req, res) => {
 
     // Check if intern exists
     const normalizedInternId = String(internId).trim();
-    const intern = await Intern.findOne({ internId: normalizedInternId }).lean();
+    const intern = await Intern.findOne({ internId: normalizedInternId })
+      .select('_id name email internId status studentType role password')
+      .lean();
     if (!intern) {
       return res.status(401).json({ 
         success: false, 

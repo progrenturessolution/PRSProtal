@@ -61,6 +61,11 @@ app.use('/api/task', taskRoutes);
 app.use('/api/trainer', trainerRoutes);
 app.use('/api/representative', representativeRoutes);
 
+// API health check route (used by login warm-up requests)
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, status: 'ok' });
+});
+
 // Health check route
 app.get('/', (req, res) => {
   res.json({ 

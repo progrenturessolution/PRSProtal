@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { representativeAPI } from '../services/api';
+import { representativeAPI, systemAPI } from '../services/api';
 import LoadingSpinner from './LoadingSpinner';
 
 function RepresentativeLogin() {
@@ -9,6 +9,10 @@ function RepresentativeLogin() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    systemAPI.healthCheck().catch(() => {});
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -29,10 +33,14 @@ function RepresentativeLogin() {
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('userRole', 'representative');
         setSuccess('Login successful! Redirecting...');
-        setTimeout(() => navigate('/representative-dashboard'), 1000);
+        navigate('/representative-dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(
+        err.code === 'ECONNABORTED'
+          ? 'Login timed out. Please try again.'
+          : err.response?.data?.message || 'Unable to reach backend. Please try again.'
+      );
     } finally {
       setLoading(false);
     }

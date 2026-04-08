@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authAPI, representativeAPI } from '../services/api';
+import { authAPI, representativeAPI, systemAPI } from '../services/api';
 import logo from '../assets/logo.png';
 
 function Login() {
@@ -13,6 +13,10 @@ function Login() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    systemAPI.healthCheck().catch(() => {});
+  }, []);
 
   const getErrorMessage = (err) =>
     err.code === 'ECONNABORTED'
