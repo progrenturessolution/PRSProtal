@@ -32,7 +32,7 @@ const smtpAltPorts = pickEnv('SMTP_ALT_PORTS', 'EMAIL_ALT_PORTS')
 const smtpTlsServername = pickEnv('SMTP_TLS_SERVERNAME', 'EMAIL_TLS_SERVERNAME') || smtpHost;
 const emailMaxRetries = Number(pickEnv('EMAIL_MAX_RETRIES', 'SMTP_MAX_RETRIES') || 2);
 const emailRetryDelayMs = Number(pickEnv('EMAIL_RETRY_DELAY_MS', 'SMTP_RETRY_DELAY_MS') || 1500);
-const PRS_LOGIN_URL = 'https://prs-protal.vercel.app/';
+const PRS_LOGIN_URL = 'http://localhost:5173/';
 const PRS_COMPANY_NAME = 'Progrentures™ Solution Pvt. Ltd.';
 
 const escapeHtml = (value) => String(value ?? '')
