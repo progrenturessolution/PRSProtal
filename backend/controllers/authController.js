@@ -47,7 +47,9 @@ exports.adminLogin = async (req, res) => {
 
     // Check if admin exists
     const normalizedEmail = String(email).toLowerCase().trim();
-    const admin = await Admin.findOne({ email: normalizedEmail });
+    const admin = await Admin.findOne({ email: normalizedEmail })
+      .select('_id email role password')
+      .lean();
     if (!admin) {
       return res.status(401).json({ 
         success: false, 

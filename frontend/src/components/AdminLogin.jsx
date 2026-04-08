@@ -51,11 +51,9 @@ function AdminLogin() {
         
         // Show success message
         setSuccess('Login successful! Redirecting...');
-        
-        // Navigate to dashboard after short delay
-        setTimeout(() => {
-          navigate('/admin-dashboard');
-        }, 1000);
+
+        // Navigate immediately so login feels responsive.
+        navigate('/admin-dashboard');
       }
     } catch (err) {
       setError(getErrorMessage(err));
