@@ -23,6 +23,14 @@ console.log('- EMAIL_PASS:', process.env.EMAIL_PASS ? '✓ Set' : '✗ Missing')
 
 // Initialize express app
 const app = express();
+const PORT = Number(process.env.PORT) || 5000;
+const HOST = '0.0.0.0';
+
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+app.disable('x-powered-by');
 
 // Middleware
 app.use(cors());
@@ -38,12 +46,25 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Connect to MongoDB
 const startServer = async () => {
-  const PORT = process.env.PORT || 5000;
   let cleanupJobStarted = false;
-
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`Server running on ${HOST}:${PORT}`);
   });
+
+  const shutdown = (signal) => {
+    console.log(`${signal} received. Shutting down server...`);
+    server.close(async () => {
+      try {
+        await mongoose.connection.close();
+      } catch (error) {
+        console.error('Error while closing database connection:', error.message);
+      }
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 
   const connectWithRetry = async () => {
     try {
@@ -83,10 +104,39 @@ app.get('/api/health', (req, res) => {
 
 // Health check route
 app.get('/', (req, res) => {
-  res.json({ 
-    success: true, 
-    message: 'Progrentures Internship Management System API' 
+  res.status(200).json({
+    success: true,
+    message: 'Server is live'
   });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled server error:', err);
+  const statusCode = Number(err.statusCode) || 500;
+
+  res.status(statusCode).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV !== 'production' ? { stack: err.stack } : {})
+  });
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
 });
 
 // Start server
