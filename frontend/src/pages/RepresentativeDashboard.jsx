@@ -61,7 +61,7 @@ function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, user
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     )},
-    { key: 'certificates', label: 'Certificates', icon: (
+    { key: 'certificates', label: 'Documents', icon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
     )},
@@ -2194,53 +2194,75 @@ function RepresentativeDashboard() {
                     <p className="empty-subtitle">Admin will add weekly payout entries here</p>
                   </div>
                 ) : (
-                  <div style={{ overflowX: 'auto' }}>
-                    <table className="premium-table">
-                      <thead>
-                        <tr>
-                          <th>Month</th>
-                          <th>Week</th>
-                          <th>Enrollments</th>
-                          <th>3000 Paid</th>
-                          <th>Payout Eligible</th>
-                          <th>Reward %</th>
-                          <th>Payout (₹)</th>
-                          <th>Status</th>
-                          <th>Release Date</th>
-                          <th>UPI/QR</th>
-                          <th>Promotional Docs</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payouts.map((row) => (
-                          <tr key={row._id}>
-                            <td>{row.monthLabel}</td>
-                            <td>{row.weekLabel}</td>
-                            <td>{row.totalEnrollmentCount}</td>
-                            <td>{row.studentsWith3000Paid}</td>
-                            <td>{row.payoutEligible}</td>
-                            <td>{row.rewardPercent}%</td>
-                            <td>₹{row.payoutAmount || 0}</td>
-                            <td>{row.payoutStatus}</td>
-                            <td>{row.payoutReleaseDate ? new Date(row.payoutReleaseDate).toLocaleDateString('en-IN') : '-'}</td>
-                            <td>{row.upiQrDriveLink ? <a href={row.upiQrDriveLink} target="_blank" rel="noreferrer">Open</a> : '-'}</td>
-                            <td>{row.promotionalDocumentsLink ? <a href={row.promotionalDocumentsLink} target="_blank" rel="noreferrer">Open</a> : '-'}</td>
+                  <>
+                    <div style={{
+                      padding: '12px 20px', borderBottom: '1px solid #f3f4f6',
+                      fontSize: '13px', color: '#6b7280'
+                    }}>
+                      Showing <strong style={{ color: '#374151' }}>{payouts.length}</strong> reward cycle{payouts.length !== 1 ? 's' : ''}
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table className="premium-table view-students-table" style={{ minWidth: '860px' }}>
+                        <thead style={{ background: '#324158' }}>
+                          <tr style={{ background: '#324158' }}>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Month</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Week</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Enrollments</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>3000 Paid</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Eligible</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Reward %</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Payout (₹)</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Status</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Release Date</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>UPI/QR</th>
+                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Promo Docs</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {payouts.map((row) => (
+                            <tr key={row._id}>
+                              <td>{row.monthLabel}</td>
+                              <td>{row.weekLabel}</td>
+                              <td>{row.totalEnrollmentCount}</td>
+                              <td>{row.studentsWith3000Paid}</td>
+                              <td>{row.payoutEligible}</td>
+                              <td>{row.rewardPercent}%</td>
+                              <td style={{ fontWeight: 600, color: '#16a34a' }}>₹{row.payoutAmount || 0}</td>
+                              <td>
+                                <span
+                                  style={{
+                                    display: 'inline-block',
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    background: row.payoutStatus === 'Paid' ? '#dcfce7' : '#fef3c7',
+                                    color: row.payoutStatus === 'Paid' ? '#166534' : '#92400e',
+                                  }}
+                                >
+                                  {row.payoutStatus}
+                                </span>
+                              </td>
+                              <td>{row.payoutReleaseDate ? new Date(row.payoutReleaseDate).toLocaleDateString('en-IN') : '-'}</td>
+                              <td>{row.upiQrDriveLink ? <a href={row.upiQrDriveLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : '-'}</td>
+                              <td>{row.promotionalDocumentsLink ? <a href={row.promotionalDocumentsLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             </>
           )}
 
-          {/* ─── CERTIFICATES ─── */}
+          {/* ─── DOCUMENTS ─── */}
           {activeTab === 'certificates' && (
             <>
               <div className="premium-page-header">
                 <div className="header-left">
-                  <h1>Certificates</h1>
+                  <h1>Documents</h1>
                   <p className="header-subtitle">Assigned files, certification details and quick access</p>
                 </div>
               </div>

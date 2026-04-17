@@ -556,9 +556,6 @@ function AddIntern({ onInternAdded, onBack }) {
                   accept="application/pdf"
                   onChange={handleOfferFile}
                 />
-                <small>
-                  Upload internship offer letter (optional).
-                </small>
               </div>
             </>
           )}
@@ -781,7 +778,7 @@ function AddIntern({ onInternAdded, onBack }) {
             className="submit-btn"
             disabled={loading}
             style={{
-              marginTop: "14px",
+              marginTop: "24px",
               background: "#324158",
               borderColor: "#324158",
             }}
