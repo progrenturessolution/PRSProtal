@@ -1460,10 +1460,10 @@ button, a, input, select, textarea {
 .logout-btn {
   margin: 20px;
   padding: 12px;
-  background: #324158;
-  border: none;
+  background: #ffffff;
+  border: 1px solid #324158;
   border-radius: 8px;
-  color: white;
+  color: #324158;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -1472,7 +1472,9 @@ button, a, input, select, textarea {
 }
 
 .logout-btn:hover {
-  background: #3d5170;
+  background: #f8fafc;
+  color: #3d5170;
+  border-color: #3d5170;
 }
 
 .main-content {
@@ -4429,10 +4431,10 @@ form {
 .logout-btn {
   margin: 20px;
   padding: 12px;
-  background: #324158;
-  border: none;
+  background: #ffffff;
+  border: 1px solid #324158;
   border-radius: 8px;
-  color: white;
+  color: #324158;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -4450,7 +4452,9 @@ form {
 }
 
 .logout-btn:hover {
-  background: #3d5170;
+  background: #f8fafc;
+  color: #3d5170;
+  border-color: #3d5170;
 }
 
 /* Large Gradient Stat Cards */

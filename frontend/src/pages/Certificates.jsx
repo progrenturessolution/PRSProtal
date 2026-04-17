@@ -6,6 +6,7 @@ function Certificates() {
   const [students, setStudents] = useState([]);
   const [category, setCategory] = useState('All');
   const [selectedStudent, setSelectedStudent] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [fileRows, setFileRows] = useState([{ id: 1, name: '', file: null }]);
   const [submitting, setSubmitting] = useState(false);
   const [certs, setCerts] = useState([]);
@@ -130,63 +131,153 @@ function Certificates() {
     fontFamily: 'inherit',
   };
 
-  const filteredStudents = students.filter(s => category === 'All' || s.studentType === category);
+  const categoryStudents = students.filter(s => category === 'All' || s.studentType === category);
+  const filteredStudents = categoryStudents.filter((s) => {
+    const q = studentSearch.trim().toLowerCase();
+    if (!q) return true;
+
+    return [
+      s.internId,
+      s.name,
+      s.email,
+      s.studentType,
+      s.phone,
+      s.mobile,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(q));
+  });
+
+  const selectedStudentObj = students.find((s) => s._id === selectedStudent);
 
   return (
     <>
       <div className="content-header">
-        <h1>Certificates</h1>
+        <h1>Documents</h1>
         <p>Assign certificates to students - available for download for 5 days, then auto-deleted</p>
       </div>
 
       {/* â”€â”€ Assign Form â”€â”€ */}
       <div className="card">
-        <h3 style={{ marginBottom: '20px', color: '#0f172a', fontSize: '18px' }}>Assign Certificates to Student</h3>
+        <h3 style={{ marginBottom: '20px', color: '#0f172a', fontSize: '18px' }}>Assign Document to Student</h3>
 
         {error && <div className="error-message" style={{ marginBottom: '16px' }}>{error}</div>}
         {message && <div className="success-message" style={{ marginBottom: '16px' }}>{message}</div>}
 
         <form onSubmit={handleAssign}>
-          {/* Category + Student row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: '16px', marginBottom: '24px' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>
+          {/* Student selection */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '10px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>
                 Category
               </label>
-              <select
-                value={category}
-                onChange={e => { setCategory(e.target.value); setSelectedStudent(''); }}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px', background: '#f8fafc' }}
-              >
-                <option value="All">All</option>
-                <option value="Internship">Internship</option>
-                <option value="SMS Program">SMS Program</option>
-              </select>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['All', 'Internship', 'SMS Program'].map((cat) => {
+                  const isActive = category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => {
+                        setCategory(cat);
+                        setSelectedStudent('');
+                        setStudentSearch('');
+                      }}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: '999px',
+                        border: isActive ? '1px solid #1d4ed8' : '1px solid #cbd5e1',
+                        background: isActive ? '#dbeafe' : '#f8fafc',
+                        color: isActive ? '#1e40af' : '#475569',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
             <div>
               <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>
-                Select Student *
+                Search & Select Student *
               </label>
-              <select
-                value={selectedStudent}
-                onChange={e => setSelectedStudent(e.target.value)}
-                required
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px', background: '#f8fafc' }}
+              <input
+                type="text"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                placeholder="Search by Student ID, name, email, type..."
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px', background: '#f8fafc', marginBottom: '10px' }}
+              />
+
+              <div
+                style={{
+                  border: '2px solid #e2e8f0',
+                  borderRadius: '8px',
+                  background: '#f8fafc',
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  padding: '8px',
+                }}
               >
-                <option value="">Choose a student...</option>
-                {filteredStudents.map(s => (
-                  <option key={s._id} value={s._id}>
-                    {s.internId} - {s.name} ({s.email})
-                  </option>
-                ))}
-              </select>
+                {filteredStudents.length === 0 ? (
+                  <div style={{ padding: '10px', color: '#64748b', fontSize: '13px' }}>
+                    No student matches your search.
+                  </div>
+                ) : (
+                  filteredStudents.map((s) => {
+                    const checked = selectedStudent === s._id;
+                    return (
+                      <label
+                        key={s._id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '10px',
+                          padding: '10px 8px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          background: checked ? '#eef2ff' : 'transparent',
+                          border: checked ? '1px solid #c7d2fe' : '1px solid transparent',
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setSelectedStudent(checked ? '' : s._id)}
+                          style={{ marginTop: '2px' }}
+                        />
+                        <div>
+                          <div style={{ ...tableCellStyle, color: '#0f172a' }}>
+                            {s.internId} - {s.name}
+                          </div>
+                          <div style={tableSubTextStyle}>
+                            {s.email} | {s.studentType}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+
+              <input type="hidden" value={selectedStudent} required />
+
+              {selectedStudentObj && (
+                <div style={{ marginTop: '8px', fontSize: '13px', color: '#334155', fontWeight: '600' }}>
+                  Selected: {selectedStudentObj.internId} - {selectedStudentObj.name}
+                </div>
+              )}
             </div>
           </div>
 
           {/* File rows */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', marginBottom: '10px', fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>
-              Certificates to Assign
+              Documents to Assign
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {fileRows.map((row) => (
@@ -303,7 +394,7 @@ function Certificates() {
             {submitting ? (
               <LoadingSpinner text="Assigning..." inline size="sm" />
             ) : (
-              'Assign Certificates'
+              'Assign Document'
             )}
           </button>
         </form>

@@ -632,7 +632,7 @@ function RepresentativeDashboard() {
                   <p className="header-subtitle">Welcome back, {profile?.name || user?.name}</p>
                 </div>
                 <div className="header-right">
-                  <button className="premium-btn-secondary" onClick={handleLogout}>Logout</button>
+                  <button className="logout-btn" onClick={handleLogout}>Logout</button>
                 </div>
               </div>
 

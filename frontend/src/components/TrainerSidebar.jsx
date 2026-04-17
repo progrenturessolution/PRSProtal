@@ -34,6 +34,13 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
     }
   };
 
+  const selectedCardBg = "linear-gradient(135deg, #324158, #1f2937)";
+  const selectedTabBg = "linear-gradient(135deg, #3241582e, #1f29372e)";
+  const selectedTabHoverBg = "linear-gradient(135deg, #32415822, #1f293722)";
+  const selectedTabBorder = "#324158";
+  const selectedTabActiveText = "#ffffff";
+  const selectedTabInactiveText = "#cbd5e1";
+
   return (
     <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-header">
@@ -118,7 +125,7 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li 
               style={{ 
                 padding: '12px 16px', 
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                background: selectedCardBg,
                 color: 'white',
                 borderRadius: '6px',
                 marginBottom: '8px',
@@ -136,24 +143,24 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li
               style={{
                 padding: '11px 16px 11px 32px',
-                background: selectedStudentTab === 'interviews' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent',
-                borderLeft: selectedStudentTab === 'interviews' ? '4px solid #667eea' : '2px solid transparent',
+                background: selectedStudentTab === 'interviews' ? selectedTabBg : 'transparent',
+                borderLeft: selectedStudentTab === 'interviews' ? `4px solid ${selectedTabBorder}` : '2px solid transparent',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 borderLeftWidth: '4px',
                 paddingLeft: selectedStudentTab === 'interviews' ? '28px' : '32px',
                 fontWeight: selectedStudentTab === 'interviews' ? '600' : '500',
-                color: selectedStudentTab === 'interviews' ? '#4f46e5' : '#e5e7eb',
+                color: selectedStudentTab === 'interviews' ? selectedTabActiveText : selectedTabInactiveText,
                 display: 'flex',
                 alignItems: 'center'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #667eea10, #764ba210)';
-                e.currentTarget.style.color = '#c7d2fe';
+                e.currentTarget.style.background = selectedTabHoverBg;
+                e.currentTarget.style.color = selectedTabActiveText;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = selectedStudentTab === 'interviews' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent';
-                e.currentTarget.style.color = selectedStudentTab === 'interviews' ? '#4f46e5' : '#e5e7eb';
+                e.currentTarget.style.background = selectedStudentTab === 'interviews' ? selectedTabBg : 'transparent';
+                e.currentTarget.style.color = selectedStudentTab === 'interviews' ? selectedTabActiveText : selectedTabInactiveText;
               }}
               onClick={() => {
                 setSelectedStudentTab('interviews');
@@ -175,23 +182,23 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li
               style={{
                 padding: '11px 16px 11px 32px',
-                background: selectedStudentTab === 'aptitude' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent',
-                borderLeft: selectedStudentTab === 'aptitude' ? '4px solid #667eea' : '2px solid transparent',
+                background: selectedStudentTab === 'aptitude' ? selectedTabBg : 'transparent',
+                borderLeft: selectedStudentTab === 'aptitude' ? `4px solid ${selectedTabBorder}` : '2px solid transparent',
                 cursor: 'pointer',
                 paddingLeft: selectedStudentTab === 'aptitude' ? '28px' : '32px',
-                color: selectedStudentTab === 'aptitude' ? '#4f46e5' : '#e5e7eb',
+                color: selectedStudentTab === 'aptitude' ? selectedTabActiveText : selectedTabInactiveText,
                 fontWeight: selectedStudentTab === 'aptitude' ? '600' : '500',
                 transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #667eea10, #764ba210)';
-                e.currentTarget.style.color = '#c7d2fe';
+                e.currentTarget.style.background = selectedTabHoverBg;
+                e.currentTarget.style.color = selectedTabActiveText;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = selectedStudentTab === 'aptitude' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent';
-                e.currentTarget.style.color = selectedStudentTab === 'aptitude' ? '#4f46e5' : '#e5e7eb';
+                e.currentTarget.style.background = selectedStudentTab === 'aptitude' ? selectedTabBg : 'transparent';
+                e.currentTarget.style.color = selectedStudentTab === 'aptitude' ? selectedTabActiveText : selectedTabInactiveText;
               }}
               onClick={() => {
                 setSelectedStudentTab('aptitude');
@@ -213,23 +220,23 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li
               style={{
                 padding: '11px 16px 11px 32px',
-                background: selectedStudentTab === 'assessments' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent',
-                borderLeft: selectedStudentTab === 'assessments' ? '4px solid #667eea' : '2px solid transparent',
+                background: selectedStudentTab === 'assessments' ? selectedTabBg : 'transparent',
+                borderLeft: selectedStudentTab === 'assessments' ? `4px solid ${selectedTabBorder}` : '2px solid transparent',
                 cursor: 'pointer',
                 paddingLeft: selectedStudentTab === 'assessments' ? '28px' : '32px',
-                color: selectedStudentTab === 'assessments' ? '#4f46e5' : '#e5e7eb',
+                color: selectedStudentTab === 'assessments' ? selectedTabActiveText : selectedTabInactiveText,
                 fontWeight: selectedStudentTab === 'assessments' ? '600' : '500',
                 transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #667eea10, #764ba210)';
-                e.currentTarget.style.color = '#c7d2fe';
+                e.currentTarget.style.background = selectedTabHoverBg;
+                e.currentTarget.style.color = selectedTabActiveText;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = selectedStudentTab === 'assessments' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent';
-                e.currentTarget.style.color = selectedStudentTab === 'assessments' ? '#4f46e5' : '#e5e7eb';
+                e.currentTarget.style.background = selectedStudentTab === 'assessments' ? selectedTabBg : 'transparent';
+                e.currentTarget.style.color = selectedStudentTab === 'assessments' ? selectedTabActiveText : selectedTabInactiveText;
               }}
               onClick={() => {
                 setSelectedStudentTab('assessments');
@@ -251,23 +258,23 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             <li
               style={{
                 padding: '11px 16px 11px 32px',
-                background: selectedStudentTab === 'training' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent',
-                borderLeft: selectedStudentTab === 'training' ? '4px solid #667eea' : '2px solid transparent',
+                background: selectedStudentTab === 'training' ? selectedTabBg : 'transparent',
+                borderLeft: selectedStudentTab === 'training' ? `4px solid ${selectedTabBorder}` : '2px solid transparent',
                 cursor: 'pointer',
                 paddingLeft: selectedStudentTab === 'training' ? '28px' : '32px',
-                color: selectedStudentTab === 'training' ? '#4f46e5' : '#e5e7eb',
+                color: selectedStudentTab === 'training' ? selectedTabActiveText : selectedTabInactiveText,
                 fontWeight: selectedStudentTab === 'training' ? '600' : '500',
                 transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #667eea10, #764ba210)';
-                e.currentTarget.style.color = '#c7d2fe';
+                e.currentTarget.style.background = selectedTabHoverBg;
+                e.currentTarget.style.color = selectedTabActiveText;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = selectedStudentTab === 'training' ? 'linear-gradient(135deg, #667eea15, #764ba215)' : 'transparent';
-                e.currentTarget.style.color = selectedStudentTab === 'training' ? '#4f46e5' : '#e5e7eb';
+                e.currentTarget.style.background = selectedStudentTab === 'training' ? selectedTabBg : 'transparent';
+                e.currentTarget.style.color = selectedStudentTab === 'training' ? selectedTabActiveText : selectedTabInactiveText;
               }}
               onClick={() => {
                 setSelectedStudentTab('training');
@@ -296,8 +303,9 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
                 marginTop: '8px',
                 padding: '10px 16px',
                 borderRadius: '6px',
-                background: '#fee2e2',
-                color: '#dc2626',
+                background: '#ffffff',
+                color: '#324158',
+                border: '1px solid #324158',
                 fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',

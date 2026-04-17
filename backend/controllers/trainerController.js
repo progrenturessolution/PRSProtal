@@ -548,7 +548,14 @@ exports.getProfile = async (req, res) => {
     const trainer = await Trainer.findById(trainerId)
       .select('-password')
       .populate('assignedStudents', 'name email internId studentType status assignedTrainer')
-      .populate('assignedGroups', 'groupName groupNumber students createdAt')
+      .populate({
+        path: 'assignedGroups',
+        select: 'groupName groupNumber students createdAt',
+        populate: {
+          path: 'students',
+          select: '_id name email mobile internId studentType status',
+        },
+      })
       .populate({
         path: 'workAssignments.assignedStudents',
         select: '_id name email internId',
