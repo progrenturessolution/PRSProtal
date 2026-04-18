@@ -1263,19 +1263,27 @@ function AccessManagement() {
               <table className="data-table access-employees-table">
                 <thead>
                   <tr>
-                    <th>Employee</th>
-                    <th>Email</th>
-                    <th>Mobile</th>
-                    <th>Role</th>
-                    <th>Assigned Groups</th>
-                    <th>Status</th>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Assign Group Name</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {trainers.map((trainer) => (
                     <tr key={trainer._id}>
-                      {/* Name */}
+                      <td>
+                        <span
+                          className="mono-text"
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            color: "#64748b",
+                          }}
+                        >
+                          {trainer._id}
+                        </span>
+                      </td>
                       <td>
                         <span
                           style={{
@@ -1287,19 +1295,6 @@ function AccessManagement() {
                           {trainer.name}
                         </span>
                       </td>
-                      <td style={{ fontSize: "14px", fontWeight: 500, color: "#64748b" }}>{trainer.email}</td>
-                      <td style={{ fontSize: "14px", fontWeight: 500, color: "#64748b" }}>{trainer.mobile}</td>
-                      <td>
-                        <span
-                          style={{
-                            fontSize: "14px",
-                            fontWeight: 500,
-                            color: "#64748b",
-                          }}
-                        >
-                          {trainer.role === "hr" ? "HR" : trainer.role === "other" ? (trainer.customRole || "Other") : "Trainer"}
-                        </span>
-                      </td>
                       <td>
                         <span
                           style={{
@@ -1309,17 +1304,6 @@ function AccessManagement() {
                           }}
                         >
                           {formatAssignedGroups(trainer)}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            (trainer.status || "").toLowerCase() === "active"
-                              ? "status-active"
-                              : "status-inactive"
-                          }`}
-                        >
-                          {trainer.status}
                         </span>
                       </td>
                       <td style={{ position: "relative" }}>

@@ -56,6 +56,7 @@ function ManageRepresentatives() {
     pgirSelectionLetter: null,
     internshipOfferLetter: null,
   });
+  const [editingRepId, setEditingRepId] = useState("");
 
   const [selectedRepDetails, setSelectedRepDetails] = useState(null);
 
@@ -117,8 +118,13 @@ function ManageRepresentatives() {
     setError("");
     setSuccess("");
 
-    if (!formData.pgirId.trim() || !formData.name.trim() || !formData.email.trim() || !formData.password.trim()) {
-      setError("PGIR ID, full name, email and password are required");
+    if (!formData.pgirId.trim() || !formData.name.trim() || !formData.email.trim()) {
+      setError("PGIR ID, full name and email are required");
+      return;
+    }
+
+    if (!editingRepId && !formData.password.trim()) {
+      setError("Password is required while adding a new representative");
       return;
     }
 
@@ -142,19 +148,51 @@ function ManageRepresentatives() {
 
     try {
       setSubmitting(true);
-      const response = await adminRepAPI.addRepresentative(payload);
+      const response = editingRepId
+        ? await adminRepAPI.updateRepresentative(editingRepId, payload)
+        : await adminRepAPI.addRepresentative(payload);
+
       if (response.data.success) {
-        setSuccess("Representative added successfully");
+        setSuccess(editingRepId ? "Representative updated successfully" : "Representative added successfully");
         setFormData(initialForm);
         setFiles({ upiScanner: null, pgirSelectionLetter: null, internshipOfferLetter: null });
+        setEditingRepId("");
         await fetchRepresentatives(filters);
         setActiveTab("list");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to add representative");
+      setError(err.response?.data?.message || (editingRepId ? "Failed to update representative" : "Failed to add representative"));
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEditRepresentative = (rep) => {
+    setFormData({
+      pgirId: rep.pgirId || "",
+      name: rep.name || "",
+      email: rep.email || "",
+      password: "",
+      mobile: rep.mobile || "",
+      designation: rep.designation || "Campus Representative",
+      internshipApplicationFormLink: rep.internshipApplicationFormLink || "",
+      internshipSheetLink: rep.internshipSheetLink || "",
+      internshipPromotionalMessage: rep.internshipPromotionalMessage || "",
+      smsPromotionalMessage: rep.smsPromotionalMessage || "",
+      joiningDate: rep.joiningDate ? new Date(rep.joiningDate).toISOString().slice(0, 10) : "",
+      college: rep.college || "",
+      course: rep.course || "",
+      department: rep.department || "",
+      year: rep.year || "",
+      instagramProfile: rep.instagramProfile || "",
+      linkedinProfile: rep.linkedinProfile || "",
+      upiId: rep.upiId || "",
+      upiMobileNumber: rep.upiMobileNumber || "",
+    });
+    setFiles({ upiScanner: null, pgirSelectionLetter: null, internshipOfferLetter: null });
+    setEditingRepId(rep._id);
+    setActiveTab("add");
+    setOpenMenuId(null);
   };
 
   const handleDelete = async (id, name) => {
@@ -406,6 +444,27 @@ function ManageRepresentatives() {
                                 </button>
                                 <button
                                   onClick={() => {
+                                    handleEditRepresentative(rep);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#0f172a",
+                                    borderTop: "1px solid #f3f4f6",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => {
                                     handleDelete(rep._id, rep.name);
                                     setOpenMenuId(null);
                                   }}
@@ -443,14 +502,14 @@ function ManageRepresentatives() {
       {activeTab === "add" && (
         <div className="premium-card">
           <div className="premium-card-header">
-            <h2 style={{ margin: 0 }}>Add Representative (PGIR)</h2>
+            <h2 style={{ margin: 0 }}>{editingRepId ? "Edit Representative (PGIR)" : "Add Representative (PGIR)"}</h2>
           </div>
           <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
               <div className="form-group"><label>PGIR ID *</label><input name="pgirId" value={formData.pgirId} onChange={handleInput} placeholder="e.g. PGIR0101" required /></div>
               <div className="form-group"><label>Full Name *</label><input name="name" value={formData.name} onChange={handleInput} required /></div>
               <div className="form-group"><label>Email Address *</label><input type="email" name="email" value={formData.email} onChange={handleInput} required /></div>
-              <div className="form-group"><label>Password *</label><input type="password" name="password" value={formData.password} onChange={handleInput} required /></div>
+              <div className="form-group"><label>{editingRepId ? "Password (leave blank to keep current)" : "Password *"}</label><input type="password" name="password" value={formData.password} onChange={handleInput} required={!editingRepId} /></div>
               <div className="form-group"><label>WhatsApp Number</label><input name="mobile" value={formData.mobile} onChange={handleInput} /></div>
               <div className="form-group"><label>Current Designation</label><input name="designation" value={formData.designation} onChange={handleInput} /></div>
               <div className="form-group"><label>Joining Date</label><input type="date" name="joiningDate" value={formData.joiningDate} onChange={handleInput} /></div>
@@ -479,9 +538,20 @@ function ManageRepresentatives() {
 
             <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
               <button type="submit" disabled={submitting} className="table-action-btn rep-form-submit-btn">
-                {submitting ? <LoadingSpinner text="Saving..." inline size="sm" /> : "Add Representative"}
+                {submitting ? <LoadingSpinner text="Saving..." inline size="sm" /> : editingRepId ? "Update Representative" : "Add Representative"}
               </button>
-              <button type="button" className="table-action-btn rep-form-cancel-btn" onClick={() => setActiveTab("list")}>Cancel</button>
+              <button
+                type="button"
+                className="table-action-btn rep-form-cancel-btn"
+                onClick={() => {
+                  setActiveTab("list");
+                  setEditingRepId("");
+                  setFormData(initialForm);
+                  setFiles({ upiScanner: null, pgirSelectionLetter: null, internshipOfferLetter: null });
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </form>
         </div>
@@ -507,7 +577,7 @@ function ManageRepresentatives() {
               maxHeight: "92vh",
               overflow: "auto",
               background: "#ffffff",
-              border: "1px solid #111111",
+              border: "1px solid #cbd5e1",
               borderRadius: "16px",
               boxShadow: "0 24px 60px rgba(0, 0, 0, 0.35)",
             }}
@@ -520,7 +590,7 @@ function ManageRepresentatives() {
                 alignItems: "center",
                 padding: "18px 22px",
                 borderBottom: "1px solid #d4d4d4",
-                background: "#0a0a0a",
+                background: "#324158",
                 color: "#ffffff",
               }}
             >
@@ -534,7 +604,7 @@ function ManageRepresentatives() {
               </div>
               <button
                 className="table-action-btn"
-                style={{ background: "#ffffff", color: "#000000", border: "1px solid #000000" }}
+                style={{ background: "#ffffff", color: "#324158", border: "1px solid #324158" }}
                 onClick={() => setSelectedRepDetails(null)}
               >
                 Close
@@ -552,24 +622,24 @@ function ManageRepresentatives() {
               >
                 <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
                   <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>PGIR ID</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.representative.pgirId || "-"}</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#324158" }}>{selectedRepDetails.representative.pgirId || "-"}</div>
                 </div>
                 <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
                   <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>Total Students</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.stats.totalStudents}</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#324158" }}>{selectedRepDetails.stats.totalStudents}</div>
                 </div>
                 <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
                   <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>This Week</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.stats.weeklyStudents}</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#324158" }}>{selectedRepDetails.stats.weeklyStudents}</div>
                 </div>
                 <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
                   <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>This Month</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#0a0a0a" }}>{selectedRepDetails.stats.monthlyStudents}</div>
+                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#324158" }}>{selectedRepDetails.stats.monthlyStudents}</div>
                 </div>
               </div>
 
               <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", marginBottom: "16px", overflow: "hidden" }}>
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#0a0a0a", color: "#ffffff" }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#324158", color: "#ffffff" }}>
                   Professional Details
                 </div>
                 <div
@@ -603,7 +673,7 @@ function ManageRepresentatives() {
                         href={toPublicFilePath(selectedRepDetails.representative.docs.upiScanner.filepath)}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: "#000000", fontWeight: 700, textDecoration: "underline" }}
+                        style={{ color: "#324158", fontWeight: 700, textDecoration: "underline" }}
                       >
                         Open
                       </a>
@@ -616,7 +686,7 @@ function ManageRepresentatives() {
                         href={toPublicFilePath(selectedRepDetails.representative.docs.pgirSelectionLetter.filepath)}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: "#000000", fontWeight: 700, textDecoration: "underline" }}
+                        style={{ color: "#324158", fontWeight: 700, textDecoration: "underline" }}
                       >
                         Open
                       </a>
@@ -629,7 +699,7 @@ function ManageRepresentatives() {
                         href={toPublicFilePath(selectedRepDetails.representative.docs.internshipOfferLetter.filepath)}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: "#000000", fontWeight: 700, textDecoration: "underline" }}
+                        style={{ color: "#324158", fontWeight: 700, textDecoration: "underline" }}
                       >
                         Open
                       </a>
@@ -639,7 +709,7 @@ function ManageRepresentatives() {
               </div>
 
               <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", overflow: "hidden" }}>
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#0a0a0a", color: "#ffffff" }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#324158", color: "#ffffff" }}>
                   Recent Payouts
                 </div>
                 <div style={{ overflowX: "auto" }}>

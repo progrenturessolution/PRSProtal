@@ -194,6 +194,7 @@ export const adminRepAPI = {
   addRepresentative: (data) => api.post("/admin/add-representative", data, { timeout: 60000 }),
   getAllRepresentatives: (params) => api.get("/admin/representatives", { params }),
   getRepresentativeDetails: (id) => api.get(`/admin/representatives/${id}/details`),
+  updateRepresentative: (id, data) => api.patch(`/admin/representative/${id}`, data),
   deleteRepresentative: (id) => api.delete(`/admin/representative/${id}`),
   getRepresentativePayouts: (params) =>
     api.get("/admin/representatives/payouts", { params }),

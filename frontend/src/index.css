@@ -110,14 +110,8 @@ button, a, input, select, textarea {
 }
 
 .logo-container::before {
-  content: '';
-  position: absolute;
-  width: 180px;
-  height: 180px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 50%;
-  z-index: 0;
-  animation: pulse 2s ease-in-out infinite;
+  content: none;
+  display: none;
 }
 
 @keyframes pulse {
@@ -2114,6 +2108,20 @@ table tr:hover {
   .data-table tbody td:nth-child(8)::before { content: "Domain"; }
   .data-table tbody td:nth-child(9)::before { content: "Status"; }
   .data-table tbody td:nth-child(10)::before { content: "Actions"; }
+
+
+  .access-employees-table tbody td:nth-child(1)::before { content: "ID"; }
+  .access-employees-table tbody td:nth-child(2)::before { content: "Name"; }
+  .access-employees-table tbody td:nth-child(3)::before { content: "Assign Group Name"; }
+  .access-employees-table tbody td:nth-child(4)::before { content: "Actions"; }
+  .view-students-table tbody td:nth-child(1)::before { content: "ID"; }
+  .view-students-table tbody td:nth-child(2)::before { content: "Name"; }
+  .view-students-table tbody td:nth-child(3)::before { content: "Mobile"; }
+  .view-students-table tbody td:nth-child(4)::before { content: "Type"; }
+  .view-students-table tbody td:nth-child(5)::before { content: "Domain"; }
+  .view-students-table tbody td:nth-child(6)::before { content: "Added By"; }
+  .view-students-table tbody td:nth-child(7)::before { content: "Start Month"; }
+  .view-students-table tbody td:nth-child(8)::before { content: "Actions"; }
 
 }
 
@@ -5282,6 +5290,8 @@ form {
 .rep-payout-table thead th {
   background-color: #324158 !important;
   color: #ffffff !important;
+  padding: 12px !important;
+  font-size: 12px !important;
 }
 
 .table-action-btn {

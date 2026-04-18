@@ -200,6 +200,105 @@ function SMSProgramManagement() {
     setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
+  const getBatchStartMonthYear = (student) => {
+    const dateSource = student.enrolmentDate || student.joiningDate;
+    if (dateSource) {
+      return new Date(dateSource).toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+    return student.enrolBatchMonth || 'N/A';
+  };
+
+  const parseMoney = (value) => {
+    if (value === null || value === undefined || value === '') return 0;
+    const cleaned = String(value).replace(/[^0-9.-]/g, '');
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getPaidAmount = (student) => {
+    const directPayment = parseMoney(student.paymentAmount);
+    if (directPayment > 0) return directPayment;
+
+    const completedFees = parseMoney(student.completedFees);
+    if (completedFees > 0) return completedFees;
+
+    const splitPayments =
+      parseMoney(student.firstPaymentAmount) +
+      parseMoney(student.secondPaymentAmount) +
+      parseMoney(student.finalPaymentAmount);
+
+    return splitPayments;
+  };
+
+  const getTotalFeesDisplay = (student) => {
+    const total = parseMoney(student.totalFees);
+    if (Number.isFinite(total) && total > 0) return `Rs. ${total}`;
+
+    const completed = parseMoney(student.completedFees);
+    const pending = parseMoney(student.pendingFees);
+    const fallbackTotal = completed + pending;
+    return fallbackTotal > 0 ? `Rs. ${fallbackTotal}` : 'N/A';
+  };
+
+  const getPendingFeesDisplay = (student) => {
+    const total = parseMoney(student.totalFees);
+    if (total <= 0) {
+      const fallbackPending = parseMoney(student.pendingFees);
+      return Number.isFinite(fallbackPending) ? `Rs. ${Math.round(fallbackPending)}` : 'N/A';
+    }
+
+    const paid = getPaidAmount(student);
+    const pending = Math.max(0, total - paid);
+    return `Rs. ${Math.round(pending)}`;
+  };
+
+  const handleStatusToggle = async (student) => {
+    const current = (student.status || '').toLowerCase();
+    const nextStatus = current === 'active' ? 'inactive' : 'active';
+
+    try {
+      await adminAPI.updateInternStatus(student._id, nextStatus);
+      const label = nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1);
+      setStudents((prev) =>
+        prev.map((s) => (s._id === student._id ? { ...s, status: label } : s)),
+      );
+      setSelectedStudent((prev) =>
+        prev && prev._id === student._id ? { ...prev, status: label } : prev,
+      );
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error('Status update error:', err);
+      alert('Failed to update status.');
+    }
+  };
+
+  const handleDeleteStudent = async (student) => {
+    const confirmed = window.confirm(
+      `Archive ${student.name}? You can restore later from Archived Students.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await adminAPI.deleteIntern(student._id);
+      setStudents((prev) => prev.filter((s) => s._id !== student._id));
+      if (selectedStudent?._id === student._id) {
+        setSelectedStudent(null);
+      }
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error('Delete student error:', err);
+      alert('Failed to archive student.');
+    }
+  };
+
+  const handleViewProgress = (student) => {
+    setSelectedStudent(student);
+    setOpenMenuId(null);
+  };
+
   const filteredStudents = getFilteredStudents();
 
   return (
@@ -337,10 +436,11 @@ function SMSProgramManagement() {
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Mobile</th>
-                  <th>Status</th>
-                  <th>Added By</th>
+                  <th>Domain</th>
+                  <th>Duration</th>
+                  <th>Batch Start Month and Year</th>
+                  <th>Total Fees</th>
+                  <th>Pending Fees</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -350,38 +450,11 @@ function SMSProgramManagement() {
                     <tr>
                       <td>{student.internId}</td>
                       <td>{student.name}</td>
-                      <td>{student.email}</td>
-                      <td>{student.mobile || 'N/A'}</td>
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            student.status?.toLowerCase() === 'active'
-                              ? 'status-active'
-                              : student.status?.toLowerCase() === 'completed'
-                              ? 'status-completed'
-                              : 'status-inactive'
-                          }`}
-                        >
-                          {student.status ? student.status.charAt(0).toUpperCase() + student.status.slice(1) : 'N/A'}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          style={{
-                            padding: '4px 10px',
-                            background: student.addedByRepresentative ? '#fef3c7' : '#dbeafe',
-                            color: student.addedByRepresentative ? '#b45309' : '#1e40af',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: '600',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {student.addedByRepresentative
-                            ? `Added by ${student.addedByRepresentative.name}`
-                            : 'Added by Admin'}
-                        </span>
-                      </td>
+                      <td>{student.suggestedDomain || student.domain || student.currentDesignation || 'N/A'}</td>
+                      <td>{student.duration || 'N/A'}</td>
+                      <td>{getBatchStartMonthYear(student)}</td>
+                      <td>{getTotalFeesDisplay(student)}</td>
+                      <td>{getPendingFeesDisplay(student)}</td>
                       <td style={{ position: 'relative' }}>
                         <button
                           onClick={() => setOpenMenuId(openMenuId === student._id ? null : student._id)}
@@ -403,7 +476,7 @@ function SMSProgramManagement() {
                         >
                           ⋮
                         </button>
-                        
+
                         {openMenuId === student._id && (
                           <div
                             style={{
@@ -415,7 +488,7 @@ function SMSProgramManagement() {
                               borderRadius: '8px',
                               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                               zIndex: 1000,
-                              minWidth: '160px',
+                              minWidth: '170px',
                               overflow: 'hidden'
                             }}
                           >
@@ -439,7 +512,67 @@ function SMSProgramManagement() {
                               onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                               onMouseLeave={(e) => e.target.style.background = 'white'}
                             >
-                              View Details
+                              View Profile
+                            </button>
+                            <button
+                              onClick={() => handleViewProgress(student)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                background: 'white',
+                                border: 'none',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#132a5d',
+                                transition: 'background 0.2s',
+                                borderTop: '1px solid #f3f4f6'
+                              }}
+                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                              onMouseLeave={(e) => e.target.style.background = 'white'}
+                            >
+                              View Progress
+                            </button>
+                            <button
+                              onClick={() => handleStatusToggle(student)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                background: 'white',
+                                border: 'none',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: student.status?.toLowerCase() === 'active' ? '#b91c1c' : '#166534',
+                                transition: 'background 0.2s',
+                                borderTop: '1px solid #f3f4f6'
+                              }}
+                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                              onMouseLeave={(e) => e.target.style.background = 'white'}
+                            >
+                              {student.status?.toLowerCase() === 'active' ? 'Mark Inactive' : 'Mark Active'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteStudent(student)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                background: 'white',
+                                border: 'none',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#dc2626',
+                                transition: 'background 0.2s',
+                                borderTop: '1px solid #f3f4f6'
+                              }}
+                              onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
+                              onMouseLeave={(e) => e.target.style.background = 'white'}
+                            >
+                              Delete
                             </button>
                           </div>
                         )}

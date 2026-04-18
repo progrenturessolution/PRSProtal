@@ -413,6 +413,18 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
   const formatDateValue = (value) =>
     value ? new Date(value).toLocaleDateString() : "Not set";
 
+  const getStartMonthValue = (student) => {
+    if (student.enrolBatchMonth) return student.enrolBatchMonth;
+
+    const startDate = student.joiningDate || student.enrolmentDate;
+    if (!startDate) return "—";
+
+    return new Date(startDate).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+  };
+
   const toggleMenu = (id) => {
     setOpenMenuId(openMenuId === id ? null : id);
   };
@@ -670,46 +682,30 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
             <table className="data-table view-students-table" style={{ minWidth: "860px" }}>
               <thead>
                 <tr>
-                  <th>#</th>
                   <th>ID</th>
                   <th>Name</th>
-                  <th>Email</th>
                   <th>Mobile</th>
                   <th>Type</th>
+                  <th>Domain</th>
                   <th>Added By</th>
-                  <th>Status</th>
+                  <th>Start Month</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredInterns.map((student, index) => (
+                {filteredInterns.map((student) => (
                   <tr key={student._id}>
-                    <td>{index + 1}</td>
                     <td>{student.internId || "—"}</td>
                     <td>{student.name || "—"}</td>
-                    <td style={{ wordBreak: "break-word" }}>{student.email || "—"}</td>
                     <td>{student.mobile || "—"}</td>
                     <td>{student.studentType || "—"}</td>
+                    <td>{student.domain || student.suggestedDomain || "—"}</td>
                     <td>
                       {student.addedByRepresentative
                         ? `Representative: ${student.addedByRepresentative.name}`
                         : "Admin"}
                     </td>
-                    <td>
-                      <span
-                        className={`status-badge ${
-                          (student.status || "").toLowerCase() === "active"
-                            ? "status-active"
-                            : (student.status || "").toLowerCase() === "completed"
-                              ? "status-completed"
-                              : "status-inactive"
-                        }`}
-                      >
-                        {student.status
-                          ? student.status.charAt(0).toUpperCase() + student.status.slice(1)
-                          : "Active"}
-                      </span>
-                    </td>
+                    <td>{getStartMonthValue(student)}</td>
                     <td style={{ position: "relative" }}>
                       <button
                         data-menu-toggle

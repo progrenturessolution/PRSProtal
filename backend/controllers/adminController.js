@@ -1670,6 +1670,142 @@ exports.getRepresentativeDetails = async (req, res) => {
   }
 };
 
+// Update representative (Admin only)
+exports.updateRepresentative = async (req, res) => {
+  try {
+    const repId = req.params.id;
+    const representative = await Representative.findById(repId);
+
+    if (!representative) {
+      return res.status(404).json({ success: false, message: 'Representative not found' });
+    }
+
+    const {
+      pgirId,
+      name,
+      email,
+      password,
+      mobile,
+      college,
+      course,
+      department,
+      year,
+      designation,
+      sheetLinks,
+      upiId,
+      internshipApplicationFormLink,
+      internshipSheetLink,
+      internshipPromotionalMessage,
+      smsPromotionalMessage,
+      joiningDate,
+      instagramProfile,
+      linkedinProfile,
+      upiMobileNumber,
+    } = req.body;
+
+    const normalizedEmail = email !== undefined ? String(email || '').trim().toLowerCase() : undefined;
+    const normalizedPgirId = pgirId !== undefined ? String(pgirId || '').trim().toUpperCase() : undefined;
+
+    if (normalizedEmail) {
+      const emailExists = await Representative.findOne({
+        _id: { $ne: repId },
+        email: normalizedEmail,
+      }).select('_id');
+
+      if (emailExists) {
+        return res.status(409).json({ success: false, message: 'Representative with this email already exists' });
+      }
+    }
+
+    if (normalizedPgirId) {
+      const pgirExists = await Representative.findOne({
+        _id: { $ne: repId },
+        pgirId: normalizedPgirId,
+      }).select('_id');
+
+      if (pgirExists) {
+        return res.status(409).json({ success: false, message: 'Representative with this PGIR ID already exists' });
+      }
+    }
+
+    const allowedUpdates = {
+      pgirId: normalizedPgirId,
+      name: name !== undefined ? String(name || '').trim() : undefined,
+      email: normalizedEmail,
+      mobile,
+      college,
+      course,
+      department,
+      year,
+      designation,
+      sheetLinks,
+      upiId,
+      internshipApplicationFormLink,
+      internshipSheetLink,
+      internshipPromotionalMessage,
+      smsPromotionalMessage,
+      joiningDate: joiningDate || undefined,
+      instagramProfile,
+      linkedinProfile,
+      upiMobileNumber,
+    };
+
+    Object.entries(allowedUpdates).forEach(([key, value]) => {
+      if (value !== undefined) {
+        representative[key] = value;
+      }
+    });
+
+    if (password !== undefined && String(password || '').trim() !== '') {
+      representative.password = await bcrypt.hash(String(password).trim(), 10);
+    }
+
+    if (!representative.docs) representative.docs = {};
+
+    if (req.files?.upiScanner?.[0]) {
+      representative.docs.upiScanner = {
+        filename: req.files.upiScanner[0].filename,
+        filepath: req.files.upiScanner[0].path,
+        uploadedAt: new Date(),
+      };
+    }
+
+    if (req.files?.pgirSelectionLetter?.[0]) {
+      representative.docs.pgirSelectionLetter = {
+        filename: req.files.pgirSelectionLetter[0].filename,
+        filepath: req.files.pgirSelectionLetter[0].path,
+        uploadedAt: new Date(),
+      };
+    }
+
+    if (req.files?.internshipOfferLetter?.[0]) {
+      representative.docs.internshipOfferLetter = {
+        filename: req.files.internshipOfferLetter[0].filename,
+        filepath: req.files.internshipOfferLetter[0].path,
+        uploadedAt: new Date(),
+      };
+    }
+
+    await representative.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Representative updated successfully',
+      representative: {
+        id: representative._id,
+        pgirId: representative.pgirId,
+        name: representative.name,
+        email: representative.email,
+        college: representative.college,
+        designation: representative.designation,
+      },
+    });
+  } catch (error) {
+    console.error('Update representative error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 // Delete representative
 exports.deleteRepresentative = async (req, res) => {
   try {

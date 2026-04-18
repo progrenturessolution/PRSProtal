@@ -202,6 +202,19 @@ router.get('/representatives', verifyToken, verifyAdmin, adminController.getAllR
 // Get representative details
 router.get('/representatives/:id/details', verifyToken, verifyAdmin, adminController.getRepresentativeDetails);
 
+// Update representative
+router.patch(
+	'/representative/:id',
+	verifyToken,
+	verifyAdmin,
+	uploadRepresentativeDocs.fields([
+		{ name: 'upiScanner', maxCount: 1 },
+		{ name: 'pgirSelectionLetter', maxCount: 1 },
+		{ name: 'internshipOfferLetter', maxCount: 1 }
+	]),
+	adminController.updateRepresentative
+);
+
 // Delete representative
 router.delete('/representative/:id', verifyToken, verifyAdmin, adminController.deleteRepresentative);
 
