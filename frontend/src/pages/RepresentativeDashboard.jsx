@@ -306,13 +306,10 @@ function RepresentativeDashboard() {
       if (
         ['totalFees', 'firstPaymentAmount', 'secondPaymentAmount', 'finalPaymentAmount'].includes(name)
       ) {
-        const total = Number(next.totalFees || 0);
         const first = Number(next.firstPaymentAmount || 0);
         const second = Number(next.secondPaymentAmount || 0);
         const final = Number(next.finalPaymentAmount || 0);
-        const pending = Math.max(total - (first + second + final), 0);
         next.completedFees = String(first + second + final);
-        next.pendingFees = String(pending);
       }
 
       return next;
@@ -1297,8 +1294,8 @@ function RepresentativeDashboard() {
                           <input type="date" name="finalPaymentDate" value={studentForm.finalPaymentDate} onChange={handleStudentChange} />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label>Pending Fees (auto-calculated)</label>
-                          <input type="number" name="pendingFees" value={studentForm.pendingFees} readOnly placeholder="Auto-calculated" />
+                          <label>Pending Fees</label>
+                          <input type="number" name="pendingFees" value={studentForm.pendingFees} onChange={handleStudentChange} placeholder="Enter pending fees" />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Current Designation</label>
