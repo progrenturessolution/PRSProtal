@@ -1274,35 +1274,43 @@ function InternDashboard() {
                 </>
               ) : (
                 <>
-                  <h3
-                    style={{
-                      marginBottom: "20px",
-                      fontSize: "18px",
-                      color: "#0f172a",
-                    }}
-                  >
-                    SMS Program Details
-                  </h3>
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(250px, 1fr))",
-                      gap: "20px",
+                      padding: "20px",
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "14px",
                     }}
                   >
+                    <h3
+                      style={{
+                        marginBottom: "20px",
+                        fontSize: "18px",
+                        color: "#0f172a",
+                      }}
+                    >
+                      SMS Program Details
+                    </h3>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(250px, 1fr))",
+                        gap: "20px",
+                      }}
+                    >
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0fdf4",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#166534",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1321,15 +1329,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0fdf4",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#166534",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1350,15 +1358,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0fdf4",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#166534",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1377,15 +1385,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0fdf4",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#166534",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1404,15 +1412,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0fdf4",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#166534",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1431,15 +1439,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0fdf4",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#166534",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1458,15 +1466,15 @@ function InternDashboard() {
                     <div
                       style={{
                         padding: "15px",
-                        background: "#f0fdf4",
+                        background: "#ffffff",
                         borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
+                        border: "1px solid #e2e8f0",
                       }}
                     >
                       <div
                         style={{
                           fontSize: "13px",
-                          color: "#166534",
+                          color: "#475569",
                           marginBottom: "5px",
                         }}
                       >
@@ -1483,6 +1491,7 @@ function InternDashboard() {
                           ? new Date(user.lastPaymentDate).toLocaleDateString()
                           : "Not Set"}
                       </div>
+                    </div>
                     </div>
                   </div>
                 </>
