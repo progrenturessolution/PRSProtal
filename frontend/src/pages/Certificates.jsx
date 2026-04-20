@@ -78,12 +78,7 @@ function Certificates() {
     try {
       const res = await adminAPI.assignCertificates(fd);
       if (res.data.success) {
-        const emailNote = res.data.emailQueued
-          ? ' Email notification has been queued.'
-          : res.data.emailError
-            ? ` Email notification was skipped: ${res.data.emailError}.`
-            : '';
-        setMessage(`âœ… ${res.data.certificates.length} certificate(s) assigned. Student has 5 days to download.${emailNote}`);
+        setMessage(`âœ… ${res.data.certificates.length} certificate(s) assigned. Student has 5 days to download.`);
         setSelectedStudent('');
         setFileRows([{ id: 1, name: '', file: null }]);
         fetchCerts();

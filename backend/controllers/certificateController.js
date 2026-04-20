@@ -1,7 +1,6 @@
 const fs = require('fs');
 const Certificate = require('../models/Certificate');
 const Intern = require('../models/Intern');
-const { sendCertificateAssignmentEmail } = require('../config/emailService');
 
 const removeFileIfExists = async (filepath) => {
   if (!filepath) return;
@@ -55,44 +54,10 @@ const assignCertificates = async (req, res) => {
 
     const created = await Certificate.insertMany(docs);
 
-    let emailQueued = false;
-    let emailError = null;
-    if (student.email) {
-      emailQueued = true;
-
-      Promise.resolve()
-        .then(() => sendCertificateAssignmentEmail({
-          internName: student.name,
-          internEmail: student.email,
-          certificateNames: created.map((cert) => cert.name),
-          expiresAt,
-          certificateFiles: created.map((cert) => ({
-            filename: cert.filename,
-            filepath: cert.filepath
-          }))
-        }))
-        .then((emailResult) => {
-          if (!emailResult?.success) {
-            console.error(
-              `Certificate notification failed for student ${student._id}:`,
-              emailResult?.error || 'Unknown email error'
-            );
-          }
-        })
-        .catch((error) => {
-          console.error(`Certificate notification error for student ${student._id}:`, error);
-        });
-    } else {
-      emailError = 'Student email not found';
-      console.error(`Certificate notification skipped: no email for student ${student._id}`);
-    }
-
     res.status(201).json({
       success: true,
       message: `${created.length} certificate(s) assigned successfully`,
-      certificates: created,
-      emailQueued,
-      emailError
+      certificates: created
     });
   } catch (err) {
     console.error('Assign certificates error:', err);

@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const Representative = require('../models/Representative');
 const Intern = require('../models/Intern');
 const RepresentativePayout = require('../models/RepresentativePayout');
-const { sendInternCredentials } = require('../config/emailService');
 
 // Generate unique Intern ID based on type with new format
 // Format: PRS/MAR26004/DJS (PRS = internship, PSMS = SMS program)
@@ -334,17 +333,6 @@ exports.addStudent = async (req, res) => {
     const intern = new Intern(internData);
     await intern.save();
 
-    // Send email in background so API responds immediately
-    sendInternCredentials(name, email, resolvedInternId, password)
-      .then((emailResult) => {
-        if (!emailResult.success) {
-          console.error(`Background credential email failed for ${email}:`, emailResult.error);
-        }
-      })
-      .catch((emailError) => {
-        console.error(`Background credential email error for ${email}:`, emailError.message);
-      });
-
     res.status(201).json({
       success: true,
       message: 'Student added successfully',
@@ -354,9 +342,7 @@ exports.addStudent = async (req, res) => {
         email: intern.email,
         internId: intern.internId,
         studentType: intern.studentType
-      },
-      emailSent: false,
-      emailQueued: true
+      }
     });
   } catch (error) {
     console.error('Add student error:', error);

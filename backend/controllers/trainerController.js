@@ -8,7 +8,6 @@ const Assessment = require('../models/Assessment');
 const Training = require('../models/Training');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
-const { sendInterviewResultEmail, sendAptitudeResultEmail, sendAssessmentResultEmail, sendTrainingResultEmail } = require('../config/emailService');
 
 // Trainer Login
 exports.trainerLogin = async (req, res) => {
@@ -138,24 +137,9 @@ exports.addInterview = async (req, res) => {
 
     await interview.save();
 
-    // Send email to student with interview results
-    await sendInterviewResultEmail({
-      studentName: student.name,
-      studentEmail: student.email,
-      trainerName: trainer.name,
-      interviewType,
-      attemptNumber,
-      communicationLevel,
-      confidenceLevel,
-      clarityLevel,
-      overallLevel,
-      levelCrossed,
-      remarks
-    });
-
     res.status(201).json({
       success: true,
-      message: 'Interview record added successfully and email sent to student',
+      message: 'Interview record added successfully',
       interview
     });
 
@@ -197,20 +181,9 @@ exports.addAptitude = async (req, res) => {
 
     await aptitude.save();
 
-    // Send email to student with aptitude results
-    await sendAptitudeResultEmail({
-      studentName: student.name,
-      studentEmail: student.email,
-      trainerName: trainer.name,
-      roundNumber,
-      score,
-      result,
-      remarks
-    });
-
     res.status(201).json({
       success: true,
-      message: 'Aptitude record added successfully and email sent to student',
+      message: 'Aptitude record added successfully',
       aptitude
     });
 
@@ -252,20 +225,9 @@ exports.addAssessment = async (req, res) => {
 
     await assessment.save();
 
-    // Send email to student with assessment results
-    await sendAssessmentResultEmail({
-      studentName: student.name,
-      studentEmail: student.email,
-      trainerName: trainer.name,
-      assessmentType,
-      score,
-      status,
-      feedback
-    });
-
     res.status(201).json({
       success: true,
-      message: 'Assessment record added successfully and email sent to student',
+      message: 'Assessment record added successfully',
       assessment
     });
 
@@ -308,21 +270,9 @@ exports.addTraining = async (req, res) => {
 
     await training.save();
 
-    // Send email to student with training session report
-    await sendTrainingResultEmail({
-      studentName: student.name,
-      studentEmail: student.email,
-      trainerName: trainer.name,
-      date,
-      attendance,
-      skillImprovementNote,
-      engagementLevel,
-      trainerRemarks
-    });
-
     res.status(201).json({
       success: true,
-      message: 'Training record added successfully and email sent to student',
+      message: 'Training record added successfully',
       training
     });
 

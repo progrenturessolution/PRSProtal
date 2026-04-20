@@ -1,6 +1,5 @@
 const Task = require('../models/Task');
 const Intern = require('../models/Intern');
-const { sendTaskAssignmentEmail, sendEmail } = require('../config/emailService');
 
 // Admin: Create and assign task
 exports.createAndAssignTask = async (req, res) => {
@@ -92,64 +91,10 @@ exports.createAndAssignTask = async (req, res) => {
 
     await task.save();
 
-    // Send assignment emails in background so task creation stays fast and reliable.
-    const teamDetails = recipients.map((member) => ({
-      name: member.name,
-      internId: member.internId
-    }));
-
-    Promise.allSettled(
-      recipients.map((recipient) => {
-        if (!recipient.email) {
-          return Promise.resolve({ success: false, error: 'Recipient email missing' });
-        }
-
-        return sendTaskAssignmentEmail({
-          internName: recipient.name,
-          internEmail: recipient.email,
-          taskTitle: title,
-          taskDescription: description,
-          deadline,
-          isTeamTask: teamTaskEnabled,
-          teamMembers: teamDetails,
-          taskDocument
-        });
-      })
-    )
-      .then((emailResults) => {
-        const failures = [];
-
-        emailResults.forEach((result, index) => {
-          const recipient = recipients[index];
-          if (result.status === 'fulfilled' && result.value?.success) {
-            return;
-          }
-
-          const reason = result.status === 'rejected'
-            ? result.reason?.message || 'Unknown error'
-            : (result.value?.error || 'Unknown error');
-
-          failures.push({
-            studentId: recipient?._id,
-            email: recipient?.email || null,
-            reason
-          });
-        });
-
-        if (failures.length > 0) {
-          console.error(`Task assignment email had ${failures.length} failure(s) for task ${task._id}`, failures);
-        }
-      })
-      .catch((emailError) => {
-        console.error(`Background task assignment email processing failed for task ${task._id}:`, emailError.message);
-      });
-
     res.status(201).json({
       success: true,
       message: 'Task created and assigned successfully',
-      task,
-      emailQueued: true,
-      emailRecipients: recipients.length
+      task
     });
 
   } catch (error) {
@@ -223,27 +168,6 @@ exports.approveTask = async (req, res) => {
     });
     await task.save();
 
-    const approvalRecipients = [
-      task.assignedTo,
-      ...(task.isTeamTask ? (task.teamMembers || []) : [])
-    ].filter(Boolean);
-
-    Promise.allSettled(
-      approvalRecipients.map((recipient) =>
-        sendEmail(
-          recipient.email,
-          'Task Approved',
-          `
-            <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">Hi <strong>${recipient.name}</strong>,</p>
-            <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">Your task <strong>${task.title}</strong> has been approved by the admin.</p>
-            <p style="margin:0;color:#374151;font-size:14px;line-height:1.75;">You can view the approval note inside your dashboard timeline.</p>
-          `
-        )
-      )
-    ).catch((emailError) => {
-      console.error(`Background task approval email processing failed for task ${task._id}:`, emailError.message);
-    });
-
     res.status(200).json({
       success: true,
       message: 'Task approved successfully',
@@ -305,32 +229,9 @@ exports.sendTaskFeedback = async (req, res) => {
     task.hasUnreadFeedback = true;
     await task.save();
 
-    // Send email notification in background so the response stays fast.
-    Promise.resolve()
-      .then(() => sendEmail(
-        task.assignedTo.email,
-        'Task Feedback - Changes Requested',
-        `
-          <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">Hi <strong>${task.assignedTo.name}</strong>,</p>
-          <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;">The admin has reviewed your task and requested some changes.</p>
-          <p style="margin:0 0 10px;color:#92400e;font-size:14px;line-height:1.75;"><strong>Task:</strong> ${task.title}</p>
-          <p style="margin:0 0 10px;color:#374151;font-size:14px;line-height:1.75;"><strong>Admin Feedback:</strong> ${message}</p>
-          <p style="margin:0;color:#374151;font-size:14px;line-height:1.75;">Please review the feedback and make the necessary changes in your dashboard.</p>
-        `
-      ))
-      .then((emailResult) => {
-        if (!emailResult?.success) {
-          console.warn('Email notification failed (non-critical):', emailResult?.error || 'Unknown error');
-        }
-      })
-      .catch((emailError) => {
-        console.warn('Email notification failed (non-critical):', emailError.message);
-      });
-
     res.status(200).json({
       success: true,
       message: 'Feedback sent successfully',
-      emailQueued: true,
       task
     });
 

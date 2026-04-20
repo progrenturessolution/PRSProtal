@@ -6,7 +6,6 @@ const RepresentativePayout = require('../models/RepresentativePayout');
 const StudentGroup = require('../models/StudentGroup');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
-const { sendInternCredentials, sendRepresentativeCredentials, sendTrainerCredentials, sendTrainerAssignmentNotification, sendStudentAssignmentNotification, sendCertificateAssignmentEmail } = require('../config/emailService');
 
 const PASSWORD_SALT_ROUNDS = (() => {
   const defaultRounds = process.env.NODE_ENV === 'production' ? 10 : 4;
@@ -300,17 +299,6 @@ exports.addIntern = async (req, res) => {
     const intern = new Intern(internData);
     await intern.save();
 
-    // Send email in background so API responds immediately
-    sendInternCredentials(name, email, resolvedInternId, password)
-      .then((emailResult) => {
-        if (!emailResult.success) {
-          console.error(`Background credential email failed for ${email}:`, emailResult.error);
-        }
-      })
-      .catch((emailError) => {
-        console.error(`Background credential email error for ${email}:`, emailError.message);
-      });
-
     res.status(201).json({
       success: true,
       message: 'Student added successfully',
@@ -320,9 +308,7 @@ exports.addIntern = async (req, res) => {
         email: intern.email,
         internId: intern.internId,
         studentType: intern.studentType
-      },
-      emailSent: false,
-      emailQueued: true
+      }
     });
 
   } catch (error) {
@@ -707,22 +693,6 @@ exports.addTrainer = async (req, res) => {
 
     await trainer.save();
 
-    if (trainer.email) {
-      sendTrainerCredentials({
-        trainerName: trainer.name,
-        trainerEmail: trainer.email,
-        password
-      })
-        .then((emailResult) => {
-          if (!emailResult.success) {
-            console.error(`Background employee credential email failed for ${trainer.email}:`, emailResult.error);
-          }
-        })
-        .catch((emailError) => {
-          console.error(`Background employee credential email error for ${trainer.email}:`, emailError.message);
-        });
-    }
-
     res.status(201).json({
       success: true,
       message: 'Employee added successfully',
@@ -733,9 +703,7 @@ exports.addTrainer = async (req, res) => {
         role: trainer.role,
         customRole: trainer.customRole,
         joiningDate: trainer.joiningDate
-      },
-      emailSent: false,
-      emailQueued: true
+      }
     });
 
   } catch (error) {
@@ -879,45 +847,9 @@ exports.assignStudentsToTrainer = async (req, res) => {
 
     console.log('Assignment successful');
 
-    // Queue emails in background so API returns quickly.
-    sendTrainerAssignmentNotification({
-      trainerName: trainer.name,
-      trainerEmail: trainer.email,
-      studentsList: students.map(s => ({ name: s.name, email: s.email, internId: s.internId }))
-    })
-      .then((emailResult) => {
-        if (!emailResult.success) {
-          console.error(`Background trainer assignment email failed for ${trainer.email}:`, emailResult.error);
-        }
-      })
-      .catch((emailError) => {
-        console.error(`Background trainer assignment email error for ${trainer.email}:`, emailError.message);
-      });
-
-    Promise.allSettled(
-      students.map(s => sendStudentAssignmentNotification({
-        studentName: s.name,
-        studentEmail: s.email,
-        trainerName: trainer.name,
-        trainerEmail: trainer.email,
-        trainerMobile: trainer.mobile
-      }))
-    )
-      .then((results) => {
-        const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success)).length;
-        if (failed > 0) {
-          console.error(`Background student assignment emails failed: ${failed}/${results.length}`);
-        }
-      })
-      .catch((emailError) => {
-        console.error('Background student assignment email batch error:', emailError.message);
-      });
-
     res.status(200).json({
       success: true,
-      message: `${uniqueStudentIds.length} student(s) assigned successfully to ${trainer.name}`,
-      emailSent: false,
-      emailQueued: true
+      message: `${uniqueStudentIds.length} student(s) assigned successfully to ${trainer.name}`
     });
 
   } catch (error) {
@@ -1307,34 +1239,10 @@ exports.uploadStudentDocument = async (req, res) => {
 
     await student.save();
 
-    let emailQueued = false;
-    if (student.email) {
-      emailQueued = true;
-      Promise.resolve()
-        .then(() => sendCertificateAssignmentEmail({
-          internName: student.name,
-          internEmail: student.email,
-          certificateNames: [resolvedCertificateName],
-          certificateFiles: [{
-            filename: docData.filename,
-            filepath: docData.filepath
-          }]
-        }))
-        .then((emailResult) => {
-          if (!emailResult?.success) {
-            console.error(`Certificate assignment email failed for student ${student._id}:`, emailResult?.error || 'Unknown email error');
-          }
-        })
-        .catch((error) => {
-          console.error(`Certificate assignment email error for student ${student._id}:`, error);
-        });
-    }
-
     res.status(200).json({
       success: true,
       message: 'Document uploaded successfully',
-      document: docData,
-      emailQueued
+      document: docData
     });
 
   } catch (error) {
@@ -1483,28 +1391,6 @@ exports.addRepresentative = async (req, res) => {
       role: 'representative'
     });
 
-    let emailSent = false;
-    let emailError = null;
-    if (rep.email) {
-      // Do not block account creation on email transport issues.
-      sendRepresentativeCredentials({
-        repName: rep.name,
-        repEmail: rep.email,
-        password: normalizedPassword
-      })
-        .then((emailResult) => {
-          if (!emailResult?.success) {
-            console.error('Representative credentials email failed:', emailResult?.error || 'Unknown email error');
-          }
-        })
-        .catch((mailErr) => {
-          console.error('Representative credentials email exception:', mailErr?.message || mailErr);
-        });
-      emailError = 'Credentials email queued in background';
-    } else {
-      emailError = 'Representative email not found';
-    }
-
     res.status(201).json({
       success: true,
       message: 'Representative added successfully',
@@ -1515,9 +1401,7 @@ exports.addRepresentative = async (req, res) => {
         email: rep.email,
         college: rep.college,
         designation: rep.designation
-      },
-      emailSent,
-      emailError
+      }
     });
   } catch (error) {
     console.error('Add representative error:', error);

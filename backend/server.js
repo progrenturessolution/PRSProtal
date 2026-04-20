@@ -18,8 +18,6 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 // Verify critical env variables
 console.log('Environment check:');
 console.log('- PORT:', process.env.PORT);
-console.log('- EMAIL_USER:', process.env.EMAIL_USER ? '✓ Set' : '✗ Missing');
-console.log('- EMAIL_PASS:', process.env.EMAIL_PASS ? '✓ Set' : '✗ Missing');
 
 // Initialize express app
 const app = express();
