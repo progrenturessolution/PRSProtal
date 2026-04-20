@@ -17,6 +17,8 @@ function InternDashboard() {
   const [assessments, setAssessments] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [jobPostings, setJobPostings] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
   const [assignedCerts, setAssignedCerts] = useState([]);
   const [taskView, setTaskView] = useState('individual');
   const [error, setError] = useState("");
@@ -193,9 +195,26 @@ function InternDashboard() {
             setJobPostings(jobsResp.data.postings || []);
           }
           break;
+        case "groups":
+          setGroupsLoading(true);
+          try {
+            const groupsResp = await internAPI.getMyGroups();
+            if (groupsResp.data && groupsResp.data.success) {
+              setGroups(groupsResp.data.groups || []);
+            } else {
+              setGroups([]);
+            }
+          } finally {
+            setGroupsLoading(false);
+          }
+          break;
       }
     } catch (err) {
       console.error(`Failed to fetch ${section}:`, err);
+      if (section === "groups") {
+        setGroups([]);
+        setGroupsLoading(false);
+      }
     }
   };
 
@@ -556,6 +575,13 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Notifications
+          </li>
+          <li
+            className={activeSection === "groups" ? "active" : ""}
+            onClick={() => handleSectionClick("groups")}
+            style={{ cursor: "pointer" }}
+          >
+            Groups
           </li>
           <li
             className={activeSection === "jobs" ? "active" : ""}
@@ -2487,6 +2513,101 @@ function InternDashboard() {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Groups Section */}
+        {activeSection === "groups" && (
+          <>
+            <div className="content-header">
+              <h1>Groups</h1>
+              <p>Your group, trainer, and member details</p>
+            </div>
+
+            <div className="card">
+              {groupsLoading ? (
+                <div className="empty-state">
+                  <p>Loading group details...</p>
+                </div>
+              ) : groups.length === 0 ? (
+                <div className="empty-state">
+                  <p>No group assigned yet.</p>
+                </div>
+              ) : (
+                <div className="table-container">
+                  <table className="data-table groups-info-table" style={{ minWidth: "1100px" }}>
+                    <thead>
+                      <tr>
+                        <th>Group No</th>
+                        <th>Group Name</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Trainer(s)</th>
+                        <th>Members</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groups.map((group) => (
+                        <tr key={group._id}>
+                          <td>{group.groupNumber || "-"}</td>
+                          <td>
+                            <div style={{ fontWeight: 600, color: "#0f172a" }}>
+                              {group.groupName || "Unnamed Group"}
+                            </div>
+                          </td>
+                          <td>{group.studentType || "All"}</td>
+                          <td>
+                            <div style={{ maxWidth: "260px", whiteSpace: "normal", lineHeight: "1.45" }}>
+                              {group.groupDescription || "-"}
+                            </div>
+                          </td>
+                          <td>
+                            {Array.isArray(group.assignedTrainerDetails) &&
+                            group.assignedTrainerDetails.length > 0 ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                {group.assignedTrainerDetails.map((trainer) => (
+                                  <div key={trainer._id}>
+                                    <div style={{ fontWeight: 600, color: "#0f172a", fontSize: "13px" }}>
+                                      {trainer.name}
+                                    </div>
+                                    <div style={{ fontSize: "12px", color: "#475569" }}>
+                                      {trainer.email || "No email"}
+                                    </div>
+                                    <div style={{ fontSize: "12px", color: "#475569" }}>
+                                      {trainer.mobile || "No mobile"}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : Array.isArray(group.assignedEmployees) &&
+                              group.assignedEmployees.length > 0 ? (
+                              <span>{group.assignedEmployees.join(", ")}</span>
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </td>
+                          <td>
+                            {Array.isArray(group.students) && group.students.length > 0 ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                {group.students.map((member) => (
+                                  <div key={member._id} style={{ fontSize: "13px" }}>
+                                    <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                                      {member.name || "Unnamed"}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span>-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

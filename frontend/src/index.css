@@ -2022,14 +2022,16 @@ table tr:hover {
 .internship-students-table thead,
 .sms-students-table thead,
 .group-students-table thead,
-.representatives-table thead {
+.representatives-table thead,
+.groups-info-table thead {
   background: #324158 !important;
 }
 
 .internship-students-table thead th,
 .sms-students-table thead th,
 .group-students-table thead th,
-.representatives-table thead th {
+.representatives-table thead th,
+.groups-info-table thead th {
   background-color: #324158 !important;
   color: #ffffff !important;
 }
@@ -2122,6 +2124,13 @@ table tr:hover {
   .view-students-table tbody td:nth-child(6)::before { content: "Added By"; }
   .view-students-table tbody td:nth-child(7)::before { content: "Start Month"; }
   .view-students-table tbody td:nth-child(8)::before { content: "Actions"; }
+
+  .groups-info-table tbody td:nth-child(1)::before { content: "Group No"; }
+  .groups-info-table tbody td:nth-child(2)::before { content: "Group Name"; }
+  .groups-info-table tbody td:nth-child(3)::before { content: "Type"; }
+  .groups-info-table tbody td:nth-child(4)::before { content: "Description"; }
+  .groups-info-table tbody td:nth-child(5)::before { content: "Trainer(s)"; }
+  .groups-info-table tbody td:nth-child(6)::before { content: "Members"; }
 
 }
 

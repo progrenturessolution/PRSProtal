@@ -62,6 +62,7 @@ router.get('/intern/my-aptitude', verifyToken, trainerController.getMyAptitude);
 router.get('/intern/my-assessments', verifyToken, trainerController.getMyAssessments);
 router.get('/intern/my-training', verifyToken, trainerController.getMyTraining);
 router.get('/intern/my-profile', verifyToken, trainerController.getMyProfile);
+router.get('/intern/my-groups', verifyToken, trainerController.getMyGroups);
 router.patch('/intern/my-profile', verifyToken, trainerController.updateMyProfile);
 router.get('/intern/my-notifications', verifyToken, trainerController.getMyNotifications);
 router.get('/intern/my-job-postings', verifyToken, trainerController.getMyJobPostings);

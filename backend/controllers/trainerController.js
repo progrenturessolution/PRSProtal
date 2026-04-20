@@ -8,6 +8,7 @@ const Assessment = require('../models/Assessment');
 const Training = require('../models/Training');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
+const StudentGroup = require('../models/StudentGroup');
 
 // Trainer Login
 exports.trainerLogin = async (req, res) => {
@@ -659,6 +660,64 @@ exports.getMyProfile = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+};
+
+// Get Intern's Assigned Groups with member and trainer details
+exports.getMyGroups = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    const groups = await StudentGroup.find({ students: studentId })
+      .populate('students', 'name internId email studentType')
+      .sort({ createdAt: -1 });
+
+    const groupIds = groups.map((group) => group._id);
+    const trainers = groupIds.length
+      ? await Trainer.find({ assignedGroups: { $in: groupIds } })
+          .select('_id name email mobile assignedGroups')
+          .lean()
+      : [];
+
+    const groupData = groups.map((groupDoc) => {
+      const group = groupDoc.toObject();
+
+      const assignedTrainerDetails = trainers
+        .filter((trainer) =>
+          (trainer.assignedGroups || []).some(
+            (groupId) => String(groupId) === String(group._id)
+          )
+        )
+        .map((trainer) => ({
+          _id: trainer._id,
+          name: trainer.name,
+          email: trainer.email,
+          mobile: trainer.mobile,
+        }));
+
+      const assignedEmployees = [...new Set([
+        ...(Array.isArray(group.assignedEmployees) ? group.assignedEmployees : []),
+        ...assignedTrainerDetails.map((trainer) => trainer.name),
+      ])];
+
+      return {
+        ...group,
+        assignedEmployees,
+        assignedTrainerDetails,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      count: groupData.length,
+      groups: groupData,
+    });
+  } catch (error) {
+    console.error('Get groups error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
     });
   }
 };
