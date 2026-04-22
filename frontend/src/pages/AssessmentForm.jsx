@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { trainerAPI } from "../services/api";
-import TrainerSidebar from "../components/TrainerSidebar";
+import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 function AssessmentForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     assessmentType: "Domain",
     score: "",
@@ -14,6 +15,7 @@ function AssessmentForm() {
     feedback: "",
   });
   const [assessments, setAssessments] = useState([]);
+  const [historySearch, setHistorySearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -71,24 +73,49 @@ function AssessmentForm() {
     }
   };
 
+  const handleBack = () => {
+    const sourceTab = location.state?.fromTab || "assignments";
+    navigate(`/trainer-dashboard?tab=${sourceTab}`);
+  };
+
+  const filteredAssessments = assessments.filter((assessment) => {
+    const query = historySearch.trim().toLowerCase();
+    if (!query) return true;
+
+    const fields = [
+      assessment?.assessmentType,
+      assessment?.score,
+      assessment?.status,
+      assessment?.feedback,
+      assessment?.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "",
+    ];
+
+    return fields.some((field) => String(field || "").toLowerCase().includes(query));
+  });
+
   return (
-    <div className="dashboard">
-      <TrainerSidebar />
-      <main className="main-content">
+    <div className="student-records-standalone">
+      <main className="main-content student-records-page student-records-main">
         <div className="content-header-with-back">
           <button
             className="back-button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             title="Go back to previous page"
           >
             <span className="back-arrow">←</span>
             <span>Back</span>
           </button>
-          <div>
+          <div className="student-records-header-copy">
             <h1>Assessment Evaluation</h1>
             <p>Add assessment records for the student</p>
           </div>
         </div>
+
+        <div className="student-records-shell">
+          <aside className="student-records-sidepanel">
+            <StudentRecordsSidebar studentId={studentId} activeTab="assessments" />
+          </aside>
+          <div className="student-records-content">
 
         <div className="card">
           <h2>Add Assessment Record</h2>
@@ -159,11 +186,22 @@ function AssessmentForm() {
         </div>
 
         {/* Assessment History */}
-        <div className="card" style={{ marginTop: "20px" }}>
+        <div className="card student-history-card" style={{ marginTop: "20px" }}>
           <h2>Assessment History</h2>
           {assessments.length === 0 ? (
             <p>No assessment records yet</p>
           ) : (
+            <>
+              <div className="student-history-toolbar">
+                <input
+                  type="text"
+                  className="student-history-search"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Search by type, score, status, feedback, date..."
+                  aria-label="Search assessment history"
+                />
+              </div>
             <div className="table-container">
               <table className="data-table">
                 <thead>
@@ -176,33 +214,42 @@ function AssessmentForm() {
                   </tr>
                 </thead>
                 <tbody>
-                  {assessments.map((assessment, index) => (
-                    <tr key={index}>
-                      <td>{assessment.assessmentType}</td>
-                      <td>{assessment.score || "-"}</td>
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            assessment.status === "Pass"
-                              ? "status-completed"
-                              : assessment.status === "Fail"
-                                ? "status-rejected"
-                                : "status-pending"
-                          }`}
-                        >
-                          {assessment.status}
-                        </span>
-                      </td>
-                      <td>{assessment.feedback || "-"}</td>
-                      <td>
-                        {new Date(assessment.createdAt).toLocaleDateString()}
-                      </td>
+                  {filteredAssessments.length === 0 ? (
+                    <tr>
+                      <td colSpan="5">No assessment records match your search</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredAssessments.map((assessment, index) => (
+                      <tr key={index}>
+                        <td>{assessment.assessmentType}</td>
+                        <td>{assessment.score || "-"}</td>
+                        <td>
+                          <span
+                            className={`status-badge ${
+                              assessment.status === "Pass"
+                                ? "status-completed"
+                                : assessment.status === "Fail"
+                                  ? "status-rejected"
+                                  : "status-pending"
+                            }`}
+                          >
+                            {assessment.status}
+                          </span>
+                        </td>
+                        <td>{assessment.feedback || "-"}</td>
+                        <td>
+                          {new Date(assessment.createdAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
+            </>
           )}
+        </div>
+          </div>
         </div>
       </main>
     </div>

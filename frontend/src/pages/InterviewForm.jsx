@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { trainerAPI } from "../services/api";
-import TrainerSidebar from "../components/TrainerSidebar";
+import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 function InterviewForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     interviewType: "HR",
     date: "",
@@ -19,6 +20,7 @@ function InterviewForm() {
     remarks: "",
   });
   const [interviews, setInterviews] = useState([]);
+  const [historySearch, setHistorySearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -80,26 +82,69 @@ function InterviewForm() {
     }
   };
 
+  const handleBack = () => {
+    const sourceTab = location.state?.fromTab || "assignments";
+    navigate(`/trainer-dashboard?tab=${sourceTab}`);
+  };
+
+  const filteredInterviews = interviews.filter((interview) => {
+    const query = historySearch.trim().toLowerCase();
+    if (!query) return true;
+
+    const dateText = interview?.date ? new Date(interview.date).toLocaleDateString().toLowerCase() : "";
+    const fields = [
+      dateText,
+      interview?.interviewType,
+      interview?.attemptNumber,
+      interview?.communicationLevel,
+      interview?.confidenceLevel,
+      interview?.clarityLevel,
+      interview?.overallLevel,
+      interview?.levelCrossed ? "yes" : "no",
+    ];
+
+    return fields.some((field) => String(field || "").toLowerCase().includes(query));
+  });
+
   return (
-    <div className="dashboard">
-      <TrainerSidebar />
-      <main className="main-content">
+    <div className="student-records-standalone">
+      <main className="main-content student-records-page student-records-main interview-unique-page">
         <div className="content-header-with-back">
           <button
             className="back-button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             title="Go back to previous page"
           >
             <span className="back-arrow">←</span>
             <span>Back</span>
           </button>
-          <div>
+          <div className="student-records-header-copy">
             <h1>Interview Evaluation</h1>
             <p>Add interview records for the student</p>
           </div>
         </div>
 
-        <div className="card">
+        <section className="interview-spotlight">
+          <div className="interview-spotlight-left">
+            <h2>Interview Control Center</h2>
+            <p>Capture each interview round with structured ratings and maintain a clean decision history.</p>
+          </div>
+          <div className="interview-spotlight-chips">
+            <span className="interview-chip">Type: {formData.interviewType}</span>
+            <span className="interview-chip">Attempt: {formData.attemptNumber}</span>
+            <span className={`interview-chip ${formData.levelCrossed ? "passed" : "pending"}`}>
+              Level: {formData.levelCrossed ? "Crossed" : "Pending"}
+            </span>
+          </div>
+        </section>
+
+        <div className="student-records-shell">
+          <aside className="student-records-sidepanel">
+            <StudentRecordsSidebar studentId={studentId} activeTab="interviews" />
+          </aside>
+          <div className="student-records-content">
+
+        <div className="card interview-form-card">
           <h2>Add Interview Record</h2>
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
@@ -205,27 +250,6 @@ function InterviewForm() {
               </select>
             </div>
 
-            <div className="form-group left-align">
-              <label
-                className="checkbox-label"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  name="levelCrossed"
-                  checked={formData.levelCrossed}
-                  onChange={handleChange}
-                  style={{ marginRight: "10px" }}
-                />
-                Level Crossed?
-              </label>
-            </div>
-
             <div className="form-group">
               <label>Remarks</label>
               <textarea
@@ -248,11 +272,22 @@ function InterviewForm() {
         </div>
 
         {/* Interview History */}
-        <div className="card" style={{ marginTop: "20px" }}>
+        <div className="card interview-history-card" style={{ marginTop: "20px" }}>
           <h2>Interview History</h2>
           {interviews.length === 0 ? (
             <p>No interview records yet</p>
           ) : (
+            <>
+              <div className="interview-history-toolbar">
+                <input
+                  type="text"
+                  className="interview-history-search"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Search by date, type, attempt, level..."
+                  aria-label="Search interview history"
+                />
+              </div>
             <div className="table-container">
               <table className="data-table">
                 <thead>
@@ -268,22 +303,31 @@ function InterviewForm() {
                   </tr>
                 </thead>
                 <tbody>
-                  {interviews.map((interview, index) => (
-                    <tr key={index}>
-                      <td>{new Date(interview.date).toLocaleDateString()}</td>
-                      <td>{interview.interviewType}</td>
-                      <td>{interview.attemptNumber}</td>
-                      <td>{interview.communicationLevel}</td>
-                      <td>{interview.confidenceLevel}</td>
-                      <td>{interview.clarityLevel}</td>
-                      <td>{interview.overallLevel}</td>
-                      <td>{interview.levelCrossed ? "Yes" : "No"}</td>
+                  {filteredInterviews.length === 0 ? (
+                    <tr>
+                      <td colSpan="8">No interview records match your search</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredInterviews.map((interview, index) => (
+                      <tr key={index}>
+                        <td>{new Date(interview.date).toLocaleDateString()}</td>
+                        <td>{interview.interviewType}</td>
+                        <td>{interview.attemptNumber}</td>
+                        <td>{interview.communicationLevel}</td>
+                        <td>{interview.confidenceLevel}</td>
+                        <td>{interview.clarityLevel}</td>
+                        <td>{interview.overallLevel}</td>
+                        <td>{interview.levelCrossed ? "Yes" : "No"}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
+            </>
           )}
+        </div>
+          </div>
         </div>
       </main>
     </div>

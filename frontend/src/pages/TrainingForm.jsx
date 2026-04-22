@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { trainerAPI } from "../services/api";
-import TrainerSidebar from "../components/TrainerSidebar";
+import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 function TrainingForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     attendance: "Present",
@@ -15,6 +16,7 @@ function TrainingForm() {
     trainerRemarks: "",
   });
   const [trainings, setTrainings] = useState([]);
+  const [historySearch, setHistorySearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -71,24 +73,49 @@ function TrainingForm() {
     }
   };
 
+  const handleBack = () => {
+    const sourceTab = location.state?.fromTab || "assignments";
+    navigate(`/trainer-dashboard?tab=${sourceTab}`);
+  };
+
+  const filteredTrainings = trainings.filter((training) => {
+    const query = historySearch.trim().toLowerCase();
+    if (!query) return true;
+
+    const fields = [
+      training?.date ? new Date(training.date).toLocaleDateString() : "",
+      training?.attendance,
+      training?.engagementLevel,
+      training?.skillImprovementNote,
+      training?.trainerRemarks,
+    ];
+
+    return fields.some((field) => String(field || "").toLowerCase().includes(query));
+  });
+
   return (
-    <div className="dashboard">
-      <TrainerSidebar />
-      <main className="main-content">
+    <div className="student-records-standalone">
+      <main className="main-content student-records-page student-records-main">
         <div className="content-header-with-back">
           <button
             className="back-button"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             title="Go back to previous page"
           >
             <span className="back-arrow">←</span>
             <span>Back</span>
           </button>
-          <div>
+          <div className="student-records-header-copy">
             <h1>Training Update</h1>
             <p>Add training and attendance records for the student</p>
           </div>
         </div>
+
+        <div className="student-records-shell">
+          <aside className="student-records-sidepanel">
+            <StudentRecordsSidebar studentId={studentId} activeTab="training" />
+          </aside>
+          <div className="student-records-content">
 
         <div className="card">
           <h2>Add Training Record</h2>
@@ -169,11 +196,22 @@ function TrainingForm() {
         </div>
 
         {/* Training History */}
-        <div className="card" style={{ marginTop: "20px" }}>
+        <div className="card student-history-card" style={{ marginTop: "20px" }}>
           <h2>Training History</h2>
           {trainings.length === 0 ? (
             <p>No training records yet</p>
           ) : (
+            <>
+              <div className="student-history-toolbar">
+                <input
+                  type="text"
+                  className="student-history-search"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Search by date, attendance, engagement, notes..."
+                  aria-label="Search training history"
+                />
+              </div>
             <div className="table-container">
               <table className="data-table">
                 <thead>
@@ -186,31 +224,40 @@ function TrainingForm() {
                   </tr>
                 </thead>
                 <tbody>
-                  {trainings.map((training, index) => (
-                    <tr key={index}>
-                      <td>{new Date(training.date).toLocaleDateString()}</td>
-                      <td>
-                        <span
-                          className={`status-badge ${
-                            training.attendance === "Present"
-                              ? "status-completed"
-                              : training.attendance === "Late"
-                                ? "status-pending"
-                                : "status-rejected"
-                          }`}
-                        >
-                          {training.attendance}
-                        </span>
-                      </td>
-                      <td>{training.engagementLevel}</td>
-                      <td>{training.skillImprovementNote || "-"}</td>
-                      <td>{training.trainerRemarks || "-"}</td>
+                  {filteredTrainings.length === 0 ? (
+                    <tr>
+                      <td colSpan="5">No training records match your search</td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredTrainings.map((training, index) => (
+                      <tr key={index}>
+                        <td>{new Date(training.date).toLocaleDateString()}</td>
+                        <td>
+                          <span
+                            className={`status-badge ${
+                              training.attendance === "Present"
+                                ? "status-completed"
+                                : training.attendance === "Late"
+                                  ? "status-pending"
+                                  : "status-rejected"
+                            }`}
+                          >
+                            {training.attendance}
+                          </span>
+                        </td>
+                        <td>{training.engagementLevel}</td>
+                        <td>{training.skillImprovementNote || "-"}</td>
+                        <td>{training.trainerRemarks || "-"}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
+            </>
           )}
+        </div>
+          </div>
         </div>
       </main>
     </div>

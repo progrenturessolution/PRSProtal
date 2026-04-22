@@ -100,7 +100,7 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
               d="M19 11H5m14 0a2 2 0 100-4H5a2 2 0 100 4m14 0a2 2 0 110 4H5a2 2 0 110-4m0 0v6a2 2 0 002 2h10a2 2 0 002-2v-6"
             />
           </svg>
-          My Assignments
+          Assign Groups
         </li>
 
         

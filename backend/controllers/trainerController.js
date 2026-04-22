@@ -10,6 +10,41 @@ const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const StudentGroup = require('../models/StudentGroup');
 
+const getAccessibleStudentIds = async (trainerId) => {
+  const trainer = await Trainer.findById(trainerId)
+    .select('assignedStudents assignedGroups')
+    .lean();
+
+  if (!trainer) return [];
+
+  const ids = new Set();
+
+  const directStudents = await Intern.find({ assignedTrainer: trainerId })
+    .select('_id')
+    .lean();
+  directStudents.forEach((student) => ids.add(String(student._id)));
+
+  (trainer.assignedStudents || []).forEach((studentId) => ids.add(String(studentId)));
+
+  if (Array.isArray(trainer.assignedGroups) && trainer.assignedGroups.length > 0) {
+    const groups = await StudentGroup.find({ _id: { $in: trainer.assignedGroups } })
+      .select('students')
+      .lean();
+
+    groups.forEach((group) => {
+      (group.students || []).forEach((studentId) => ids.add(String(studentId)));
+    });
+  }
+
+  return Array.from(ids);
+};
+
+const isStudentAccessibleToTrainer = async (trainerId, studentId) => {
+  if (!studentId) return false;
+  const accessibleStudentIds = await getAccessibleStudentIds(trainerId);
+  return accessibleStudentIds.includes(String(studentId));
+};
+
 // Trainer Login
 exports.trainerLogin = async (req, res) => {
   try {
@@ -74,7 +109,17 @@ exports.getAssignedStudents = async (req, res) => {
   try {
     const trainerId = req.user.id;
 
-    const students = await Intern.find({ assignedTrainer: trainerId })
+    const accessibleStudentIds = await getAccessibleStudentIds(trainerId);
+
+    if (accessibleStudentIds.length === 0) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        students: []
+      });
+    }
+
+    const students = await Intern.find({ _id: { $in: accessibleStudentIds } })
       .select('-password')
       .sort({ createdAt: -1 });
 
@@ -111,8 +156,8 @@ exports.addInterview = async (req, res) => {
     } = req.body;
 
     // Verify student is assigned to trainer
-    const student = await Intern.findOne({ _id: studentId, assignedTrainer: trainerId });
-    if (!student) {
+    const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'You can only add interviews for assigned students'
@@ -160,8 +205,8 @@ exports.addAptitude = async (req, res) => {
     const { studentId, roundNumber, score, result, remarks } = req.body;
 
     // Verify student is assigned to trainer
-    const student = await Intern.findOne({ _id: studentId, assignedTrainer: trainerId });
-    if (!student) {
+    const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'You can only add aptitude records for assigned students'
@@ -204,8 +249,8 @@ exports.addAssessment = async (req, res) => {
     const { studentId, assessmentType, score, status, feedback } = req.body;
 
     // Verify student is assigned to trainer
-    const student = await Intern.findOne({ _id: studentId, assignedTrainer: trainerId });
-    if (!student) {
+    const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'You can only add assessments for assigned students'
@@ -248,8 +293,8 @@ exports.addTraining = async (req, res) => {
     const { studentId, date, attendance, skillImprovementNote, engagementLevel, trainerRemarks } = req.body;
 
     // Verify student is assigned to trainer
-    const student = await Intern.findOne({ _id: studentId, assignedTrainer: trainerId });
-    if (!student) {
+    const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'You can only add training records for assigned students'
@@ -352,8 +397,8 @@ exports.getStudentRecords = async (req, res) => {
     const trainerId = req.user.id;
 
     // Verify student is assigned to trainer
-    const student = await Intern.findOne({ _id: studentId, assignedTrainer: trainerId });
-    if (!student) {
+    const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
+    if (!hasAccess) {
       return res.status(403).json({
         success: false,
         message: 'Access denied'
@@ -392,7 +437,15 @@ exports.updateStudentStatus = async (req, res) => {
     const trainerId = req.user.id;
 
     // Check if the student is assigned to this trainer
-    const student = await Intern.findOne({ _id: studentId, assignedTrainer: trainerId });
+    const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
+    if (!hasAccess) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found or not assigned to you'
+      });
+    }
+
+    const student = await Intern.findById(studentId);
     if (!student) {
       return res.status(404).json({
         success: false,
