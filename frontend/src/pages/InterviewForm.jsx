@@ -101,6 +101,8 @@ function InterviewForm() {
       interview?.clarityLevel,
       interview?.overallLevel,
       interview?.levelCrossed ? "yes" : "no",
+      interview?.levelCrossed ? "crossed" : "pending",
+      interview?.remarks,
     ];
 
     return fields.some((field) => String(field || "").toLowerCase().includes(query));
@@ -124,15 +126,15 @@ function InterviewForm() {
           </div>
         </div>
 
-        <section className="interview-spotlight">
-          <div className="interview-spotlight-left">
+        <section className="record-spotlight">
+          <div className="record-spotlight-left">
             <h2>Interview Control Center</h2>
             <p>Capture each interview round with structured ratings and maintain a clean decision history.</p>
           </div>
-          <div className="interview-spotlight-chips">
-            <span className="interview-chip">Type: {formData.interviewType}</span>
-            <span className="interview-chip">Attempt: {formData.attemptNumber}</span>
-            <span className={`interview-chip ${formData.levelCrossed ? "passed" : "pending"}`}>
+          <div className="record-spotlight-chips">
+            <span className="record-chip">Type: {formData.interviewType}</span>
+            <span className="record-chip">Attempt: {formData.attemptNumber}</span>
+            <span className={`record-chip ${formData.levelCrossed ? "passed" : "pending"}`}>
               Level: {formData.levelCrossed ? "Crossed" : "Pending"}
             </span>
           </div>
@@ -144,121 +146,124 @@ function InterviewForm() {
           </aside>
           <div className="student-records-content">
 
-        <div className="card interview-form-card">
+        <div className="card record-form-card">
           <h2>Add Interview Record</h2>
+          <p className="record-form-subtitle">Capture complete interview feedback in a clean, structured format.</p>
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            <div className="form-group">
-              <label>Interview Type *</label>
-              <select
-                name="interviewType"
-                value={formData.interviewType}
-                onChange={handleChange}
-                required
-              >
-                <option value="HR">HR</option>
-                <option value="Technical">Technical</option>
-              </select>
-            </div>
+            <div className="record-form-grid">
+              <div className="form-group">
+                <label>Interview Type *</label>
+                <select
+                  name="interviewType"
+                  value={formData.interviewType}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="HR">HR</option>
+                  <option value="Technical">Technical</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Date *</label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                required
-              />
-            </div>
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Attempt Number *</label>
-              <input
-                type="number"
-                name="attemptNumber"
-                value={formData.attemptNumber}
-                onChange={handleChange}
-                min="1"
-                required
-              />
-            </div>
+              <div className="form-group">
+                <label>Attempt Number *</label>
+                <input
+                  type="number"
+                  name="attemptNumber"
+                  value={formData.attemptNumber}
+                  onChange={handleChange}
+                  min="1"
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Communication Level *</label>
-              <select
-                name="communicationLevel"
-                value={formData.communicationLevel}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Level</option>
-                <option value="B">B - Beginner</option>
-                <option value="I">I - Intermediate</option>
-                <option value="A">A - Advanced</option>
-                <option value="E">E - Expert</option>
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Communication Level *</label>
+                <select
+                  name="communicationLevel"
+                  value={formData.communicationLevel}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Level</option>
+                  <option value="B">B - Beginner</option>
+                  <option value="I">I - Intermediate</option>
+                  <option value="A">A - Advanced</option>
+                  <option value="E">E - Expert</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Confidence Level *</label>
-              <select
-                name="confidenceLevel"
-                value={formData.confidenceLevel}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Level</option>
-                <option value="B">B - Beginner</option>
-                <option value="I">I - Intermediate</option>
-                <option value="A">A - Advanced</option>
-                <option value="E">E - Expert</option>
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Confidence Level *</label>
+                <select
+                  name="confidenceLevel"
+                  value={formData.confidenceLevel}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Level</option>
+                  <option value="B">B - Beginner</option>
+                  <option value="I">I - Intermediate</option>
+                  <option value="A">A - Advanced</option>
+                  <option value="E">E - Expert</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Clarity Level *</label>
-              <select
-                name="clarityLevel"
-                value={formData.clarityLevel}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Level</option>
-                <option value="B">B - Beginner</option>
-                <option value="I">I - Intermediate</option>
-                <option value="A">A - Advanced</option>
-                <option value="E">E - Expert</option>
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Clarity Level *</label>
+                <select
+                  name="clarityLevel"
+                  value={formData.clarityLevel}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Level</option>
+                  <option value="B">B - Beginner</option>
+                  <option value="I">I - Intermediate</option>
+                  <option value="A">A - Advanced</option>
+                  <option value="E">E - Expert</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Overall Level *</label>
-              <select
-                name="overallLevel"
-                value={formData.overallLevel}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Level</option>
-                <option value="F">F - Fail</option>
-                <option value="C">C - Clear</option>
-                <option value="P">P - Pass</option>
-                <option value="E">E - Excellent</option>
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Overall Level *</label>
+                <select
+                  name="overallLevel"
+                  value={formData.overallLevel}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Level</option>
+                  <option value="F">F - Fail</option>
+                  <option value="C">C - Clear</option>
+                  <option value="P">P - Pass</option>
+                  <option value="E">E - Excellent</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Remarks</label>
-              <textarea
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleChange}
-                rows="4"
-                placeholder="Enter your remarks about the interview"
-              />
+              <div className="form-group full-width">
+                <label>Remarks</label>
+                <textarea
+                  name="remarks"
+                  value={formData.remarks}
+                  onChange={handleChange}
+                  rows="4"
+                  placeholder="Enter your remarks about the interview"
+                />
+              </div>
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
@@ -272,24 +277,39 @@ function InterviewForm() {
         </div>
 
         {/* Interview History */}
-        <div className="card interview-history-card" style={{ marginTop: "20px" }}>
+        <div className="card student-history-card" style={{ marginTop: "20px" }}>
           <h2>Interview History</h2>
           {interviews.length === 0 ? (
-            <p>No interview records yet</p>
+            <p className="record-history-empty">No interview records yet</p>
           ) : (
             <>
-              <div className="interview-history-toolbar">
-                <input
-                  type="text"
-                  className="interview-history-search"
-                  value={historySearch}
-                  onChange={(e) => setHistorySearch(e.target.value)}
-                  placeholder="Search by date, type, attempt, level..."
-                  aria-label="Search interview history"
-                />
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Interviews</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
+                    placeholder="Search by date, type, attempt, levels, remarks..."
+                    aria-label="Search interview history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredInterviews.length} records</span>
+                  {historySearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setHistorySearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             <div className="table-container">
-              <table className="data-table">
+              <table className="data-table view-students-table interview-history-table">
                 <thead>
                   <tr>
                     <th>Date</th>

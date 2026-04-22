@@ -41,29 +41,58 @@ function StudentRecordsSidebar({ studentId, activeTab }) {
     ? `${studentInfo.status.charAt(0).toUpperCase()}${studentInfo.status.slice(1)}`
     : "N/A";
 
+  const studentDomain = studentInfo?.domain || studentInfo?.suggestedDomain || "Not Assigned";
+  const studentDuration = studentInfo?.duration || "-";
+
+  const studentInitials = (studentInfo?.name || "Student")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
   return (
-    <div>
-      <h3 className="student-records-nav-title">Student Records</h3>
+    <div className="student-records-sidebar">
+      <section className="student-records-nav-title-wrap">
+        <h3 className="student-records-nav-title">Student Records</h3>
+        <p className="student-records-nav-subtitle">Track progress across all modules</p>
+      </section>
 
-      <div className="student-records-student-card">
-        <div className="student-records-student-name">{studentInfo?.name || "Loading student..."}</div>
-        <div className="student-records-student-id">ID: {studentInfo?.internId || "-"}</div>
+      <section className="student-records-student-card">
+        <div className="student-records-student-top">
+          <div className="student-records-student-avatar">{studentInitials || "S"}</div>
+          <div className="student-records-student-core">
+            <div className="student-records-student-name">{studentInfo?.name || "Loading student..."}</div>
+            <div className="student-records-student-id">ID: {studentInfo?.internId || "-"}</div>
+            <span className={`student-records-status-chip ${(studentInfo?.status || "").toLowerCase()}`}>
+              {statusText}
+            </span>
+          </div>
+        </div>
 
-        <div className="student-records-student-meta">
-          <span>Email</span>
-          <strong>{studentInfo?.email || "-"}</strong>
+        <div className="student-records-student-meta-list">
+          <div className="student-records-student-meta">
+            <span>Email</span>
+            <strong>{studentInfo?.email || "-"}</strong>
+          </div>
+          <div className="student-records-student-meta">
+            <span>Mobile</span>
+            <strong>{studentInfo?.mobile || "-"}</strong>
+          </div>
+          <div className="student-records-student-meta">
+            <span>Domain</span>
+            <strong>{studentDomain}</strong>
+          </div>
+          <div className="student-records-student-meta">
+            <span>Duration</span>
+            <strong>{studentDuration}</strong>
+          </div>
         </div>
-        <div className="student-records-student-meta">
-          <span>Mobile</span>
-          <strong>{studentInfo?.mobile || "-"}</strong>
-        </div>
-        <div className="student-records-student-meta">
-          <span>Status</span>
-          <strong>{statusText}</strong>
-        </div>
-      </div>
+      </section>
 
-      <div className="student-records-nav-list">
+      <section className="student-records-nav-card">
+        <p className="student-records-nav-label">Record Modules</p>
+        <div className="student-records-nav-list">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -81,7 +110,8 @@ function StudentRecordsSidebar({ studentId, activeTab }) {
             {tab.label}
           </button>
         ))}
-      </div>
+        </div>
+      </section>
     </div>
   );
 }

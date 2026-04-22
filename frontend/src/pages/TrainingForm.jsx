@@ -111,78 +111,93 @@ function TrainingForm() {
           </div>
         </div>
 
+        <section className="record-spotlight">
+          <div className="record-spotlight-left">
+            <h2>Training Control Center</h2>
+            <p>Maintain attendance and engagement updates with consistent session-level observations.</p>
+          </div>
+          <div className="record-spotlight-chips">
+            <span className="record-chip">Date: {formData.date || "-"}</span>
+            <span className="record-chip">Attendance: {formData.attendance}</span>
+            <span className="record-chip">Engagement: {formData.engagementLevel}</span>
+          </div>
+        </section>
+
         <div className="student-records-shell">
           <aside className="student-records-sidepanel">
             <StudentRecordsSidebar studentId={studentId} activeTab="training" />
           </aside>
           <div className="student-records-content">
 
-        <div className="card">
+        <div className="card record-form-card">
           <h2>Add Training Record</h2>
+          <p className="record-form-subtitle">Log attendance and session quality with focused training notes.</p>
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            <div className="form-group">
-              <label>Date *</label>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                required
-              />
-            </div>
+            <div className="record-form-grid">
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Attendance *</label>
-              <select
-                name="attendance"
-                value={formData.attendance}
-                onChange={handleChange}
-                required
-              >
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Late">Late</option>
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Attendance *</label>
+                <select
+                  name="attendance"
+                  value={formData.attendance}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Present">Present</option>
+                  <option value="Absent">Absent</option>
+                  <option value="Late">Late</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Skill Improvement Note</label>
-              <textarea
-                name="skillImprovementNote"
-                value={formData.skillImprovementNote}
-                onChange={handleChange}
-                rows="3"
-                placeholder="Enter notes about skill improvements observed"
-              />
-            </div>
+              <div className="form-group">
+                <label>Engagement Level *</label>
+                <select
+                  name="engagementLevel"
+                  value={formData.engagementLevel}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Excellent">Excellent</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Engagement Level *</label>
-              <select
-                name="engagementLevel"
-                value={formData.engagementLevel}
-                onChange={handleChange}
-                required
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-                <option value="Excellent">Excellent</option>
-              </select>
-            </div>
+              <div className="form-group full-width">
+                <label>Skill Improvement Note</label>
+                <textarea
+                  name="skillImprovementNote"
+                  value={formData.skillImprovementNote}
+                  onChange={handleChange}
+                  rows="3"
+                  placeholder="Enter notes about skill improvements observed"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Trainer Remarks</label>
-              <textarea
-                name="trainerRemarks"
-                value={formData.trainerRemarks}
-                onChange={handleChange}
-                rows="4"
-                placeholder="Enter your remarks about the training session"
-              />
+              <div className="form-group full-width">
+                <label>Trainer Remarks</label>
+                <textarea
+                  name="trainerRemarks"
+                  value={formData.trainerRemarks}
+                  onChange={handleChange}
+                  rows="4"
+                  placeholder="Enter your remarks about the training session"
+                />
+              </div>
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
@@ -199,21 +214,36 @@ function TrainingForm() {
         <div className="card student-history-card" style={{ marginTop: "20px" }}>
           <h2>Training History</h2>
           {trainings.length === 0 ? (
-            <p>No training records yet</p>
+            <p className="record-history-empty">No training records yet</p>
           ) : (
             <>
-              <div className="student-history-toolbar">
-                <input
-                  type="text"
-                  className="student-history-search"
-                  value={historySearch}
-                  onChange={(e) => setHistorySearch(e.target.value)}
-                  placeholder="Search by date, attendance, engagement, notes..."
-                  aria-label="Search training history"
-                />
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Training</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
+                    placeholder="Search by date, attendance, engagement, notes..."
+                    aria-label="Search training history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredTrainings.length} records</span>
+                  {historySearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setHistorySearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             <div className="table-container">
-              <table className="data-table">
+              <table className="data-table view-students-table training-history-table">
                 <thead>
                   <tr>
                     <th>Date</th>

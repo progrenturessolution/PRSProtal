@@ -2306,6 +2306,606 @@ table tr:hover {
   cursor: not-allowed;
 }
 
+/* Student records standalone pages */
+.student-records-standalone {
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+}
+
+.student-records-standalone .main-content {
+  margin-left: 0;
+  max-width: 1440px;
+  margin-right: auto;
+  margin-inline: auto;
+}
+
+.student-records-page {
+  padding-bottom: 56px;
+}
+
+.student-records-main {
+  width: 100%;
+}
+
+.student-records-header-copy h1 {
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.student-records-header-copy p {
+  margin-bottom: 0;
+  max-width: 760px;
+}
+
+.student-records-shell {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.student-records-sidepanel {
+  flex: 0 0 290px;
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
+  padding-top: 12px;
+}
+
+.student-records-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.student-records-nav-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+.student-records-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 12px;
+}
+
+.student-records-content > .card {
+  margin-top: 0;
+}
+
+.student-history-card,
+.interview-history-card,
+.interview-form-card {
+  border-radius: 18px;
+}
+
+.student-history-toolbar,
+.interview-history-toolbar {
+  margin-top: 16px;
+}
+
+.student-history-search,
+.interview-history-search {
+  width: 100%;
+  max-width: 420px;
+}
+
+.interview-history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.interview-history-search-wrap {
+  flex: 1;
+  min-width: 340px;
+  max-width: 760px;
+}
+
+.interview-history-search-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.interview-history-search {
+  max-width: none;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.interview-history-search:focus {
+  border-color: #cbd5e1;
+  box-shadow: 0 0 0 3px rgba(226, 232, 240, 0.6);
+  outline: none;
+  background: #f8fafc;
+}
+
+.interview-history-toolbar-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.interview-history-clear-btn {
+  border: 1px solid #d8e1ec;
+  background: #ffffff;
+  color: #324158;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.interview-history-clear-btn:hover {
+  border-color: #b8c5d8;
+  background: #f8fafc;
+}
+
+.interview-history-table thead {
+  background: #324158;
+}
+
+.interview-history-table thead th {
+  background-color: #324158 !important;
+  color: #ffffff !important;
+}
+
+.aptitude-history-table thead,
+.assessment-history-table thead,
+.training-history-table thead {
+  background: #324158;
+}
+
+.aptitude-history-table thead th,
+.assessment-history-table thead th,
+.training-history-table thead th {
+  background-color: #324158 !important;
+  color: #ffffff !important;
+}
+
+.student-records-nav-title {
+  color: #324158;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.student-records-nav-subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.student-records-student-card {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.student-records-student-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.student-records-student-core {
+  min-width: 0;
+}
+
+.student-records-student-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #324158 0%, #1f2a3d 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.student-records-student-name {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.student-records-student-id {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 0;
+}
+
+.student-records-status-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border: 1px solid #dbe3ee;
+  background: #f8fafc;
+  color: #324158;
+}
+
+.student-records-status-chip.active {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.student-records-status-chip.inactive {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.student-records-status-chip.completed {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.student-records-student-meta-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-records-student-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid #eef2f7;
+}
+
+.student-records-student-meta span {
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  flex-shrink: 0;
+}
+
+.student-records-student-meta strong {
+  text-align: right;
+  word-break: break-word;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.student-records-nav-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  padding: 12px;
+}
+
+.student-records-nav-label {
+  margin: 0 0 10px 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.student-records-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.student-records-nav-btn {
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+.student-records-nav-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.student-records-nav-btn.active {
+  background: linear-gradient(135deg, #324158 0%, #2b3850 100%);
+  border-color: #324158;
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(50, 65, 88, 0.16);
+}
+
+.record-spotlight {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  padding: 24px 28px;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.record-spotlight-left h2 {
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.record-spotlight-left p {
+  color: #64748b;
+  margin-bottom: 0;
+  max-width: 760px;
+}
+
+.record-spotlight-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.record-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #324158;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.record-chip.passed {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.24);
+}
+
+.record-chip.pending {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.24);
+}
+
+.record-form-card,
+.student-history-card {
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+}
+
+.record-form-card {
+  margin-top: 10px;
+}
+
+.record-form-card h2,
+.student-history-card h2 {
+  font-size: 20px;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.record-form-subtitle {
+  margin: 0 0 18px 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.record-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 18px;
+}
+
+.record-form-grid .form-group {
+  margin-bottom: 0;
+}
+
+.record-form-grid .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.record-form-card .form-group label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #334155;
+}
+
+.record-form-card input,
+.record-form-card select,
+.record-form-card textarea,
+.student-history-search {
+  border: 1px solid #d8e1ec;
+  border-radius: 10px;
+  background: #fbfdff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.record-form-card input:focus,
+.record-form-card select:focus,
+.record-form-card textarea:focus,
+.student-history-search:focus {
+  border-color: #8aa1bf;
+  box-shadow: 0 0 0 3px rgba(50, 65, 88, 0.12);
+  background: #ffffff;
+  outline: none;
+}
+
+.record-form-card .submit-btn {
+  margin-top: 6px;
+  min-height: 44px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.record-history-empty {
+  margin: 4px 0 0 0;
+  color: #64748b;
+}
+
+.student-history-card .data-table thead th {
+  font-size: 11px;
+  letter-spacing: 0.55px;
+}
+
+.student-history-card .data-table tbody td {
+  font-size: 13px;
+}
+
+.student-records-content .table-container {
+  margin-top: 16px;
+}
+
+@media (max-width: 1100px) {
+  .student-records-shell {
+    flex-direction: column;
+  }
+
+  .student-records-sidepanel {
+    position: static;
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .student-records-nav-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .student-records-nav-btn {
+    width: auto;
+    flex: 1 1 160px;
+  }
+
+  .record-spotlight {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .interview-history-search-wrap {
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .interview-history-toolbar-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-records-standalone .main-content {
+    padding: 24px 18px;
+  }
+
+  .student-records-header-copy h1 {
+    font-size: 26px;
+  }
+
+  .student-records-header-copy p {
+    font-size: 14px;
+  }
+
+  .student-records-student-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .student-records-student-meta strong {
+    text-align: left;
+  }
+
+  .record-spotlight {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .record-form-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .record-chip {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .student-records-nav-btn {
+    flex: 1 1 100%;
+  }
+
+  .interview-history-table tbody td:nth-child(1)::before { content: "Date"; }
+  .interview-history-table tbody td:nth-child(2)::before { content: "Type"; }
+  .interview-history-table tbody td:nth-child(3)::before { content: "Attempt"; }
+  .interview-history-table tbody td:nth-child(4)::before { content: "Communication"; }
+  .interview-history-table tbody td:nth-child(5)::before { content: "Confidence"; }
+  .interview-history-table tbody td:nth-child(6)::before { content: "Clarity"; }
+  .interview-history-table tbody td:nth-child(7)::before { content: "Overall"; }
+  .interview-history-table tbody td:nth-child(8)::before { content: "Level Crossed"; }
+
+  .aptitude-history-table tbody td:nth-child(1)::before { content: "Round Number"; }
+  .aptitude-history-table tbody td:nth-child(2)::before { content: "Score"; }
+  .aptitude-history-table tbody td:nth-child(3)::before { content: "Result"; }
+  .aptitude-history-table tbody td:nth-child(4)::before { content: "Remarks"; }
+  .aptitude-history-table tbody td:nth-child(5)::before { content: "Date"; }
+
+  .assessment-history-table tbody td:nth-child(1)::before { content: "Type"; }
+  .assessment-history-table tbody td:nth-child(2)::before { content: "Score"; }
+  .assessment-history-table tbody td:nth-child(3)::before { content: "Status"; }
+  .assessment-history-table tbody td:nth-child(4)::before { content: "Feedback"; }
+  .assessment-history-table tbody td:nth-child(5)::before { content: "Date"; }
+
+  .training-history-table tbody td:nth-child(1)::before { content: "Date"; }
+  .training-history-table tbody td:nth-child(2)::before { content: "Attendance"; }
+  .training-history-table tbody td:nth-child(3)::before { content: "Engagement Level"; }
+  .training-history-table tbody td:nth-child(4)::before { content: "Skill Improvement"; }
+  .training-history-table tbody td:nth-child(5)::before { content: "Remarks"; }
+}
+
 .error-message {
   background: var(--error-bg);
   color: var(--error-color);

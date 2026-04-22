@@ -111,68 +111,83 @@ function AssessmentForm() {
           </div>
         </div>
 
+        <section className="record-spotlight">
+          <div className="record-spotlight-left">
+            <h2>Assessment Control Center</h2>
+            <p>Document assessment outcomes clearly so progress and performance trends stay visible.</p>
+          </div>
+          <div className="record-spotlight-chips">
+            <span className="record-chip">Type: {formData.assessmentType}</span>
+            <span className="record-chip">Status: {formData.status}</span>
+            <span className="record-chip">Score: {formData.score || "-"}</span>
+          </div>
+        </section>
+
         <div className="student-records-shell">
           <aside className="student-records-sidepanel">
             <StudentRecordsSidebar studentId={studentId} activeTab="assessments" />
           </aside>
           <div className="student-records-content">
 
-        <div className="card">
+        <div className="card record-form-card">
           <h2>Add Assessment Record</h2>
+          <p className="record-form-subtitle">Document each assessment with clear outcomes, scores, and actionable feedback.</p>
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            <div className="form-group">
-              <label>Assessment Type *</label>
-              <select
-                name="assessmentType"
-                value={formData.assessmentType}
-                onChange={handleChange}
-                required
-              >
-                <option value="Domain">Domain</option>
-                <option value="Coding">Coding</option>
-              </select>
-            </div>
+            <div className="record-form-grid">
+              <div className="form-group">
+                <label>Assessment Type *</label>
+                <select
+                  name="assessmentType"
+                  value={formData.assessmentType}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Domain">Domain</option>
+                  <option value="Coding">Coding</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Score</label>
-              <input
-                type="number"
-                name="score"
-                value={formData.score}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                placeholder="Enter score (0-100)"
-              />
-            </div>
+              <div className="form-group">
+                <label>Score</label>
+                <input
+                  type="number"
+                  name="score"
+                  value={formData.score}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  placeholder="Enter score (0-100)"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Status *</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                required
-              >
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Pass">Pass</option>
-                <option value="Fail">Fail</option>
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Status *</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Pending">Pending</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Pass">Pass</option>
+                  <option value="Fail">Fail</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Feedback</label>
-              <textarea
-                name="feedback"
-                value={formData.feedback}
-                onChange={handleChange}
-                rows="4"
-                placeholder="Enter your feedback about the assessment"
-              />
+              <div className="form-group full-width">
+                <label>Feedback</label>
+                <textarea
+                  name="feedback"
+                  value={formData.feedback}
+                  onChange={handleChange}
+                  rows="4"
+                  placeholder="Enter your feedback about the assessment"
+                />
+              </div>
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
@@ -189,21 +204,36 @@ function AssessmentForm() {
         <div className="card student-history-card" style={{ marginTop: "20px" }}>
           <h2>Assessment History</h2>
           {assessments.length === 0 ? (
-            <p>No assessment records yet</p>
+            <p className="record-history-empty">No assessment records yet</p>
           ) : (
             <>
-              <div className="student-history-toolbar">
-                <input
-                  type="text"
-                  className="student-history-search"
-                  value={historySearch}
-                  onChange={(e) => setHistorySearch(e.target.value)}
-                  placeholder="Search by type, score, status, feedback, date..."
-                  aria-label="Search assessment history"
-                />
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Assessments</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
+                    placeholder="Search by type, score, status, feedback, date..."
+                    aria-label="Search assessment history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredAssessments.length} records</span>
+                  {historySearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setHistorySearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             <div className="table-container">
-              <table className="data-table">
+              <table className="data-table view-students-table assessment-history-table">
                 <thead>
                   <tr>
                     <th>Type</th>

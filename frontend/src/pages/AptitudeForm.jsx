@@ -109,66 +109,81 @@ function AptitudeForm() {
           </div>
         </div>
 
+        <section className="record-spotlight">
+          <div className="record-spotlight-left">
+            <h2>Aptitude Control Center</h2>
+            <p>Capture aptitude performance in a structured format and keep every round easy to review.</p>
+          </div>
+          <div className="record-spotlight-chips">
+            <span className="record-chip">Round: {formData.roundNumber}</span>
+            <span className="record-chip">Result: {formData.result}</span>
+            <span className="record-chip">Score: {formData.score || "-"}</span>
+          </div>
+        </section>
+
         <div className="student-records-shell">
           <aside className="student-records-sidepanel">
             <StudentRecordsSidebar studentId={studentId} activeTab="aptitude" />
           </aside>
           <div className="student-records-content">
 
-        <div className="card">
+        <div className="card record-form-card">
           <h2>Add Aptitude Record</h2>
+          <p className="record-form-subtitle">Track each aptitude round with concise scores and clear evaluator notes.</p>
           <form onSubmit={handleSubmit}>
             {error && <div className="error-message">{error}</div>}
             {success && <div className="success-message">{success}</div>}
 
-            <div className="form-group">
-              <label>Aptitude Round Number *</label>
-              <input
-                type="number"
-                name="roundNumber"
-                value={formData.roundNumber}
-                onChange={handleChange}
-                min="1"
-                required
-              />
-            </div>
+            <div className="record-form-grid">
+              <div className="form-group">
+                <label>Aptitude Round Number *</label>
+                <input
+                  type="number"
+                  name="roundNumber"
+                  value={formData.roundNumber}
+                  onChange={handleChange}
+                  min="1"
+                  required
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Score *</label>
-              <input
-                type="number"
-                name="score"
-                value={formData.score}
-                onChange={handleChange}
-                min="0"
-                max="100"
-                required
-                placeholder="Enter score (0-100)"
-              />
-            </div>
+              <div className="form-group">
+                <label>Score *</label>
+                <input
+                  type="number"
+                  name="score"
+                  value={formData.score}
+                  onChange={handleChange}
+                  min="0"
+                  max="100"
+                  required
+                  placeholder="Enter score (0-100)"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Result *</label>
-              <select
-                name="result"
-                value={formData.result}
-                onChange={handleChange}
-                required
-              >
-                <option value="Pass">Pass</option>
-                <option value="Improve">Improve</option>
-              </select>
-            </div>
+              <div className="form-group">
+                <label>Result *</label>
+                <select
+                  name="result"
+                  value={formData.result}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Pass">Pass</option>
+                  <option value="Improve">Improve</option>
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Remarks</label>
-              <textarea
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleChange}
-                rows="4"
-                placeholder="Enter your remarks about the aptitude test"
-              />
+              <div className="form-group full-width">
+                <label>Remarks</label>
+                <textarea
+                  name="remarks"
+                  value={formData.remarks}
+                  onChange={handleChange}
+                  rows="4"
+                  placeholder="Enter your remarks about the aptitude test"
+                />
+              </div>
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>
@@ -185,21 +200,36 @@ function AptitudeForm() {
         <div className="card student-history-card" style={{ marginTop: "20px" }}>
           <h2>Aptitude Test History</h2>
           {aptitudes.length === 0 ? (
-            <p>No aptitude records yet</p>
+            <p className="record-history-empty">No aptitude records yet</p>
           ) : (
             <>
-              <div className="student-history-toolbar">
-                <input
-                  type="text"
-                  className="student-history-search"
-                  value={historySearch}
-                  onChange={(e) => setHistorySearch(e.target.value)}
-                  placeholder="Search by round, score, result, remarks, date..."
-                  aria-label="Search aptitude history"
-                />
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Aptitude</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
+                    placeholder="Search by round, score, result, remarks, date..."
+                    aria-label="Search aptitude history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredAptitudes.length} records</span>
+                  {historySearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setHistorySearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             <div className="table-container">
-              <table className="data-table">
+              <table className="data-table view-students-table aptitude-history-table">
                 <thead>
                   <tr>
                     <th>Round Number</th>
