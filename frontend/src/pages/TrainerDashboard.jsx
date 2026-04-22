@@ -17,6 +17,7 @@ function TrainerDashboard() {
   const [selectedStudentTab, setSelectedStudentTab] = useState(null);
   const [studentFilter, setStudentFilter] = useState("all");
   const [studentSearch, setStudentSearch] = useState("");
+  const [openStudentMenuId, setOpenStudentMenuId] = useState(null);
   const [openAssignmentMenuId, setOpenAssignmentMenuId] = useState(null);
   const [groupSearchQuery, setGroupSearchQuery] = useState("");
   const [groupStudentSearch, setGroupStudentSearch] = useState({});
@@ -103,14 +104,24 @@ function TrainerDashboard() {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!openAssignmentMenuId) return;
-      if (e.target.closest("[data-assignment-menu]") || e.target.closest("[data-assignment-menu-toggle]")) return;
-      setOpenAssignmentMenuId(null);
+      if (openAssignmentMenuId) {
+        if (e.target.closest("[data-assignment-menu]") || e.target.closest("[data-assignment-menu-toggle]")) {
+          return;
+        }
+        setOpenAssignmentMenuId(null);
+      }
+
+      if (openStudentMenuId) {
+        if (e.target.closest("[data-student-menu]") || e.target.closest("[data-student-menu-toggle]")) {
+          return;
+        }
+        setOpenStudentMenuId(null);
+      }
     };
 
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [openAssignmentMenuId]);
+  }, [openAssignmentMenuId, openStudentMenuId]);
 
   const fetchDashboardData = async () => {
     try {
@@ -674,7 +685,7 @@ function TrainerDashboard() {
                     </svg>
                   </div>
                   <div className="action-card-content">
-                    <h3>My Assignments</h3>
+                    <h3>Assign Groups</h3>
                     <p>Check assigned groups and work tasks</p>
                   </div>
                   <button
@@ -692,7 +703,7 @@ function TrainerDashboard() {
             <>
               <div className="premium-page-header">
                 <div className="header-left">
-                  <h1>My Assignments</h1>
+                  <h1>Assign Groups</h1>
                   <p className="header-subtitle">
                     All students, groups, and work assigned by admin
                   </p>
@@ -955,9 +966,9 @@ function TrainerDashboard() {
                                               >
                                                 <button
                                                   onClick={() => {
-                                                    setSelectedStudent(student);
-                                                    setSelectedStudentTab('interviews');
-                                                    setActiveTab('student-records');
+                                                    navigate(`/trainer/student/${student._id}/interviews`, {
+                                                      state: { student, fromTab: "assignments" },
+                                                    });
                                                     setOpenAssignmentMenuId(null);
                                                   }}
                                                   style={{
@@ -1037,7 +1048,7 @@ function TrainerDashboard() {
             <>
               <div className="premium-page-header">
                 <div className="header-left">
-                  <h1>Assigned Students</h1>
+                  <h1 style={{ color: "#324158" }}>My Students</h1>
                   <p className="header-subtitle">
                     Search and manage your assigned students
                   </p>
@@ -1251,7 +1262,7 @@ function TrainerDashboard() {
                       </div>
 
                       <div style={{ overflowX: "auto" }}>
-                        <table className="premium-table">
+                        <table className="premium-table view-students-table">
                           <thead>
                             <tr>
                               <th>Student</th>
@@ -1262,32 +1273,12 @@ function TrainerDashboard() {
                           </thead>
                           <tbody>
                             {filteredStudents.map((student) => {
-                              const initials = student.name
-                                ? student.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
-                                : "S";
                               const isCompleted = student.status === "completed";
                               return (
                                 <tr key={student._id}>
-                                  {/* Student with avatar */}
+                                  {/* Student details */}
                                   <td>
                                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                      <div
-                                        style={{
-                                          width: "38px",
-                                          height: "38px",
-                                          borderRadius: "50%",
-                                          background: "linear-gradient(135deg, #667eea, #764ba2)",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          color: "#fff",
-                                          fontWeight: "700",
-                                          fontSize: "13px",
-                                          flexShrink: 0,
-                                        }}
-                                      >
-                                        {initials}
-                                      </div>
                                       <div>
                                         <div
                                           style={{ fontWeight: "600", color: "#1f2937", fontSize: "14px" }}
@@ -1343,37 +1334,104 @@ function TrainerDashboard() {
                                   </td>
 
                                   {/* Actions */}
-                                  <td>
-                                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                  <td style={{ position: "relative" }}>
+                                    <button
+                                      data-student-menu-toggle
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenStudentMenuId((prev) =>
+                                          prev === student._id ? null : student._id,
+                                        );
+                                      }}
+                                      style={{
+                                        background: "transparent",
+                                        color: "#0f172a",
+                                        border: "1px solid #d1d5db",
+                                        borderRadius: "8px",
+                                        width: "36px",
+                                        height: "36px",
+                                        cursor: "pointer",
+                                        fontSize: "20px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        lineHeight: 1,
+                                      }}
+                                      aria-label={`Open actions for ${student.name || "student"}`}
+                                    >
+                                      ⋮
+                                    </button>
+
+                                    {openStudentMenuId === student._id && (
+                                      <div
+                                        data-student-menu
+                                        style={{
+                                          position: "absolute",
+                                          right: 0,
+                                          top: "42px",
+                                          background: "#ffffff",
+                                          border: "1px solid #e5e7eb",
+                                          borderRadius: "12px",
+                                          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                          zIndex: 1000,
+                                          minWidth: "180px",
+                                          overflow: "hidden",
+                                        }}
+                                      >
                                       <button
                                         onClick={() => {
-                                          setSelectedStudent(student);
-                                          setSelectedStudentTab('interviews');
-                                          setActiveTab('student-records');
+                                          navigate(`/trainer/student/${student._id}/interviews`, {
+                                            state: { student, fromTab: "students" },
+                                          });
+                                          setOpenStudentMenuId(null);
                                         }}
-                                        className="table-action-btn"
-                                        style={{ background: 'linear-gradient(135deg, #667eea, #764ba2)', color: 'white', fontWeight: '600' }}
+                                        style={{
+                                          width: "100%",
+                                          padding: "12px 16px",
+                                          background: "#ffffff",
+                                          border: "none",
+                                          textAlign: "left",
+                                          cursor: "pointer",
+                                          fontSize: "14px",
+                                          fontWeight: "500",
+                                          color: "#0f172a",
+                                        }}
+                                        onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                        onMouseLeave={(e) => (e.target.style.background = "#ffffff")}
                                       >
                                         View Student
                                       </button>
-                                      {!isCompleted ? (
-                                        <button
-                                          onClick={() => handleUpdateStatus(student._id, "completed")}
-                                          className="table-action-btn"
-                                          style={{ background: "#3b82f6" }}
-                                        >
-                                          Mark Completed
-                                        </button>
-                                      ) : (
-                                        <button
-                                          onClick={() => handleUpdateStatus(student._id, "active")}
-                                          className="table-action-btn"
-                                          style={{ background: "#10b981" }}
-                                        >
-                                          Mark Active
-                                        </button>
-                                      )}
-                                    </div>
+                                      <button
+                                        onClick={() => {
+                                          if (!isCompleted) {
+                                            handleUpdateStatus(student._id, "completed");
+                                          }
+                                          setOpenStudentMenuId(null);
+                                        }}
+                                        disabled={isCompleted}
+                                        style={{
+                                          width: "100%",
+                                          padding: "12px 16px",
+                                          background: "#ffffff",
+                                          border: "none",
+                                          borderTop: "1px solid #f3f4f6",
+                                          textAlign: "left",
+                                          cursor: isCompleted ? "not-allowed" : "pointer",
+                                          fontSize: "14px",
+                                          fontWeight: "500",
+                                          color: isCompleted ? "#9ca3af" : "#0f172a",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          if (!isCompleted) {
+                                            e.target.style.background = "#f9fafb";
+                                          }
+                                        }}
+                                        onMouseLeave={(e) => (e.target.style.background = "#ffffff")}
+                                      >
+                                        Mark Completed
+                                      </button>
+                                      </div>
+                                    )}
                                   </td>
                                 </tr>
                               );

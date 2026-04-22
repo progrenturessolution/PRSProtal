@@ -108,6 +108,13 @@ function AdminDashboard() {
     navigate("/");
   };
 
+  const handleCardKeyDown = (event, menuKey) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      setActiveMenu(menuKey);
+    }
+  };
+
   const renderContent = () => {
     switch (activeMenu) {
       case "dashboard":
@@ -131,7 +138,13 @@ function AdminDashboard() {
 
             {/* Student Statistics */}
             <div className="premium-stats-grid">
-              <div className="premium-stat-card accent-blue">
+              <div
+                className="premium-stat-card accent-blue admin-clickable-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveMenu("view-interns")}
+                onKeyDown={(event) => handleCardKeyDown(event, "view-interns")}
+              >
                 <div className="stat-icon-wrapper">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -149,7 +162,13 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="premium-stat-card accent-teal">
+              <div
+                className="premium-stat-card accent-teal admin-clickable-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveMenu("view-interns")}
+                onKeyDown={(event) => handleCardKeyDown(event, "view-interns")}
+              >
                 <div className="stat-icon-wrapper">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -167,7 +186,13 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="premium-stat-card accent-indigo">
+              <div
+                className="premium-stat-card accent-indigo admin-clickable-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveMenu("archived-students")}
+                onKeyDown={(event) => handleCardKeyDown(event, "archived-students")}
+              >
                 <div className="stat-icon-wrapper">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -185,7 +210,13 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              <div className="premium-stat-card accent-slate">
+              <div
+                className="premium-stat-card accent-slate admin-clickable-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveMenu("add-intern")}
+                onKeyDown={(event) => handleCardKeyDown(event, "add-intern")}
+              >
                 <div className="stat-icon-wrapper">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -211,7 +242,13 @@ function AdminDashboard() {
               </div>
 
               <div className="premium-stats-grid" style={{ marginBottom: "0" }}>
-                <div className="premium-stat-card accent-blue">
+                <div
+                  className="premium-stat-card accent-blue admin-clickable-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveMenu("manage-tasks")}
+                  onKeyDown={(event) => handleCardKeyDown(event, "manage-tasks")}
+                >
                   <div className="stat-icon-wrapper">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -229,7 +266,13 @@ function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="premium-stat-card accent-teal">
+                <div
+                  className="premium-stat-card accent-teal admin-clickable-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveMenu("manage-tasks")}
+                  onKeyDown={(event) => handleCardKeyDown(event, "manage-tasks")}
+                >
                   <div className="stat-icon-wrapper">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -247,7 +290,13 @@ function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="premium-stat-card accent-indigo">
+                <div
+                  className="premium-stat-card accent-indigo admin-clickable-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveMenu("manage-tasks")}
+                  onKeyDown={(event) => handleCardKeyDown(event, "manage-tasks")}
+                >
                   <div className="stat-icon-wrapper">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -267,7 +316,13 @@ function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="premium-stat-card accent-slate">
+                <div
+                  className="premium-stat-card accent-slate admin-clickable-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveMenu("pending-approvals")}
+                  onKeyDown={(event) => handleCardKeyDown(event, "pending-approvals")}
+                >
                   <div className="stat-icon-wrapper">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -287,7 +342,13 @@ function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="premium-stat-card accent-blue">
+                <div
+                  className="premium-stat-card accent-blue admin-clickable-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setActiveMenu("completed-tasks")}
+                  onKeyDown={(event) => handleCardKeyDown(event, "completed-tasks")}
+                >
                   <div className="stat-icon-wrapper">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -309,7 +370,13 @@ function AdminDashboard() {
 
             {/* Quick Actions */}
             <div className="premium-action-grid">
-              <div className="premium-action-card">
+              <div
+                className="premium-action-card admin-clickable-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveMenu("add-intern")}
+                onKeyDown={(event) => handleCardKeyDown(event, "add-intern")}
+              >
                 <div className="action-card-icon blue">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -332,7 +399,13 @@ function AdminDashboard() {
                 </button>
               </div>
 
-              <div className="premium-action-card">
+              <div
+                className="premium-action-card admin-clickable-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveMenu("create-task")}
+                onKeyDown={(event) => handleCardKeyDown(event, "create-task")}
+              >
                 <div className="action-card-icon teal">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -355,7 +428,13 @@ function AdminDashboard() {
                 </button>
               </div>
 
-              <div className="premium-action-card">
+              <div
+                className="premium-action-card admin-clickable-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => setActiveMenu("reports")}
+                onKeyDown={(event) => handleCardKeyDown(event, "reports")}
+              >
                 <div className="action-card-icon indigo">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
