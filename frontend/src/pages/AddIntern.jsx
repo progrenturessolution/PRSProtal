@@ -46,6 +46,16 @@ function AddIntern({ onInternAdded, onBack }) {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const calculatePendingFees = (data) => {
+    const total = Number(data.totalFees || 0);
+    const first = Number(data.firstPaymentAmount || 0);
+    const second = Number(data.secondPaymentAmount || 0);
+    const final = Number(data.finalPaymentAmount || 0);
+    const pending = Math.max(total - (first + second + final), 0);
+
+    return String(pending);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -67,6 +77,7 @@ function AddIntern({ onInternAdded, onBack }) {
       const second = Number(nextData.secondPaymentAmount || 0);
       const final = Number(nextData.finalPaymentAmount || 0);
       nextData.completedFees = String(first + second + final);
+      nextData.pendingFees = calculatePendingFees(nextData);
     }
 
     setFormData(nextData);
@@ -332,7 +343,7 @@ function AddIntern({ onInternAdded, onBack }) {
 
           {studentType === "SMS Program" && (
             <div className="form-group">
-              <label>PSMS ID (required) *</label>
+              <label>PSMS ID *</label>
               <input
                 type="text"
                 name="internId"
@@ -361,7 +372,7 @@ function AddIntern({ onInternAdded, onBack }) {
           )}
 
           <div className="form-group">
-            <label>Full Name (required) *</label>
+            <label>Full Name *</label>
             <input
               type="text"
               name="name"
@@ -373,7 +384,7 @@ function AddIntern({ onInternAdded, onBack }) {
           </div>
 
           <div className="form-group">
-            <label>Mobile Number (WhatsApp preferred) (required) *</label>
+            <label>Mobile Number (WhatsApp preferred) *</label>
             <input
               type="tel"
               name="mobile"
@@ -385,7 +396,7 @@ function AddIntern({ onInternAdded, onBack }) {
           </div>
 
           <div className="form-group">
-            <label>Email Address (required) *</label>
+            <label>Email Address *</label>
             <input
               type="email"
               name="email"
@@ -552,7 +563,7 @@ function AddIntern({ onInternAdded, onBack }) {
           {studentType === "SMS Program" && (
             <>
               <div className="form-group">
-                <label>Suggested Domain (required) *</label>
+                <label>Suggested Domain *</label>
                 <input
                   type="text"
                   name="suggestedDomain"
@@ -564,7 +575,7 @@ function AddIntern({ onInternAdded, onBack }) {
               </div>
 
               <div className="form-group">
-                <label>Current Qualification (e.g., 12th Pass, Diploma, BCA, BTech, etc.)</label>
+                <label>Current Qualification</label>
                 <input
                   type="text"
                   name="currentQualification"
@@ -575,7 +586,7 @@ function AddIntern({ onInternAdded, onBack }) {
               </div>
 
               <div className="form-group">
-                <label>Full Name of College/Institute/School (required) *</label>
+                <label>Full Name of College/Institute/School *</label>
                 <input
                   type="text"
                   name="instituteName"
@@ -587,7 +598,7 @@ function AddIntern({ onInternAdded, onBack }) {
               </div>
 
               <div className="form-group">
-                <label>Year of Study (required) *</label>
+                <label>Year of Study *</label>
                 <input
                   type="text"
                   name="yearOfStudy"
@@ -610,7 +621,7 @@ function AddIntern({ onInternAdded, onBack }) {
               </div>
 
               <div className="form-group">
-                <label>Enrolment date (required) *</label>
+                <label>Enrolment date *</label>
                 <input
                   type="date"
                   name="enrolmentDate"
@@ -621,7 +632,7 @@ function AddIntern({ onInternAdded, onBack }) {
               </div>
 
               <div className="form-group">
-                <label>Enrol Batch Month (required) *</label>
+                <label>Enrol Batch Month *</label>
                 <input
                   type="month"
                   name="enrolBatchMonth"
@@ -632,7 +643,7 @@ function AddIntern({ onInternAdded, onBack }) {
               </div>
 
               <div className="form-group">
-                <label>Total Fees (required) *</label>
+                <label>Total Fees *</label>
                 <input
                   type="number"
                   name="totalFees"
@@ -712,8 +723,8 @@ function AddIntern({ onInternAdded, onBack }) {
                   type="number"
                   name="pendingFees"
                   value={formData.pendingFees}
-                  onChange={handleChange}
-                  placeholder="Enter pending fees"
+                  readOnly
+                  placeholder="Auto-calculated"
                 />
               </div>
 
@@ -735,7 +746,7 @@ function AddIntern({ onInternAdded, onBack }) {
                   accept="application/pdf,image/*"
                   onChange={handleWelcomeFile}
                 />
-                <small>(Optional)</small>
+
               </div>
 
               <div className="form-group">
@@ -745,7 +756,7 @@ function AddIntern({ onInternAdded, onBack }) {
                   accept="application/pdf,image/*"
                   onChange={handleOfferFile}
                 />
-                <small>(Optional)</small>
+
               </div>
 
               <div className="form-group">
@@ -755,7 +766,7 @@ function AddIntern({ onInternAdded, onBack }) {
                   accept="application/pdf,image/*"
                   onChange={handlePaymentFile}
                 />
-                <small>(Optional)</small>
+
               </div>
             </>
           )}

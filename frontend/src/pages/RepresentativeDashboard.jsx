@@ -164,6 +164,14 @@ function RepresentativeDashboard() {
   const [studentEditForm, setStudentEditForm] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
 
+  const calculatePendingFees = (data) => {
+    const total = Number(data.totalFees || 0);
+    const first = Number(data.firstPaymentAmount || 0);
+    const second = Number(data.secondPaymentAmount || 0);
+    const final = Number(data.finalPaymentAmount || 0);
+    return String(Math.max(total - (first + second + final), 0));
+  };
+
   useEffect(() => {
     const stored = localStorage.getItem('user');
     const role = localStorage.getItem('userRole');
@@ -310,6 +318,7 @@ function RepresentativeDashboard() {
         const second = Number(next.secondPaymentAmount || 0);
         const final = Number(next.finalPaymentAmount || 0);
         next.completedFees = String(first + second + final);
+        next.pendingFees = calculatePendingFees(next);
       }
 
       return next;
@@ -1234,7 +1243,7 @@ function RepresentativeDashboard() {
                           <input type="text" name="suggestedDomain" value={studentForm.suggestedDomain} onChange={handleStudentChange} placeholder="Enter suggested domain" required />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                          <label>Current Qualification (e.g., 12th Pass, Diploma, BCA, BTech, etc.)</label>
+                          <label>Current Qualification</label>
                           <input type="text" name="currentQualification" value={studentForm.currentQualification} onChange={handleStudentChange} placeholder="e.g. Diploma, BCA" />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
@@ -1287,7 +1296,7 @@ function RepresentativeDashboard() {
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Pending Fees</label>
-                          <input type="number" name="pendingFees" value={studentForm.pendingFees} onChange={handleStudentChange} placeholder="Enter pending fees" />
+                          <input type="number" name="pendingFees" value={studentForm.pendingFees} readOnly placeholder="Auto-calculated" />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Current Designation</label>
