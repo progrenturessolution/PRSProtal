@@ -12,6 +12,7 @@ function InternshipManagement({ onAddStudentClick }) {
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editForm, setEditForm] = useState({
+    internId: "",
     name: "",
     email: "",
     mobile: "",
@@ -112,7 +113,7 @@ function InternshipManagement({ onAddStudentClick }) {
             return s;
           }),
         );
-        // If modal is open for this student, update it too so the View Details reflects the new document
+        // If modal is open for this student, update it too so the View Profile reflects the new document
         setSelectedStudent((prev) => {
           if (prev && prev._id === studentId) {
             return {
@@ -140,6 +141,7 @@ function InternshipManagement({ onAddStudentClick }) {
 
   const handleEditClick = () => {
     setEditForm({
+      internId: selectedStudent.internId || "",
       name: selectedStudent.name || "",
       email: selectedStudent.email || "",
       mobile: selectedStudent.mobile || "",
@@ -159,6 +161,7 @@ function InternshipManagement({ onAddStudentClick }) {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditForm({
+      internId: "",
       name: "",
       email: "",
       mobile: "",
@@ -525,7 +528,7 @@ function InternshipManagement({ onAddStudentClick }) {
                               (e.target.style.background = "white")
                             }
                           >
-                            View Details
+                            View Profile
                           </button>
                         </div>
                       )}
@@ -597,6 +600,7 @@ function InternshipManagement({ onAddStudentClick }) {
                   </div>
                 ) : (
                   <div className="profile-info-grid">
+                    <div className="profile-field"><label>PIID</label><input type="text" name="internId" value={editForm.internId} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Name</label><input type="text" name="name" value={editForm.name} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Email</label><input type="email" name="email" value={editForm.email} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Mobile</label><input type="tel" name="mobile" value={editForm.mobile} onChange={handleInputChange} /></div>
@@ -631,6 +635,7 @@ function InternshipManagement({ onAddStudentClick }) {
                       <label>Status</label>
                       <select name="status" value={editForm.status} onChange={handleInputChange}>
                         <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
                         <option value="completed">Completed</option>
                       </select>
                     </div>

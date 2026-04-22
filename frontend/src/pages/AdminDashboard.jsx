@@ -646,7 +646,7 @@ function AdminDashboard() {
                 d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
               />
             </svg>
-            SMS program Mangemnet
+            SMS program Management
           </li>
 
           <li
@@ -664,7 +664,7 @@ function AdminDashboard() {
                 d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
-            Internship Mangemnet
+            Internship Management
           </li>
 
           <li
@@ -718,7 +718,7 @@ function AdminDashboard() {
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
               />
             </svg>
-            Emoloyee Mangemnet
+            Employee Management
           </li>
 
           <li
@@ -736,7 +736,7 @@ function AdminDashboard() {
                 d="M7 7h10v10H7zM3 3h4v4H3zM17 3h4v4h-4zM3 17h4v4H3zM17 17h4v4h-4z"
               />
             </svg>
-            Group Mangemnet
+            Group Management
           </li>
 
           <li

@@ -879,218 +879,110 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
       {showProfileModal &&
         selectedStudent &&
         createPortal(
-          <div className="profile-modal-overlay">
-            <div className="profile-modal-container">
+          <div
+            className="profile-modal-overlay"
+            onClick={() => {
+              setShowProfileModal(false);
+              setSelectedStudent(null);
+            }}
+          >
+            <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="profile-header" style={{ background: "#324158" }}>
+                <button
+                  className="profile-close-btn"
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    setSelectedStudent(null);
+                  }}
+                >
+                  ×
+                </button>
+
+                <div className="profile-avatar">
+                  {String(selectedStudent.name || "S")
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <h2 className="profile-name">{selectedStudent.name || "Student"}</h2>
+                <div className="profile-badges">
+                  <span className="profile-badge">PIID: {selectedStudent.internId || "-"}</span>
+                  <span className="profile-badge">{selectedStudent.studentType || "Student"}</span>
+                  <span
+                    className={`profile-badge ${(selectedStudent.status || "").toLowerCase() === "active" ? "status-active" : "status-inactive"}`}
+                  >
+                    {selectedStudent.status || "Active"}
+                  </span>
+                </div>
+              </div>
+
               <div className="profile-body">
-                <div className="premium-page-header" style={{ marginBottom: "16px" }}>
-                  <div className="header-left">
-                    <h1 style={{ marginBottom: "4px" }}>Student Profile</h1>
-                    <p className="header-subtitle">{selectedStudent.name}</p>
-                  </div>
-                  <div className="header-right">
-                    <button
-                      className="premium-btn-secondary"
-                      onClick={() => setShowProfileModal(false)}
-                    >
-                      Close
-                    </button>
+                <div className="profile-section">
+                  <h3 className="profile-section-title">
+                    <span className="profile-section-bar" />
+                    Contact Information
+                  </h3>
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Name</label><div className="field-value">{selectedStudent.name || "-"}</div></div>
+                    <div className="profile-field"><label>Email</label><div className="field-value">{selectedStudent.email || "-"}</div></div>
+                    <div className="profile-field"><label>PIID</label><div className="field-value">{selectedStudent.internId || "-"}</div></div>
+                    <div className="profile-field"><label>Mobile</label><div className="field-value">{selectedStudent.mobile || "-"}</div></div>
+                    <div className="profile-field"><label>Current Designation</label><div className="field-value">{selectedStudent.currentDesignation || "Not set"}</div></div>
+                    <div className="profile-field"><label>Added By</label><div className="field-value">{selectedStudent.addedByRepresentative?.name || "Admin"}</div></div>
+                    <div className="profile-field"><label>Registered On</label><div className="field-value">{formatDateValue(selectedStudent.createdAt)}</div></div>
+                    <div className="profile-field"><label>Joining Date</label><div className="field-value">{formatDateValue(selectedStudent.joiningDate)}</div></div>
+                    <div className="profile-field"><label>Ending Date</label><div className="field-value">{formatDateValue(selectedStudent.endingDate)}</div></div>
+                    <div className="profile-field"><label>Duration</label><div className="field-value">{selectedStudent.duration || "Not set"}</div></div>
+                    {selectedStudent.assignedTrainer && (
+                      <>
+                        <div className="profile-field"><label>Assigned Trainer</label><div className="field-value">{selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}</div></div>
+                        <div className="profile-field"><label>Trainer Email</label><div className="field-value">{selectedStudent.assignedTrainer.email || "Not available"}</div></div>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="premium-card" style={{ marginBottom: "16px" }}>
-                  <div className="premium-card-header">
-                    <h2>Personal Information</h2>
-                  </div>
-
+                <div className="profile-section">
+                  <h3 className="profile-section-title">
+                    <span className="profile-section-bar" />
+                    {selectedStudent.studentType === "Internship" ? "Internship Details" : "Program Details"}
+                  </h3>
                   <div className="profile-info-grid">
-                    <div className="profile-field">
-                      <label>Full Name</label>
-                      <div className="field-value">{selectedStudent.name || "Not available"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Email Address</label>
-                      <div className="field-value mono-text">{selectedStudent.email || "Not available"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Mobile Number</label>
-                      <div className="field-value mono-text">{selectedStudent.mobile || "Not available"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Student ID</label>
-                      <div className="field-value mono-text">{selectedStudent.internId || "Not available"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Student Type</label>
-                      <div className="field-value">
-                        <span className="badge-neutral">{selectedStudent.studentType || "Not set"}</span>
-                      </div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Status</label>
-                      <div className="field-value">
-                        <span className="badge-neutral">{selectedStudent.status || "active"}</span>
-                      </div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Current Designation</label>
-                      <div className="field-value">{selectedStudent.currentDesignation || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Registered On</label>
-                      <div className="field-value">{formatDateValue(selectedStudent.createdAt)}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Joining Date</label>
-                      <div className="field-value">{formatDateValue(selectedStudent.joiningDate)}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Ending Date</label>
-                      <div className="field-value">{formatDateValue(selectedStudent.endingDate)}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Duration</label>
-                      <div className="field-value">{selectedStudent.duration || "Not set"}</div>
-                    </div>
-
-                    {selectedStudent.assignedTrainer && (
-                      <>
-                        <div className="profile-field">
-                          <label>Assigned Trainer</label>
-                          <div className="field-value">
-                            {selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}
-                          </div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Trainer Email</label>
-                          <div className="field-value mono-text">
-                            {selectedStudent.assignedTrainer.email || "Not available"}
-                          </div>
-                        </div>
-                      </>
-                    )}
-
                     {selectedStudent.studentType === "Internship" ? (
                       <>
-                        <div className="profile-field">
-                          <label>Domain</label>
-                          <div className="field-value">{selectedStudent.domain || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>College Name</label>
-                          <div className="field-value">{selectedStudent.collegeName || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Branch</label>
-                          <div className="field-value">{selectedStudent.branch || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Year of Study</label>
-                          <div className="field-value">{selectedStudent.yearOfStudy || "Not set"}</div>
-                        </div>
+                        <div className="profile-field"><label>Domain</label><div className="field-value">{selectedStudent.domain || "Not set"}</div></div>
+                        <div className="profile-field"><label>College Name</label><div className="field-value">{selectedStudent.collegeName || "Not set"}</div></div>
+                        <div className="profile-field"><label>Branch</label><div className="field-value">{selectedStudent.branch || "Not set"}</div></div>
+                        <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || "Not set"}</div></div>
                       </>
                     ) : (
                       <>
-                        <div className="profile-field">
-                          <label>Suggested Domain</label>
-                          <div className="field-value">{selectedStudent.suggestedDomain || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Current Qualification</label>
-                          <div className="field-value">{selectedStudent.currentQualification || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Institute Name</label>
-                          <div className="field-value">{selectedStudent.instituteName || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Institute Location</label>
-                          <div className="field-value">{selectedStudent.instituteLocation || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Enrolment Date</label>
-                          <div className="field-value">{formatDateValue(selectedStudent.enrolmentDate)}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Batch Month</label>
-                          <div className="field-value">{selectedStudent.enrolBatchMonth || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Total Fees</label>
-                          <div className="field-value">{selectedStudent.totalFees || "0"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Completed Fees</label>
-                          <div className="field-value">{selectedStudent.completedFees || "0"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Pending Fees</label>
-                          <div className="field-value">{selectedStudent.pendingFees || "0"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Gender</label>
-                          <div className="field-value">{selectedStudent.gender || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Payment Done By</label>
-                          <div className="field-value">{selectedStudent.paymentDoneBy || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Transaction ID</label>
-                          <div className="field-value mono-text">{selectedStudent.transactionId || "Not set"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Payment Amount</label>
-                          <div className="field-value">{selectedStudent.paymentAmount || "0"}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Date of Payment</label>
-                          <div className="field-value">{formatDateValue(selectedStudent.dateOfPayment)}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Last Payment Date</label>
-                          <div className="field-value">{formatDateValue(selectedStudent.lastPaymentDate)}</div>
-                        </div>
-                        <div className="profile-field">
-                          <label>First Payment</label>
-                          <div className="field-value">
-                            {(selectedStudent.firstPaymentAmount || "0") +
-                              (selectedStudent.firstPaymentDate
-                                ? ` on ${formatDateValue(selectedStudent.firstPaymentDate)}`
-                                : "")}
-                          </div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Second Payment</label>
-                          <div className="field-value">
-                            {(selectedStudent.secondPaymentAmount || "0") +
-                              (selectedStudent.secondPaymentDate
-                                ? ` on ${formatDateValue(selectedStudent.secondPaymentDate)}`
-                                : "")}
-                          </div>
-                        </div>
-                        <div className="profile-field">
-                          <label>Final Payment</label>
-                          <div className="field-value">
-                            {(selectedStudent.finalPaymentAmount || "0") +
-                              (selectedStudent.finalPaymentDate
-                                ? ` on ${formatDateValue(selectedStudent.finalPaymentDate)}`
-                                : "")}
-                          </div>
-                        </div>
+                        <div className="profile-field"><label>Suggested Domain</label><div className="field-value">{selectedStudent.suggestedDomain || "Not set"}</div></div>
+                        <div className="profile-field"><label>Current Qualification</label><div className="field-value">{selectedStudent.currentQualification || "Not set"}</div></div>
+                        <div className="profile-field"><label>Institute Name</label><div className="field-value">{selectedStudent.instituteName || "Not set"}</div></div>
+                        <div className="profile-field"><label>Institute Location</label><div className="field-value">{selectedStudent.instituteLocation || "Not set"}</div></div>
+                        <div className="profile-field"><label>Enrolment Date</label><div className="field-value">{formatDateValue(selectedStudent.enrolmentDate)}</div></div>
+                        <div className="profile-field"><label>Batch Month</label><div className="field-value">{selectedStudent.enrolBatchMonth || "Not set"}</div></div>
+                        <div className="profile-field"><label>Total Fees</label><div className="field-value">Rs. {selectedStudent.totalFees || 0}</div></div>
+                        <div className="profile-field"><label>Completed Fees</label><div className="field-value">Rs. {selectedStudent.completedFees || 0}</div></div>
+                        <div className="profile-field"><label>Pending Fees</label><div className="field-value">Rs. {selectedStudent.pendingFees || 0}</div></div>
+                        <div className="profile-field"><label>Gender</label><div className="field-value">{selectedStudent.gender || "Not set"}</div></div>
+                        <div className="profile-field"><label>Payment Done By</label><div className="field-value">{selectedStudent.paymentDoneBy || "Not set"}</div></div>
+                        <div className="profile-field"><label>Transaction ID</label><div className="field-value">{selectedStudent.transactionId || "Not set"}</div></div>
+                        <div className="profile-field"><label>Payment Amount</label><div className="field-value">Rs. {selectedStudent.paymentAmount || 0}</div></div>
+                        <div className="profile-field"><label>Date of Payment</label><div className="field-value">{formatDateValue(selectedStudent.dateOfPayment)}</div></div>
+                        <div className="profile-field"><label>Last Payment Date</label><div className="field-value">{formatDateValue(selectedStudent.lastPaymentDate)}</div></div>
+                        <div className="profile-field"><label>First Payment</label><div className="field-value">Rs. {selectedStudent.firstPaymentAmount || 0}{selectedStudent.firstPaymentDate ? ` on ${formatDateValue(selectedStudent.firstPaymentDate)}` : ""}</div></div>
+                        <div className="profile-field"><label>Second Payment</label><div className="field-value">Rs. {selectedStudent.secondPaymentAmount || 0}{selectedStudent.secondPaymentDate ? ` on ${formatDateValue(selectedStudent.secondPaymentDate)}` : ""}</div></div>
+                        <div className="profile-field"><label>Final Payment</label><div className="field-value">Rs. {selectedStudent.finalPaymentAmount || 0}{selectedStudent.finalPaymentDate ? ` on ${formatDateValue(selectedStudent.finalPaymentDate)}` : ""}</div></div>
                       </>
                     )}
                   </div>
-
-                  <div className="info-banner">
-                    <strong>Profile Information</strong>
-                    <p>
-                      Is profile ka layout intern My Profile jaisa rakha gaya hai,
-                      jisme sab main details clearly visible hain.
-                    </p>
-                  </div>
                 </div>
 
-                {/* Documents / Certificates */}
                 <div className="profile-section">
                   <h3 className="profile-section-title">
                     <span className="profile-section-bar"></span>
@@ -1256,7 +1148,10 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
                   </button>
                   <button
                     className="profile-btn profile-btn-ghost"
-                    onClick={() => setShowProfileModal(false)}
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      setSelectedStudent(null);
+                    }}
                   >
                     Close
                   </button>
@@ -1269,304 +1164,340 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
 
       {/* Edit Modal */}
       {showEditModal && selectedStudent && editForm && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Edit Profile</h2>
-              <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
-                ✕
+        <div className="profile-modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-header" style={{ background: "#324158" }}>
+              <button className="profile-close-btn" onClick={() => setShowEditModal(false)}>
+                ×
               </button>
+              <div className="profile-avatar">
+                {String(editForm.name || selectedStudent.name || "S")
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join("")
+                  .toUpperCase()}
+              </div>
+              <h2 className="profile-name">Edit Profile</h2>
+              <div className="profile-badges">
+                <span className="profile-badge">PIID: {editForm.internId || "-"}</span>
+                <span className="profile-badge">{editForm.studentType || "Student"}</span>
+              </div>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSaveEdit();
-              }}
-            >
-              <div className="form-group">
-                <label>Student Type</label>
-                <select
-                  value={editForm.studentType}
-                  onChange={(e) => handleEditChange("studentType", e.target.value)}
-                >
-                  <option value="Internship">Internship</option>
-                  <option value="SMS Program">SMS Program</option>
-                </select>
-              </div>
+            <div className="profile-body">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveEdit();
+                }}
+              >
+                <div className="profile-section">
+                  <h3 className="profile-section-title">
+                    <span className="profile-section-bar" />
+                    Basic Information
+                  </h3>
+                  <div className="profile-info-grid">
+                    <div className="profile-field">
+                      <label>Student Type</label>
+                      <select
+                        value={editForm.studentType}
+                        onChange={(e) => handleEditChange("studentType", e.target.value)}
+                      >
+                        <option value="Internship">Internship</option>
+                        <option value="SMS Program">SMS Program</option>
+                      </select>
+                    </div>
+                    <div className="profile-field">
+                      <label>Student ID</label>
+                      <input value={editForm.internId} readOnly />
+                    </div>
+                    <div className="profile-field">
+                      <label>Full Name</label>
+                      <input
+                        value={editForm.name}
+                        onChange={(e) => handleEditChange("name", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        value={editForm.email}
+                        onChange={(e) => handleEditChange("email", e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label>Mobile</label>
+                      <input
+                        value={editForm.mobile}
+                        onChange={(e) => handleEditChange("mobile", e.target.value)}
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label>Current Designation</label>
+                      <input
+                        value={editForm.currentDesignation}
+                        onChange={(e) => handleEditChange("currentDesignation", e.target.value)}
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label>Joining Date</label>
+                      <input
+                        type="date"
+                        value={editForm.joiningDate}
+                        onChange={(e) => handleEditChange("joiningDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label>Ending Date</label>
+                      <input
+                        type="date"
+                        value={editForm.endingDate}
+                        onChange={(e) => handleEditChange("endingDate", e.target.value)}
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label>Duration</label>
+                      <input
+                        value={editForm.duration}
+                        onChange={(e) => handleEditChange("duration", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-              <div className="form-group">
-                <label>Student ID</label>
-                <input value={editForm.internId} readOnly />
-              </div>
+                {editForm.studentType === "Internship" ? (
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar" />
+                      Internship Details
+                    </h3>
+                    <div className="profile-info-grid">
+                      <div className="profile-field">
+                        <label>Domain</label>
+                        <input
+                          value={editForm.domain}
+                          onChange={(e) => handleEditChange("domain", e.target.value)}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>College Name</label>
+                        <input
+                          value={editForm.collegeName}
+                          onChange={(e) => handleEditChange("collegeName", e.target.value)}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Branch</label>
+                        <input
+                          value={editForm.branch}
+                          onChange={(e) => handleEditChange("branch", e.target.value)}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Year of Study</label>
+                        <input
+                          value={editForm.yearOfStudy}
+                          onChange={(e) => handleEditChange("yearOfStudy", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="profile-section">
+                      <h3 className="profile-section-title">
+                        <span className="profile-section-bar" />
+                        Program Details
+                      </h3>
+                      <div className="profile-info-grid">
+                        <div className="profile-field">
+                          <label>Suggested Domain</label>
+                          <input
+                            value={editForm.suggestedDomain}
+                            onChange={(e) => handleEditChange("suggestedDomain", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Current Qualification</label>
+                          <input
+                            value={editForm.currentQualification}
+                            onChange={(e) => handleEditChange("currentQualification", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Institute Name</label>
+                          <input
+                            value={editForm.instituteName}
+                            onChange={(e) => handleEditChange("instituteName", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Institute Location</label>
+                          <input
+                            value={editForm.instituteLocation}
+                            onChange={(e) => handleEditChange("instituteLocation", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Enrolment Date</label>
+                          <input
+                            type="date"
+                            value={editForm.enrolmentDate}
+                            onChange={(e) => handleEditChange("enrolmentDate", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Batch Month</label>
+                          <input
+                            type="month"
+                            value={editForm.enrolBatchMonth}
+                            onChange={(e) => handleEditChange("enrolBatchMonth", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Total Fees</label>
+                          <input
+                            value={editForm.totalFees}
+                            onChange={(e) => handleEditChange("totalFees", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Completed Fees</label>
+                          <input
+                            value={editForm.completedFees}
+                            onChange={(e) => handleEditChange("completedFees", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Pending Fees</label>
+                          <input
+                            value={editForm.pendingFees}
+                            onChange={(e) => handleEditChange("pendingFees", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Gender</label>
+                          <select
+                            value={editForm.gender}
+                            onChange={(e) => handleEditChange("gender", e.target.value)}
+                          >
+                            <option value="">Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="form-group">
-                <label>Full Name</label>
-                <input
-                  value={editForm.name}
-                  onChange={(e) => handleEditChange("name", e.target.value)}
-                  required
-                />
-              </div>
+                    <div className="profile-section">
+                      <h3 className="profile-section-title">
+                        <span className="profile-section-bar" />
+                        Payment Details
+                      </h3>
+                      <div className="profile-info-grid">
+                        <div className="profile-field">
+                          <label>Payment Done By</label>
+                          <input
+                            value={editForm.paymentDoneBy}
+                            onChange={(e) => handleEditChange("paymentDoneBy", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Transaction ID</label>
+                          <input
+                            value={editForm.transactionId}
+                            onChange={(e) => handleEditChange("transactionId", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Date of Payment</label>
+                          <input
+                            type="date"
+                            value={editForm.dateOfPayment}
+                            onChange={(e) => handleEditChange("dateOfPayment", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Payment Amount</label>
+                          <input
+                            value={editForm.paymentAmount}
+                            onChange={(e) => handleEditChange("paymentAmount", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>First Payment Amount</label>
+                          <input
+                            value={editForm.firstPaymentAmount}
+                            onChange={(e) => handleEditChange("firstPaymentAmount", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>First Payment Date</label>
+                          <input
+                            type="date"
+                            value={editForm.firstPaymentDate}
+                            onChange={(e) => handleEditChange("firstPaymentDate", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Second Payment Amount</label>
+                          <input
+                            value={editForm.secondPaymentAmount}
+                            onChange={(e) => handleEditChange("secondPaymentAmount", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Second Payment Date</label>
+                          <input
+                            type="date"
+                            value={editForm.secondPaymentDate}
+                            onChange={(e) => handleEditChange("secondPaymentDate", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Final Payment Amount</label>
+                          <input
+                            value={editForm.finalPaymentAmount}
+                            onChange={(e) => handleEditChange("finalPaymentAmount", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Final Payment Date</label>
+                          <input
+                            type="date"
+                            value={editForm.finalPaymentDate}
+                            onChange={(e) => handleEditChange("finalPaymentDate", e.target.value)}
+                          />
+                        </div>
+                        <div className="profile-field">
+                          <label>Last Payment Date</label>
+                          <input
+                            type="date"
+                            value={editForm.lastPaymentDate}
+                            onChange={(e) => handleEditChange("lastPaymentDate", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
 
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) => handleEditChange("email", e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Mobile</label>
-                <input
-                  value={editForm.mobile}
-                  onChange={(e) => handleEditChange("mobile", e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Current Designation</label>
-                <input
-                  value={editForm.currentDesignation}
-                  onChange={(e) =>
-                    handleEditChange("currentDesignation", e.target.value)
-                  }
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Joining Date</label>
-                <input
-                  type="date"
-                  value={editForm.joiningDate}
-                  onChange={(e) => handleEditChange("joiningDate", e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Ending Date</label>
-                <input
-                  type="date"
-                  value={editForm.endingDate}
-                  onChange={(e) => handleEditChange("endingDate", e.target.value)}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Duration</label>
-                <input
-                  value={editForm.duration}
-                  onChange={(e) => handleEditChange("duration", e.target.value)}
-                />
-              </div>
-
-              {editForm.studentType === "Internship" ? (
-                <>
-                  <div className="form-group">
-                    <label>Domain</label>
-                    <input
-                      value={editForm.domain}
-                      onChange={(e) => handleEditChange("domain", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>College Name</label>
-                    <input
-                      value={editForm.collegeName}
-                      onChange={(e) => handleEditChange("collegeName", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Branch</label>
-                    <input
-                      value={editForm.branch}
-                      onChange={(e) => handleEditChange("branch", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Year of Study</label>
-                    <input
-                      value={editForm.yearOfStudy}
-                      onChange={(e) => handleEditChange("yearOfStudy", e.target.value)}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="form-group">
-                    <label>Suggested Domain</label>
-                    <input
-                      value={editForm.suggestedDomain}
-                      onChange={(e) => handleEditChange("suggestedDomain", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Current Qualification</label>
-                    <input
-                      value={editForm.currentQualification}
-                      onChange={(e) => handleEditChange("currentQualification", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Institute Name</label>
-                    <input
-                      value={editForm.instituteName}
-                      onChange={(e) => handleEditChange("instituteName", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Institute Location</label>
-                    <input
-                      value={editForm.instituteLocation}
-                      onChange={(e) => handleEditChange("instituteLocation", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Enrolment Date</label>
-                    <input
-                      type="date"
-                      value={editForm.enrolmentDate}
-                      onChange={(e) => handleEditChange("enrolmentDate", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Batch Month</label>
-                    <input
-                      type="month"
-                      value={editForm.enrolBatchMonth}
-                      onChange={(e) => handleEditChange("enrolBatchMonth", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Total Fees</label>
-                    <input
-                      value={editForm.totalFees}
-                      onChange={(e) => handleEditChange("totalFees", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Completed Fees</label>
-                    <input
-                      value={editForm.completedFees}
-                      onChange={(e) => handleEditChange("completedFees", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Pending Fees</label>
-                    <input
-                      value={editForm.pendingFees}
-                      onChange={(e) => handleEditChange("pendingFees", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Gender</label>
-                    <select
-                      value={editForm.gender}
-                      onChange={(e) => handleEditChange("gender", e.target.value)}
-                    >
-                      <option value="">Select gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label>Payment Done By</label>
-                    <input
-                      value={editForm.paymentDoneBy}
-                      onChange={(e) => handleEditChange("paymentDoneBy", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Transaction ID</label>
-                    <input
-                      value={editForm.transactionId}
-                      onChange={(e) => handleEditChange("transactionId", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Date of Payment</label>
-                    <input
-                      type="date"
-                      value={editForm.dateOfPayment}
-                      onChange={(e) => handleEditChange("dateOfPayment", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Payment Amount</label>
-                    <input
-                      value={editForm.paymentAmount}
-                      onChange={(e) => handleEditChange("paymentAmount", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>First Payment Amount</label>
-                    <input
-                      value={editForm.firstPaymentAmount}
-                      onChange={(e) => handleEditChange("firstPaymentAmount", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>First Payment Date</label>
-                    <input
-                      type="date"
-                      value={editForm.firstPaymentDate}
-                      onChange={(e) => handleEditChange("firstPaymentDate", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Second Payment Amount</label>
-                    <input
-                      value={editForm.secondPaymentAmount}
-                      onChange={(e) => handleEditChange("secondPaymentAmount", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Second Payment Date</label>
-                    <input
-                      type="date"
-                      value={editForm.secondPaymentDate}
-                      onChange={(e) => handleEditChange("secondPaymentDate", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Final Payment Amount</label>
-                    <input
-                      value={editForm.finalPaymentAmount}
-                      onChange={(e) => handleEditChange("finalPaymentAmount", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Final Payment Date</label>
-                    <input
-                      type="date"
-                      value={editForm.finalPaymentDate}
-                      onChange={(e) => handleEditChange("finalPaymentDate", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Last Payment Date</label>
-                    <input
-                      type="date"
-                      value={editForm.lastPaymentDate}
-                      onChange={(e) => handleEditChange("lastPaymentDate", e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
-
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-primary">
-                  Save
-                </button>
-              </div>
-            </form>
+                <div className="profile-actions">
+                  <button type="button" className="profile-btn profile-btn-ghost" onClick={() => setShowEditModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="profile-btn profile-btn-primary">
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

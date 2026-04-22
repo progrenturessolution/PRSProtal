@@ -11,9 +11,24 @@ function SMSProgramManagement() {
   const [documentModalStudent, setDocumentModalStudent] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
+    internId: '',
     name: '',
     email: '',
     mobile: '',
+    suggestedDomain: '',
+    currentQualification: '',
+    instituteName: '',
+    instituteLocation: '',
+    yearOfStudy: '',
+    enrolmentDate: '',
+    enrolBatchMonth: '',
+    totalFees: '',
+    firstPaymentAmount: '',
+    firstPaymentDate: '',
+    secondPaymentAmount: '',
+    secondPaymentDate: '',
+    finalPaymentAmount: '',
+    finalPaymentDate: '',
     currentDesignation: '',
     paymentDoneBy: '',
     transactionId: '',
@@ -144,9 +159,24 @@ function SMSProgramManagement() {
 
   const handleEditClick = () => {
     setEditForm({
+      internId: selectedStudent.internId || '',
       name: selectedStudent.name || '',
       email: selectedStudent.email || '',
       mobile: selectedStudent.mobile || '',
+      suggestedDomain: selectedStudent.suggestedDomain || '',
+      currentQualification: selectedStudent.currentQualification || '',
+      instituteName: selectedStudent.instituteName || '',
+      instituteLocation: selectedStudent.instituteLocation || '',
+      yearOfStudy: selectedStudent.yearOfStudy || '',
+      enrolmentDate: selectedStudent.enrolmentDate ? selectedStudent.enrolmentDate.split('T')[0] : '',
+      enrolBatchMonth: selectedStudent.enrolBatchMonth || '',
+      totalFees: selectedStudent.totalFees || '',
+      firstPaymentAmount: selectedStudent.firstPaymentAmount || '',
+      firstPaymentDate: selectedStudent.firstPaymentDate ? selectedStudent.firstPaymentDate.split('T')[0] : '',
+      secondPaymentAmount: selectedStudent.secondPaymentAmount || '',
+      secondPaymentDate: selectedStudent.secondPaymentDate ? selectedStudent.secondPaymentDate.split('T')[0] : '',
+      finalPaymentAmount: selectedStudent.finalPaymentAmount || '',
+      finalPaymentDate: selectedStudent.finalPaymentDate ? selectedStudent.finalPaymentDate.split('T')[0] : '',
       currentDesignation: selectedStudent.currentDesignation || '',
       paymentDoneBy: selectedStudent.paymentDoneBy || '',
       transactionId: selectedStudent.transactionId || '',
@@ -163,9 +193,24 @@ function SMSProgramManagement() {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditForm({
+      internId: '',
       name: '',
       email: '',
       mobile: '',
+      suggestedDomain: '',
+      currentQualification: '',
+      instituteName: '',
+      instituteLocation: '',
+      yearOfStudy: '',
+      enrolmentDate: '',
+      enrolBatchMonth: '',
+      totalFees: '',
+      firstPaymentAmount: '',
+      firstPaymentDate: '',
+      secondPaymentAmount: '',
+      secondPaymentDate: '',
+      finalPaymentAmount: '',
+      finalPaymentDate: '',
       currentDesignation: '',
       paymentDoneBy: '',
       transactionId: '',
@@ -937,6 +982,7 @@ function SMSProgramManagement() {
                 </h3>
                 {!isEditing ? (
                   <div className="profile-info-grid">
+                    <div className="profile-field"><label>PSMS ID</label><div className="field-value">{selectedStudent.internId || '-'}</div></div>
                     <div className="profile-field"><label>Name</label><div className="field-value">{selectedStudent.name || '-'}</div></div>
                     <div className="profile-field"><label>Email</label><div className="field-value">{selectedStudent.email || '-'}</div></div>
                     <div className="profile-field"><label>Mobile</label><div className="field-value">{selectedStudent.mobile || '-'}</div></div>
@@ -945,10 +991,41 @@ function SMSProgramManagement() {
                   </div>
                 ) : (
                   <div className="profile-info-grid">
+                    <div className="profile-field"><label>PSMS ID</label><input type="text" name="internId" value={editForm.internId} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Name</label><input type="text" name="name" value={editForm.name} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Email</label><input type="email" name="email" value={editForm.email} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Mobile</label><input type="tel" name="mobile" value={editForm.mobile} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Current Designation</label><input type="text" name="currentDesignation" value={editForm.currentDesignation} onChange={handleInputChange} /></div>
+                  </div>
+                )}
+              </div>
+
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Program Details
+                </h3>
+                {!isEditing ? (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Suggested Domain</label><div className="field-value">{selectedStudent.suggestedDomain || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Current Qualification</label><div className="field-value">{selectedStudent.currentQualification || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Institute Name</label><div className="field-value">{selectedStudent.instituteName || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Institute Location</label><div className="field-value">{selectedStudent.instituteLocation || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Enrolment Date</label><div className="field-value">{selectedStudent.enrolmentDate ? new Date(selectedStudent.enrolmentDate).toLocaleDateString('en-IN') : 'N/A'}</div></div>
+                    <div className="profile-field"><label>Batch Month</label><div className="field-value">{selectedStudent.enrolBatchMonth || 'N/A'}</div></div>
+                    <div className="profile-field"><label>Total Fees</label><div className="field-value">Rs. {selectedStudent.totalFees || 0}</div></div>
+                  </div>
+                ) : (
+                  <div className="profile-info-grid">
+                    <div className="profile-field"><label>Suggested Domain</label><input type="text" name="suggestedDomain" value={editForm.suggestedDomain} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Current Qualification</label><input type="text" name="currentQualification" value={editForm.currentQualification} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Institute Name</label><input type="text" name="instituteName" value={editForm.instituteName} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Institute Location</label><input type="text" name="instituteLocation" value={editForm.instituteLocation} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Year of Study</label><input type="text" name="yearOfStudy" value={editForm.yearOfStudy} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Enrolment Date</label><input type="date" name="enrolmentDate" value={editForm.enrolmentDate} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Batch Month</label><input type="month" name="enrolBatchMonth" value={editForm.enrolBatchMonth} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Total Fees</label><input type="number" name="totalFees" value={editForm.totalFees} onChange={handleInputChange} /></div>
                   </div>
                 )}
               </div>
@@ -963,6 +1040,9 @@ function SMSProgramManagement() {
                     <div className="profile-field"><label>Payment By</label><div className="field-value">{selectedStudent.paymentDoneBy || 'N/A'}</div></div>
                     <div className="profile-field"><label>Transaction ID</label><div className="field-value">{selectedStudent.transactionId || 'N/A'}</div></div>
                     <div className="profile-field"><label>Payment Amount</label><div className="field-value">{selectedStudent.paymentAmount ? `Rs. ${selectedStudent.paymentAmount}` : 'N/A'}</div></div>
+                    <div className="profile-field"><label>First Payment</label><div className="field-value">Rs. {selectedStudent.firstPaymentAmount || 0}{selectedStudent.firstPaymentDate ? ` on ${new Date(selectedStudent.firstPaymentDate).toLocaleDateString('en-IN')}` : ''}</div></div>
+                    <div className="profile-field"><label>Second Payment</label><div className="field-value">Rs. {selectedStudent.secondPaymentAmount || 0}{selectedStudent.secondPaymentDate ? ` on ${new Date(selectedStudent.secondPaymentDate).toLocaleDateString('en-IN')}` : ''}</div></div>
+                    <div className="profile-field"><label>Final Payment</label><div className="field-value">Rs. {selectedStudent.finalPaymentAmount || 0}{selectedStudent.finalPaymentDate ? ` on ${new Date(selectedStudent.finalPaymentDate).toLocaleDateString('en-IN')}` : ''}</div></div>
                     <div className="profile-field"><label>Completed Fees</label><div className="field-value">Rs. {selectedStudent.completedFees || 0}</div></div>
                     <div className="profile-field"><label>Pending Fees</label><div className="field-value">Rs. {selectedStudent.pendingFees || 0}</div></div>
                     <div className="profile-field"><label>Payment Date</label><div className="field-value">{selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString('en-IN') : 'N/A'}</div></div>
@@ -974,6 +1054,12 @@ function SMSProgramManagement() {
                     <div className="profile-field"><label>Payment By</label><input type="text" name="paymentDoneBy" value={editForm.paymentDoneBy} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Transaction ID</label><input type="text" name="transactionId" value={editForm.transactionId} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Payment Amount</label><input type="number" name="paymentAmount" value={editForm.paymentAmount} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>First Payment Amount</label><input type="number" name="firstPaymentAmount" value={editForm.firstPaymentAmount} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>First Payment Date</label><input type="date" name="firstPaymentDate" value={editForm.firstPaymentDate} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Second Payment Amount</label><input type="number" name="secondPaymentAmount" value={editForm.secondPaymentAmount} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Second Payment Date</label><input type="date" name="secondPaymentDate" value={editForm.secondPaymentDate} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Final Payment Amount</label><input type="number" name="finalPaymentAmount" value={editForm.finalPaymentAmount} onChange={handleInputChange} /></div>
+                    <div className="profile-field"><label>Final Payment Date</label><input type="date" name="finalPaymentDate" value={editForm.finalPaymentDate} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Completed Fees</label><input type="number" name="completedFees" value={editForm.completedFees} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Pending Fees</label><input type="number" name="pendingFees" value={editForm.pendingFees} onChange={handleInputChange} /></div>
                     <div className="profile-field"><label>Payment Date</label><input type="date" name="dateOfPayment" value={editForm.dateOfPayment} onChange={handleInputChange} /></div>
@@ -982,6 +1068,7 @@ function SMSProgramManagement() {
                       <label>Status</label>
                       <select name="status" value={editForm.status} onChange={handleInputChange}>
                         <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
                         <option value="completed">Completed</option>
                       </select>
                     </div>
