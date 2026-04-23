@@ -145,6 +145,7 @@ exports.addInterview = async (req, res) => {
     const {
       studentId,
       interviewType,
+      attendanceStatus,
       date,
       attemptNumber,
       communicationLevel,
@@ -154,6 +155,8 @@ exports.addInterview = async (req, res) => {
       levelCrossed,
       remarks
     } = req.body;
+    const normalizedLevelCrossed =
+      levelCrossed === true || levelCrossed === 'true' || levelCrossed === '1' || levelCrossed === 1;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -171,13 +174,14 @@ exports.addInterview = async (req, res) => {
       studentId,
       trainerId,
       interviewType,
+      attendanceStatus,
       date,
       attemptNumber,
       communicationLevel,
       confidenceLevel,
       clarityLevel,
       overallLevel,
-      levelCrossed,
+      levelCrossed: normalizedLevelCrossed,
       remarks
     });
 
@@ -202,7 +206,7 @@ exports.addInterview = async (req, res) => {
 exports.addAptitude = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { studentId, roundNumber, score, result, remarks } = req.body;
+    const { studentId, attendanceStatus, roundNumber, score, result, remarks } = req.body;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -219,6 +223,7 @@ exports.addAptitude = async (req, res) => {
     const aptitude = new Aptitude({
       studentId,
       trainerId,
+      attendanceStatus,
       roundNumber,
       score,
       result,
@@ -246,7 +251,7 @@ exports.addAptitude = async (req, res) => {
 exports.addAssessment = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { studentId, assessmentType, score, status, feedback } = req.body;
+    const { studentId, attendanceStatus, assessmentType, score, status, feedback } = req.body;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -263,6 +268,7 @@ exports.addAssessment = async (req, res) => {
     const assessment = new Assessment({
       studentId,
       trainerId,
+      attendanceStatus,
       assessmentType,
       score,
       status,

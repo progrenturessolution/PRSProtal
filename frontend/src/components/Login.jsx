@@ -97,11 +97,15 @@ function Login() {
           <div className="logo-container">
             <img src={logo} alt="Progrentures Logo" className="company-logo" />
           </div>
-          <h1 className="company-name">
-            <span>Progrentures Solution</span>
-            <span className="trademark-mark">TM</span>
-          </h1>
-          <p className="company-subtitle">PRS PORTAL</p>
+          <div className="brand-copy">
+            <h1 className="company-name">
+              <span className="company-word-progrentures">
+                Progrenture<span className="tm-anchor">s<span className="trademark-mark">TM</span></span>
+              </span>
+              <span className="company-word-solution">Solution</span>
+            </h1>
+            <p className="company-subtitle">PRS PORTAL</p>
+          </div>
           
           <div className="features-list">
             <div className="feature-item">

@@ -16,6 +16,11 @@ const interviewSchema = new mongoose.Schema({
     required: true,
     enum: ['HR', 'Technical']
   },
+  attendanceStatus: {
+    type: String,
+    enum: ['Present', 'Absent', 'Late'],
+    default: 'Present'
+  },
   date: {
     type: Date,
     required: true

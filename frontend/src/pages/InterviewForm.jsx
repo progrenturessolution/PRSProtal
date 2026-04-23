@@ -44,7 +44,7 @@ function InterviewForm() {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: name === "levelCrossed" ? value === "true" : type === "checkbox" ? checked : value,
     });
   };
 
@@ -100,8 +100,8 @@ function InterviewForm() {
       interview?.confidenceLevel,
       interview?.clarityLevel,
       interview?.overallLevel,
-      interview?.levelCrossed ? "yes" : "no",
-      interview?.levelCrossed ? "crossed" : "pending",
+      interview?.levelCrossed ? "crossed" : "not crossed",
+      interview?.levelCrossed ? "crossed" : "not crossed",
       interview?.remarks,
     ];
 
@@ -255,6 +255,19 @@ function InterviewForm() {
               </div>
 
               <div className="form-group full-width">
+                <label>Level Crossed *</label>
+                <select
+                  name="levelCrossed"
+                  value={String(formData.levelCrossed)}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="true">Crossed</option>
+                  <option value="false">Not Crossed</option>
+                </select>
+              </div>
+
+              <div className="form-group full-width">
                 <label>Remarks</label>
                 <textarea
                   name="remarks"
@@ -337,7 +350,7 @@ function InterviewForm() {
                         <td>{interview.confidenceLevel}</td>
                         <td>{interview.clarityLevel}</td>
                         <td>{interview.overallLevel}</td>
-                        <td>{interview.levelCrossed ? "Yes" : "No"}</td>
+                        <td>{interview.levelCrossed ? "Crossed" : "Not Crossed"}</td>
                       </tr>
                     ))
                   )}

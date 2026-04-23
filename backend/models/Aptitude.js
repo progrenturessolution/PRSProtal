@@ -11,6 +11,11 @@ const aptitudeSchema = new mongoose.Schema({
     ref: 'Trainer',
     required: true
   },
+  attendanceStatus: {
+    type: String,
+    enum: ['Present', 'Absent', 'Late'],
+    default: 'Present'
+  },
   roundNumber: {
     type: Number,
     required: true,

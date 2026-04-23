@@ -11,6 +11,11 @@ const assessmentSchema = new mongoose.Schema({
     ref: 'Trainer',
     required: true
   },
+  attendanceStatus: {
+    type: String,
+    enum: ['Present', 'Absent', 'Late'],
+    default: 'Present'
+  },
   assessmentType: {
     type: String,
     required: true,

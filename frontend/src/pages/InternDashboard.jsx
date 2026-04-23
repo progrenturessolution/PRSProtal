@@ -15,6 +15,11 @@ function InternDashboard() {
   const [interviews, setInterviews] = useState([]);
   const [aptitude, setAptitude] = useState([]);
   const [assessments, setAssessments] = useState([]);
+  const [trainings, setTrainings] = useState([]);
+  const [interviewSearch, setInterviewSearch] = useState("");
+  const [aptitudeSearch, setAptitudeSearch] = useState("");
+  const [assessmentSearch, setAssessmentSearch] = useState("");
+  const [trainingSearch, setTrainingSearch] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [jobPostings, setJobPostings] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -173,14 +178,22 @@ function InternDashboard() {
             setInterviews(intResp.data.interviews || []);
           }
           break;
-        case "assessments":
+        case "aptitude":
           const aptResp = await internAPI.getMyAptitude();
-          const assResp = await internAPI.getMyAssessments();
           if (aptResp.data && aptResp.data.success) {
             setAptitude(aptResp.data.aptitudeRecords || []);
           }
+          break;
+        case "assessments":
+          const assResp = await internAPI.getMyAssessments();
           if (assResp.data && assResp.data.success) {
             setAssessments(assResp.data.assessments || []);
+          }
+          break;
+        case "training":
+          const trainingResp = await internAPI.getMyTraining();
+          if (trainingResp.data && trainingResp.data.success) {
+            setTrainings(trainingResp.data.trainings || []);
           }
           break;
         case "notifications":
@@ -217,6 +230,143 @@ function InternDashboard() {
       }
     }
   };
+
+  const levelScoreMap = {
+    B: 25,
+    I: 50,
+    A: 75,
+    E: 100,
+    F: 25,
+    C: 60,
+    P: 80,
+  };
+
+  const attendanceScoreMap = {
+    Present: 100,
+    Late: 70,
+    Absent: 0,
+  };
+
+  const engagementScoreMap = {
+    Low: 25,
+    Medium: 50,
+    High: 75,
+    Excellent: 100,
+  };
+
+  const getInterviewScore = (interview) => {
+    const scoreValues = [
+      levelScoreMap[interview?.communicationLevel],
+      levelScoreMap[interview?.confidenceLevel],
+      levelScoreMap[interview?.clarityLevel],
+      levelScoreMap[interview?.overallLevel],
+    ].filter((value) => typeof value === "number");
+
+    if (scoreValues.length === 0) {
+      return "-";
+    }
+
+    const averageScore = Math.round(
+      scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length,
+    );
+
+    return interview?.levelCrossed ? Math.min(100, averageScore + 5) : averageScore;
+  };
+
+  const getTrainingScore = (training) => {
+    const attendanceScore = attendanceScoreMap[training?.attendance];
+    const engagementScore = engagementScoreMap[training?.engagementLevel];
+    const scoreValues = [attendanceScore, engagementScore].filter(
+      (value) => typeof value === "number",
+    );
+
+    if (scoreValues.length === 0) {
+      return "-";
+    }
+
+    return Math.round(
+      scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length,
+    );
+  };
+
+  const interviewLevelTextMap = {
+    B: "Beginner",
+    I: "Intermediate",
+    A: "Advanced",
+    E: "Expert",
+    F: "Fail",
+    C: "Clear",
+    P: "Pass",
+  };
+
+  const filteredInterviews = interviews.filter((interview) => {
+    const query = interviewSearch.trim().toLowerCase();
+    if (!query) return true;
+
+    const fields = [
+      interview?.date ? new Date(interview.date).toLocaleDateString() : "",
+      interview?.interviewType,
+      interview?.attendanceStatus,
+      interview?.attemptNumber,
+      getInterviewScore(interview),
+      interviewLevelTextMap[interview?.communicationLevel],
+      interviewLevelTextMap[interview?.confidenceLevel],
+      interviewLevelTextMap[interview?.clarityLevel],
+      interviewLevelTextMap[interview?.overallLevel],
+      interview?.levelCrossed ? "crossed" : "not crossed",
+      interview?.remarks,
+    ];
+
+    return fields.some((field) => String(field || "").toLowerCase().includes(query));
+  });
+
+  const filteredAptitudes = aptitude.filter((apt) => {
+    const query = aptitudeSearch.trim().toLowerCase();
+    if (!query) return true;
+
+    const fields = [
+      apt?.attendanceStatus,
+      apt?.roundNumber,
+      apt?.score,
+      apt?.result,
+      apt?.remarks,
+      apt?.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "",
+    ];
+
+    return fields.some((field) => String(field || "").toLowerCase().includes(query));
+  });
+
+  const filteredAssessments = assessments.filter((assessment) => {
+    const query = assessmentSearch.trim().toLowerCase();
+    if (!query) return true;
+
+    const fields = [
+      assessment?.attendanceStatus,
+      assessment?.assessmentType,
+      assessment?.score,
+      assessment?.status,
+      assessment?.feedback,
+      assessment?.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "",
+    ];
+
+    return fields.some((field) => String(field || "").toLowerCase().includes(query));
+  });
+
+  const filteredTrainings = trainings.filter((training) => {
+    const query = trainingSearch.trim().toLowerCase();
+    if (!query) return true;
+
+    const fields = [
+      training?.date ? new Date(training.date).toLocaleDateString() : "",
+      training?.attendance,
+      training?.engagementLevel,
+      training?.skillImprovementNote,
+      training?.trainerRemarks,
+      getTrainingScore(training),
+    ];
+
+    return fields.some((field) => String(field || "").toLowerCase().includes(query));
+  });
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -556,11 +706,25 @@ function InternDashboard() {
             Interviews
           </li>
           <li
+            className={activeSection === "aptitude" ? "active" : ""}
+            onClick={() => handleSectionClick("aptitude")}
+            style={{ cursor: "pointer" }}
+          >
+            Aptitude
+          </li>
+          <li
             className={activeSection === "assessments" ? "active" : ""}
             onClick={() => handleSectionClick("assessments")}
             style={{ cursor: "pointer" }}
           >
-            Aptitude & Assessments
+            Assessments
+          </li>
+          <li
+            className={activeSection === "training" ? "active" : ""}
+            onClick={() => handleSectionClick("training")}
+            style={{ cursor: "pointer" }}
+          >
+            Training
           </li>
           <li
             className={activeSection === "documents" ? "active" : ""}
@@ -1770,490 +1934,347 @@ function InternDashboard() {
               <p>Your interview attempt history and HR remarks</p>
             </div>
 
-            <div className="card">
+            <div className="card student-history-card">
+              <h2>Interview History</h2>
               {interviews.length === 0 ? (
-                <div className="empty-state">
-                  <p>No interview records yet.</p>
-                </div>
+                <p className="record-history-empty">No interview records yet</p>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "20px",
-                  }}
-                >
-                  {interviews.map((interview, idx) => (
-                    <div
-                      key={interview._id}
-                      style={{
-                        padding: "20px",
-                        background: "#f9fafb",
-                        borderRadius: "10px",
-                        border: "1px solid #e5e7eb",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "start",
-                          marginBottom: "15px",
-                        }}
-                      >
-                        <div>
-                          <h3
-                            style={{
-                              margin: "0 0 5px 0",
-                              color: "#0f172a",
-                              fontSize: "16px",
-                            }}
-                          >
-                            Attempt #{interview.attemptNumber} -{" "}
-                            {interview.interviewType} Interview
-                          </h3>
-                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {new Date(interview.date).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <span
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: "20px",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            backgroundColor: interview.levelCrossed
-                              ? "#d1fae5"
-                              : "#fee2e2",
-                            color: interview.levelCrossed
-                              ? "#065f46"
-                              : "#991b1b",
-                          }}
+                <>
+                  <div className="student-history-toolbar interview-history-toolbar">
+                    <div className="interview-history-search-wrap">
+                      <label className="interview-history-search-label">Search Interviews</label>
+                      <input
+                        type="text"
+                        className="student-history-search interview-history-search"
+                        value={interviewSearch}
+                        onChange={(e) => setInterviewSearch(e.target.value)}
+                        placeholder="Search by date, type, attempt, score, remarks..."
+                        aria-label="Search interview history"
+                      />
+                    </div>
+                    <div className="interview-history-toolbar-meta">
+                      <span>{filteredInterviews.length} records</span>
+                      {interviewSearch.trim() && (
+                        <button
+                          type="button"
+                          className="interview-history-clear-btn"
+                          onClick={() => setInterviewSearch("")}
                         >
-                          {interview.levelCrossed ? "Passed" : "Not Passed"}
-                        </span>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "repeat(auto-fit, minmax(150px, 1fr))",
-                          gap: "12px",
-                          marginBottom: "15px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            padding: "12px",
-                            background: "white",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              marginBottom: "4px",
-                            }}
-                          >
-                            Communication
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 600,
-                              color: "#0f172a",
-                            }}
-                          >
-                            {interview.communicationLevel === "B"
-                              ? "Beginner"
-                              : interview.communicationLevel === "I"
-                                ? "Intermediate"
-                                : interview.communicationLevel === "A"
-                                  ? "Advanced"
-                                  : "Expert"}
-                          </div>
-                        </div>
-                        <div
-                          style={{
-                            padding: "12px",
-                            background: "white",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              marginBottom: "4px",
-                            }}
-                          >
-                            Confidence
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 600,
-                              color: "#0f172a",
-                            }}
-                          >
-                            {interview.confidenceLevel === "B"
-                              ? "Beginner"
-                              : interview.confidenceLevel === "I"
-                                ? "Intermediate"
-                                : interview.confidenceLevel === "A"
-                                  ? "Advanced"
-                                  : "Expert"}
-                          </div>
-                        </div>
-                        <div
-                          style={{
-                            padding: "12px",
-                            background: "white",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              marginBottom: "4px",
-                            }}
-                          >
-                            Clarity
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 600,
-                              color: "#0f172a",
-                            }}
-                          >
-                            {interview.clarityLevel === "B"
-                              ? "Beginner"
-                              : interview.clarityLevel === "I"
-                                ? "Intermediate"
-                                : interview.clarityLevel === "A"
-                                  ? "Advanced"
-                                  : "Expert"}
-                          </div>
-                        </div>
-                        <div
-                          style={{
-                            padding: "12px",
-                            background: "white",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              marginBottom: "4px",
-                            }}
-                          >
-                            Overall Level
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "14px",
-                              fontWeight: 600,
-                              color: "#0f172a",
-                            }}
-                          >
-                            {interview.overallLevel === "F"
-                              ? "Fail"
-                              : interview.overallLevel === "C"
-                                ? "Clear"
-                                : interview.overallLevel === "P"
-                                  ? "Pass"
-                                  : "Excellent"}
-                          </div>
-                        </div>
-                      </div>
-
-                      {interview.remarks && (
-                        <div
-                          style={{
-                            padding: "12px",
-                            background: "#eff6ff",
-                            borderRadius: "8px",
-                            borderLeft: "3px solid #3b82f6",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              color: "#1e40af",
-                              marginBottom: "6px",
-                            }}
-                          >
-                            HR Remarks (Read-only)
-                          </div>
-                          <div style={{ fontSize: "13px", color: "#1f2937" }}>
-                            {interview.remarks}
-                          </div>
-                        </div>
+                          Clear
+                        </button>
                       )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  <div className="table-container">
+                    <table className="data-table view-students-table interview-history-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Type</th>
+                          <th>Attendance</th>
+                          <th>Attempt</th>
+                          <th>Score</th>
+                          <th>Communication</th>
+                          <th>Confidence</th>
+                          <th>Clarity</th>
+                          <th>Overall</th>
+                          <th>Level Crossed</th>
+                          <th>Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredInterviews.length === 0 ? (
+                          <tr>
+                            <td colSpan="11">No interview records match your search</td>
+                          </tr>
+                        ) : (
+                          filteredInterviews.map((interview) => (
+                            <tr key={interview._id}>
+                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : "-"}</td>
+                              <td>{interview.interviewType || "-"}</td>
+                              <td>{interview.attendanceStatus || "-"}</td>
+                              <td>{interview.attemptNumber || "-"}</td>
+                              <td>{getInterviewScore(interview)}</td>
+                              <td>{interviewLevelTextMap[interview.communicationLevel] || interview.communicationLevel || "-"}</td>
+                              <td>{interviewLevelTextMap[interview.confidenceLevel] || interview.confidenceLevel || "-"}</td>
+                              <td>{interviewLevelTextMap[interview.clarityLevel] || interview.clarityLevel || "-"}</td>
+                              <td>{interviewLevelTextMap[interview.overallLevel] || interview.overallLevel || "-"}</td>
+                              <td>
+                                <span className={`status-badge ${interview.levelCrossed ? "status-completed" : "status-rejected"}`}>
+                                  {interview.levelCrossed ? "Crossed" : "Not Crossed"}
+                                </span>
+                              </td>
+                              <td>{interview.remarks || "-"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </>
         )}
 
-        {/* Aptitude & Assessments Section */}
+        {/* Aptitude Section */}
+        {activeSection === "aptitude" && (
+          <>
+            <div className="content-header">
+              <h1>Aptitude</h1>
+              <p>Your aptitude scores and remarks</p>
+            </div>
+
+            <div className="card student-history-card">
+              <h2>Aptitude Test History</h2>
+              {aptitude.length === 0 ? (
+                <p className="record-history-empty">No aptitude records yet</p>
+              ) : (
+                <>
+                  <div className="student-history-toolbar interview-history-toolbar">
+                    <div className="interview-history-search-wrap">
+                      <label className="interview-history-search-label">Search Aptitude</label>
+                      <input
+                        type="text"
+                        className="student-history-search interview-history-search"
+                        value={aptitudeSearch}
+                        onChange={(e) => setAptitudeSearch(e.target.value)}
+                        placeholder="Search by attendance, round, score, result, remarks, date..."
+                        aria-label="Search aptitude history"
+                      />
+                    </div>
+                    <div className="interview-history-toolbar-meta">
+                      <span>{filteredAptitudes.length} records</span>
+                      {aptitudeSearch.trim() && (
+                        <button
+                          type="button"
+                          className="interview-history-clear-btn"
+                          onClick={() => setAptitudeSearch("")}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="table-container">
+                    <table className="data-table view-students-table aptitude-history-table">
+                      <thead>
+                        <tr>
+                          <th>Attendance</th>
+                          <th>Round Number</th>
+                          <th>Score</th>
+                          <th>Result</th>
+                          <th>Remarks</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAptitudes.length === 0 ? (
+                          <tr>
+                            <td colSpan="6">No aptitude records match your search</td>
+                          </tr>
+                        ) : (
+                          filteredAptitudes.map((apt) => (
+                            <tr key={apt._id}>
+                              <td>{apt.attendanceStatus || "-"}</td>
+                              <td>{apt.roundNumber}</td>
+                              <td>{apt.score}</td>
+                              <td>
+                                <span className={`status-badge ${apt.result === "Pass" ? "status-completed" : "status-pending"}`}>
+                                  {apt.result}
+                                </span>
+                              </td>
+                              <td>{apt.remarks || "-"}</td>
+                              <td>{apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "-"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Assessments Section */}
         {activeSection === "assessments" && (
           <>
             <div className="content-header">
-              <h1>Aptitude & Assessments</h1>
-              <p>Your scores and feedback analysis</p>
+              <h1>Assessments</h1>
+              <p>Your assessment scores and feedback</p>
             </div>
 
-            {/* Aptitude Section */}
-            <div className="card" style={{ marginBottom: "30px" }}>
-              <h3
-                style={{
-                  marginBottom: "20px",
-                  fontSize: "18px",
-                  color: "#0f172a",
-                }}
-              >
-                Aptitude Test Results
-              </h3>
-              {aptitude.length === 0 ? (
-                <div className="empty-state">
-                  <p>No aptitude records yet.</p>
-                </div>
+            <div className="card student-history-card">
+              <h2>Assessment History</h2>
+              {assessments.length === 0 ? (
+                <p className="record-history-empty">No assessment records yet</p>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "15px",
-                  }}
-                >
-                  {aptitude.map((apt) => (
-                    <div
-                      key={apt._id}
-                      style={{
-                        padding: "16px",
-                        background: "#f0fdf4",
-                        borderRadius: "10px",
-                        border: "1px solid #b7e4c7",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "start",
-                          marginBottom: "10px",
-                        }}
-                      >
-                        <div>
-                          <h4
-                            style={{
-                              margin: "0 0 3px 0",
-                              color: "#0f172a",
-                              fontSize: "15px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            Round {apt.roundNumber}
-                          </h4>
-                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {new Date(apt.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <span
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: "20px",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            backgroundColor:
-                              apt.result === "Pass" ? "#d1fae5" : "#fef3c7",
-                            color:
-                              apt.result === "Pass" ? "#065f46" : "#92400e",
-                          }}
+                <>
+                  <div className="student-history-toolbar interview-history-toolbar">
+                    <div className="interview-history-search-wrap">
+                      <label className="interview-history-search-label">Search Assessments</label>
+                      <input
+                        type="text"
+                        className="student-history-search interview-history-search"
+                        value={assessmentSearch}
+                        onChange={(e) => setAssessmentSearch(e.target.value)}
+                        placeholder="Search by attendance, type, score, status, feedback, date..."
+                        aria-label="Search assessment history"
+                      />
+                    </div>
+                    <div className="interview-history-toolbar-meta">
+                      <span>{filteredAssessments.length} records</span>
+                      {assessmentSearch.trim() && (
+                        <button
+                          type="button"
+                          className="interview-history-clear-btn"
+                          onClick={() => setAssessmentSearch("")}
                         >
-                          {apt.result}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          padding: "12px",
-                          background: "white",
-                          borderRadius: "8px",
-                          marginBottom: "10px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            color: "#6b7280",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Score
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "20px",
-                            fontWeight: 700,
-                            color: "#059669",
-                          }}
-                        >
-                          {apt.score}
-                        </div>
-                      </div>
-                      {apt.remarks && (
-                        <div
-                          style={{
-                            padding: "10px",
-                            background: "#f0fdf4",
-                            borderRadius: "6px",
-                            borderLeft: "3px solid #10b981",
-                          }}
-                        >
-                          <div style={{ fontSize: "13px", color: "#166534" }}>
-                            <strong>Feedback:</strong> {apt.remarks}
-                          </div>
-                        </div>
+                          Clear
+                        </button>
                       )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  <div className="table-container">
+                    <table className="data-table view-students-table assessment-history-table">
+                      <thead>
+                        <tr>
+                          <th>Attendance</th>
+                          <th>Type</th>
+                          <th>Score</th>
+                          <th>Status</th>
+                          <th>Feedback</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredAssessments.length === 0 ? (
+                          <tr>
+                            <td colSpan="6">No assessment records match your search</td>
+                          </tr>
+                        ) : (
+                          filteredAssessments.map((assessment) => (
+                            <tr key={assessment._id}>
+                              <td>{assessment.attendanceStatus || "-"}</td>
+                              <td>{assessment.assessmentType || "-"}</td>
+                              <td>{assessment.score || "-"}</td>
+                              <td>
+                                <span
+                                  className={`status-badge ${
+                                    assessment.status === "Pass"
+                                      ? "status-completed"
+                                      : assessment.status === "Fail"
+                                        ? "status-rejected"
+                                        : "status-pending"
+                                  }`}
+                                >
+                                  {assessment.status || "-"}
+                                </span>
+                              </td>
+                              <td>{assessment.feedback || "-"}</td>
+                              <td>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "-"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
+          </>
+        )}
 
-            {/* Assessment Section */}
-            <div className="card">
-              <h3
-                style={{
-                  marginBottom: "20px",
-                  fontSize: "18px",
-                  color: "#0f172a",
-                }}
-              >
-                Assessment Results
-              </h3>
-              {assessments.length === 0 ? (
-                <div className="empty-state">
-                  <p>No assessment records yet.</p>
-                </div>
+        {/* Training Section */}
+        {activeSection === "training" && (
+          <>
+            <div className="content-header">
+              <h1>Training</h1>
+              <p>Your training attendance and engagement scores</p>
+            </div>
+
+            <div className="card student-history-card">
+              <h2>Training History</h2>
+              {trainings.length === 0 ? (
+                <p className="record-history-empty">No training records yet</p>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "15px",
-                  }}
-                >
-                  {assessments.map((assess) => (
-                    <div
-                      key={assess._id}
-                      style={{
-                        padding: "16px",
-                        background: "#eff6ff",
-                        borderRadius: "10px",
-                        border: "1px solid #bfdbfe",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "start",
-                          marginBottom: "10px",
-                        }}
-                      >
-                        <div>
-                          <h4
-                            style={{
-                              margin: "0 0 3px 0",
-                              color: "#0f172a",
-                              fontSize: "15px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {assess.assessmentType} Assessment
-                          </h4>
-                          <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {new Date(assess.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <span
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: "20px",
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            backgroundColor:
-                              assess.status === "Pass"
-                                ? "#d1fae5"
-                                : assess.status === "Fail"
-                                  ? "#fee2e2"
-                                  : "#fef3c7",
-                            color:
-                              assess.status === "Pass"
-                                ? "#065f46"
-                                : assess.status === "Fail"
-                                  ? "#991b1b"
-                                  : "#92400e",
-                          }}
+                <>
+                  <div className="student-history-toolbar interview-history-toolbar">
+                    <div className="interview-history-search-wrap">
+                      <label className="interview-history-search-label">Search Training</label>
+                      <input
+                        type="text"
+                        className="student-history-search interview-history-search"
+                        value={trainingSearch}
+                        onChange={(e) => setTrainingSearch(e.target.value)}
+                        placeholder="Search by date, attendance, score, engagement, remarks..."
+                        aria-label="Search training history"
+                      />
+                    </div>
+                    <div className="interview-history-toolbar-meta">
+                      <span>{filteredTrainings.length} records</span>
+                      {trainingSearch.trim() && (
+                        <button
+                          type="button"
+                          className="interview-history-clear-btn"
+                          onClick={() => setTrainingSearch("")}
                         >
-                          {assess.status}
-                        </span>
-                      </div>
-                      <div
-                        style={{
-                          padding: "12px",
-                          background: "white",
-                          borderRadius: "8px",
-                          marginBottom: "10px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            color: "#6b7280",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Score
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "20px",
-                            fontWeight: 700,
-                            color: "#3b82f6",
-                          }}
-                        >
-                          {assess.score || "N/A"}
-                        </div>
-                      </div>
-                      {assess.feedback && (
-                        <div
-                          style={{
-                            padding: "10px",
-                            background: "#eff6ff",
-                            borderRadius: "6px",
-                            borderLeft: "3px solid #3b82f6",
-                          }}
-                        >
-                          <div style={{ fontSize: "13px", color: "#1e40af" }}>
-                            <strong>Feedback:</strong> {assess.feedback}
-                          </div>
-                        </div>
+                          Clear
+                        </button>
                       )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  <div className="table-container">
+                    <table className="data-table view-students-table training-history-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Score</th>
+                          <th>Attendance</th>
+                          <th>Engagement Level</th>
+                          <th>Skill Improvement</th>
+                          <th>Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredTrainings.length === 0 ? (
+                          <tr>
+                            <td colSpan="6">No training records match your search</td>
+                          </tr>
+                        ) : (
+                          filteredTrainings.map((training) => (
+                            <tr key={training._id}>
+                              <td>{training.date ? new Date(training.date).toLocaleDateString() : "-"}</td>
+                              <td>{getTrainingScore(training)}</td>
+                              <td>
+                                <span
+                                  className={`status-badge ${
+                                    training.attendance === "Present"
+                                      ? "status-completed"
+                                      : training.attendance === "Late"
+                                        ? "status-pending"
+                                        : "status-rejected"
+                                  }`}
+                                >
+                                  {training.attendance || "-"}
+                                </span>
+                              </td>
+                              <td>{training.engagementLevel || "-"}</td>
+                              <td>{training.skillImprovementNote || "-"}</td>
+                              <td>{training.trainerRemarks || "-"}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </>

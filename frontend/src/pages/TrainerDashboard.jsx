@@ -1674,16 +1674,16 @@ function TrainerDashboard() {
                         </select>
                       </div>
                       <div className="form-group left-align">
-                        <label className="checkbox-label record-checkbox-label">
-                          <input
-                            type="checkbox"
-                            name="levelCrossed"
-                            checked={interviewFormData.levelCrossed}
-                            onChange={(e) => setInterviewFormData({ ...interviewFormData, levelCrossed: e.target.checked })}
-                            className="record-checkbox-input"
-                          />
-                          Level Crossed?
-                        </label>
+                        <label>Level Crossed *</label>
+                        <select
+                          name="levelCrossed"
+                          value={String(interviewFormData.levelCrossed)}
+                          onChange={(e) => setInterviewFormData({ ...interviewFormData, levelCrossed: e.target.value === "true" })}
+                          required
+                        >
+                          <option value="true">Crossed</option>
+                          <option value="false">Not Crossed</option>
+                        </select>
                       </div>
                       <div className="form-group">
                         <label>Remarks</label>
@@ -1972,7 +1972,7 @@ function TrainerDashboard() {
                                   <td>{interview.confidenceLevel}</td>
                                   <td>{interview.clarityLevel}</td>
                                   <td>{interview.overallLevel}</td>
-                                  <td>{interview.levelCrossed ? "Yes" : "No"}</td>
+                                  <td>{interview.levelCrossed ? "Crossed" : "Not Crossed"}</td>
                                 </tr>
                               ))}
                             </tbody>
