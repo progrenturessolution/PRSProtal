@@ -6094,6 +6094,10 @@ form {
 
 .record-workspace .left-align {
   grid-column: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .record-workspace .form-group input:focus,
@@ -6110,20 +6114,41 @@ form {
 }
 
 .record-checkbox-label {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
-  background: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px 12px;
+  width: fit-content;
+  min-height: 44px;
+  margin-top: 2px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.record-checkbox-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.record-checkbox-help {
+  margin: 0 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #64748b;
+  max-width: 100%;
 }
 
 .record-checkbox-input {
   width: 16px !important;
   height: 16px !important;
   margin: 0;
-  accent-color: #1d4ed8;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: #0f172a;
   cursor: pointer;
   box-shadow: none !important;
 }
@@ -6201,17 +6226,64 @@ form {
 }
 
 .record-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  display: block;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
 
-.record-workspace .premium-table thead th {
+.record-table-wrap .student-records-history-table {
+  width: 100%;
+  min-width: 1120px;
+  table-layout: fixed;
+}
+
+.record-table-wrap .student-records-history-table thead {
+  background: #324158;
+}
+
+.record-table-wrap .student-records-history-table thead th {
+  background-color: #324158 !important;
+  color: #ffffff !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid #2b364a !important;
+}
+
+.record-table-wrap .student-records-history-table tbody td {
+  padding: 12px;
+  color: #334155;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: top;
+}
+
+.record-table-wrap .student-records-history-table tbody tr:nth-child(even) {
+  background: #fcfdff;
+}
+
+.record-table-wrap .student-records-history-table tbody tr:hover {
   background: #f8fafc;
 }
 
-.record-workspace .premium-table tbody tr:nth-child(even) {
+.record-workspace .premium-table:not(.student-records-history-table) thead th {
+  background: #f8fafc;
+}
+
+.record-workspace .premium-table:not(.student-records-history-table) tbody tr:nth-child(even) {
   background: #fcfdff;
+}
+
+@media (max-width: 1100px) {
+  .record-table-wrap .student-records-history-table {
+    min-width: 980px;
+  }
 }
 
 @media (max-width: 768px) {

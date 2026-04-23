@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { trainerAPI } from "../services/api";
 import logo from "../assets/logo.png";
 import TrainerSidebar from "../components/TrainerSidebar";
+import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
 
 function TrainerDashboard() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ function TrainerDashboard() {
   const [successMessage, setSuccessMessage] = useState("");
   const [recordError, setRecordError] = useState("");
   const [recordSuccess, setRecordSuccess] = useState("");
+  const [recordHistorySearch, setRecordHistorySearch] = useState("");
   const [recordSubmitting, setRecordSubmitting] = useState(false);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [interviews, setInterviews] = useState([]);
@@ -435,6 +437,19 @@ function TrainerDashboard() {
     }));
   };
 
+  const openStudentRecords = (student, sourceMenuSetter) => {
+    if (!student?._id) return;
+    clearRecordMessages();
+    setRecordHistorySearch("");
+    setSelectedStudent(student);
+    setSelectedStudentTab("interviews");
+    setActiveTab("student-records");
+    fetchStudentRecords(student._id);
+    if (sourceMenuSetter) {
+      sourceMenuSetter(null);
+    }
+  };
+
   const handleGroupStudentSearchChange = (groupId, value) => {
     setGroupStudentSearch((prev) => ({
       ...prev,
@@ -448,6 +463,7 @@ function TrainerDashboard() {
 
   const assignedGroups = trainerProfile?.assignedGroups || [];
   const workAssignments = trainerProfile?.workAssignments || [];
+  const currentStudentTab = selectedStudentTab || "interviews";
 
   const normalizedGroupSearch = groupSearchQuery.trim().toLowerCase();
   const filteredAssignedGroups = assignedGroups.filter((group) => {
@@ -472,6 +488,60 @@ function TrainerDashboard() {
         .some((value) => String(value).toLowerCase().includes(normalizedGroupSearch));
     });
   });
+
+  const normalizedHistorySearch = recordHistorySearch.trim().toLowerCase();
+  const matchesHistorySearch = (...values) => {
+    if (!normalizedHistorySearch) return true;
+    return values
+      .filter((value) => value !== undefined && value !== null)
+      .some((value) => String(value).toLowerCase().includes(normalizedHistorySearch));
+  };
+
+  const filteredInterviews = interviews.filter((interview) =>
+    matchesHistorySearch(
+      interview.date ? new Date(interview.date).toLocaleDateString() : "",
+      interview.interviewType,
+      interview.attendanceStatus,
+      interview.attemptNumber,
+      interview.communicationLevel,
+      interview.confidenceLevel,
+      interview.clarityLevel,
+      interview.overallLevel,
+      interview.levelCrossed ? "yes" : "no",
+    ),
+  );
+
+  const filteredAptitudes = aptitudes.filter((apt) =>
+    matchesHistorySearch(
+      apt.attendanceStatus,
+      apt.roundNumber,
+      apt.score,
+      apt.result,
+      apt.remarks,
+      apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "",
+    ),
+  );
+
+  const filteredAssessments = assessments.filter((assessment) =>
+    matchesHistorySearch(
+      assessment.attendanceStatus,
+      assessment.assessmentType,
+      assessment.score,
+      assessment.status,
+      assessment.feedback,
+      assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "",
+    ),
+  );
+
+  const filteredTrainings = trainings.filter((training) =>
+    matchesHistorySearch(
+      training.date ? new Date(training.date).toLocaleDateString() : "",
+      training.attendance,
+      training.engagementLevel,
+      training.skillImprovementNote,
+      training.trainerRemarks,
+    ),
+  );
 
   return (
     <div className="dashboard">
@@ -499,10 +569,6 @@ function TrainerDashboard() {
         setActiveTab={setActiveTab} 
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        selectedStudent={selectedStudent}
-        setSelectedStudent={setSelectedStudent}
-        selectedStudentTab={selectedStudentTab}
-        setSelectedStudentTab={setSelectedStudentTab}
       />
 
       {/* Clean Enterprise Content */}
@@ -966,10 +1032,7 @@ function TrainerDashboard() {
                                               >
                                                 <button
                                                   onClick={() => {
-                                                    navigate(`/trainer/student/${student._id}/interviews`, {
-                                                      state: { student, fromTab: "assignments" },
-                                                    });
-                                                    setOpenAssignmentMenuId(null);
+                                                    openStudentRecords(student, setOpenAssignmentMenuId);
                                                   }}
                                                   style={{
                                                     width: "100%",
@@ -1380,10 +1443,7 @@ function TrainerDashboard() {
                                       >
                                       <button
                                         onClick={() => {
-                                          navigate(`/trainer/student/${student._id}/interviews`, {
-                                            state: { student, fromTab: "students" },
-                                          });
-                                          setOpenStudentMenuId(null);
+                                          openStudentRecords(student, setOpenStudentMenuId);
                                         }}
                                         style={{
                                           width: "100%",
@@ -1460,6 +1520,7 @@ function TrainerDashboard() {
                     onClick={() => {
                       setSelectedStudent(null);
                       setSelectedStudentTab(null);
+                      setRecordHistorySearch("");
                       setActiveTab("students");
                     }}
                     className="premium-btn-secondary"
@@ -1471,6 +1532,20 @@ function TrainerDashboard() {
 
               {/* Tab Content */}
               <div className="premium-card record-workspace">
+                <div className="student-records-shell">
+                  <aside className="student-records-sidepanel">
+                    <StudentRecordsSidebar
+                      studentId={selectedStudent._id}
+                      activeTab={currentStudentTab}
+                      studentInfo={selectedStudent}
+                      onTabChange={(tabKey) => {
+                        setSelectedStudentTab(tabKey);
+                        setRecordHistorySearch("");
+                        clearRecordMessages();
+                      }}
+                    />
+                  </aside>
+                  <div className="student-records-content">
                 {recordsLoading && (
                   <div className="premium-empty-state">
                     <p className="empty-title">Loading records...</p>
@@ -1485,7 +1560,7 @@ function TrainerDashboard() {
                   <div className="success-message" style={{ margin: "20px" }}>{recordSuccess}</div>
                 )}
 
-                {!recordsLoading && selectedStudentTab === "interviews" && (
+                {!recordsLoading && currentStudentTab === "interviews" && (
                   <div className="record-section">
                     <h2 className="record-form-title">Add Interview Record</h2>
                     <div className="record-intro-card">
@@ -1624,49 +1699,10 @@ function TrainerDashboard() {
                       </button>
                     </form>
 
-                    <div className="record-history">
-                      <h2 className="record-history-title">Interview History</h2>
-                      {interviews.length === 0 ? (
-                        <p>No interview records yet</p>
-                      ) : (
-                        <div className="record-table-wrap">
-                          <table className="premium-table">
-                            <thead>
-                              <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Attendance</th>
-                                <th>Attempt</th>
-                                <th>Communication</th>
-                                <th>Confidence</th>
-                                <th>Clarity</th>
-                                <th>Overall</th>
-                                <th>Level Crossed</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {interviews.map((interview, index) => (
-                                <tr key={index}>
-                                  <td>{new Date(interview.date).toLocaleDateString()}</td>
-                                  <td>{interview.interviewType}</td>
-                                  <td>{interview.attendanceStatus || "-"}</td>
-                                  <td>{interview.attemptNumber}</td>
-                                  <td>{interview.communicationLevel}</td>
-                                  <td>{interview.confidenceLevel}</td>
-                                  <td>{interview.clarityLevel}</td>
-                                  <td>{interview.overallLevel}</td>
-                                  <td>{interview.levelCrossed ? "Yes" : "No"}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
 
-                {!recordsLoading && selectedStudentTab === "aptitude" && (
+                {!recordsLoading && currentStudentTab === "aptitude" && (
                   <div className="record-section">
                     <h2 className="record-form-title">Add Aptitude Record</h2>
                     <div className="record-intro-card">
@@ -1735,43 +1771,10 @@ function TrainerDashboard() {
                       </button>
                     </form>
 
-                    <div className="record-history">
-                      <h2 className="record-history-title">Aptitude Test History</h2>
-                      {aptitudes.length === 0 ? (
-                        <p>No aptitude records yet</p>
-                      ) : (
-                        <div className="record-table-wrap">
-                          <table className="premium-table">
-                            <thead>
-                              <tr>
-                                <th>Attendance</th>
-                                <th>Round Number</th>
-                                <th>Score</th>
-                                <th>Result</th>
-                                <th>Remarks</th>
-                                <th>Date</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {aptitudes.map((apt, index) => (
-                                <tr key={index}>
-                                  <td>{apt.attendanceStatus || "-"}</td>
-                                  <td>{apt.roundNumber}</td>
-                                  <td>{apt.score}</td>
-                                  <td>{apt.result}</td>
-                                  <td>{apt.remarks || "-"}</td>
-                                  <td>{new Date(apt.createdAt).toLocaleDateString()}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
 
-                {!recordsLoading && selectedStudentTab === "assessments" && (
+                {!recordsLoading && currentStudentTab === "assessments" && (
                   <div className="record-section">
                     <h2 className="record-form-title">Add Assessment Record</h2>
                     <div className="record-intro-card">
@@ -1842,43 +1845,10 @@ function TrainerDashboard() {
                       </button>
                     </form>
 
-                    <div className="record-history">
-                      <h2 className="record-history-title">Assessment History</h2>
-                      {assessments.length === 0 ? (
-                        <p>No assessment records yet</p>
-                      ) : (
-                        <div className="record-table-wrap">
-                          <table className="premium-table">
-                            <thead>
-                              <tr>
-                                <th>Attendance</th>
-                                <th>Type</th>
-                                <th>Score</th>
-                                <th>Status</th>
-                                <th>Feedback</th>
-                                <th>Date</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {assessments.map((assessment, index) => (
-                                <tr key={index}>
-                                  <td>{assessment.attendanceStatus || "-"}</td>
-                                  <td>{assessment.assessmentType}</td>
-                                  <td>{assessment.score || "-"}</td>
-                                  <td>{assessment.status}</td>
-                                  <td>{assessment.feedback || "-"}</td>
-                                  <td>{new Date(assessment.createdAt).toLocaleDateString()}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
 
-                {!recordsLoading && selectedStudentTab === "training" && (
+                {!recordsLoading && currentStudentTab === "training" && (
                   <div className="record-section">
                     <h2 className="record-form-title">Add Training Record</h2>
                     <div className="record-intro-card">
@@ -1945,13 +1915,144 @@ function TrainerDashboard() {
                       </button>
                     </form>
 
-                    <div className="record-history">
-                      <h2 className="record-history-title">Training History</h2>
-                      {trainings.length === 0 ? (
-                        <p>No training records yet</p>
+                  </div>
+                )}
+                  </div>
+                </div>
+
+                {!recordsLoading && currentStudentTab && (
+                  <div className="record-history record-history-below">
+                    <div className="record-history-toolbar" style={{ marginBottom: "10px" }}>
+                      <h2 className="record-history-title" style={{ marginBottom: 0 }}>
+                        {currentStudentTab === "interviews"
+                          ? "Interview History"
+                          : currentStudentTab === "aptitude"
+                            ? "Aptitude Test History"
+                            : currentStudentTab === "assessments"
+                              ? "Assessment History"
+                              : "Training History"}
+                      </h2>
+                      <input
+                        type="text"
+                        placeholder="Search in history records..."
+                        value={recordHistorySearch}
+                        onChange={(e) => setRecordHistorySearch(e.target.value)}
+                        className="interview-history-search"
+                        style={{ maxWidth: "360px" }}
+                      />
+                    </div>
+
+                    {currentStudentTab === "interviews" && (
+                      filteredInterviews.length === 0 ? (
+                        <p>{interviews.length === 0 ? "No interview records yet" : "No interview records match this search"}</p>
                       ) : (
                         <div className="record-table-wrap">
-                          <table className="premium-table">
+                          <table className="premium-table view-students-table student-records-history-table">
+                            <thead>
+                              <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Attendance</th>
+                                <th>Attempt</th>
+                                <th>Communication</th>
+                                <th>Confidence</th>
+                                <th>Clarity</th>
+                                <th>Overall</th>
+                                <th>Level Crossed</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredInterviews.map((interview, index) => (
+                                <tr key={index}>
+                                  <td>{new Date(interview.date).toLocaleDateString()}</td>
+                                  <td>{interview.interviewType}</td>
+                                  <td>{interview.attendanceStatus || "-"}</td>
+                                  <td>{interview.attemptNumber}</td>
+                                  <td>{interview.communicationLevel}</td>
+                                  <td>{interview.confidenceLevel}</td>
+                                  <td>{interview.clarityLevel}</td>
+                                  <td>{interview.overallLevel}</td>
+                                  <td>{interview.levelCrossed ? "Yes" : "No"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    )}
+
+                    {currentStudentTab === "aptitude" && (
+                      filteredAptitudes.length === 0 ? (
+                        <p>{aptitudes.length === 0 ? "No aptitude records yet" : "No aptitude records match this search"}</p>
+                      ) : (
+                        <div className="record-table-wrap">
+                          <table className="premium-table view-students-table student-records-history-table">
+                            <thead>
+                              <tr>
+                                <th>Attendance</th>
+                                <th>Round Number</th>
+                                <th>Score</th>
+                                <th>Result</th>
+                                <th>Remarks</th>
+                                <th>Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredAptitudes.map((apt, index) => (
+                                <tr key={index}>
+                                  <td>{apt.attendanceStatus || "-"}</td>
+                                  <td>{apt.roundNumber}</td>
+                                  <td>{apt.score}</td>
+                                  <td>{apt.result}</td>
+                                  <td>{apt.remarks || "-"}</td>
+                                  <td>{new Date(apt.createdAt).toLocaleDateString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    )}
+
+                    {currentStudentTab === "assessments" && (
+                      filteredAssessments.length === 0 ? (
+                        <p>{assessments.length === 0 ? "No assessment records yet" : "No assessment records match this search"}</p>
+                      ) : (
+                        <div className="record-table-wrap">
+                          <table className="premium-table view-students-table student-records-history-table">
+                            <thead>
+                              <tr>
+                                <th>Attendance</th>
+                                <th>Type</th>
+                                <th>Score</th>
+                                <th>Status</th>
+                                <th>Feedback</th>
+                                <th>Date</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredAssessments.map((assessment, index) => (
+                                <tr key={index}>
+                                  <td>{assessment.attendanceStatus || "-"}</td>
+                                  <td>{assessment.assessmentType}</td>
+                                  <td>{assessment.score || "-"}</td>
+                                  <td>{assessment.status}</td>
+                                  <td>{assessment.feedback || "-"}</td>
+                                  <td>{new Date(assessment.createdAt).toLocaleDateString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    )}
+
+                    {currentStudentTab === "training" && (
+                      filteredTrainings.length === 0 ? (
+                        <p>{trainings.length === 0 ? "No training records yet" : "No training records match this search"}</p>
+                      ) : (
+                        <div className="record-table-wrap">
+                          <table className="premium-table view-students-table student-records-history-table">
                             <thead>
                               <tr>
                                 <th>Date</th>
@@ -1962,7 +2063,7 @@ function TrainerDashboard() {
                               </tr>
                             </thead>
                             <tbody>
-                              {trainings.map((training, index) => (
+                              {filteredTrainings.map((training, index) => (
                                 <tr key={index}>
                                   <td>{new Date(training.date).toLocaleDateString()}</td>
                                   <td>{training.attendance}</td>
@@ -1974,8 +2075,8 @@ function TrainerDashboard() {
                             </tbody>
                           </table>
                         </div>
-                      )}
-                    </div>
+                      )
+                    )}
                   </div>
                 )}
               </div>

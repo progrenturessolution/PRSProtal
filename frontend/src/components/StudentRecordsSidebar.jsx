@@ -9,12 +9,17 @@ const tabs = [
   { key: "training", label: "Training" },
 ];
 
-function StudentRecordsSidebar({ studentId, activeTab }) {
+function StudentRecordsSidebar({ studentId, activeTab, onTabChange, studentInfo: providedStudentInfo }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [studentInfo, setStudentInfo] = useState(location.state?.student || null);
+  const [studentInfo, setStudentInfo] = useState(providedStudentInfo || location.state?.student || null);
 
   useEffect(() => {
+    if (providedStudentInfo && providedStudentInfo._id === studentId) {
+      setStudentInfo(providedStudentInfo);
+      return;
+    }
+
     const navStudent = location.state?.student;
     if (navStudent && navStudent._id === studentId) {
       setStudentInfo(navStudent);
@@ -35,7 +40,7 @@ function StudentRecordsSidebar({ studentId, activeTab }) {
     };
 
     fetchStudent();
-  }, [location.state, studentId]);
+  }, [location.state, studentId, providedStudentInfo]);
 
   const statusText = studentInfo?.status
     ? `${studentInfo.status.charAt(0).toUpperCase()}${studentInfo.status.slice(1)}`
@@ -98,14 +103,19 @@ function StudentRecordsSidebar({ studentId, activeTab }) {
             key={tab.key}
             type="button"
             className={`student-records-nav-btn ${activeTab === tab.key ? "active" : ""}`}
-            onClick={() =>
+            onClick={() => {
+              if (onTabChange) {
+                onTabChange(tab.key);
+                return;
+              }
+
               navigate(`/trainer/student/${studentId}/${tab.key}`, {
                 state: {
                   student: studentInfo || location.state?.student || null,
                   fromTab: location.state?.fromTab || "assignments",
                 },
-              })
-            }
+              });
+            }}
           >
             {tab.label}
           </button>
