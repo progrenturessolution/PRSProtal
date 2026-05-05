@@ -11,6 +11,7 @@ import InterviewForm from './pages/InterviewForm';
 import AptitudeForm from './pages/AptitudeForm';
 import AssessmentForm from './pages/AssessmentForm';
 import TrainingForm from './pages/TrainingForm';
+import StudentDetailReport from './pages/StudentDetailReport';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/trainer/student/:studentId/aptitude" element={<AptitudeForm />} />
         <Route path="/trainer/student/:studentId/assessments" element={<AssessmentForm />} />
         <Route path="/trainer/student/:studentId/training" element={<TrainingForm />} />
+        <Route path="/admin/student/:studentId/report" element={<StudentDetailReport />} />
       </Routes>
     </Router>
   );

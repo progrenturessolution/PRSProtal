@@ -270,6 +270,7 @@ function AccessManagement() {
       )
     ) {
       try {
+        const response = await adminAPI.deleteTrainer(trainerId);
         if (response.data.success) {
           setTrainers(trainers.filter((t) => t._id !== trainerId));
           setOpenMenuId(null);

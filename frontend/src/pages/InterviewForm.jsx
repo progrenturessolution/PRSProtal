@@ -8,16 +8,24 @@ function InterviewForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [studentInfo, setStudentInfo] = useState(null);
   const [formData, setFormData] = useState({
     interviewType: "HR",
     date: "",
     attemptNumber: 1,
     communicationLevel: "",
     confidenceLevel: "",
-    clarityLevel: "",
-    overallLevel: "",
+    bodyLanguage: "",
+    clarityOfAnswer: "",
+    technicalKnowledge: "",
+    problemSolving: "",
+    codingAbility: "",
+    logicAndApproach: "",
+    overallHRLevel: "",
+    overallTechnicalLevel: "",
     levelCrossed: false,
-    remarks: "",
+    hrRemarks: "",
+    technicalRemarks: "",
   });
   const [interviews, setInterviews] = useState([]);
   const [historySearch, setHistorySearch] = useState("");
@@ -26,8 +34,21 @@ function InterviewForm() {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
+    fetchStudentInfo();
     fetchInterviews();
   }, [studentId]);
+
+  const fetchStudentInfo = async () => {
+    try {
+      const response = await trainerAPI.getAssignedStudents();
+      if (response.data.success) {
+        const student = (response.data.students || []).find((item) => item._id === studentId);
+        setStudentInfo(student || null);
+      }
+    } catch (error) {
+      console.error("Error fetching student info:", error);
+    }
+  };
 
   const fetchInterviews = async () => {
     try {
@@ -68,10 +89,17 @@ function InterviewForm() {
           attemptNumber: 1,
           communicationLevel: "",
           confidenceLevel: "",
-          clarityLevel: "",
-          overallLevel: "",
+          bodyLanguage: "",
+          clarityOfAnswer: "",
+          technicalKnowledge: "",
+          problemSolving: "",
+          codingAbility: "",
+          logicAndApproach: "",
+          overallHRLevel: "",
+          overallTechnicalLevel: "",
           levelCrossed: false,
-          remarks: "",
+          hrRemarks: "",
+          technicalRemarks: "",
         });
         fetchInterviews();
       }
@@ -98,10 +126,19 @@ function InterviewForm() {
       interview?.attemptNumber,
       interview?.communicationLevel,
       interview?.confidenceLevel,
-      interview?.clarityLevel,
+      interview?.bodyLanguage,
+      interview?.clarityOfAnswer,
+      interview?.technicalKnowledge,
+      interview?.problemSolving,
+      interview?.codingAbility,
+      interview?.logicAndApproach,
+      interview?.overallHRLevel,
+      interview?.overallTechnicalLevel,
       interview?.overallLevel,
       interview?.levelCrossed ? "crossed" : "not crossed",
       interview?.levelCrossed ? "crossed" : "not crossed",
+      interview?.hrRemarks,
+      interview?.technicalRemarks,
       interview?.remarks,
     ];
 
@@ -155,16 +192,57 @@ function InterviewForm() {
 
             <div className="record-form-grid">
               <div className="form-group">
+                <label>PSMS ID</label>
+                <input type="text" value={studentInfo?.internId || ""} readOnly />
+              </div>
+
+              <div className="form-group">
+                <label>Student Name</label>
+                <input type="text" value={studentInfo?.name || ""} readOnly />
+              </div>
+
+              <div className="form-group">
                 <label>Interview Type *</label>
                 <select
                   name="interviewType"
                   value={formData.interviewType}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const interviewType = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      interviewType,
+                      communicationLevel: "",
+                      confidenceLevel: "",
+                      bodyLanguage: "",
+                      clarityOfAnswer: "",
+                      technicalKnowledge: "",
+                      problemSolving: "",
+                      codingAbility: "",
+                      logicAndApproach: "",
+                      overallHRLevel: "",
+                      overallTechnicalLevel: "",
+                      levelCrossed: false,
+                      hrRemarks: "",
+                      technicalRemarks: "",
+                    }));
+                  }}
                   required
                 >
                   <option value="HR">HR</option>
                   <option value="Technical">Technical</option>
                 </select>
+              </div>
+
+              <div className="form-group">
+                <label>Interview Attempt (ex. 4/24) *</label>
+                <input
+                  type="text"
+                  name="attemptNumber"
+                  value={formData.attemptNumber}
+                  onChange={handleChange}
+                  placeholder="4/24"
+                  required
+                />
               </div>
 
               <div className="form-group">
@@ -178,105 +256,207 @@ function InterviewForm() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Attempt Number *</label>
-                <input
-                  type="number"
-                  name="attemptNumber"
-                  value={formData.attemptNumber}
-                  onChange={handleChange}
-                  min="1"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Communication Level *</label>
-                <select
-                  name="communicationLevel"
-                  value={formData.communicationLevel}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Level</option>
-                  <option value="B">B - Beginner</option>
-                  <option value="I">I - Intermediate</option>
-                  <option value="A">A - Advanced</option>
-                  <option value="E">E - Expert</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Confidence Level *</label>
-                <select
-                  name="confidenceLevel"
-                  value={formData.confidenceLevel}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Level</option>
-                  <option value="B">B - Beginner</option>
-                  <option value="I">I - Intermediate</option>
-                  <option value="A">A - Advanced</option>
-                  <option value="E">E - Expert</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Clarity Level *</label>
-                <select
-                  name="clarityLevel"
-                  value={formData.clarityLevel}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Level</option>
-                  <option value="B">B - Beginner</option>
-                  <option value="I">I - Intermediate</option>
-                  <option value="A">A - Advanced</option>
-                  <option value="E">E - Expert</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Overall Level *</label>
-                <select
-                  name="overallLevel"
-                  value={formData.overallLevel}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Select Level</option>
-                  <option value="F">F - Fail</option>
-                  <option value="C">C - Clear</option>
-                  <option value="P">P - Pass</option>
-                  <option value="E">E - Excellent</option>
-                </select>
-              </div>
-
-              <div className="form-group full-width">
-                <label>Level Crossed *</label>
-                <select
-                  name="levelCrossed"
-                  value={String(formData.levelCrossed)}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="true">Crossed</option>
-                  <option value="false">Not Crossed</option>
-                </select>
-              </div>
-
-              <div className="form-group full-width">
-                <label>Remarks</label>
-                <textarea
-                  name="remarks"
-                  value={formData.remarks}
-                  onChange={handleChange}
-                  rows="4"
-                  placeholder="Enter your remarks about the interview"
-                />
-              </div>
+              {formData.interviewType === "HR" ? (
+                <>
+                  <div className="form-group">
+                    <label>Communication Level (B/I/A/E) *</label>
+                    <select
+                      name="communicationLevel"
+                      value={formData.communicationLevel}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Confidence Level (B/I/A/E) *</label>
+                    <select
+                      name="confidenceLevel"
+                      value={formData.confidenceLevel}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Body Language (B/I/A/E) *</label>
+                    <select
+                      name="bodyLanguage"
+                      value={formData.bodyLanguage}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Clarity of Answer (B/I/A/E) *</label>
+                    <select
+                      name="clarityOfAnswer"
+                      value={formData.clarityOfAnswer}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Overall HR Level (B/I/A/E) *</label>
+                    <select
+                      name="overallHRLevel"
+                      value={formData.overallHRLevel}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Level Crossed? (Yes/No) *</label>
+                    <select
+                      name="levelCrossed"
+                      value={String(formData.levelCrossed)}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>HR Remarks</label>
+                    <textarea
+                      name="hrRemarks"
+                      value={formData.hrRemarks}
+                      onChange={handleChange}
+                      rows="4"
+                      placeholder="Enter HR remarks"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label>Technical Knowledge (B/I/A/E) *</label>
+                    <select
+                      name="technicalKnowledge"
+                      value={formData.technicalKnowledge}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Problem-Solving (B/I/A/E) *</label>
+                    <select
+                      name="problemSolving"
+                      value={formData.problemSolving}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Coding Ability (B/I/A/E) *</label>
+                    <select
+                      name="codingAbility"
+                      value={formData.codingAbility}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Logic &amp; Approach (B/I/A/E) *</label>
+                    <select
+                      name="logicAndApproach"
+                      value={formData.logicAndApproach}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Overall Technical Level (B/I/A/E) *</label>
+                    <select
+                      name="overallTechnicalLevel"
+                      value={formData.overallTechnicalLevel}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="B">B - Beginner</option>
+                      <option value="I">I - Intermediate</option>
+                      <option value="A">A - Advanced</option>
+                      <option value="E">E - Expert</option>
+                    </select>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Level Crossed? (Yes/No) *</label>
+                    <select
+                      name="levelCrossed"
+                      value={String(formData.levelCrossed)}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                  <div className="form-group full-width">
+                    <label>Technical Remarks</label>
+                    <textarea
+                      name="technicalRemarks"
+                      value={formData.technicalRemarks}
+                      onChange={handleChange}
+                      rows="4"
+                      placeholder="Enter technical remarks"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <button type="submit" className="submit-btn" disabled={loading}>

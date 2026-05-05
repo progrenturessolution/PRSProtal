@@ -96,6 +96,8 @@ export const adminAPI = {
   assignWorkToTrainer: (data) => api.post("/admin/assign-work", data),
   getGroups: () => api.get("/admin/groups"),
   deleteTrainer: (id) => api.delete(`/admin/trainer/${id}`),
+  deleteStudentPerformanceRecords: (studentId) =>
+    api.delete(`/admin/student-performance/${studentId}`),
 
   // Notifications
   createNotification: (notificationData) =>

@@ -40,10 +40,17 @@ function TrainerDashboard() {
     attemptNumber: 1,
     communicationLevel: "",
     confidenceLevel: "",
-    clarityLevel: "",
-    overallLevel: "",
+    bodyLanguage: "",
+    clarityOfAnswer: "",
+    technicalKnowledge: "",
+    problemSolving: "",
+    codingAbility: "",
+    logicAndApproach: "",
+    overallHRLevel: "",
+    overallTechnicalLevel: "",
     levelCrossed: false,
-    remarks: "",
+    hrRemarks: "",
+    technicalRemarks: "",
   });
   const [aptitudeFormData, setAptitudeFormData] = useState({
     attendanceStatus: "Present",
@@ -196,10 +203,17 @@ function TrainerDashboard() {
           attemptNumber: 1,
           communicationLevel: "",
           confidenceLevel: "",
-          clarityLevel: "",
-          overallLevel: "",
+          bodyLanguage: "",
+          clarityOfAnswer: "",
+          technicalKnowledge: "",
+          problemSolving: "",
+          codingAbility: "",
+          logicAndApproach: "",
+          overallHRLevel: "",
+          overallTechnicalLevel: "",
           levelCrossed: false,
-          remarks: "",
+          hrRemarks: "",
+          technicalRemarks: "",
         });
         fetchStudentRecords(selectedStudent._id);
       }
@@ -1569,29 +1583,59 @@ function TrainerDashboard() {
                     </div>
                     <form onSubmit={handleInterviewSubmit} className="record-form-grid">
                       <div className="form-group">
+                        <label>PSMS ID</label>
+                        <input type="text" value={selectedStudent?.internId || ""} readOnly />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Student Name</label>
+                        <input type="text" value={selectedStudent?.name || ""} readOnly />
+                      </div>
+
+                      <div className="form-group">
                         <label>Interview Type *</label>
                         <select
                           name="interviewType"
                           value={interviewFormData.interviewType}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                          onChange={(e) => {
+                            const interviewType = e.target.value;
+                            setInterviewFormData((prev) => ({
+                              ...prev,
+                              interviewType,
+                              communicationLevel: "",
+                              confidenceLevel: "",
+                              bodyLanguage: "",
+                              clarityOfAnswer: "",
+                              technicalKnowledge: "",
+                              problemSolving: "",
+                              codingAbility: "",
+                              logicAndApproach: "",
+                              overallHRLevel: "",
+                              overallTechnicalLevel: "",
+                              levelCrossed: false,
+                              hrRemarks: "",
+                              technicalRemarks: "",
+                            }));
+                          }}
                           required
                         >
                           <option value="HR">HR</option>
                           <option value="Technical">Technical</option>
                         </select>
                       </div>
+
                       <div className="form-group">
-                        <label>Attendance *</label>
-                        <select
-                          name="attendanceStatus"
-                          value={interviewFormData.attendanceStatus}
+                        <label>Interview Attempt (ex. 4/24) *</label>
+                        <input
+                          type="text"
+                          name="attemptNumber"
+                          value={interviewFormData.attemptNumber}
                           onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                          placeholder="4/24"
                           required
-                        >
-                          <option value="Present">Present</option>
-                          <option value="Absent">Absent</option>
-                        </select>
+                        />
                       </div>
+
                       <div className="form-group">
                         <label>Date *</label>
                         <input
@@ -1602,99 +1646,209 @@ function TrainerDashboard() {
                           required
                         />
                       </div>
-                      <div className="form-group">
-                        <label>Attempt Number *</label>
-                        <input
-                          type="number"
-                          name="attemptNumber"
-                          value={interviewFormData.attemptNumber}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
-                          min="1"
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Communication Level *</label>
-                        <select
-                          name="communicationLevel"
-                          value={interviewFormData.communicationLevel}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
-                          required
-                        >
-                          <option value="">Select Level</option>
-                          <option value="B">B - Beginner</option>
-                          <option value="I">I - Intermediate</option>
-                          <option value="A">A - Advanced</option>
-                          <option value="E">E - Expert</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Confidence Level *</label>
-                        <select
-                          name="confidenceLevel"
-                          value={interviewFormData.confidenceLevel}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
-                          required
-                        >
-                          <option value="">Select Level</option>
-                          <option value="B">B - Beginner</option>
-                          <option value="I">I - Intermediate</option>
-                          <option value="A">A - Advanced</option>
-                          <option value="E">E - Expert</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Clarity Level *</label>
-                        <select
-                          name="clarityLevel"
-                          value={interviewFormData.clarityLevel}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
-                          required
-                        >
-                          <option value="">Select Level</option>
-                          <option value="B">B - Beginner</option>
-                          <option value="I">I - Intermediate</option>
-                          <option value="A">A - Advanced</option>
-                          <option value="E">E - Expert</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Overall Level *</label>
-                        <select
-                          name="overallLevel"
-                          value={interviewFormData.overallLevel}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
-                          required
-                        >
-                          <option value="">Select Level</option>
-                          <option value="F">F - Fail</option>
-                          <option value="C">C - Clear</option>
-                          <option value="P">P - Pass</option>
-                          <option value="E">E - Excellent</option>
-                        </select>
-                      </div>
-                      <div className="form-group left-align">
-                        <label>Level Crossed *</label>
-                        <select
-                          name="levelCrossed"
-                          value={String(interviewFormData.levelCrossed)}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, levelCrossed: e.target.value === "true" })}
-                          required
-                        >
-                          <option value="true">Crossed</option>
-                          <option value="false">Not Crossed</option>
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Remarks</label>
-                        <textarea
-                          name="remarks"
-                          value={interviewFormData.remarks}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
-                          rows="4"
-                        />
-                      </div>
-                      <button type="submit" className="submit-btn record-submit-btn record-submit-btn-compact" disabled={recordSubmitting}>
+
+                      {interviewFormData.interviewType === "HR" ? (
+                        <>
+                          <div className="form-group">
+                            <label>Communication Level (B/I/A/E) *</label>
+                            <select
+                              name="communicationLevel"
+                              value={interviewFormData.communicationLevel}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Confidence Level (B/I/A/E) *</label>
+                            <select
+                              name="confidenceLevel"
+                              value={interviewFormData.confidenceLevel}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Body Language (B/I/A/E) *</label>
+                            <select
+                              name="bodyLanguage"
+                              value={interviewFormData.bodyLanguage}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Clarity of Answer (B/I/A/E) *</label>
+                            <select
+                              name="clarityOfAnswer"
+                              value={interviewFormData.clarityOfAnswer}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Overall HR Level (B/I/A/E) *</label>
+                            <select
+                              name="overallHRLevel"
+                              value={interviewFormData.overallHRLevel}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group left-align">
+                            <label>Level Crossed? (Yes/No) *</label>
+                            <select
+                              name="levelCrossed"
+                              value={String(interviewFormData.levelCrossed)}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, levelCrossed: e.target.value === "true" })}
+                              required
+                            >
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </select>
+                          </div>
+                          <div className="form-group full-width">
+                            <label>HR Remarks</label>
+                            <textarea
+                              name="hrRemarks"
+                              value={interviewFormData.hrRemarks}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              rows="4"
+                              placeholder="Add HR feedback and notes"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="form-group">
+                            <label>Technical Knowledge (B/I/A/E) *</label>
+                            <select
+                              name="technicalKnowledge"
+                              value={interviewFormData.technicalKnowledge}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Problem-Solving (B/I/A/E) *</label>
+                            <select
+                              name="problemSolving"
+                              value={interviewFormData.problemSolving}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Coding Ability (B/I/A/E) *</label>
+                            <select
+                              name="codingAbility"
+                              value={interviewFormData.codingAbility}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Logic &amp; Approach (B/I/A/E) *</label>
+                            <select
+                              name="logicAndApproach"
+                              value={interviewFormData.logicAndApproach}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group">
+                            <label>Overall Technical Level (B/I/A/E) *</label>
+                            <select
+                              name="overallTechnicalLevel"
+                              value={interviewFormData.overallTechnicalLevel}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              required
+                            >
+                              <option value="">Select Level</option>
+                              <option value="B">B - Beginner</option>
+                              <option value="I">I - Intermediate</option>
+                              <option value="A">A - Advanced</option>
+                              <option value="E">E - Expert</option>
+                            </select>
+                          </div>
+                          <div className="form-group left-align">
+                            <label>Level Crossed? (Yes/No) *</label>
+                            <select
+                              name="levelCrossed"
+                              value={String(interviewFormData.levelCrossed)}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, levelCrossed: e.target.value === "true" })}
+                              required
+                            >
+                              <option value="true">Yes</option>
+                              <option value="false">No</option>
+                            </select>
+                          </div>
+                          <div className="form-group full-width">
+                            <label>Technical Remarks</label>
+                            <textarea
+                              name="technicalRemarks"
+                              value={interviewFormData.technicalRemarks}
+                              onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                              rows="4"
+                              placeholder="Add technical feedback and notes"
+                            />
+                          </div>
+                        </>
+                      )}
+                      <button type="submit" className="submit-btn record-submit-btn record-submit-btn-compact full-width" disabled={recordSubmitting}>
                         {recordSubmitting ? "Saving..." : "Save Interview Record"}
                       </button>
                     </form>

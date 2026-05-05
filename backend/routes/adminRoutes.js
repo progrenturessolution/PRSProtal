@@ -146,6 +146,9 @@ router.post('/assign-work', verifyToken, verifyAdmin, adminController.assignWork
 // Delete trainer
 router.delete('/trainer/:id', verifyToken, verifyAdmin, adminController.deleteTrainer);
 
+// Delete student performance records
+router.delete('/student-performance/:studentId', verifyToken, verifyAdmin, adminController.deleteStudentPerformanceRecords);
+
 // ========== NOTIFICATIONS ==========
 
 // Create notification

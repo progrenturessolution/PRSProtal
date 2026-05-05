@@ -55,176 +55,164 @@ button, a, input, select, textarea {
 .login-container {
   display: flex;
   min-height: 100vh;
-  background: var(--bg-secondary);
+  background: #eef2f7;
   transition: background 0.3s ease;
 }
 
 .login-left {
   flex: 1;
-  background: var(--sidebar-bg);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 72px 64px;
+  justify-content: flex-start;
+  padding: 56px 64px;
   position: relative;
-  box-shadow: 2px 0 30px rgba(15, 23, 42, 0.2);
   overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(9, 16, 29, 0.86) 0%, rgba(17, 24, 39, 0.96) 100%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 38%),
+    #0f172a;
 }
 
 .login-left::before {
   content: '';
   position: absolute;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-  border-radius: 50%;
-  top: -100px;
-  right: -100px;
-}
-
-.login-left::after {
-  content: '';
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-  border-radius: 50%;
-  bottom: -50px;
-  left: -50px;
+  inset: 0;
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%),
+    linear-gradient(45deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%),
+    linear-gradient(315deg, rgba(255, 255, 255, 0.045) 25%, transparent 25%);
+  background-position: 24px 0, 24px 0, 0 0, 0 0;
+  background-size: 48px 48px;
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .brand-section {
   width: 100%;
-  max-width: 520px;
-  text-align: center;
+  max-width: 560px;
+  text-align: left;
   color: white;
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 18px;
 }
 
 .logo-container {
+  width: 124px;
+  height: 124px;
   margin: 0;
+  align-self: center;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 10px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.08) 100%);
+  box-shadow: 0 14px 34px rgba(2, 6, 23, 0.28);
 }
 
 .logo-container::before {
-  content: none;
-  display: none;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 20px;
+  background: #ffffff;
 }
 
 .company-logo {
-  width: 128px;
-  height: 128px;
+  width: 88px;
+  height: auto;
+  max-width: 92px;
+  max-height: 92px;
   object-fit: contain;
-  background: var(--bg-secondary);
-  padding: 18px;
-  border-radius: 18px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  filter: none;
   position: relative;
   z-index: 1;
-  transition: transform 0.25s ease;
-}
-
-.company-name {
-  font-size: 46px;
-  font-weight: 800;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 12px;
-  line-height: 1.05;
-  white-space: nowrap;
-  margin: 2px 0 0;
-  letter-spacing: -0.7px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  color: #ffffff;
-}
-
-.company-word-progrentures,
-.company-word-solution {
-  display: inline-block;
+  display: block;
+  margin: auto;
 }
 
 .brand-copy {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.company-name {
+  font-size: 40px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  line-height: 0.92;
+  margin: 0;
+  letter-spacing: -0.7px;
+  text-shadow: none;
+  color: #ffffff;
+}
+
+.company-word-progrentures,
+.company-word-solution {
+  display: block;
+}
+
+.company-word-solution {
+  font-weight: 600;
 }
 
 .tm-anchor {
-  position: relative;
-  display: inline-block;
-  padding-right: 0.44em;
+  padding-right: 0.15em;
 }
 
 .trademark-mark {
-  position: absolute;
-  right: -0.02em;
-  top: 0;
-  transform: translateY(-58%);
-  font-size: 0.34em;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: 0;
-  color: #e2e8f0;
-  background: none;
+  font-size: 0.4em;
+  vertical-align: super;
+  margin-left: 2px;
+  opacity: 0.85;
 }
 
 .company-subtitle {
-  font-size: 13px;
-  opacity: 0.86;
-  font-weight: 500;
-  letter-spacing: 2.4px;
-  line-height: 1.3;
+  font-size: 12px;
+  letter-spacing: 2.8px;
+  color: rgba(255, 255, 255, 0.78);
   margin: 0;
-  padding: 0;
   text-transform: uppercase;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* Features List */
 .features-list {
   width: 100%;
-  margin-top: 14px;
+  margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 14px 14px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 14px 16px;
+  border: none;
+  border-radius: 14px;
   position: relative;
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   min-width: 0;
-  min-height: 66px;
+  min-height: 58px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
 }
 
 .feature-item::before {
@@ -232,39 +220,34 @@ button, a, input, select, textarea {
 }
 
 .feature-item:hover {
-  background: rgba(255, 255, 255, 0.11);
-  border-color: rgba(255, 255, 255, 0.22);
-  transform: translateY(-1px);
+  opacity: 1;
+  transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .feature-icon {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 9px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
-  transition: background 0.2s ease;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #7dd3fc 0%, #3b82f6 100%);
+  border: none;
+  box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.12);
 }
 
 .feature-icon svg {
-  width: 18px;
-  height: 18px;
-  color: white;
+  display: none;
 }
 
 .feature-item span {
-  font-size: 13.5px;
+  flex: 1;
+  font-size: 14px;
   font-weight: 600;
-  color: white;
-  letter-spacing: 0.2px;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.3;
+  line-height: 1.25;
   min-width: 0;
+  color: rgba(255, 255, 255, 0.92);
+  overflow-wrap: anywhere;
 }
 
 .login-right {
@@ -272,22 +255,27 @@ button, a, input, select, textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px;
-  background: var(--bg-primary);
+  padding: 48px 60px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   transition: background 0.3s ease;
 }
 
 .login-card {
   width: 100%;
-  max-width: 420px;
-  background: var(--bg-card);
-  border-radius: 12px;
-  padding: 40px 36px;
-  box-shadow: var(--shadow-sm), var(--shadow-md);
-  border: 1px solid var(--border-color);
+  max-width: 500px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px 40px 34px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes rotate {
@@ -652,20 +640,20 @@ button, a, input, select, textarea {
 
 .login-header {
   margin-bottom: 32px;
-  text-align: center;
+  text-align: left;
 }
 
 .login-header h2 {
-  font-size: 28px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
   margin-bottom: 8px;
   transition: color 0.3s ease;
 }
 
 .login-header p {
-  font-size: 15px;
-  color: var(--text-secondary);
+  font-size: 16px;
+  color: #64748b;
   font-weight: 400;
   transition: color 0.3s ease;
 }
@@ -673,47 +661,46 @@ button, a, input, select, textarea {
 .login-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: 0;
   margin-bottom: 28px;
-  background: #f8fafc;
-  padding: 6px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .tab-btn {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 6px;
-  padding: 10px 6px;
+  justify-content: center;
+  gap: 0;
+  padding: 14px 8px 16px;
   border: none;
   background: transparent;
   color: #64748b;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
+  border-bottom: 3px solid transparent;
 }
 
 .tab-icon {
-  width: 20px;
-  height: 20px;
-  transition: all 0.2s;
+  display: none;
 }
 
 .tab-btn:hover:not(.disabled) {
-  color: var(--text-primary);
-  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
 }
 
 .tab-btn.active {
-  background: var(--bg-card);
   color: #0f172a;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1), 0 1px 3px rgba(15, 23, 42, 0.08);
-  position: relative;
+  border-bottom-color: #0f172a;
+  box-shadow: none;
+  background: transparent;
   z-index: 1;
 }
 
@@ -742,8 +729,8 @@ button, a, input, select, textarea {
 .form-group label {
   display: block;
   margin-bottom: 10px;
-  color: #1e293b;
-  font-size: 14px;
+  color: #0f172a;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.2px;
 }
@@ -751,11 +738,11 @@ button, a, input, select, textarea {
 
 .form-group input {
   width: 100%;
-  padding: 13px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 15px;
-  color: #1e293b;
+  color: #0f172a;
   background: #ffffff;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -767,8 +754,8 @@ button, a, input, select, textarea {
 
 .form-group input:focus {
   outline: none;
-  border-color: #475569;
-  box-shadow: 0 0 0 4px rgba(71, 85, 105, 0.1);
+  border-color: #64748b;
+  box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.12);
   background: #ffffff;
 }
 
@@ -784,16 +771,16 @@ button, a, input, select, textarea {
 .login-submit-btn {
   width: 100%;
   padding: 14px 24px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   margin-top: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -818,8 +805,8 @@ button, a, input, select, textarea {
 }
 
 .login-submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.4);
+  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.26);
   transform: translateY(-2px);
 }
 
@@ -884,14 +871,14 @@ button, a, input, select, textarea {
   .login-container {
     flex-direction: column;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #ecf2f6 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
   }
 
   .login-left {
     min-height: auto;
-    padding: 36px 22px;
+    padding: 34px 22px;
     box-shadow: none;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
     position: relative;
     overflow: hidden;
   }
@@ -924,45 +911,52 @@ button, a, input, select, textarea {
     max-width: 620px;
     position: relative;
     z-index: 1;
-    gap: 14px;
+    gap: 16px;
+    align-items: flex-start;
+    text-align: left;
   }
 
   .logo-container {
     margin: 0;
+    align-self: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    width: 102px;
+    height: 102px;
+    padding: 0;
     border-radius: 18px;
   }
 
   .logo-container::before {
-    width: 100px;
-    height: 100px;
+    inset: 10px;
+    border-radius: 16px;
   }
 
   .company-logo {
-    width: 80px;
-    height: 80px;
-    padding: 12px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    width: 72px;
+    height: auto;
+    max-width: 76px;
+    max-height: 76px;
+    padding: 0;
+    box-shadow: none;
   }
 
   .company-name {
-    font-size: 33px;
+    font-size: 32px;
     margin: 0;
     color: white;
     letter-spacing: -0.4px;
-    gap: 8px;
+    gap: 0;
   }
 
   .company-subtitle {
     font-size: 12px;
-    padding: 0;
+    padding: 6px 10px;
     margin: 0;
-    color: rgba(255, 255, 255, 0.85);
-    letter-spacing: 1.9px;
-    font-weight: 500;
+    color: rgba(255, 255, 255, 0.86);
+    letter-spacing: 2.2px;
+    font-weight: 600;
   }
 
   .brand-copy {
@@ -971,15 +965,15 @@ button, a, input, select, textarea {
 
   .features-list {
     margin-top: 10px;
-    gap: 12px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    grid-template-columns: 1fr;
   }
 
   .feature-item {
-    padding: 12px 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    min-height: 60px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    min-height: 54px;
   }
 
   .feature-item:hover {
@@ -988,14 +982,8 @@ button, a, input, select, textarea {
   }
 
   .feature-icon {
-    width: 32px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .feature-icon svg {
-    width: 18px;
-    height: 18px;
+    width: 11px;
+    height: 11px;
   }
 
   .feature-item span {
@@ -1006,13 +994,13 @@ button, a, input, select, textarea {
   .login-right {
     padding: 24px 16px;
     min-height: auto;
-    background: #ffffff;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   }
 
   .login-card {
     padding: 24px 18px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    border-radius: 14px;
     border: 1px solid #e2e8f0;
     background: white;
     max-width: 100%;
@@ -1020,11 +1008,11 @@ button, a, input, select, textarea {
 
   .login-header {
     margin-bottom: 20px;
-    text-align: center;
+    text-align: left;
   }
 
   .login-header h2 {
-    font-size: 20px;
+    font-size: 22px;
     margin-bottom: 4px;
     color: #0f172a;
     font-weight: 700;
@@ -1036,31 +1024,32 @@ button, a, input, select, textarea {
   }
 
   .login-tabs {
-    gap: 4px;
-    padding: 4px;
+    gap: 0;
+    padding: 0;
     margin-bottom: 20px;
-    background: #f8fafc;
+    background: transparent;
     grid-template-columns: repeat(4, 1fr);
   }
 
   .tab-btn {
-    padding: 10px 8px;
-    font-size: 12px;
-    border-radius: 8px;
+    padding: 12px 6px 14px;
+    font-size: 13px;
+    border-radius: 0;
     color: #64748b;
     background: transparent;
     transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
   }
 
   .tab-btn:hover {
-    background: rgba(15, 23, 42, 0.05);
     color: #0f172a;
   }
 
   .tab-btn.active {
-    background: white;
     color: #0f172a;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
+    background: transparent;
+    box-shadow: none;
+    border-bottom-color: #0f172a;
   }
 
   .form-group {
@@ -2793,6 +2782,15 @@ table tr:hover {
 
 .student-history-card .data-table tbody td {
   font-size: 13px;
+}
+
+.assessment-records-table thead {
+  background: #324158 !important;
+}
+
+.assessment-records-table thead th {
+  background-color: #324158 !important;
+  color: #ffffff !important;
 }
 
 .student-records-content .table-container {

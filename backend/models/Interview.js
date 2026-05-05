@@ -32,29 +32,65 @@ const interviewSchema = new mongoose.Schema({
   },
   communicationLevel: {
     type: String,
-    required: true,
     enum: ['B', 'I', 'A', 'E'] // Beginner, Intermediate, Advanced, Expert
   },
   confidenceLevel: {
     type: String,
-    required: true,
+    enum: ['B', 'I', 'A', 'E']
+  },
+  bodyLanguage: {
+    type: String,
     enum: ['B', 'I', 'A', 'E']
   },
   clarityLevel: {
     type: String,
-    required: true,
+    enum: ['B', 'I', 'A', 'E']
+  },
+  clarityOfAnswer: {
+    type: String,
+    enum: ['B', 'I', 'A', 'E']
+  },
+  technicalKnowledge: {
+    type: String,
+    enum: ['B', 'I', 'A', 'E']
+  },
+  problemSolving: {
+    type: String,
+    enum: ['B', 'I', 'A', 'E']
+  },
+  codingAbility: {
+    type: String,
+    enum: ['B', 'I', 'A', 'E']
+  },
+  logicAndApproach: {
+    type: String,
     enum: ['B', 'I', 'A', 'E']
   },
   overallLevel: {
     type: String,
-    required: true,
     enum: ['F', 'C', 'P', 'E'] // Fail, Clear, Pass, Excellent
+  },
+  overallHRLevel: {
+    type: String,
+    enum: ['B', 'I', 'A', 'E']
+  },
+  overallTechnicalLevel: {
+    type: String,
+    enum: ['B', 'I', 'A', 'E']
   },
   levelCrossed: {
     type: Boolean,
     required: true
   },
   remarks: {
+    type: String,
+    trim: true
+  },
+  hrRemarks: {
+    type: String,
+    trim: true
+  },
+  technicalRemarks: {
     type: String,
     trim: true
   }

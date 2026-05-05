@@ -150,10 +150,20 @@ exports.addInterview = async (req, res) => {
       attemptNumber,
       communicationLevel,
       confidenceLevel,
+      bodyLanguage,
       clarityLevel,
+      clarityOfAnswer,
+      technicalKnowledge,
+      problemSolving,
+      codingAbility,
+      logicAndApproach,
       overallLevel,
+      overallHRLevel,
+      overallTechnicalLevel,
       levelCrossed,
-      remarks
+      remarks,
+      hrRemarks,
+      technicalRemarks
     } = req.body;
     const normalizedLevelCrossed =
       levelCrossed === true || levelCrossed === 'true' || levelCrossed === '1' || levelCrossed === 1;
@@ -170,6 +180,9 @@ exports.addInterview = async (req, res) => {
     // Get trainer details for email
     const trainer = await Trainer.findById(trainerId);
 
+    const selectedOverallLevel = interviewType === 'Technical' ? overallTechnicalLevel : overallHRLevel || overallLevel;
+    const selectedRemarks = interviewType === 'Technical' ? technicalRemarks : hrRemarks || remarks;
+
     const interview = new Interview({
       studentId,
       trainerId,
@@ -179,10 +192,20 @@ exports.addInterview = async (req, res) => {
       attemptNumber,
       communicationLevel,
       confidenceLevel,
+      bodyLanguage,
       clarityLevel,
-      overallLevel,
+      clarityOfAnswer,
+      technicalKnowledge,
+      problemSolving,
+      codingAbility,
+      logicAndApproach,
+      overallLevel: selectedOverallLevel,
+      overallHRLevel,
+      overallTechnicalLevel,
       levelCrossed: normalizedLevelCrossed,
-      remarks
+      remarks: selectedRemarks,
+      hrRemarks,
+      technicalRemarks
     });
 
     await interview.save();

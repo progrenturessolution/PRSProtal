@@ -6,6 +6,10 @@ const RepresentativePayout = require('../models/RepresentativePayout');
 const StudentGroup = require('../models/StudentGroup');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
+const Interview = require('../models/Interview');
+const Aptitude = require('../models/Aptitude');
+const Assessment = require('../models/Assessment');
+const Training = require('../models/Training');
 
 const PASSWORD_SALT_ROUNDS = (() => {
   const defaultRounds = process.env.NODE_ENV === 'production' ? 10 : 4;
@@ -785,6 +789,37 @@ exports.deleteTrainer = async (req, res) => {
     });
   } catch (error) {
     console.error('Delete trainer error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Delete all performance records for a student
+exports.deleteStudentPerformanceRecords = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const [interviewsResult, aptitudeResult, assessmentsResult, trainingsResult] = await Promise.all([
+      Interview.deleteMany({ studentId }),
+      Aptitude.deleteMany({ studentId }),
+      Assessment.deleteMany({ studentId }),
+      Training.deleteMany({ studentId }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: 'Student performance records deleted successfully',
+      deletedCounts: {
+        interviews: interviewsResult.deletedCount,
+        aptitude: aptitudeResult.deletedCount,
+        assessments: assessmentsResult.deletedCount,
+        trainings: trainingsResult.deletedCount,
+      },
+    });
+  } catch (error) {
+    console.error('Delete student performance records error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
