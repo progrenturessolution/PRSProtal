@@ -94,25 +94,25 @@ function Reports() {
 
   const handleDeleteAssessmentRecords = async (studentId, studentName) => {
     const confirmed = window.confirm(
-      `Delete ${studentName}? This will move the student to the recycle bin and remove the row from this report.`
+      `Delete assessment records for ${studentName}? This will remove only assessment-related records for this student from reports.`
     );
 
     if (!confirmed) return;
 
     try {
-      const response = await adminAPI.deleteIntern(studentId);
-      if (response.data.success) {
-        setStudents((prev) => prev.filter((student) => student._id !== studentId));
+      const response = await adminAPI.deleteStudentPerformanceRecords(studentId);
+      if (response.data && response.data.success) {
+        // Do not remove the student from the main list — only assessment records were deleted
         setOpenMenuId(null);
-        setInfoMessage(response.data.message || "Student deleted successfully");
+        setInfoMessage(response.data.message || "Assessment records deleted successfully");
         setTimeout(() => setInfoMessage(""), 4000);
       } else {
-        setInfoMessage(response.data.message || "Failed to delete student");
+        setInfoMessage(response.data?.message || "Failed to delete assessment records");
         setTimeout(() => setInfoMessage(""), 4000);
       }
     } catch (error) {
-      console.error("Delete student error:", error);
-      setInfoMessage(error.response?.data?.message || "Failed to delete student. Please try again.");
+      console.error("Delete assessment records error:", error);
+      setInfoMessage(error.response?.data?.message || "Failed to delete assessment records. Please try again.");
       setTimeout(() => setInfoMessage(""), 4000);
     }
   };
@@ -1050,9 +1050,9 @@ function Reports() {
 
     return (
       <div className="card">
-        <h3>Student Assessment Records</h3>
+        <h3>Student Activity Records</h3>
         <p style={{ color: "#6b7280", marginTop: "5px", marginBottom: "15px" }}>
-          View and manage all student assessment records including interviews, aptitude tests, and assessments
+          View and manage all student activity records including interviews, aptitude tests, and assessments
         </p>
 
         <div
@@ -1547,7 +1547,7 @@ function Reports() {
               color: reportType === "assessments" ? "white" : "#64748b",
             }}
           >
-            Assessment Records
+            Activity Records
           </button>
           <button
             onClick={() => setReportType("custom")}

@@ -1105,6 +1105,43 @@ exports.createNotification = async (req, res) => {
   }
 };
 
+// Get a student's activity records for the admin report page
+exports.getStudentRecords = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const student = await Intern.findById(studentId).select('_id name internId email studentType status joiningDate mobile');
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student not found'
+      });
+    }
+
+    const interviews = await Interview.find({ studentId }).sort({ date: -1 });
+    const aptitudes = await Aptitude.find({ studentId }).sort({ createdAt: -1 });
+    const assessments = await Assessment.find({ studentId }).sort({ createdAt: -1 });
+    const trainings = await Training.find({ studentId }).sort({ date: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        student,
+        interviews,
+        aptitudes,
+        assessments,
+        trainings
+      }
+    });
+  } catch (error) {
+    console.error('Get student records error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 // Get all notifications
 exports.getAllNotifications = async (req, res) => {
   try {

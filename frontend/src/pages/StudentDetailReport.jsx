@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { adminAPI, trainerAPI } from "../services/api";
+import { adminAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import "./StudentDetailReport.css";
 
@@ -17,6 +17,26 @@ function StudentDetailReport() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
+
+  const getInterviewOverallLevel = (interview) =>
+    interview.interviewType === "Technical"
+      ? interview.overallTechnicalLevel
+      : interview.overallHRLevel;
+
+  const getInterviewOverallLabel = (level) => {
+    switch (level) {
+      case "B":
+        return "Beginner";
+      case "I":
+        return "Intermediate";
+      case "A":
+        return "Advanced";
+      case "E":
+        return "Expert";
+      default:
+        return "-";
+    }
+  };
 
   useEffect(() => {
     fetchStudentAndRecords();
@@ -42,15 +62,20 @@ function StudentDetailReport() {
         }
       }
 
-      // Fetch student records
+      // Fetch student activity records for all record modules
       try {
-        const recordsResponse = await trainerAPI.getStudentRecords(studentId);
+        const recordsResponse = await adminAPI.getStudentRecords(studentId);
         if (recordsResponse.data.success) {
-          setRecords(recordsResponse.data.data);
+          setStudent(recordsResponse.data.data.student || foundStudent);
+          setRecords({
+            interviews: recordsResponse.data.data.interviews || [],
+            aptitudes: recordsResponse.data.data.aptitudes || [],
+            assessments: recordsResponse.data.data.assessments || [],
+            trainings: recordsResponse.data.data.trainings || [],
+          });
         }
       } catch (err) {
-        // If trainer API fails, continue with empty records
-        console.log("Could not fetch trainer records");
+        console.log("Could not fetch admin student records");
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -161,14 +186,16 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                ${records.interviews.map(interview => `
+                ${records.interviews.map(interview => {
+                  const overallLevel = getInterviewOverallLevel(interview);
+                  return `
                   <tr>
                     <td>${interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${interview.interviewType}</td>
-                    <td>${interview.overallLevel === 'E' ? 'Excellent' : interview.overallLevel === 'P' ? 'Pass' : interview.overallLevel === 'C' ? 'Clear' : 'Fail'}</td>
+                    <td>${getInterviewOverallLabel(overallLevel)}</td>
                     <td>${interview.levelCrossed ? 'Yes' : 'No'}</td>
                   </tr>
-                `).join('')}
+                `; }).join('')}
               </tbody>
             </table>
           </div>
@@ -307,10 +334,11 @@ function StudentDetailReport() {
         ws_data.push([], ["Interview Records"]);
         ws_data.push(["Date", "Type", "Overall", "Level Crossed"]);
         records.interviews.forEach(interview => {
+          const overallLevel = getInterviewOverallLevel(interview);
           ws_data.push([
             interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A',
             interview.interviewType,
-            interview.overallLevel === 'E' ? 'Excellent' : interview.overallLevel === 'P' ? 'Pass' : interview.overallLevel === 'C' ? 'Clear' : 'Fail',
+            getInterviewOverallLabel(overallLevel),
             interview.levelCrossed ? 'Yes' : 'No'
           ]);
         });
@@ -571,17 +599,16 @@ function StudentDetailReport() {
                       <span className="level-badge">{interview.clarityLevel}</span>
                     </td>
                     <td>
-                      <span
-                        className={`result-badge result-${interview.overallLevel.toLowerCase()}`}
-                      >
-                        {interview.overallLevel === "E"
-                          ? "Excellent"
-                          : interview.overallLevel === "P"
-                            ? "Pass"
-                            : interview.overallLevel === "C"
-                              ? "Clear"
-                              : "Fail"}
-                      </span>
+                      {(() => {
+                        const overallLevel = getInterviewOverallLevel(interview);
+                        return overallLevel ? (
+                          <span className={`result-badge result-${overallLevel.toLowerCase()}`}>
+                            {getInterviewOverallLabel(overallLevel)}
+                          </span>
+                        ) : (
+                          "-"
+                        );
+                      })()}
                     </td>
                     <td>
                       <span

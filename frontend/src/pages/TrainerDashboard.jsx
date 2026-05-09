@@ -187,13 +187,39 @@ function TrainerDashboard() {
   const handleInterviewSubmit = async (e) => {
     e.preventDefault();
     if (!selectedStudent?._id) return;
+    
+    // Validate required fields
+    if (!interviewFormData.date || interviewFormData.date === "") {
+      setRecordError("Date is required for interview record");
+      setRecordSubmitting(false);
+      return;
+    }
+    
     setRecordSubmitting(true);
     clearRecordMessages();
     try {
-      const response = await trainerAPI.addInterview({
+      const cleanedData = {
         studentId: selectedStudent._id,
-        ...interviewFormData,
-      });
+        interviewType: interviewFormData.interviewType,
+        attendanceStatus: interviewFormData.attendanceStatus,
+        date: interviewFormData.date,
+        attemptNumber: interviewFormData.attemptNumber,
+        levelCrossed: interviewFormData.levelCrossed,
+      };
+      // Add optional fields only if they have values
+      if (interviewFormData.communicationLevel) cleanedData.communicationLevel = interviewFormData.communicationLevel;
+      if (interviewFormData.confidenceLevel) cleanedData.confidenceLevel = interviewFormData.confidenceLevel;
+      if (interviewFormData.bodyLanguage) cleanedData.bodyLanguage = interviewFormData.bodyLanguage;
+      if (interviewFormData.clarityOfAnswer) cleanedData.clarityOfAnswer = interviewFormData.clarityOfAnswer;
+      if (interviewFormData.technicalKnowledge) cleanedData.technicalKnowledge = interviewFormData.technicalKnowledge;
+      if (interviewFormData.problemSolving) cleanedData.problemSolving = interviewFormData.problemSolving;
+      if (interviewFormData.codingAbility) cleanedData.codingAbility = interviewFormData.codingAbility;
+      if (interviewFormData.logicAndApproach) cleanedData.logicAndApproach = interviewFormData.logicAndApproach;
+      if (interviewFormData.overallHRLevel) cleanedData.overallHRLevel = interviewFormData.overallHRLevel;
+      if (interviewFormData.overallTechnicalLevel) cleanedData.overallTechnicalLevel = interviewFormData.overallTechnicalLevel;
+      if (interviewFormData.hrRemarks) cleanedData.hrRemarks = interviewFormData.hrRemarks;
+      if (interviewFormData.technicalRemarks) cleanedData.technicalRemarks = interviewFormData.technicalRemarks;
+      const response = await trainerAPI.addInterview(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Interview record added successfully!");
         setInterviewFormData({
@@ -227,13 +253,29 @@ function TrainerDashboard() {
   const handleAptitudeSubmit = async (e) => {
     e.preventDefault();
     if (!selectedStudent?._id) return;
+    
+    // Validate required fields
+    if (!aptitudeFormData.score || aptitudeFormData.score === "") {
+      setRecordError("Score is required for aptitude record");
+      setRecordSubmitting(false);
+      return;
+    }
+    
     setRecordSubmitting(true);
     clearRecordMessages();
     try {
-      const response = await trainerAPI.addAptitude({
+      const cleanedData = {
         studentId: selectedStudent._id,
-        ...aptitudeFormData,
-      });
+        attendanceStatus: aptitudeFormData.attendanceStatus,
+        roundNumber: aptitudeFormData.roundNumber,
+        score: parseFloat(aptitudeFormData.score),
+        result: aptitudeFormData.result,
+      };
+      // Only add remarks if present
+      if (aptitudeFormData.remarks) {
+        cleanedData.remarks = aptitudeFormData.remarks;
+      }
+      const response = await trainerAPI.addAptitude(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Aptitude record added successfully!");
         setAptitudeFormData({
@@ -258,10 +300,21 @@ function TrainerDashboard() {
     setRecordSubmitting(true);
     clearRecordMessages();
     try {
-      const response = await trainerAPI.addAssessment({
+      const cleanedData = {
         studentId: selectedStudent._id,
-        ...assessmentFormData,
-      });
+        attendanceStatus: assessmentFormData.attendanceStatus,
+        assessmentType: assessmentFormData.assessmentType,
+        status: assessmentFormData.status,
+      };
+      // Only add score if present and is a valid number
+      if (assessmentFormData.score && assessmentFormData.score !== "") {
+        cleanedData.score = parseFloat(assessmentFormData.score);
+      }
+      // Only add feedback if present
+      if (assessmentFormData.feedback) {
+        cleanedData.feedback = assessmentFormData.feedback;
+      }
+      const response = await trainerAPI.addAssessment(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Assessment record added successfully!");
         setAssessmentFormData({
@@ -286,10 +339,14 @@ function TrainerDashboard() {
     setRecordSubmitting(true);
     clearRecordMessages();
     try {
-      const response = await trainerAPI.addTraining({
+      const cleanedData = {
         studentId: selectedStudent._id,
         ...trainingFormData,
-      });
+      };
+      // Clean up empty notes and remarks
+      if (!cleanedData.skillImprovementNote) delete cleanedData.skillImprovementNote;
+      if (!cleanedData.trainerRemarks) delete cleanedData.trainerRemarks;
+      const response = await trainerAPI.addTraining(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Training record added successfully!");
         setTrainingFormData({

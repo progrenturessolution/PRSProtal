@@ -81,6 +81,7 @@ export const adminAPI = {
     api.patch(`/admin/intern/${id}/status`, { status }),
   updateIntern: (id, data) => api.patch(`/admin/intern/${id}`, data),
   deleteAllInterns: () => api.delete("/admin/delete-all-interns"),
+  getStudentRecords: (studentId) => api.get(`/admin/students/${studentId}/records`),
 
   // Recycle Bin (Archived Students)
   getDeletedInterns: () => api.get("/admin/deleted-interns"),

@@ -180,9 +180,6 @@ exports.addInterview = async (req, res) => {
     // Get trainer details for email
     const trainer = await Trainer.findById(trainerId);
 
-    const selectedOverallLevel = interviewType === 'Technical' ? overallTechnicalLevel : overallHRLevel || overallLevel;
-    const selectedRemarks = interviewType === 'Technical' ? technicalRemarks : hrRemarks || remarks;
-
     const interview = new Interview({
       studentId,
       trainerId,
@@ -199,11 +196,9 @@ exports.addInterview = async (req, res) => {
       problemSolving,
       codingAbility,
       logicAndApproach,
-      overallLevel: selectedOverallLevel,
       overallHRLevel,
       overallTechnicalLevel,
       levelCrossed: normalizedLevelCrossed,
-      remarks: selectedRemarks,
       hrRemarks,
       technicalRemarks
     });
@@ -218,9 +213,17 @@ exports.addInterview = async (req, res) => {
 
   } catch (error) {
     console.error('Add interview error:', error);
+    // Provide detailed error messages for validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: error.message || 'Server error'
     });
   }
 };
@@ -263,9 +266,17 @@ exports.addAptitude = async (req, res) => {
 
   } catch (error) {
     console.error('Add aptitude error:', error);
+    // Provide detailed error messages for validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: error.message || 'Server error'
     });
   }
 };
@@ -308,9 +319,17 @@ exports.addAssessment = async (req, res) => {
 
   } catch (error) {
     console.error('Add assessment error:', error);
+    // Provide detailed error messages for validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: error.message || 'Server error'
     });
   }
 };
@@ -353,9 +372,17 @@ exports.addTraining = async (req, res) => {
 
   } catch (error) {
     console.error('Add training error:', error);
+    // Provide detailed error messages for validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${messages}`
+      });
+    }
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: error.message || 'Server error'
     });
   }
 };

@@ -149,6 +149,9 @@ router.delete('/trainer/:id', verifyToken, verifyAdmin, adminController.deleteTr
 // Delete student performance records
 router.delete('/student-performance/:studentId', verifyToken, verifyAdmin, adminController.deleteStudentPerformanceRecords);
 
+// Get student activity records for admin report page
+router.get('/students/:studentId/records', verifyToken, verifyAdmin, adminController.getStudentRecords);
+
 // ========== NOTIFICATIONS ==========
 
 // Create notification

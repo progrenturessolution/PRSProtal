@@ -11,6 +11,12 @@ function InternshipManagement({ onAddStudentClick }) {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCertificateUpload, setShowCertificateUpload] = useState(false);
+  const [certificateFile, setCertificateFile] = useState(null);
+  const [certificateType, setCertificateType] = useState("offerLetter");
+  const [certificateName, setCertificateName] = useState("");
+  const [uploadingCert, setUploadingCert] = useState(false);
+  const [certificateUploadStatus, setCertificateUploadStatus] = useState(null);
   const [editForm, setEditForm] = useState({
     internId: "",
     name: "",
@@ -24,6 +30,123 @@ function InternshipManagement({ onAddStudentClick }) {
     joiningDate: "",
     status: "",
   });
+
+  const certificateTypeOptions = [
+    { value: "offerLetter", label: "Offer Letter" },
+    { value: "welcomeLetter", label: "Welcome Letter" },
+    { value: "paymentReceipt", label: "Payment Receipt" },
+    { value: "completionCertificate", label: "Completion Certificate" },
+    { value: "experienceLetter", label: "Experience Letter" },
+    { value: "other", label: "Other" },
+  ];
+
+  const directCertificateTypes = [
+    "offerLetter",
+    "welcomeLetter",
+    "paymentReceipt",
+    "completionCertificate",
+    "experienceLetter",
+  ];
+
+  const handleCertificateUpload = async () => {
+    if (!certificateFile) {
+      alert("Please select a file to upload");
+      return;
+    }
+
+    if (certificateType === "other" && !certificateName.trim()) {
+      alert("Please enter certificate name for Other type");
+      return;
+    }
+
+    const selectedOption = certificateTypeOptions.find(
+      (item) => item.value === certificateType,
+    );
+    const isDirectType = directCertificateTypes.includes(certificateType);
+    const uploadDocumentType = isDirectType ? certificateType : "other";
+
+    setUploadingCert(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", certificateFile);
+      formData.append("documentType", uploadDocumentType);
+      if (!isDirectType) {
+        formData.append(
+          "certificateName",
+          certificateType === "other"
+            ? certificateName.trim()
+            : selectedOption?.label || "Other Certificate",
+        );
+      }
+
+      const response = await adminAPI.uploadStudentDocument(
+        selectedStudent._id,
+        formData,
+      );
+
+      if (response.data && response.data.success) {
+        // Update selected student
+        setSelectedStudent((prev) => {
+          let updatedDocuments = { ...(prev.documents || {}) };
+
+          if (!isDirectType) {
+            const existingOther = updatedDocuments.otherCertificates || [];
+            updatedDocuments.otherCertificates = [
+              ...existingOther,
+              response.data.document,
+            ];
+          } else {
+            updatedDocuments[certificateType] = response.data.document;
+          }
+
+          return {
+            ...prev,
+            documents: updatedDocuments,
+          };
+        });
+
+        // Update students list
+        setStudents(prev => prev.map(s => {
+          if (s._id === selectedStudent._id) {
+            let updatedDocuments = { ...(s.documents || {}) };
+            if (!isDirectType) {
+              const existingOther = updatedDocuments.otherCertificates || [];
+              updatedDocuments.otherCertificates = [
+                ...existingOther,
+                response.data.document,
+              ];
+            } else {
+              updatedDocuments[certificateType] = response.data.document;
+            }
+            return {
+              ...s,
+              documents: updatedDocuments,
+            };
+          }
+          return s;
+        }));
+
+        setCertificateUploadStatus({
+          success: true,
+          label: !isDirectType
+            ? certificateType === "other"
+              ? certificateName.trim()
+              : selectedOption?.label || "Other Certificate"
+            : selectedOption?.label || "Certificate",
+        });
+        setCertificateFile(null);
+        setCertificateName("");
+        setTimeout(() => setShowCertificateUpload(false), 1500);
+      } else {
+        setCertificateUploadStatus({ success: false });
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      setCertificateUploadStatus({ success: false });
+    } finally {
+      setUploadingCert(false);
+    }
+  };
 
   useEffect(() => {
     fetchInternshipStudents();
@@ -643,15 +766,277 @@ function InternshipManagement({ onAddStudentClick }) {
                 )}
               </div>
 
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Documents &amp; Certificates
+                </h3>
+                <div style={{ display: "grid", gap: "10px" }}>
+                  {[
+                    { key: "offerLetter", label: "Offer Letter" },
+                    { key: "welcomeLetter", label: "Welcome Letter" },
+                    { key: "paymentReceipt", label: "Payment Receipt" },
+                    { key: "completionCertificate", label: "Completion Certificate" },
+                    { key: "experienceLetter", label: "Experience Letter" },
+                  ].map(({ key, label }) => (
+                    <div
+                      key={key}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 14px",
+                        background: "#f8fafc",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>
+                          {label}
+                        </div>
+                        {selectedStudent.documents?.[key] && (
+                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                            Uploaded: {new Date(selectedStudent.documents[key].uploadedAt || Date.now()).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                      {selectedStudent.documents?.[key] ? (
+                        <a
+                          href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents[key].filename}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            padding: "6px 14px",
+                            background: "#0f172a",
+                            color: "white",
+                            textDecoration: "none",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                          Not uploaded
+                        </span>
+                      )}
+                    </div>
+                  ))}
+
+                  {(selectedStudent.documents?.otherCertificates || []).map((cert, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 14px",
+                        background: "#f8fafc",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>
+                          {cert.name || `Certificate ${i + 1}`}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                          Uploaded: {new Date(cert.uploadedAt || Date.now()).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <a
+                        href={`${UPLOADS_BASE}/uploads/students/${cert.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          padding: "6px 14px",
+                          background: "#0f172a",
+                          color: "white",
+                          textDecoration: "none",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        View
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {showCertificateUpload && (
+                <div style={{
+                  padding: '20px',
+                  background: '#eff6ff',
+                  borderRadius: '10px',
+                  marginBottom: '24px',
+                  border: '2px dashed #3b82f6',
+                }}>
+                  <h3 style={{ marginTop: 0, fontSize: '16px', color: '#1e40af' }}>
+                    Upload New Certificate
+                  </h3>
+
+                  {certificateUploadStatus?.success && (
+                    <div style={{
+                      marginBottom: '12px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      background: '#dcfce7',
+                      border: '1px solid #86efac',
+                      color: '#166534',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                    }}>
+                      Certificate assigned successfully: {certificateUploadStatus.label}
+                    </div>
+                  )}
+
+                  {certificateUploadStatus && !certificateUploadStatus.success && (
+                    <div style={{
+                      marginBottom: '12px',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      background: '#fee2e2',
+                      border: '1px solid #fca5a5',
+                      color: '#991b1b',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                    }}>
+                      Certificate assignment failed. Please retry.
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      marginBottom: '6px',
+                      color: '#0f172a',
+                    }}>
+                      Certificate Type
+                    </label>
+                    <select
+                      value={certificateType}
+                      onChange={(e) => setCertificateType(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '14px',
+                      }}
+                    >
+                      {certificateTypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {certificateType === 'other' && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        marginBottom: '6px',
+                        color: '#0f172a',
+                      }}>
+                        Certificate Name
+                      </label>
+                      <input
+                        type="text"
+                        value={certificateName}
+                        onChange={(e) => setCertificateName(e.target.value)}
+                        placeholder="e.g., Participation Certificate"
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          borderRadius: '6px',
+                          border: '1px solid #cbd5e1',
+                          fontSize: '14px',
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{
+                      display: 'block',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      marginBottom: '6px',
+                      color: '#0f172a',
+                    }}>
+                      Select PDF File
+                    </label>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => setCertificateFile(e.target.files[0])}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        background: 'white',
+                      }}
+                    />
+                    {certificateFile && (
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '13px',
+                        color: '#059669',
+                        fontWeight: 500,
+                      }}>
+                        Selected: {certificateFile.name}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleCertificateUpload}
+                    disabled={uploadingCert || !certificateFile}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      background: uploadingCert || !certificateFile ? '#cbd5e1' : '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: uploadingCert || !certificateFile ? 'not-allowed' : 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {uploadingCert ? 'Assigning Certificate...' : 'Assign Certificate'}
+                  </button>
+                </div>
+              )}
+
               <div className="profile-actions">
                 {!isEditing ? (
-                  <button
-                    onClick={handleEditClick}
-                    className="profile-btn profile-btn-primary"
-                    style={{ background: "#324158", borderColor: "#324158" }}
-                  >
-                    Edit Profile
-                  </button>
+                  <>
+                    <button
+                      onClick={handleEditClick}
+                      className="profile-btn profile-btn-primary"
+                      style={{ background: "#324158", borderColor: "#324158" }}
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={() => setShowCertificateUpload(!showCertificateUpload)}
+                      className="profile-btn profile-btn-secondary"
+                    >
+                      {showCertificateUpload ? 'Hide' : 'Manage Certificates'}
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button onClick={handleCancelEdit} className="profile-btn profile-btn-ghost">Cancel</button>

@@ -105,7 +105,7 @@ button, a, input, select, textarea {
   width: 124px;
   height: 124px;
   margin: 0;
-  align-self: center;
+  align-self: flex-start;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,16 +141,16 @@ button, a, input, select, textarea {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 16px;
 }
 
 .company-name {
   font-size: 40px;
-  font-weight: 700;
+  font-weight: 500;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
-  gap: 0;
+  gap: 8px;
   line-height: 0.92;
   margin: 0;
   letter-spacing: -0.7px;
@@ -164,7 +164,7 @@ button, a, input, select, textarea {
 }
 
 .company-word-solution {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .tm-anchor {
@@ -219,21 +219,33 @@ button, a, input, select, textarea {
   content: none;
 }
 
+.feature-item:nth-child(1) {
+  background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
+  border: 1px solid #fcd34d;
+}
+
+.feature-item:nth-child(2) {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #93c5fd;
+}
+
+.feature-item:nth-child(3) {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #6ee7b7;
+}
+
+.feature-item:nth-child(4) {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  border: 1px solid #f472b6;
+}
+
 .feature-item:hover {
-  opacity: 1;
-  transform: translateX(3px);
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #7dd3fc 0%, #3b82f6 100%);
-  border: none;
-  box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.12);
+  display: none;
 }
 
 .feature-icon svg {
@@ -246,8 +258,24 @@ button, a, input, select, textarea {
   font-weight: 600;
   line-height: 1.25;
   min-width: 0;
-  color: rgba(255, 255, 255, 0.92);
+  color: #000000;
   overflow-wrap: anywhere;
+  background-color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.feature-item:nth-child(1),
+.feature-item:nth-child(2),
+.feature-item:nth-child(3),
+.feature-item:nth-child(4) {
+  background: white;
+  border: 1px solid #e5e7eb;
+}
+
+.feature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .login-right {
@@ -918,7 +946,7 @@ button, a, input, select, textarea {
 
   .logo-container {
     margin: 0;
-    align-self: center;
+    align-self: flex-start;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -944,6 +972,7 @@ button, a, input, select, textarea {
 
   .company-name {
     font-size: 32px;
+    font-weight: 500;
     margin: 0;
     color: white;
     letter-spacing: -0.4px;
@@ -960,7 +989,7 @@ button, a, input, select, textarea {
   }
 
   .brand-copy {
-    gap: 6px;
+    gap: 16px;
   }
 
   .features-list {
@@ -976,19 +1005,30 @@ button, a, input, select, textarea {
     min-height: 54px;
   }
 
+  .feature-item:nth-child(1),
+  .feature-item:nth-child(2),
+  .feature-item:nth-child(3),
+  .feature-item:nth-child(4) {
+    background: white;
+    border: 1px solid #e5e7eb;
+  }
+
   .feature-item:hover {
-    background: rgba(255, 255, 255, 0.12);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   .feature-icon {
-    width: 11px;
-    height: 11px;
+    display: none;
   }
 
   .feature-item span {
     font-size: 13px;
     font-weight: 600;
+    background-color: white;
+    color: #000000;
+    padding: 4px 8px;
+    border-radius: 4px;
   }
 
   .login-right {
@@ -1187,7 +1227,7 @@ button, a, input, select, textarea {
   }
 
   .logo-container {
-    margin: 0 auto 16px;
+    margin: 0 0 16px 0;
   }
 
   .logo-container::before {
@@ -1203,6 +1243,7 @@ button, a, input, select, textarea {
 
   .company-name {
     font-size: 24px;
+    font-weight: 500;
     margin-bottom: 6px;
     gap: 6px;
   }
@@ -1219,6 +1260,14 @@ button, a, input, select, textarea {
 
   .feature-item {
     min-height: 54px;
+  }
+
+  .feature-item:nth-child(1),
+  .feature-item:nth-child(2),
+  .feature-item:nth-child(3),
+  .feature-item:nth-child(4) {
+    background: white;
+    border: 1px solid #e5e7eb;
   }
 
   .login-right {
@@ -1836,6 +1885,10 @@ button, a, input, select, textarea {
 
   .feature-item span {
     font-size: 12.5px;
+    background-color: white;
+    color: #000000;
+    padding: 4px 8px;
+    border-radius: 4px;
   }
 
   .login-right {
