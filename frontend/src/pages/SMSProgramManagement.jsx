@@ -469,6 +469,17 @@ function SMSProgramManagement() {
     setOpenMenuId(null);
   };
 
+  const handleManageCertificates = (student) => {
+    setSelectedStudent(student);
+    setIsEditing(false);
+    setShowCertificateUpload(true);
+    setCertificateUploadStatus(null);
+    setCertificateFile(null);
+    setCertificateName('');
+    setCertificateType('offerLetter');
+    setOpenMenuId(null);
+  };
+
   const filteredStudents = getFilteredStudents();
 
   return (
@@ -703,6 +714,26 @@ function SMSProgramManagement() {
                               onMouseLeave={(e) => e.target.style.background = 'white'}
                             >
                               View Progress
+                            </button>
+                            <button
+                              onClick={() => handleManageCertificates(student)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                background: 'white',
+                                border: 'none',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#132a5d',
+                                transition: 'background 0.2s',
+                                borderTop: '1px solid #f3f4f6'
+                              }}
+                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                              onMouseLeave={(e) => e.target.style.background = 'white'}
+                            >
+                              Manage Certificates
                             </button>
                             <button
                               onClick={() => handleStatusToggle(student)}
@@ -1064,6 +1095,8 @@ function SMSProgramManagement() {
           onClick={() => {
             setSelectedStudent(null);
             setIsEditing(false);
+            setShowCertificateUpload(false);
+            setCertificateUploadStatus(null);
           }}
         >
           <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -1073,6 +1106,8 @@ function SMSProgramManagement() {
                 onClick={() => {
                   setSelectedStudent(null);
                   setIsEditing(false);
+                  setShowCertificateUpload(false);
+                  setCertificateUploadStatus(null);
                 }}
               >
                 ×
@@ -1469,7 +1504,6 @@ function SMSProgramManagement() {
                     <button
                       onClick={() => setShowCertificateUpload(!showCertificateUpload)}
                       className="profile-btn profile-btn-secondary"
-                      style={{ background: '#3b82f6', borderColor: '#3b82f6', color: 'white' }}
                     >
                       {showCertificateUpload ? 'Hide' : 'Manage Certificates'}
                     </button>
