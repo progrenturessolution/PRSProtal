@@ -235,5 +235,8 @@ router.get('/groups/:id', verifyToken, verifyAdmin, adminController.getStudentGr
 router.patch('/groups/:id', verifyToken, verifyAdmin, adminController.updateStudentGroup);
 router.delete('/groups/:id', verifyToken, verifyAdmin, adminController.deleteStudentGroup);
 
+// Schedule interview
+router.post('/schedule-interview', verifyToken, verifyAdmin, adminController.scheduleInterview);
+
 module.exports = router;
 

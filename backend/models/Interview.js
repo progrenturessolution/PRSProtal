@@ -14,7 +14,17 @@ const interviewSchema = new mongoose.Schema({
   interviewType: {
     type: String,
     required: true,
-    enum: ['HR', 'Technical']
+    enum: ['HR', 'PI', 'Technical']
+  },
+  status: {
+    type: String,
+    enum: ['Scheduled', 'Completed', 'Cancelled'],
+    default: 'Scheduled'
+  },
+  mode: {
+    type: String,
+    enum: ['Individual', 'Group'],
+    default: 'Individual'
   },
   attendanceStatus: {
     type: String,
@@ -24,6 +34,10 @@ const interviewSchema = new mongoose.Schema({
   date: {
     type: Date,
     required: true
+  },
+  startTime: {
+    type: String,
+    default: '09:00'
   },
   attemptNumber: {
     type: Number,
@@ -80,7 +94,7 @@ const interviewSchema = new mongoose.Schema({
   },
   levelCrossed: {
     type: Boolean,
-    required: true
+    default: false
   },
   remarks: {
     type: String,

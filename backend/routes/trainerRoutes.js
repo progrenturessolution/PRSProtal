@@ -18,6 +18,9 @@ router.get('/students', trainerController.getAssignedStudents);
 router.get('/students/:studentId/records', trainerController.getStudentRecords);
 router.patch('/students/:studentId/status', trainerController.updateStudentStatus);
 
+// Get scheduled interviews
+router.get('/scheduled-interviews', trainerController.getScheduledInterviews);
+
 // Add evaluation records
 router.post('/interviews', trainerController.addInterview);
 router.post('/aptitude', trainerController.addAptitude);

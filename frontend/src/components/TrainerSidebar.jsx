@@ -48,13 +48,13 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
           <img src={logo} alt="PRS Portal" className="sidebar-logo" />
         </div>
         <h2>PRS PORTAL</h2>
-        <p>Trainer Portal</p>
+        <p>Employee Portal</p>
       </div>
 
       <div className="sidebar-user-summary">
         <p className="sidebar-user-label">Welcome,</p>
-        <p className="sidebar-user-name">{user?.name || "Trainer"}</p>
-        <p className="sidebar-user-role">Trainer</p>
+        <p className="sidebar-user-name">{user?.name || "Employee"}</p>
+        <p className="sidebar-user-role">Employee</p>
       </div>
 
       <ul className="sidebar-menu">

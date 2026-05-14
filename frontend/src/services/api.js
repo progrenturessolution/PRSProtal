@@ -120,6 +120,9 @@ export const adminAPI = {
     api.post("/admin/certificates/assign", formData, { timeout: 60000 }),
   getCertificates: () => api.get("/admin/certificates"),
   deleteCertificate: (id) => api.delete(`/admin/certificates/${id}`),
+
+  // Schedule interviews
+  scheduleInterview: (data) => api.post("/admin/schedule-interview", data),
 };
 
 // Trainer APIs
@@ -139,6 +142,7 @@ export const trainerAPI = {
     api.patch(`/trainer/tasks/${taskId}/progress`, data),
   updateStudentStatus: (studentId, status) =>
     api.patch(`/trainer/students/${studentId}/status`, { status }),
+  getScheduledInterviews: () => api.get("/trainer/scheduled-interviews"),
 };
 
 // Task APIs
@@ -172,6 +176,7 @@ export const internAPI = {
   getMyGroups: () => api.get("/task/intern/my-groups"),
   updateMyProfile: (data) => api.patch("/task/intern/my-profile", data),
   getMyInterviews: () => api.get("/task/intern/my-interviews"),
+  getMyScheduledInterviews: () => api.get("/task/intern/my-scheduled-interviews"),
   getMyAptitude: () => api.get("/task/intern/my-aptitude"),
   getMyAssessments: () => api.get("/task/intern/my-assessments"),
   getMyTraining: () => api.get("/task/intern/my-training"),

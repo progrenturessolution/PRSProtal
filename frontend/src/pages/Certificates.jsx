@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { adminAPI } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -7,16 +7,28 @@ function Certificates() {
   const [category, setCategory] = useState('All');
   const [selectedStudent, setSelectedStudent] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
+  const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
   const [fileRows, setFileRows] = useState([{ id: 1, name: '', file: null }]);
   const [submitting, setSubmitting] = useState(false);
   const [certs, setCerts] = useState([]);
   const [loadingCerts, setLoadingCerts] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     fetchStudents();
     fetchCerts();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-student-dropdown]')) {
+        setIsStudentDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchStudents = async () => {
@@ -101,6 +113,23 @@ function Certificates() {
     }
   };
 
+  const filterStudentsBySearch = (query) => {
+    let filtered = students;
+    if (category !== 'All') {
+      filtered = filtered.filter(s => s.studentType === category);
+    }
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.name?.toLowerCase().includes(q) ||
+        s.internId?.toLowerCase().includes(q) ||
+        s.email?.toLowerCase().includes(q) ||
+        s.studentType?.toLowerCase().includes(q)
+      );
+    }
+    return filtered;
+  };
+
   const getTimeRemaining = (expiresAt) => {
     const diff = new Date(expiresAt) - new Date();
     if (diff <= 0) return { text: 'Expired', color: '#dc2626', bg: '#fee2e2' };
@@ -125,23 +154,6 @@ function Certificates() {
     marginTop: '2px',
     fontFamily: 'inherit',
   };
-
-  const categoryStudents = students.filter(s => category === 'All' || s.studentType === category);
-  const filteredStudents = categoryStudents.filter((s) => {
-    const q = studentSearch.trim().toLowerCase();
-    if (!q) return true;
-
-    return [
-      s.internId,
-      s.name,
-      s.email,
-      s.studentType,
-      s.phone,
-      s.mobile,
-    ]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(q));
-  });
 
   const selectedStudentObj = students.find((s) => s._id === selectedStudent);
 
@@ -197,73 +209,187 @@ function Certificates() {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>
-                Search & Select Student *
+              <label style={{ display: 'block', marginBottom: '10px', fontWeight: '600', fontSize: '14px', color: '#0f172a' }}>
+                Select Student *
               </label>
-              <input
-                type="text"
-                value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
-                placeholder="Search by Student ID, name, email, type..."
-                style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '2px solid #e2e8f0', fontSize: '14px', background: '#f8fafc', marginBottom: '10px' }}
-              />
+              
+              <div data-student-dropdown style={{ position: 'relative' }}>
+                {/* Dropdown Trigger */}
+                <div
+                  onClick={() => setIsStudentDropdownOpen(!isStudentDropdownOpen)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: '10px',
+                    border: `2px solid ${isStudentDropdownOpen ? '#3b82f6' : '#e2e8f0'}`,
+                    background: '#f8fafc',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.2s',
+                    color: selectedStudent ? '#0f172a' : '#94a3b8'
+                  }}
+                >
+                  <span>
+                    {selectedStudent 
+                      ? `${students.find(s => s._id === selectedStudent)?.internId} - ${students.find(s => s._id === selectedStudent)?.name}`
+                      : 'Search & Select Student...'}
+                  </span>
+                  <span style={{ fontSize: '12px', transition: 'transform 0.2s', transform: isStudentDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>
+                    ▼
+                  </span>
+                </div>
 
-              <div
-                style={{
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '8px',
-                  background: '#f8fafc',
-                  maxHeight: '220px',
-                  overflowY: 'auto',
-                  padding: '8px',
-                }}
-              >
-                {filteredStudents.length === 0 ? (
-                  <div style={{ padding: '10px', color: '#64748b', fontSize: '13px' }}>
-                    No student matches your search.
-                  </div>
-                ) : (
-                  filteredStudents.map((s) => {
-                    const checked = selectedStudent === s._id;
-                    return (
-                      <label
-                        key={s._id}
+                {/* Dropdown List */}
+                {isStudentDropdownOpen && (
+                  <div
+                    data-student-dropdown
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      marginTop: '8px',
+                      background: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '10px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                      zIndex: 1000,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {/* Search Input */}
+                    <div style={{ padding: '12px', borderBottom: '1px solid #f1f5f9' }}>
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        placeholder="Search by ID, name, email..."
                         style={{
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '10px',
-                          padding: '10px 8px',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          background: checked ? '#eef2ff' : 'transparent',
-                          border: checked ? '1px solid #c7d2fe' : '1px solid transparent',
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '13px',
+                          background: '#f8fafc',
+                          outline: 'none'
                         }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => setSelectedStudent(checked ? '' : s._id)}
-                          style={{ marginTop: '2px' }}
-                        />
-                        <div>
-                          <div style={{ ...tableCellStyle, color: '#0f172a' }}>
-                            {s.internId} - {s.name}
-                          </div>
-                          <div style={tableSubTextStyle}>
-                            {s.email} | {s.studentType}
-                          </div>
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* Student List */}
+                    <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                      {filterStudentsBySearch(studentSearch).length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>
+                          No students match your search
                         </div>
-                      </label>
-                    );
-                  })
+                      ) : (
+                        filterStudentsBySearch(studentSearch).map((s) => {
+                          const isSelected = selectedStudent === s._id;
+                          const initials = s.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                          return (
+                            <div
+                              key={s._id}
+                              data-student-dropdown
+                              onClick={() => {
+                                setSelectedStudent(s._id);
+                                setIsStudentDropdownOpen(false);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                padding: '12px 14px',
+                                borderBottom: '1px solid #f1f5f9',
+                                cursor: 'pointer',
+                                background: isSelected ? '#eff6ff' : 'transparent',
+                                transition: 'all 0.2s',
+                                borderLeft: isSelected ? '4px solid #3b82f6' : '4px solid transparent',
+                                paddingLeft: isSelected ? '10px' : '14px'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isSelected) e.currentTarget.style.background = '#f8fafc';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = isSelected ? '#eff6ff' : 'transparent';
+                              }}
+                            >
+                              {/* Avatar */}
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '36px',
+                                  height: '36px',
+                                  borderRadius: '8px',
+                                  background: isSelected ? '#dbeafe' : '#e2e8f0',
+                                  color: isSelected ? '#1e40af' : '#475569',
+                                  fontSize: '12px',
+                                  fontWeight: 700,
+                                  flexShrink: 0
+                                }}
+                              >
+                                {initials}
+                              </div>
+
+                              {/* Student Info */}
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
+                                  {s.internId} - {s.name}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                                  {s.email}
+                                </div>
+                              </div>
+
+                              {/* Type Badge */}
+                              <span
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  background: s.studentType === 'Internship' ? '#dbeafe' : '#fef3c7',
+                                  color: s.studentType === 'Internship' ? '#1e40af' : '#92400e',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {s.studentType}
+                              </span>
+
+                              {/* Checkmark */}
+                              {isSelected && (
+                                <span style={{ fontSize: '18px', color: '#10b981' }}>✓</span>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
 
-              <input type="hidden" value={selectedStudent} required />
-
-              {selectedStudentObj && (
-                <div style={{ marginTop: '8px', fontSize: '13px', color: '#334155', fontWeight: '600' }}>
-                  Selected: {selectedStudentObj.internId} - {selectedStudentObj.name}
+              {/* Selected Summary */}
+              {selectedStudent && (
+                <div
+                  style={{
+                    marginTop: '12px',
+                    padding: '10px 12px',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: '#1e40af'
+                  }}
+                >
+                  ✓ Student selected and ready to assign documents
                 </div>
               )}
             </div>

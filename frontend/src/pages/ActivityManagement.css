@@ -1,0 +1,148 @@
+.activity-page {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color: #0f172a;
+}
+
+.premium-page-header .header-left h1 {
+  font-size: 22px;
+  margin: 0 0 4px 0;
+  color: #0b1220;
+}
+.premium-page-header .header-left .header-subtitle {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.premium-action-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 8px 0 20px 0;
+}
+
+.premium-action-card {
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: box-shadow .18s ease, transform .12s ease;
+  box-shadow: 0 1px 2px rgba(2,6,23,0.04);
+}
+.premium-action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(2,6,23,0.08);
+}
+
+.action-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #eef2ff, #e0f2fe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+.action-card-content {
+  flex: 1;
+  padding-right: 12px;
+}
+.action-card-content h3 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  color: #0b1220;
+}
+.action-card-content p { margin:0; color:#64748b; font-size:13px }
+.action-card-btn {
+  background: #0f172a;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.action-card-btn:hover { opacity: .95 }
+
+.premium-card {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 1px 3px rgba(2,6,23,0.04);
+}
+.premium-card-header { padding: 12px 16px; border-bottom: 1px solid #f1f5f9 }
+.premium-card-header h2 { margin:0; font-size:16px }
+
+.premium-card > div[style] { padding: 12px }
+
+.activity-controls label { display:block; font-size:13px; color:#334155; margin-top:8px }
+.activity-controls input[type="text"], .activity-controls input[type="date"], .activity-controls input[type="time"], .activity-controls select, .activity-controls input[type="number"] {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e6edf3;
+  margin-top:6px;
+  box-sizing: border-box;
+}
+
+.activity-grid { display: grid; grid-template-columns: 1fr 360px; gap: 20px }
+
+.recent-list li { padding: 12px 0; border-bottom: 1px solid #f1f5f9 }
+.recent-list li .meta { color: #64748b; font-size: 13px }
+
+.activity-flow-card { padding: 0; }
+.activity-controls { padding: 12px; display: block }
+.student-list { background: #fff }
+.group-card { background: #fbfdff; border: 1px solid #eef2ff; border-radius: 8px }
+.search-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #e6edf3 }
+.student-row { transition: background .12s ease }
+.student-row:hover { background: #fbfdff }
+.form-row { margin-bottom: 8px }
+
+/* Modal / slide-over */
+.activity-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+.activity-modal {
+  width: 920px;
+  max-width: 96%;
+  max-height: 90vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 20px 60px rgba(2,6,23,0.35);
+  border: 1px solid rgba(15,23,42,0.06);
+}
+
+/* Larger, more prominent action cards layout */
+.premium-action-grid { grid-template-columns: repeat(4, 1fr); }
+.premium-action-card { padding: 18px; }
+.premium-action-card .action-card-content h3 { font-size: 18px }
+.premium-action-card .action-card-btn { padding: 10px 14px }
+
+@media (max-width: 1000px) {
+  .premium-action-grid { grid-template-columns: repeat(2, 1fr) }
+}
+
+table.activity-table { width: 100%; border-collapse: collapse }
+table.activity-table th, table.activity-table td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9 }
+table.activity-table thead th { font-size: 13px; color: #334155 }
+
+.btn-ghost { background: transparent; border: 1px solid #e6edf3; padding: 6px 10px; border-radius: 8px; cursor: pointer }
+.btn-primary { background: #0f172a; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer }
+
+@media (max-width: 1000px) {
+  .premium-action-grid { grid-template-columns: repeat(2, 1fr) }
+  .activity-grid { grid-template-columns: 1fr }
+}

@@ -13,6 +13,7 @@ function InternDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [documents, setDocuments] = useState(null);
   const [interviews, setInterviews] = useState([]);
+  const [scheduledInterviews, setScheduledInterviews] = useState([]);
   const [aptitude, setAptitude] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [trainings, setTrainings] = useState([]);
@@ -176,6 +177,12 @@ function InternDashboard() {
           const intResp = await internAPI.getMyInterviews();
           if (intResp.data && intResp.data.success) {
             setInterviews(intResp.data.interviews || []);
+          }
+          break;
+        case "scheduled-interviews":
+          const schedResp = await internAPI.getMyScheduledInterviews();
+          if (schedResp.data && schedResp.data.success) {
+            setScheduledInterviews(schedResp.data.interviews || []);
           }
           break;
         case "aptitude":
@@ -704,6 +711,13 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Interviews
+          </li>
+          <li
+            className={activeSection === "scheduled-interviews" ? "active" : ""}
+            onClick={() => handleSectionClick("scheduled-interviews")}
+            style={{ cursor: "pointer" }}
+          >
+            Scheduled Interviews
           </li>
           <li
             className={activeSection === "aptitude" ? "active" : ""}
@@ -2009,6 +2023,56 @@ function InternDashboard() {
                             </tr>
                           ))
                         )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Scheduled Interviews Section */}
+        {activeSection === "scheduled-interviews" && (
+          <>
+            <div className="content-header">
+              <h1>Scheduled Interviews</h1>
+              <p>Your upcoming interview schedules</p>
+            </div>
+
+            <div className="card student-history-card">
+              <h2>Upcoming Interviews</h2>
+              {scheduledInterviews.length === 0 ? (
+                <p className="record-history-empty">No scheduled interviews yet</p>
+              ) : (
+                <>
+                  <div className="table-container">
+                    <table className="data-table view-students-table interview-schedule-table">
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Interview Type</th>
+                          <th>Mode</th>
+                          <th>Interviewer</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scheduledInterviews.map((interview) => (
+                          <tr key={interview._id}>
+                            <td>{interview.date ? new Date(interview.date).toLocaleDateString() : "-"}</td>
+                            <td>{interview.startTime || "-"}</td>
+                            <td>{interview.interviewType || "-"}</td>
+                            <td>{interview.mode || "Individual"}</td>
+                            <td>{interview.trainerId?.name || "-"}</td>
+                            <td>
+                              <span className="status-badge status-pending">
+                                {interview.status || "Scheduled"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>

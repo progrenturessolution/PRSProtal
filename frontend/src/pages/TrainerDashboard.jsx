@@ -30,6 +30,7 @@ function TrainerDashboard() {
   const [recordSubmitting, setRecordSubmitting] = useState(false);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [interviews, setInterviews] = useState([]);
+  const [scheduledInterviews, setScheduledInterviews] = useState([]);
   const [aptitudes, setAptitudes] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [trainings, setTrainings] = useState([]);
@@ -134,9 +135,10 @@ function TrainerDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [profileResult, studentsResult] = await Promise.allSettled([
+      const [profileResult, studentsResult, scheduledInterviewsResult] = await Promise.allSettled([
         trainerAPI.getProfile(),
         trainerAPI.getAssignedStudents(),
+        trainerAPI.getScheduledInterviews(),
       ]);
 
       if (profileResult.status === "fulfilled" && profileResult.value.data.success) {
@@ -154,6 +156,10 @@ function TrainerDashboard() {
 
       if (studentsResult.status === "fulfilled" && studentsResult.value.data.success) {
         setStudents(studentsResult.value.data.students || []);
+      }
+
+      if (scheduledInterviewsResult.status === "fulfilled" && scheduledInterviewsResult.value.data.success) {
+        setScheduledInterviews(scheduledInterviewsResult.value.data.interviews || []);
       }
     } catch (error) {
       console.error("Error fetching trainer dashboard data:", error);
@@ -831,6 +837,54 @@ function TrainerDashboard() {
                   >
                     Open
                   </button>
+                </div>
+              </div>
+
+              {/* Scheduled Interviews Section */}
+              <div className="premium-card" style={{ marginTop: "24px" }}>
+                <div className="premium-card-header">
+                  <h2>Upcoming Scheduled Interviews</h2>
+                </div>
+                <div style={{ padding: "16px 20px" }}>
+                  {scheduledInterviews.length === 0 ? (
+                    <p className="record-history-empty">No scheduled interviews yet</p>
+                  ) : (
+                    <div className="table-container">
+                      <table className="data-table view-students-table interview-schedule-table">
+                        <thead>
+                          <tr>
+                            <th>Student Name</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Interview Type</th>
+                            <th>Mode</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scheduledInterviews.slice(0, 5).map((interview) => (
+                            <tr key={interview._id}>
+                              <td>{interview.studentId?.name || "-"}</td>
+                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : "-"}</td>
+                              <td>{interview.startTime || "-"}</td>
+                              <td>{interview.interviewType || "-"}</td>
+                              <td>{interview.mode || "Individual"}</td>
+                              <td>
+                                <span className="status-badge status-pending">
+                                  {interview.status || "Scheduled"}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {scheduledInterviews.length > 5 && (
+                    <div style={{ textAlign: "center", marginTop: "12px" }}>
+                      <small>Showing 5 of {scheduledInterviews.length} scheduled interviews</small>
+                    </div>
+                  )}
                 </div>
               </div>
             </>

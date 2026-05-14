@@ -1014,4 +1014,60 @@ exports.getMyJobPostings = async (req, res) => {
   }
 };
 
+// Get scheduled interviews for trainer
+exports.getScheduledInterviews = async (req, res) => {
+  try {
+    const trainerId = req.user.id;
+    
+    const interviews = await Interview.find({
+      trainerId,
+      status: 'Scheduled'
+    })
+      .populate('studentId', 'name email internId psmsId registrationId')
+      .sort({ date: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: interviews.length,
+      interviews
+    });
+
+  } catch (error) {
+    console.error('Get scheduled interviews error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
+// Get scheduled interviews for intern (student)
+exports.getMyScheduledInterviews = async (req, res) => {
+  try {
+    const studentId = req.user.id;
+
+    const interviews = await Interview.find({
+      studentId,
+      status: 'Scheduled'
+    })
+      .populate('trainerId', 'name email')
+      .sort({ date: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: interviews.length,
+      interviews
+    });
+
+  } catch (error) {
+    console.error('Get my scheduled interviews error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
 module.exports = exports;

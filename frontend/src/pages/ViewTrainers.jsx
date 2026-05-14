@@ -192,9 +192,9 @@ function ViewTrainers() {
         </div>
       </div>
 
-      {/* Trainers Table */}
+      {/* Employees Table */}
       <div className="card">
-        <h3 style={{ marginBottom: "20px" }}>Trainers List</h3>
+        <h3 style={{ marginBottom: "20px" }}>Employees List</h3>
 
         {filteredTrainers.length === 0 ? (
           <div

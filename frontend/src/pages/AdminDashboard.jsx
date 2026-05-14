@@ -16,6 +16,8 @@ import AccessManagement from "./AccessManagement";
 import Reports from "./Reports";
 import ManageRepresentatives from "./ManageRepresentatives";
 import RepresentativePayoutManagement from "./RepresentativePayoutManagement";
+import ActivityManagement from "./ActivityManagement";
+import ActivitiesPanel from "./ActivitiesPanel";
 import GroupManagement from "./GroupManagement";
 import { adminAPI, taskAPI } from "../services/api";
 import logo from "../assets/logo.png";
@@ -539,6 +541,10 @@ function AdminDashboard() {
       case "representative-payout":
         return <RepresentativePayoutManagement key="representative-payout" />;
 
+      case "activity-management":
+        return <ActivityManagement onNavigate={(m) => setActiveMenu(m)} />;
+      case "activities-panel":
+        return <ActivitiesPanel onNavigate={(m) => { setActiveMenu(m); setSidebarOpen(false); }} />;
       default:
         return (
           <div className="content-header">
@@ -896,6 +902,42 @@ function AdminDashboard() {
               />
             </svg>
             reports
+          </li>
+
+          <li
+            className={activeMenu === "activity-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("activity-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Activity Management
+          </li>
+
+          <li
+            className={activeMenu === "activities-panel" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("activities-panel");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6M12 9v6m-9 3h18a2 2 0 002-2V6a2 2 0 00-2-2H3a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Activities
           </li>
         </ul>
 

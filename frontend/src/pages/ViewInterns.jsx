@@ -938,8 +938,8 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
                     <div className="profile-field"><label>Duration</label><div className="field-value">{selectedStudent.duration || "Not set"}</div></div>
                     {selectedStudent.assignedTrainer && (
                       <>
-                        <div className="profile-field"><label>Assigned Trainer</label><div className="field-value">{selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}</div></div>
-                        <div className="profile-field"><label>Trainer Email</label><div className="field-value">{selectedStudent.assignedTrainer.email || "Not available"}</div></div>
+                        <div className="profile-field"><label>Assigned Employee</label><div className="field-value">{selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}</div></div>
+                        <div className="profile-field"><label>Employee Email</label><div className="field-value">{selectedStudent.assignedTrainer.email || "Not available"}</div></div>
                       </>
                     )}
                   </div>

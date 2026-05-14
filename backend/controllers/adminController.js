@@ -2039,6 +2039,79 @@ exports.deleteStudentGroup = async (req, res) => {
   }
 };
 
+// Schedule interview for students
+exports.scheduleInterview = async (req, res) => {
+  try {
+    const {
+      studentIds,
+      trainerId,
+      interviewType,
+      mode,
+      date,
+      startTime,
+      perGap
+    } = req.body;
+
+    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Student IDs required' });
+    }
+
+    if (!trainerId) {
+      return res.status(400).json({ success: false, message: 'Trainer ID required' });
+    }
+
+    if (!interviewType || !date || !startTime) {
+      return res.status(400).json({ success: false, message: 'Interview type, date, and start time required' });
+    }
+
+    const createdInterviews = [];
+    const perGapMinutes = perGap || 15;
+
+    const baseTime = new Date(`${date}T${startTime}:00`);
+
+    for (let idx = 0; idx < studentIds.length; idx++) {
+      const studentId = studentIds[idx];
+      
+      // Calculate slot time for this student
+      const slotTime = new Date(baseTime.getTime() + idx * perGapMinutes * 60000);
+
+      // Get current attempt number for this student
+      const lastInterview = await Interview.findOne({
+        studentId,
+        interviewType,
+        status: 'Completed'
+      }).sort({ attemptNumber: -1 });
+
+      const attemptNumber = lastInterview ? lastInterview.attemptNumber + 1 : 1;
+
+      const interview = new Interview({
+        studentId,
+        trainerId,
+        interviewType,
+        status: 'Scheduled',
+        mode,
+        date: slotTime,
+        startTime: slotTime.toTimeString().slice(0, 5),
+        attemptNumber,
+        levelCrossed: false
+      });
+
+      const saved = await interview.save();
+      createdInterviews.push(saved);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `${createdInterviews.length} interview(s) scheduled successfully`,
+      interviews: createdInterviews
+    });
+  } catch (error) {
+    console.error('Schedule interview error:', error);
+    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+
 
 
 

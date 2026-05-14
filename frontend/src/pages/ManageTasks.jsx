@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { taskAPI } from "../services/api";
 
 function ManageTasks({ onTaskApproved }) {
@@ -16,11 +16,23 @@ function ManageTasks({ onTaskApproved }) {
     description: "",
     deadline: "",
   });
+  const [openActionMenu, setOpenActionMenu] = useState(null);
 
   const adminUser = JSON.parse(localStorage.getItem("user") || "{}");
 
   useEffect(() => {
     fetchTasks();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      // Close menu if clicking outside any action menu button or dropdown
+      if (!e.target.closest('[data-action-menu]')) {
+        setOpenActionMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchTasks = async () => {
@@ -142,6 +154,152 @@ function ManageTasks({ onTaskApproved }) {
       default:
         return "#64748b";
     }
+  };
+
+  const renderActionMenu = (task, isTeamTask) => {
+    const isOpen = openActionMenu === task._id;
+    const menuOptions = [];
+
+    if (isTeamTask) {
+      menuOptions.push({
+        label: "View Team",
+        icon: "👥",
+        action: () => {
+          setExpandedTask(task);
+          setAdminMessage("");
+          setOpenActionMenu(null);
+        },
+      });
+    }
+
+    if (task.status === "Pending Approval") {
+      menuOptions.push({
+        label: "Approve",
+        icon: "✓",
+        action: () => {
+          handleApproveTask(task._id);
+          setOpenActionMenu(null);
+        },
+        className: "approve",
+      });
+    }
+
+    if (task.status !== "Completed") {
+      menuOptions.push({
+        label: "Edit",
+        icon: "✎",
+        action: () => {
+          handleEditTask(task);
+          setOpenActionMenu(null);
+        },
+        className: "edit",
+      });
+      menuOptions.push({
+        label: "Delete",
+        icon: "🗑",
+        action: () => {
+          handleDeleteTask(task._id);
+          setOpenActionMenu(null);
+        },
+        className: "delete",
+      });
+    }
+
+    return (
+      <div
+        data-action-menu
+        style={{
+          position: "relative",
+          display: "inline-block",
+        }}
+      >
+        <button
+          data-action-menu
+          onClick={() => setOpenActionMenu(isOpen ? null : task._id)}
+          style={{
+            padding: "6px 8px",
+            background: isOpen ? "#f1f5f9" : "transparent",
+            border: "1px solid #e2e8f0",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "16px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#64748b",
+            transition: "all 0.2s",
+            fontWeight: "700",
+          }}
+          title="Actions"
+        >
+          ⋯
+        </button>
+
+        {isOpen && (
+          <div
+            data-action-menu
+            style={{
+              position: "absolute",
+              right: 0,
+              top: "100%",
+              marginTop: "6px",
+              background: "white",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
+              minWidth: "180px",
+              zIndex: 1000,
+              overflow: "hidden",
+            }}
+          >
+            {menuOptions.map((option, idx) => (
+              <button
+                key={idx}
+                onClick={option.action}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  width: "100%",
+                  padding: "12px 16px",
+                  background:
+                    option.className === "delete"
+                      ? "transparent"
+                      : "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  color:
+                    option.className === "delete"
+                      ? "#dc2626"
+                      : option.className === "approve"
+                        ? "#10b981"
+                        : option.className === "edit"
+                          ? "#3b82f6"
+                          : "#475569",
+                  textAlign: "left",
+                  transition: "all 0.2s",
+                  borderBottom:
+                    idx < menuOptions.length - 1
+                      ? "1px solid #f1f5f9"
+                      : "none",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f8fafc";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <span style={{ fontSize: "14px" }}>{option.icon}</span>
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const fmt = (d) =>
@@ -377,14 +535,79 @@ function ManageTasks({ onTaskApproved }) {
             </div>
             <table className="data-table">
               <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Task Title</th>
-                  <th>Assigned On</th>
-                  <th>Deadline</th>
-                  <th style={{ textAlign: "center" }}>Team Size</th>
-                  <th>Status</th>
-                  <th style={{ textAlign: "center" }}>Actions</th>
+                <tr style={{
+                  background: '#324158'
+                }}>
+                  <th style={{
+                    background: '#324158',
+                    color: '#ffffff',
+                    padding: "16px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textAlign: "left",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>#</th>
+                  <th style={{
+                    background: '#324158',
+                    color: '#ffffff',
+                    padding: "16px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textAlign: "left",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>Task Title</th>
+                  <th style={{
+                    background: '#324158',
+                    color: '#ffffff',
+                    padding: "16px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textAlign: "left",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>Assigned On</th>
+                  <th style={{
+                    background: '#324158',
+                    color: '#ffffff',
+                    padding: "16px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textAlign: "left",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>Deadline</th>
+                  <th style={{
+                    background: '#324158',
+                    color: '#ffffff',
+                    padding: "16px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textAlign: "center",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>Team Size</th>
+                  <th style={{
+                    background: '#324158',
+                    color: '#ffffff',
+                    padding: "16px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textAlign: "left",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>Status</th>
+                  <th style={{
+                    background: '#324158',
+                    color: '#ffffff',
+                    padding: "16px 12px",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textAlign: "center",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -460,88 +683,12 @@ function ManageTasks({ onTaskApproved }) {
                         {task.status}
                       </span>
                     </td>
-                    <td>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "6px",
-                          justifyContent: "center",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <button
-                          onClick={() => {
-                            setExpandedTask(task);
-                            setAdminMessage("");
-                          }}
-                          style={{
-                            padding: "7px 14px",
-                            background: "#eff6ff",
-                            color: "#2563eb",
-                            border: "1px solid #bfdbfe",
-                            borderRadius: "7px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "700",
-                          }}
-                        >
-                          View Team
-                        </button>
-                        {task.status === "Pending Approval" && (
-                          <button
-                            onClick={() => handleApproveTask(task._id)}
-                            style={{
-                              padding: "7px 14px",
-                              background:
-                                "linear-gradient(135deg,#10b981,#059669)",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "7px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              fontWeight: "700",
-                            }}
-                          >
-                             Approve
-                          </button>
-                        )}
-                        {task.status !== "Completed" && (
-                          <>
-                            <button
-                              onClick={() => handleEditTask(task)}
-                              style={{
-                                padding: "7px 14px",
-                                background:
-                                  "linear-gradient(135deg,#3b82f6,#2563eb)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "7px",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "700",
-                              }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTask(task._id)}
-                              style={{
-                                padding: "7px 14px",
-                                background:
-                                  "linear-gradient(135deg,#ef4444,#dc2626)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "7px",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "700",
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
-                      </div>
+                    <td
+                      style={{
+                        textAlign: "center",
+                      }}
+                    >
+                      {renderActionMenu(task, true)}
                     </td>
                   </tr>
                 ))}
@@ -574,15 +721,64 @@ function ManageTasks({ onTaskApproved }) {
                 </div>
                 <table className="data-table">
                   <thead>
-                    <tr>
-                      <th style={{ width: "22%" }}>Task Details</th>
-                      <th style={{ width: "15%" }}>Assigned To</th>
-                      <th style={{ width: "14%" }}>Deadline</th>
-                      
-                      <th style={{ width: "12%" }}>Status</th>
-                      <th style={{ width: "21%", textAlign: "center" }}>
-                        Actions
-                      </th>
+                    <tr style={{
+                      background: '#324158'
+                    }}>
+                      <th style={{
+                        width: "22%",
+                        background: '#324158',
+                        color: '#ffffff',
+                        padding: "16px 12px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textAlign: "left",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>Task Details</th>
+                      <th style={{
+                        width: "15%",
+                        background: '#324158',
+                        color: '#ffffff',
+                        padding: "16px 12px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textAlign: "left",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>Assigned To</th>
+                      <th style={{
+                        width: "14%",
+                        background: '#324158',
+                        color: '#ffffff',
+                        padding: "16px 12px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textAlign: "left",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>Deadline</th>
+                      <th style={{
+                        width: "12%",
+                        background: '#324158',
+                        color: '#ffffff',
+                        padding: "16px 12px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textAlign: "left",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>Status</th>
+                      <th style={{
+                        width: "21%",
+                        background: '#324158',
+                        color: '#ffffff',
+                        padding: "16px 12px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textAlign: "center",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -655,81 +851,12 @@ function ManageTasks({ onTaskApproved }) {
                             {task.status}
                           </span>
                         </td>
-                        <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "6px",
-                              justifyContent: "center",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {task.status === "Pending Approval" && (
-                              <button
-                                className="approve-btn"
-                                onClick={() => handleApproveTask(task._id)}
-                                style={{
-                                  fontSize: "12px",
-                                  padding: "8px 12px",
-                                  background:
-                                    "linear-gradient(135deg,#10b981,#059669)",
-                                  boxShadow: "0 2px 8px rgba(16,185,129,0.3)",
-                                }}
-                              >
-                                Approve
-                              </button>
-                            )}
-                            {task.status === "Completed" && (
-                              <span
-                                style={{
-                                  color: "#10b981",
-                                  fontWeight: 700,
-                                  fontSize: "13px",
-                                  padding: "8px 12px",
-                                  background: "#d1fae5",
-                                  borderRadius: "8px",
-                                }}
-                              >
-                                Approved
-                              </span>
-                            )}
-                            {task.status !== "Completed" && (
-                              <>
-                                <button
-                                  onClick={() => handleEditTask(task)}
-                                  style={{
-                                    padding: "8px 12px",
-                                    background:
-                                      "linear-gradient(135deg,#3b82f6,#2563eb)",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: 600,
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteTask(task._id)}
-                                  style={{
-                                    padding: "8px 12px",
-                                    background:
-                                      "linear-gradient(135deg,#ef4444,#dc2626)",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    fontSize: "12px",
-                                    fontWeight: 600,
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  Delete
-                                </button>
-                              </>
-                            )}
-                          </div>
+                        <td
+                          style={{
+                            textAlign: "center",
+                          }}
+                        >
+                          {renderActionMenu(task, false)}
                         </td>
                       </tr>
                     ))}
@@ -918,80 +1045,89 @@ function ManageTasks({ onTaskApproved }) {
                     </div>
                   </div>
                   <div
-                    style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
+                    style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}
                   >
-                    {task.status === "Pending Approval" && (
-                      <button
-                        onClick={() => handleApproveTask(task._id)}
-                        style={{
-                          flex: 1,
-                          padding: "12px 16px",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          background: "linear-gradient(135deg,#10b981,#059669)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "10px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Approve Task
-                      </button>
-                    )}
-                    {task.status === "Completed" && (
-                      <div
-                        style={{
-                          flex: 1,
-                          padding: "12px",
-                          fontSize: "13px",
-                          fontWeight: 700,
-                          background: "linear-gradient(135deg,#d1fae5,#a7f3d0)",
-                          color: "#065f46",
-                          borderRadius: "10px",
-                          textAlign: "center",
-                        }}
-                      >
-                        Approved
-                      </div>
-                    )}
-                    {task.status !== "Completed" && (
-                      <>
+                    <div style={{ flex: 1, display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      {task.status === "Pending Approval" && (
                         <button
-                          onClick={() => handleEditTask(task)}
+                          onClick={() => handleApproveTask(task._id)}
                           style={{
-                            flex: 1,
-                            padding: "12px",
-                            background:
-                              "linear-gradient(135deg,#3b82f6,#2563eb)",
+                            flex: "1 1 auto",
+                            minWidth: "120px",
+                            padding: "12px 16px",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            background: "linear-gradient(135deg,#10b981,#059669)",
                             color: "white",
                             border: "none",
                             borderRadius: "10px",
-                            fontSize: "13px",
-                            fontWeight: 600,
                             cursor: "pointer",
                           }}
                         >
-                          Edit
+                          Approve Task
                         </button>
-                        <button
-                          onClick={() => handleDeleteTask(task._id)}
+                      )}
+                      {task.status === "Completed" && (
+                        <div
                           style={{
-                            flex: 1,
+                            flex: "1 1 auto",
+                            minWidth: "120px",
                             padding: "12px",
-                            background:
-                              "linear-gradient(135deg,#ef4444,#dc2626)",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "10px",
                             fontSize: "13px",
-                            fontWeight: 600,
-                            cursor: "pointer",
+                            fontWeight: 700,
+                            background: "linear-gradient(135deg,#d1fae5,#a7f3d0)",
+                            color: "#065f46",
+                            borderRadius: "10px",
+                            textAlign: "center",
                           }}
                         >
-                          Delete
-                        </button>
-                      </>
-                    )}
+                          Approved
+                        </div>
+                      )}
+                      {task.status !== "Completed" && (
+                        <>
+                          <button
+                            onClick={() => handleEditTask(task)}
+                            style={{
+                              flex: "1 1 auto",
+                              minWidth: "100px",
+                              padding: "12px",
+                              background:
+                                "linear-gradient(135deg,#3b82f6,#2563eb)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "10px",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTask(task._id)}
+                            style={{
+                              flex: "1 1 auto",
+                              minWidth: "100px",
+                              padding: "12px",
+                              background:
+                                "linear-gradient(135deg,#ef4444,#dc2626)",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "10px",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    <div style={{ flexShrink: 0 }}>
+                      {renderActionMenu(task, false)}
+                    </div>
                   </div>
                 </div>
               ))}

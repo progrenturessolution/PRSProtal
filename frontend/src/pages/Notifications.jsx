@@ -274,7 +274,7 @@ function Notifications() {
                 }}
               >
                 <option value="Student">Students</option>
-                <option value="Trainer">Trainers</option>
+                <option value="Trainer">Employees</option>
               </select>
             </div>
           )}

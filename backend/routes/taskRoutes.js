@@ -58,6 +58,7 @@ router.get('/intern/my-documents', verifyToken, adminController.getStudentDocume
 
 // Intern: fetch own performance data
 router.get('/intern/my-interviews', verifyToken, trainerController.getMyInterviews);
+router.get('/intern/my-scheduled-interviews', verifyToken, trainerController.getMyScheduledInterviews);
 router.get('/intern/my-aptitude', verifyToken, trainerController.getMyAptitude);
 router.get('/intern/my-assessments', verifyToken, trainerController.getMyAssessments);
 router.get('/intern/my-training', verifyToken, trainerController.getMyTraining);
