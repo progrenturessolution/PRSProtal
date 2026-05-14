@@ -527,7 +527,7 @@ function SMSProgramManagement() {
         <div style={{ marginBottom: '20px' }}>
           <input
             type="text"
-            placeholder="🔍 Search by name, email, ID, designation, payment info..."
+            placeholder="Search by name, email, ID, designation, payment info..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
