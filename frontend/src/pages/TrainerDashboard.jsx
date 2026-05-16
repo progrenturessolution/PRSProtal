@@ -853,7 +853,7 @@ function TrainerDashboard() {
                       <table className="data-table view-students-table interview-schedule-table">
                         <thead>
                           <tr>
-                            <th>Student Name</th>
+                            <th>Student / Group</th>
                             <th>Date</th>
                             <th>Time</th>
                             <th>Interview Type</th>
@@ -864,14 +864,18 @@ function TrainerDashboard() {
                         <tbody>
                           {scheduledInterviews.slice(0, 5).map((interview) => (
                             <tr key={interview._id}>
-                              <td>{interview.studentId?.name || "-"}</td>
-                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : "-"}</td>
-                              <td>{interview.startTime || "-"}</td>
-                              <td>{interview.interviewType || "-"}</td>
-                              <td>{interview.mode || "Individual"}</td>
+                              <td>
+                                {interview.mode === 'Group'
+                                  ? (interview.groupName || 'Group')
+                                  : (interview.studentId?.name || '-')}
+                              </td>
+                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : '-'}</td>
+                              <td>{interview.startTime || '-'}</td>
+                              <td>{interview.interviewType || '-'}</td>
+                              <td>{interview.mode || 'Individual'}</td>
                               <td>
                                 <span className="status-badge status-pending">
-                                  {interview.status || "Scheduled"}
+                                  {interview.status || 'Scheduled'}
                                 </span>
                               </td>
                             </tr>
@@ -888,6 +892,88 @@ function TrainerDashboard() {
                 </div>
               </div>
             </>
+          )}
+
+          {activeTab === "scheduled-individuals" && (
+            <div className="premium-card" style={{ marginTop: "24px" }}>
+              <div className="premium-card-header">
+                <h2>Scheduled — Individual Interviews</h2>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                {scheduledInterviews.filter(s => (s.mode || 'Individual') === 'Individual').length === 0 ? (
+                  <p className="record-history-empty">No individual scheduled interviews yet</p>
+                ) : (
+                  <div className="table-container">
+                    <table className="data-table view-students-table interview-schedule-table">
+                      <thead>
+                        <tr>
+                          <th>Student Name</th>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Interview Type</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scheduledInterviews.filter(s => (s.mode || 'Individual') === 'Individual').map((interview) => (
+                          <tr key={interview._id}>
+                            <td>{interview.studentId?.name || '-'}</td>
+                            <td>{interview.date ? new Date(interview.date).toLocaleDateString() : '-'}</td>
+                            <td>{interview.startTime || '-'}</td>
+                            <td>{interview.interviewType || '-'}</td>
+                            <td>
+                              <span className="status-badge status-pending">{interview.status || 'Scheduled'}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "scheduled-groups" && (
+            <div className="premium-card" style={{ marginTop: "24px" }}>
+              <div className="premium-card-header">
+                <h2>Scheduled — Group Interviews</h2>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                {scheduledInterviews.filter(s => s.mode === 'Group').length === 0 ? (
+                  <p className="record-history-empty">No group scheduled interviews yet</p>
+                ) : (
+                  <div className="table-container">
+                    <table className="data-table view-students-table interview-schedule-table">
+                      <thead>
+                        <tr>
+                          <th>Group</th>
+                          <th>Student</th>
+                          <th>Date</th>
+                          <th>Time</th>
+                          <th>Interview Type</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scheduledInterviews.filter(s => s.mode === 'Group').map((interview) => (
+                          <tr key={interview._id}>
+                            <td>{interview.groupName || (interview.groupId ? 'Group' : '-')}</td>
+                            <td>{interview.studentId?.name || '-'}</td>
+                            <td>{interview.date ? new Date(interview.date).toLocaleDateString() : '-'}</td>
+                            <td>{interview.startTime || '-'}</td>
+                            <td>{interview.interviewType || '-'}</td>
+                            <td>
+                              <span className="status-badge status-pending">{interview.status || 'Scheduled'}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {activeTab === "assignments" && (
