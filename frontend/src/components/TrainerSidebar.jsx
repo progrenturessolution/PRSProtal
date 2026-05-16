@@ -103,6 +103,26 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
           Assign Groups
         </li>
 
+        <li
+          className={activeTab === "scheduled-individuals" ? "active" : ""}
+          onClick={() => handleMenuClick("scheduled-individuals")}
+        >
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v4m0 8v4m8-8h-4M4 12H8" />
+          </svg>
+          Individual Interviews
+        </li>
+
+        <li
+          className={activeTab === "scheduled-groups" ? "active" : ""}
+          onClick={() => handleMenuClick("scheduled-groups")}
+        >
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+          </svg>
+          Group Interviews
+        </li>
+
         
 
         <li

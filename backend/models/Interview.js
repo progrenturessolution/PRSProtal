@@ -11,6 +11,14 @@ const interviewSchema = new mongoose.Schema({
     ref: 'Trainer',
     required: true
   },
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'StudentGroup'
+  },
+  groupName: {
+    type: String,
+    trim: true
+  },
   interviewType: {
     type: String,
     required: true,

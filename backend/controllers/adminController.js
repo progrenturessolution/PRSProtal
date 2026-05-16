@@ -2049,15 +2049,29 @@ exports.scheduleInterview = async (req, res) => {
       mode,
       date,
       startTime,
-      perGap
+      perGap,
+      groupId
     } = req.body;
 
     if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
       return res.status(400).json({ success: false, message: 'Student IDs required' });
     }
 
-    if (!trainerId) {
-      return res.status(400).json({ success: false, message: 'Trainer ID required' });
+    // Allow resolving trainer by name/email when trainerId not provided (some group assignments store names)
+    let resolvedTrainerId = trainerId;
+    if (!resolvedTrainerId && req.body.interviewerName) {
+      const nameOrEmail = String(req.body.interviewerName || '').trim();
+      if (nameOrEmail) {
+        // try to find trainer by exact email or name (case-insensitive)
+        const trainerByEmail = await Trainer.findOne({ email: { $regex: new RegExp(`^${nameOrEmail}$`, 'i') } });
+        const trainerByName = await Trainer.findOne({ name: { $regex: new RegExp(`^${nameOrEmail}$`, 'i') } });
+        const found = trainerByEmail || trainerByName;
+        if (found) resolvedTrainerId = found._id;
+      }
+    }
+
+    if (!resolvedTrainerId) {
+      return res.status(400).json({ success: false, message: 'Trainer ID required (or provide an exact interviewer name/email that matches a trainer)' });
     }
 
     if (!interviewType || !date || !startTime) {
@@ -2084,9 +2098,9 @@ exports.scheduleInterview = async (req, res) => {
 
       const attemptNumber = lastInterview ? lastInterview.attemptNumber + 1 : 1;
 
-      const interview = new Interview({
+      const interviewData = {
         studentId,
-        trainerId,
+        trainerId: resolvedTrainerId,
         interviewType,
         status: 'Scheduled',
         mode,
@@ -2094,7 +2108,21 @@ exports.scheduleInterview = async (req, res) => {
         startTime: slotTime.toTimeString().slice(0, 5),
         attemptNumber,
         levelCrossed: false
-      });
+      };
+
+      // If this scheduling call provided a groupId (group mode), attach it to the interview
+      if (groupId) {
+        interviewData.groupId = groupId;
+        // Try to attach a human-readable groupName to make trainer UI clearer
+        try {
+          const group = await StudentGroup.findById(groupId).select('groupName groupNumber');
+          if (group) interviewData.groupName = group.groupName || group.groupNumber || '';
+        } catch (err) {
+          // ignore group lookup errors; groupName is optional
+        }
+      }
+
+      const interview = new Interview(interviewData);
 
       const saved = await interview.save();
       createdInterviews.push(saved);
