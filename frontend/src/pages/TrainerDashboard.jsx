@@ -4,6 +4,8 @@ import { trainerAPI } from "../services/api";
 import logo from "../assets/logo.png";
 import TrainerSidebar from "../components/TrainerSidebar";
 import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
+import ErrorBoundary from "../components/ErrorBoundary";
+import GdConductModal from "../components/GdConductModal";
 
 function TrainerDashboard() {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ function TrainerDashboard() {
   const [studentSearch, setStudentSearch] = useState("");
   const [openStudentMenuId, setOpenStudentMenuId] = useState(null);
   const [openAssignmentMenuId, setOpenAssignmentMenuId] = useState(null);
+  const [openGdMenuId, setOpenGdMenuId] = useState(null);
   const [groupSearchQuery, setGroupSearchQuery] = useState("");
   const [groupStudentSearch, setGroupStudentSearch] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({});
@@ -31,6 +34,9 @@ function TrainerDashboard() {
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [interviews, setInterviews] = useState([]);
   const [scheduledInterviews, setScheduledInterviews] = useState([]);
+  const [scheduledGds, setScheduledGds] = useState([]);
+  const [selectedGd, setSelectedGd] = useState(null);
+  const [showGdModal, setShowGdModal] = useState(false);
   const [aptitudes, setAptitudes] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [trainings, setTrainings] = useState([]);
@@ -86,6 +92,9 @@ function TrainerDashboard() {
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState("");
+  const [globalError, setGlobalError] = useState(null);
+  const [interviewOnlyMode, setInterviewOnlyMode] = useState(false);
+  
 
 
   useEffect(() => {
@@ -105,9 +114,19 @@ function TrainerDashboard() {
       return;
     }
 
-    setUser(JSON.parse(storedUser));
+    try {
+      setUser(JSON.parse(storedUser));
+    } catch (err) {
+      console.error('Failed to parse stored user', err);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      navigate('/');
+      return;
+    }
+
     setLoading(false); // Show page immediately
-    
+
     // Load data in background
     fetchDashboardData();
   }, [navigate]);
@@ -127,11 +146,33 @@ function TrainerDashboard() {
         }
         setOpenStudentMenuId(null);
       }
+
+      if (openGdMenuId) {
+        if (e.target.closest("[data-gd-menu]") || e.target.closest("[data-gd-menu-toggle]")) {
+          return;
+        }
+        setOpenGdMenuId(null);
+      }
     };
 
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [openAssignmentMenuId, openStudentMenuId]);
+  }, [openAssignmentMenuId, openStudentMenuId, openGdMenuId]);
+
+  useEffect(() => {
+    const onError = (event) => {
+      const message = event?.message || (event?.reason && event.reason.message) || String(event);
+      console.error('Global error captured:', event);
+      setGlobalError({ message, stack: event?.error?.stack || (event?.reason && event.reason.stack) || '' });
+    };
+
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onError);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onError);
+    };
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -161,6 +202,25 @@ function TrainerDashboard() {
       if (scheduledInterviewsResult.status === "fulfilled" && scheduledInterviewsResult.value.data.success) {
         setScheduledInterviews(scheduledInterviewsResult.value.data.interviews || []);
       }
+      
+      // merge scheduled GDs into the view area if any
+      // (we will render both scheduledInterviews and scheduledGds together where appropriate)
+
+      // Also read any locally-persisted scheduled GDs and include those assigned to this trainer
+      try {
+        const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
+        const trainerIdCandidates = [profileResult.status === 'fulfilled' && profileResult.value.data.user?._id, profileResult.status === 'fulfilled' && profileResult.value.data.user?.id, user?._id, user?.id].map(String).filter(Boolean);
+        const myGds = (raw || []).filter(act => {
+          try {
+            const trainerId = act.details?.form?.trainerId || act.details?.form?.interviewer;
+            const interviewerName = act.details?.form?.interviewerName || act.details?.form?.otherInterviewerName;
+            if (trainerId && trainerIdCandidates.includes(String(trainerId))) return true;
+            if (interviewerName && trainerProfile && (String(interviewerName) === String(trainerProfile.name) || String(interviewerName) === String(user?.name))) return true;
+          } catch (e) {}
+          return false;
+        });
+        setScheduledGds(myGds || []);
+      } catch (e) { setScheduledGds([]); }
     } catch (error) {
       console.error("Error fetching trainer dashboard data:", error);
     }
@@ -515,15 +575,34 @@ function TrainerDashboard() {
   };
 
   const openStudentRecords = (student, sourceMenuSetter) => {
-    if (!student?._id) return;
-    clearRecordMessages();
-    setRecordHistorySearch("");
-    setSelectedStudent(student);
-    setSelectedStudentTab("interviews");
-    setActiveTab("student-records");
-    fetchStudentRecords(student._id);
-    if (sourceMenuSetter) {
-      sourceMenuSetter(null);
+    try {
+    // openStudentRecords called
+      if (!student || typeof student !== "object" || !student._id) {
+        console.warn("openStudentRecords: invalid student", student);
+        setRecordError("Invalid student selected");
+        if (sourceMenuSetter) sourceMenuSetter(null);
+        return;
+      }
+
+      // If we opened from Activity Management tabs, force interview-only mode
+      setInterviewOnlyMode(activeTab === "activity-individuals" || activeTab === "activity-groups");
+      clearRecordMessages();
+      setRecordHistorySearch("");
+      setSelectedStudent(student);
+      setSelectedStudentTab("interviews");
+      setActiveTab("student-records");
+      // fetch and handle errors internally
+      fetchStudentRecords(student._id).catch((err) => {
+        console.error("fetchStudentRecords failed for", student._id, err);
+        setRecordError("Failed to load student records");
+      });
+    } catch (err) {
+    console.error("Error in openStudentRecords", err);
+    setRecordError("Something went wrong while opening student records");
+    } finally {
+      if (sourceMenuSetter) {
+        try { sourceMenuSetter(null); } catch (e) { /* ignore */ }
+      }
     }
   };
 
@@ -532,6 +611,45 @@ function TrainerDashboard() {
       ...prev,
       [groupId]: value,
     }));
+  };
+
+  // Helper function to enrich student data with full details from the students array
+  const enrichStudentData = (student) => {
+    if (!student || typeof student !== "object") return student;
+    
+    // If student already has email, mobile, etc., return as-is
+    if (student.email || student.mobile || student.studentType) return student;
+    
+    // Try to find matching student by _id or internId in the students array
+    const studentId = student._id || student.id;
+    const internId = student.internId;
+    
+    let matchedStudent = null;
+    if (studentId) {
+      matchedStudent = (students || []).find(s => s._id === studentId || s.id === studentId);
+    }
+    if (!matchedStudent && internId) {
+      matchedStudent = (students || []).find(s => s.internId === internId);
+    }
+    
+    // If we found a match, merge the data
+    if (matchedStudent) {
+      return {
+        ...student,
+        email: student.email || matchedStudent.email || "-",
+        mobile: student.mobile || matchedStudent.mobile || "-",
+        studentType: student.studentType || matchedStudent.studentType || "-",
+        status: student.status || matchedStudent.status || "-",
+      };
+    }
+    
+    return {
+      ...student,
+      email: student.email || "-",
+      mobile: student.mobile || "-",
+      studentType: student.studentType || "-",
+      status: student.status || "-",
+    };
   };
 
   if (loading) {
@@ -646,9 +764,36 @@ function TrainerDashboard() {
         setActiveTab={setActiveTab} 
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        openConductGd={() => {
+          const gd = {
+            _id: `live-gd-${Date.now()}`,
+            title: 'Live Group Discussion',
+            details: {
+              form: {
+                title: 'Live Group Discussion',
+                date: new Date().toISOString().split('T')[0],
+                startTime: '',
+                groups: trainerProfile?.assignedGroups || []
+              }
+            }
+          };
+          setSelectedGd(gd);
+          setShowGdModal(true);
+        }}
       />
 
+      {globalError && (
+        <div style={{ position: 'fixed', top: 80, right: 20, zIndex: 9999, background: '#fee2e2', color: '#b91c1c', padding: 12, borderRadius: 8, boxShadow: '0 6px 18px rgba(0,0,0,0.12)', maxWidth: 480 }}>
+          <strong>Runtime error:</strong>
+          <div style={{ fontSize: 13, marginTop: 6 }}>{globalError.message}</div>
+          {globalError.stack && <details style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>{globalError.stack}</details>}
+        </div>
+      )}
+
+      
+
       {/* Clean Enterprise Content */}
+      <ErrorBoundary>
       <main className="main-content">
         <div className="dashboard-content">
           {activeTab === "overview" && (
@@ -846,8 +991,8 @@ function TrainerDashboard() {
                   <h2>Upcoming Scheduled Interviews</h2>
                 </div>
                 <div style={{ padding: "16px 20px" }}>
-                  {scheduledInterviews.length === 0 ? (
-                    <p className="record-history-empty">No scheduled interviews yet</p>
+                  {((scheduledInterviews.length === 0) && (scheduledGds.length === 0)) ? (
+                    <p className="record-history-empty">No scheduled interviews or GDs yet</p>
                   ) : (
                     <div className="table-container">
                       <table className="data-table view-students-table interview-schedule-table">
@@ -862,17 +1007,17 @@ function TrainerDashboard() {
                           </tr>
                         </thead>
                         <tbody>
-                          {scheduledInterviews.slice(0, 5).map((interview) => (
-                            <tr key={interview._id}>
+                          {[...scheduledInterviews, ...scheduledGds].slice(0,5).map((interview, idx) => (
+                            <tr key={interview._id || interview.title || idx}>
                               <td>
-                                {interview.mode === 'Group'
-                                  ? (interview.groupName || 'Group')
+                                {(interview.type === 'GD' || interview.details?.form?.groupMode || interview.mode === 'Group')
+                                  ? (interview.title || interview.groupName || 'Group Discussion')
                                   : (interview.studentId?.name || '-')}
                               </td>
-                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : '-'}</td>
-                              <td>{interview.startTime || '-'}</td>
-                              <td>{interview.interviewType || '-'}</td>
-                              <td>{interview.mode || 'Individual'}</td>
+                              <td>{(interview.date || interview.dateTime || interview.details?.form?.date) ? new Date(interview.date || interview.dateTime || interview.details?.form?.date).toLocaleDateString() : '-'}</td>
+                              <td>{interview.startTime || interview.details?.form?.startTime || '-'}</td>
+                              <td>{interview.interviewType || (interview.type === 'GD' ? 'GD' : '-')}</td>
+                              <td>{interview.mode || (interview.type === 'GD' ? 'Group' : 'Individual')}</td>
                               <td>
                                 <span className="status-badge status-pending">
                                   {interview.status || 'Scheduled'}
@@ -933,6 +1078,9 @@ function TrainerDashboard() {
               </div>
             </div>
           )}
+          {showGdModal && selectedGd && (
+            <GdConductModal gd={selectedGd} onClose={() => setShowGdModal(false)} onSave={() => { setShowGdModal(false); fetchDashboardData(); }} />
+          )}
 
           {activeTab === "scheduled-groups" && (
             <div className="premium-card" style={{ marginTop: "24px" }}>
@@ -972,6 +1120,1035 @@ function TrainerDashboard() {
                     </table>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "activity-individuals" && (
+            <>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1 style={{ color: "#324158" }}>Activity Management — Individual Interviews</h1>
+                  <p className="header-subtitle">Conduct interviews for students assigned to you</p>
+                </div>
+              </div>
+
+              <div className="premium-card record-workspace">
+                {(() => {
+                  const q = studentSearch.trim().toLowerCase();
+                  const filteredStudents = students.filter((student) => {
+                    const matchesFilter =
+                      studentFilter === "all" ||
+                      student.status === (studentFilter === "active" ? "active" : "completed");
+                    const matchesSearch =
+                      !q ||
+                      student.name?.toLowerCase().includes(q) ||
+                      student.internId?.toLowerCase().includes(q) ||
+                      student.email?.toLowerCase().includes(q);
+                    return matchesFilter && matchesSearch;
+                  });
+
+                  return filteredStudents.length === 0 ? (
+                    <div className="premium-empty-state">
+                      <div className="empty-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
+                          />
+                        </svg>
+                      </div>
+                      <p className="empty-title">
+                        {q ? `No students match "${studentSearch}"` : "No students assigned"}
+                      </p>
+                      <p className="empty-subtitle">
+                        {q
+                          ? "Try a different name or student ID"
+                          : "Students assigned to you will appear here"}
+                      </p>
+                      {q && (
+                        <button
+                          onClick={() => setStudentSearch("")}
+                          style={{
+                            marginTop: "12px",
+                            padding: "8px 20px",
+                            borderRadius: "6px",
+                            border: "none",
+                            background: "linear-gradient(135deg, #667eea, #764ba2)",
+                            color: "#fff",
+                            cursor: "pointer",
+                            fontSize: "14px",
+                          }}
+                        >
+                          Clear Search
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          padding: "12px 20px",
+                          borderBottom: "1px solid #f3f4f6",
+                          fontSize: "13px",
+                          color: "#6b7280",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: "15px", height: "15px" }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        Showing <strong style={{ color: "#374151" }}>{filteredStudents.length}</strong> of {" "}
+                        <strong style={{ color: "#374151" }}>{students.length}</strong> students
+                        {q && (
+                          <span style={{ marginLeft: "4px" }}>
+                            for <em>"{studentSearch}"</em>
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ overflowX: "auto" }}>
+                        <table className="premium-table view-students-table">
+                          <thead>
+                            <tr>
+                              <th>Student</th>
+                              <th>Student ID</th>
+                              <th>Status</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredStudents.map((student, idx) => {
+                              const isCompleted = student.status === "completed";
+                              const menuId = student._id || `student-${idx}`;
+                              return (
+                                <tr key={student._id || menuId}>
+                                  <td>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                      <div>
+                                        <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "14px" }}>
+                                          {student.name}
+                                        </div>
+                                        {student.email && (
+                                          <div style={{ fontSize: "12px", color: "#9ca3af" }}>{student.email}</div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <span className="mono-text" style={{ fontSize: "13px" }}>{student.internId}</span>
+                                  </td>
+                                  <td>
+                                    <span
+                                      style={{
+                                        display: "inline-block",
+                                        padding: "3px 10px",
+                                        borderRadius: "999px",
+                                        fontSize: "12px",
+                                        fontWeight: "600",
+                                        background: isCompleted ? "#d1fae5" : "#dbeafe",
+                                        color: isCompleted ? "#065f46" : "#1e40af",
+                                      }}
+                                    >
+                                      {isCompleted ? "Completed" : "Active"}
+                                    </span>
+                                  </td>
+                                  <td style={{ position: "relative" }}>
+                                    <button
+                                      data-student-menu-toggle
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                          setOpenStudentMenuId((prev) => (prev === student._id ? null : student._id));
+                                      }}
+                                      style={{
+                                        background: "transparent",
+                                        color: "#0f172a",
+                                        border: "1px solid #d1d5db",
+                                        borderRadius: "8px",
+                                        width: "36px",
+                                        height: "36px",
+                                        cursor: "pointer",
+                                        fontSize: "20px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        lineHeight: 1,
+                                      }}
+                                      aria-label={`Open actions for ${student.name || "student"}`}>
+                                      ⋮
+                                    </button>
+
+                                    {openStudentMenuId === student._id && (
+                                      <div
+                                        data-student-menu
+                                        style={{
+                                          position: "absolute",
+                                          right: 0,
+                                          top: "42px",
+                                          background: "#ffffff",
+                                          border: "1px solid #e5e7eb",
+                                          borderRadius: "12px",
+                                          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                          zIndex: 1000,
+                                          minWidth: "160px",
+                                          overflow: "hidden",
+                                        }}
+                                      >
+                                        <button
+                                          onClick={() => openStudentRecords(student, setOpenStudentMenuId)}
+                                          style={{
+                                            width: "100%",
+                                            padding: "12px 16px",
+                                            background: "#ffffff",
+                                            border: "none",
+                                            textAlign: "left",
+                                            cursor: "pointer",
+                                            fontSize: "14px",
+                                            fontWeight: "500",
+                                            color: "#0f172a",
+                                          }}
+                                          onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                          onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
+                                        >
+                                          Conduct Interview
+                                        </button>
+                                      </div>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </>
+          )}
+
+          {activeTab === "activity-groups" && (
+            <>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>Activity Management — Group Interviews</h1>
+                  <p className="header-subtitle">Conduct interviews for students inside your assigned groups</p>
+                </div>
+              </div>
+
+              <div className="premium-card" style={{ marginBottom: "16px" }}>
+                <div className="premium-card-header">
+                  <h2>Assigned Groups</h2>
+                </div>
+                <div style={{ padding: "0 20px 16px 20px" }}>
+                  <input
+                    type="text"
+                    value={groupSearchQuery}
+                    onChange={(e) => setGroupSearchQuery(e.target.value)}
+                    placeholder="Search groups by name, group number, student name, ID, email..."
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "10px",
+                      fontSize: "14px",
+                      background: "#ffffff",
+                    }}
+                  />
+                </div>
+                {assignedGroups.length === 0 ? (
+                  <div className="premium-empty-state">
+                    <p className="empty-title">No groups assigned yet</p>
+                  </div>
+                ) : filteredAssignedGroups.length === 0 ? (
+                  <div className="premium-empty-state">
+                    <p className="empty-title">No groups match this search</p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    {filteredAssignedGroups.map((group) => {
+                      const groupStudents = Array.isArray(group.students) ? group.students : [];
+                      const groupId = group._id || String(group.groupNumber || group.groupName || "group");
+                      const isExpanded = !!expandedGroups[groupId];
+                      const groupStudentQuery = (groupStudentSearch[groupId] || "").trim().toLowerCase();
+                      const visibleGroupStudents = groupStudents.filter((student) => {
+                        if (!groupStudentQuery) return true;
+                        if (!student || typeof student !== "object") return false;
+                        return [
+                          student.name,
+                          student.internId,
+                          student.email,
+                          student.mobile,
+                          student.studentType,
+                          student.status,
+                        ]
+                          .filter(Boolean)
+                          .some((value) => String(value).toLowerCase().includes(groupStudentQuery));
+                      });
+
+                      return (
+                        <div key={group._id} style={{ marginBottom: "16px", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+                          <div
+                            style={{
+                              padding: "16px",
+                              background: "#f9fafb",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              transition: "all 0.2s ease",
+                              borderBottom: isExpanded ? "1px solid #e5e7eb" : "none",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => handleToggleGroup(groupId)}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
+                              <div>
+                                <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "15px" }}>
+                                  {group.groupName || "Unnamed Group"}
+                                </div>
+                                <div style={{ fontSize: "13px", color: "#9ca3af", marginTop: "2px" }}>
+                                  Group #: {group.groupNumber || "-"}
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "13px", color: "#6b7280" }}>
+                              <span style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: "999px", fontWeight: "600" }}>
+                                {groupStudents.length} Student{groupStudents.length !== 1 ? 's' : ''}
+                              </span>
+                              
+                              <span style={{ color: "#324158", fontSize: "12px", fontWeight: "700" }}>
+                                {isExpanded ? "Hide" : "View"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {isExpanded && (
+                            <div style={{ padding: "16px", background: "#fff" }}>
+                              <div style={{ marginBottom: "12px" }}>
+                                <input
+                                  type="text"
+                                  value={groupStudentSearch[groupId] || ""}
+                                  onChange={(e) => handleGroupStudentSearchChange(groupId, e.target.value)}
+                                  placeholder="Search students in this group by name, ID, email, mobile..."
+                                  style={{
+                                    width: "100%",
+                                    padding: "10px 12px",
+                                    border: "1px solid #d1d5db",
+                                    borderRadius: "8px",
+                                    fontSize: "13px",
+                                    background: "#ffffff",
+                                  }}
+                                />
+                              </div>
+
+                              {groupStudents.length === 0 ? (
+                                <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                                  <p>No students in this group</p>
+                                </div>
+                              ) : visibleGroupStudents.length === 0 ? (
+                                <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                                  <p>No students match this search</p>
+                                </div>
+                              ) : (
+                                <div style={{ overflowX: "auto" }}>
+                                  <table className="data-table view-students-table" style={{ minWidth: "1100px", marginBottom: 0 }}>
+                                    <thead>
+                                      <tr>
+                                        <th style={{ minWidth: "40px", width: "40px" }}>#</th>
+                                        <th style={{ minWidth: "80px", width: "80px" }}>ID</th>
+                                        <th style={{ minWidth: "120px", width: "120px" }}>Student</th>
+                                        <th style={{ minWidth: "150px", width: "150px" }}>Email</th>
+                                        <th style={{ minWidth: "100px", width: "100px" }}>Mobile</th>
+                                        <th style={{ minWidth: "80px", width: "80px" }}>Type</th>
+                                        <th style={{ minWidth: "80px", width: "80px" }}>Status</th>
+                                        <th style={{ minWidth: "60px", width: "60px" }}>Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {visibleGroupStudents.map((student, index) => {
+                                        const isStudentObject = student && typeof student === "object";
+                                        const studentId = isStudentObject ? student._id : String(student || "");
+                                        const menuId = `${group._id || "group"}-${studentId || index}`;
+                                        const studentName = isStudentObject ? student.name : "Unknown";
+                                        const internId = isStudentObject ? student.internId : "-";
+                                        const studentEmail = isStudentObject ? student.email : "-";
+                                        const studentMobile = isStudentObject ? student.mobile : "-";
+                                        const studentType = isStudentObject ? student.studentType : "-";
+                                        const studentStatus = isStudentObject ? student.status : "-";
+                                        return (
+                                          <tr key={studentId}>
+                                            <td>{index + 1}</td>
+                                            <td>{internId}</td>
+                                            <td>{studentName}</td>
+                                            <td><span style={{ wordBreak: "break-word" }}>{studentEmail}</span></td>
+                                            <td>{studentMobile || "-"}</td>
+                                            <td>{studentType}</td>
+                                            <td>
+                                              <span className={`status-badge ${(studentStatus || "").toLowerCase() === "active" ? "status-active" : (studentStatus || "").toLowerCase() === "completed" ? "status-completed" : "status-inactive"}`}>
+                                                {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : "-"}
+                                              </span>
+                                            </td>
+                                            <td style={{ position: "relative" }}>
+                                              <button
+                                                data-assignment-menu-toggle
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                        
+                                                  if (!isStudentObject || !student._id) return;
+                                                  setOpenAssignmentMenuId((prev) => (prev === menuId ? null : menuId));
+                                                }}
+                                                style={{
+                                                  background: "transparent",
+                                                  color: "#0f172a",
+                                                  border: "1px solid #d1d5db",
+                                                  borderRadius: "8px",
+                                                  width: "36px",
+                                                  height: "36px",
+                                                  cursor: !isStudentObject || !student._id ? "not-allowed" : "pointer",
+                                                  fontSize: "20px",
+                                                  display: "flex",
+                                                  alignItems: "center",
+                                                  justifyContent: "center",
+                                                }}
+                                                disabled={!isStudentObject || !student._id}
+                                                aria-label="Open actions"
+                                              >
+                                                ⋮
+                                              </button>
+
+                                              {openAssignmentMenuId === menuId && (
+                                                <div
+                                                  data-assignment-menu
+                                                  style={{
+                                                    position: "absolute",
+                                                    right: 0,
+                                                    top: "42px",
+                                                    background: "white",
+                                                    border: "1px solid #e5e7eb",
+                                                    borderRadius: "12px",
+                                                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                                    zIndex: 1000,
+                                                    minWidth: "160px",
+                                                    overflow: "hidden",
+                                                  }}
+                                                >
+                                                  <button
+                                                    onClick={() => {
+                                                      openStudentRecords(student, setOpenAssignmentMenuId);
+                                                    }}
+                                                    style={{
+                                                      width: "100%",
+                                                      padding: "12px 16px",
+                                                      background: "white",
+                                                      border: "none",
+                                                      textAlign: "left",
+                                                      cursor: "pointer",
+                                                      fontSize: "14px",
+                                                      fontWeight: "500",
+                                                      color: "#0f172a",
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                                                  >
+                                                    Conduct Interview
+                                                  </button>
+                                                </div>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* 'Schedule GD' render removed — trainers use Conduct (activity-groups) view instead */}
+
+          {activeTab === "scheduled-gds" && (
+            <div>
+              <div className="premium-page-header">
+                <div className="header-left">
+                  <h1>Scheduled — Group Discussion</h1>
+                  <p className="header-subtitle">Conduct assigned GDs and record feedback</p>
+                </div>
+              </div>
+
+              <div className="premium-card" style={{ marginTop: 12 }}>
+                <div className="premium-card-header">
+                  <h2>{selectedGd ? (selectedGd.title || 'Group Discussion') : 'Assigned GDs'}</h2>
+                </div>
+                <div style={{ padding: 16 }}>
+                  {!selectedGd ? (
+                    (() => {
+                      // Extract all groups from scheduled GDs (only GDs admin assigned to this trainer)
+                      const allScheduledGdGroups = [];
+                      (scheduledGds || []).forEach((gd) => {
+                        const rawGroups = gd.details?.groups || gd.details?.form?.groups || [];
+                        (rawGroups || []).forEach((group, groupIdx) => {
+                          if (Array.isArray(group)) {
+                            allScheduledGdGroups.push({
+                              id: `gd-${gd._id || gd.title || groupIdx}-group-${groupIdx}`,
+                              groupName: gd.title || gd.details?.form?.title || `GD Group ${groupIdx + 1}`,
+                              groupNumber: groupIdx + 1,
+                              students: group,
+                            });
+                          } else if (group && typeof group === 'object') {
+                            allScheduledGdGroups.push({
+                              id: group._id || `gd-${gd._id || gd.title || groupIdx}-group-${groupIdx}`,
+                              groupName: group.groupName || gd.title || `GD Group ${groupIdx + 1}`,
+                              groupNumber: group.groupNumber || groupIdx + 1,
+                              students: Array.isArray(group.students) ? group.students : (Array.isArray(group.members) ? group.members : []),
+                            });
+                          }
+                        });
+                      });
+
+                      if (allScheduledGdGroups.length === 0) {
+                        return <p className="record-history-empty">No GD groups scheduled for you</p>;
+                      }
+
+                      return (
+                        <div style={{ overflowX: 'auto' }}>
+                          {allScheduledGdGroups.map((group) => {
+                          const groupStudents = Array.isArray(group.students) ? group.students : [];
+                          const groupId = group._id || String(group.groupNumber || group.groupName || Math.random());
+                          const isExpanded = !!expandedGroups[groupId];
+                          const groupStudentQuery = (groupStudentSearch[groupId] || "").trim().toLowerCase();
+                          const visibleGroupStudents = groupStudents.filter((student) => {
+                            if (!groupStudentQuery) return true;
+                            if (!student || typeof student !== "object") return false;
+                            return [
+                              student.name,
+                              student.internId,
+                              student.email,
+                              student.mobile,
+                              student.studentType,
+                              student.status,
+                            ]
+                              .filter(Boolean)
+                              .some((value) => String(value).toLowerCase().includes(groupStudentQuery));
+                          });
+
+                          return (
+                            <div key={groupId} style={{ marginBottom: "16px", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+                              <div
+                                style={{
+                                  padding: "16px",
+                                  background: "#f9fafb",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  transition: "all 0.2s ease",
+                                  borderBottom: isExpanded ? "1px solid #e5e7eb" : "none",
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => handleToggleGroup(groupId)}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
+                                  <div>
+                                    <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "15px" }}>
+                                      {group.groupName || "Unnamed Group"}
+                                    </div>
+                                    <div style={{ fontSize: "13px", color: "#9ca3af", marginTop: "2px" }}>
+                                      Group #: {group.groupNumber || "-"}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "13px", color: "#6b7280" }}>
+                                  <span style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: "999px", fontWeight: "600" }}>
+                                    {groupStudents.length} Student{groupStudents.length !== 1 ? "s" : ""}
+                                  </span>
+                                  <span style={{ color: "#324158", fontSize: "12px", fontWeight: "700" }}>
+                                    {isExpanded ? "Hide" : "View"}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {isExpanded && (
+                                <div style={{ padding: "16px", background: "#fff" }}>
+                                  <div style={{ marginBottom: "12px" }}>
+                                    <input
+                                      type="text"
+                                      value={groupStudentSearch[groupId] || ""}
+                                      onChange={(e) => handleGroupStudentSearchChange(groupId, e.target.value)}
+                                      placeholder="Search students in this group by name, ID, email, mobile..."
+                                      style={{
+                                        width: "100%",
+                                        padding: "10px 12px",
+                                        border: "1px solid #d1d5db",
+                                        borderRadius: "8px",
+                                        fontSize: "13px",
+                                        background: "#ffffff",
+                                      }}
+                                    />
+                                  </div>
+
+                                  {groupStudents.length === 0 ? (
+                                    <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                                      <p>No students in this group</p>
+                                    </div>
+                                  ) : visibleGroupStudents.length === 0 ? (
+                                    <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                                      <p>No students match this search</p>
+                                    </div>
+                                  ) : (
+                                    <div style={{ overflowX: "auto" }}>
+                                      <table className="data-table view-students-table" style={{ minWidth: "1100px", marginBottom: 0 }}>
+                                        <thead>
+                                          <tr>
+                                            <th style={{ minWidth: "40px", width: "40px" }}>#</th>
+                                            <th style={{ minWidth: "80px", width: "80px" }}>ID</th>
+                                            <th style={{ minWidth: "120px", width: "120px" }}>Student</th>
+                                            <th style={{ minWidth: "150px", width: "150px" }}>Email</th>
+                                            <th style={{ minWidth: "100px", width: "100px" }}>Mobile</th>
+                                            <th style={{ minWidth: "80px", width: "80px" }}>Type</th>
+                                            <th style={{ minWidth: "80px", width: "80px" }}>Status</th>
+                                            <th style={{ minWidth: "60px", width: "60px" }}>Actions</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {visibleGroupStudents.map((student, index) => {
+                                            const enrichedStudent = enrichStudentData(student);
+                                            const isStudentObject = enrichedStudent && typeof enrichedStudent === "object";
+                                            const studentId = isStudentObject ? enrichedStudent._id : String(enrichedStudent || "");
+                                            const menuId = `${group._id || "group"}-${studentId || index}`;
+                                            const studentName = isStudentObject ? enrichedStudent.name : "Unknown";
+                                            const internId = isStudentObject ? enrichedStudent.internId : "-";
+                                            const studentEmail = isStudentObject ? enrichedStudent.email : "-";
+                                            const studentMobile = isStudentObject ? enrichedStudent.mobile : "-";
+                                            const studentType = isStudentObject ? enrichedStudent.studentType : "-";
+                                            const studentStatus = isStudentObject ? enrichedStudent.status : "-";
+                                            return (
+                                              <tr key={studentId}>
+                                                <td>{index + 1}</td>
+                                                <td>{internId}</td>
+                                                <td>{studentName}</td>
+                                                <td><span style={{ wordBreak: "break-word" }}>{studentEmail}</span></td>
+                                                <td>{studentMobile || "-"}</td>
+                                                <td>{studentType}</td>
+                                                <td>
+                                                  <span className={`status-badge ${(studentStatus || "").toLowerCase() === "active" ? "status-active" : (studentStatus || "").toLowerCase() === "completed" ? "status-completed" : "status-inactive"}`}>
+                                                    {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : "-"}
+                                                  </span>
+                                                </td>
+                                                <td style={{ position: "relative" }}>
+                                                  <button
+                                                    data-assignment-menu-toggle
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+
+                                                      if (!isStudentObject || !enrichedStudent._id) return;
+                                                      setOpenAssignmentMenuId((prev) => (prev === menuId ? null : menuId));
+                                                    }}
+                                                    style={{
+                                                      background: "transparent",
+                                                      color: "#0f172a",
+                                                      border: "1px solid #d1d5db",
+                                                      borderRadius: "8px",
+                                                      width: "36px",
+                                                      height: "36px",
+                                                      cursor: !isStudentObject || !enrichedStudent._id ? "not-allowed" : "pointer",
+                                                      fontSize: "20px",
+                                                      display: "flex",
+                                                      alignItems: "center",
+                                                      justifyContent: "center",
+                                                    }}
+                                                    disabled={!isStudentObject || !enrichedStudent._id}
+                                                    aria-label="Open actions"
+                                                  >
+                                                    ⋮
+                                                  </button>
+
+                                                  {openAssignmentMenuId === menuId && (
+                                                    <div
+                                                      data-assignment-menu
+                                                      style={{
+                                                        position: "absolute",
+                                                        right: 0,
+                                                        top: "42px",
+                                                        background: "white",
+                                                        border: "1px solid #e5e7eb",
+                                                        borderRadius: "12px",
+                                                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                                        zIndex: 1000,
+                                                        minWidth: "160px",
+                                                        overflow: "hidden",
+                                                      }}
+                                                    >
+                                                      <button
+                                                        onClick={() => {
+                                                          openStudentRecords(enrichedStudent, setOpenAssignmentMenuId);
+                                                        }}
+                                                        style={{
+                                                          width: "100%",
+                                                          padding: "12px 16px",
+                                                          background: "white",
+                                                          border: "none",
+                                                          textAlign: "left",
+                                                          cursor: "pointer",
+                                                          fontSize: "14px",
+                                                          fontWeight: "500",
+                                                          color: "#0f172a",
+                                                        }}
+                                                        onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                                        onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                                                      >
+                                                        Conduct Interview
+                                                      </button>
+                                                    </div>
+                                                  )}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      );
+                    })()
+                  ) : (
+                    <div>
+                      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <strong>Date:</strong> {selectedGd.details?.form?.date || selectedGd.dateTime || '-'} &nbsp; <strong>Time:</strong> {selectedGd.details?.form?.startTime || '-'}
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            onClick={() => setShowGdModal(true)}
+                            style={{
+                              background: 'linear-gradient(135deg, #10b981, #059669)',
+                              color: '#ffffff',
+                              border: 'none',
+                              padding: '10px 16px',
+                              borderRadius: '10px',
+                              cursor: 'pointer',
+                              fontWeight: '600',
+                              boxShadow: '0 8px 18px rgba(16, 185, 129, 0.22)'
+                            }}
+                          >
+                            Conduct GD
+                          </button>
+                          <button
+                            onClick={() => { setSelectedGd(null); }}
+                            style={{
+                              background: '#f8fafc',
+                              color: '#334155',
+                              border: '1px solid #cbd5e1',
+                              padding: '10px 16px',
+                              borderRadius: '10px',
+                              cursor: 'pointer',
+                              fontWeight: '600'
+                            }}
+                          >
+                            Back
+                          </button>
+                        </div>
+                      </div>
+
+                      <div style={{ padding: '0 20px 16px 20px' }}>
+                        <input
+                          type="text"
+                          value={groupSearchQuery}
+                          onChange={(e) => setGroupSearchQuery(e.target.value)}
+                          placeholder="Search GD groups by name, group number, student name, ID, email..."
+                          style={{
+                            width: '100%',
+                            padding: '11px 14px',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '10px',
+                            fontSize: '14px',
+                            background: '#ffffff',
+                          }}
+                        />
+                      </div>
+
+                      {(() => {
+                        const rawGroups = selectedGd.details?.groups || selectedGd.details?.form?.groups || [];
+                        const gdGroups = (rawGroups || []).map((group, index) => {
+                          if (Array.isArray(group)) {
+                            return {
+                              id: `gd-group-${index}`,
+                              groupName: `GD Group ${index + 1}`,
+                              groupNumber: index + 1,
+                              students: group,
+                            };
+                          }
+
+                          if (group && typeof group === 'object') {
+                            return {
+                              id: group._id || `gd-group-${index}`,
+                              groupName: group.groupName || `GD Group ${index + 1}`,
+                              groupNumber: group.groupNumber || index + 1,
+                              students: Array.isArray(group.students)
+                                ? group.students
+                                : Array.isArray(group.members)
+                                  ? group.members
+                                  : [],
+                            };
+                          }
+
+                          return {
+                            id: `gd-group-${index}`,
+                            groupName: `GD Group ${index + 1}`,
+                            groupNumber: index + 1,
+                            students: [],
+                          };
+                        });
+
+                        const gdGroupQuery = (groupSearchQuery || '').trim().toLowerCase();
+                        const filteredGdGroups = gdGroups.filter((group) => {
+                          if (!gdGroupQuery) return true;
+                          return [group.groupName, group.groupNumber, ...(group.students || []).flatMap((student) => {
+                            if (!student || typeof student !== 'object') return [];
+                            return [student.name, student.internId, student.email, student.mobile, student.studentType, student.status];
+                          })]
+                            .filter(Boolean)
+                            .some((value) => String(value).toLowerCase().includes(gdGroupQuery));
+                        });
+
+                        if (gdGroups.length === 0) {
+                          return (
+                            <div className="premium-empty-state">
+                              <p className="empty-title">No GD groups found</p>
+                            </div>
+                          );
+                        }
+
+                        if (filteredGdGroups.length === 0) {
+                          return (
+                            <div className="premium-empty-state">
+                              <p className="empty-title">No GD groups match this search</p>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div style={{ overflowX: 'auto' }}>
+                            {filteredGdGroups.map((group) => {
+                              const groupStudents = Array.isArray(group.students) ? group.students : [];
+                              const groupId = group.id;
+                              const isExpanded = !!expandedGroups[groupId];
+                              const groupStudentQuery = (groupStudentSearch[groupId] || '').trim().toLowerCase();
+                              const visibleGroupStudents = groupStudents.filter((student) => {
+                                if (!groupStudentQuery) return true;
+                                if (!student || typeof student !== 'object') return false;
+                                return [student.name, student.internId, student.email, student.mobile, student.studentType, student.status]
+                                  .filter(Boolean)
+                                  .some((value) => String(value).toLowerCase().includes(groupStudentQuery));
+                              });
+
+                              return (
+                                <div key={group.id} style={{ marginBottom: '16px', border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
+                                  <div
+                                    style={{
+                                      padding: '16px',
+                                      background: '#f9fafb',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      transition: 'all 0.2s ease',
+                                      borderBottom: isExpanded ? '1px solid #e5e7eb' : 'none',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => handleToggleGroup(groupId)}
+                                  >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+                                      <div>
+                                        <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '15px' }}>
+                                          {group.groupName || 'GD Group'}
+                                        </div>
+                                        <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '2px' }}>
+                                          Group #: {group.groupNumber || '-'}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px', color: '#6b7280' }}>
+                                      <span style={{ background: '#dbeafe', color: '#1e40af', padding: '4px 12px', borderRadius: '999px', fontWeight: '600' }}>
+                                        {groupStudents.length} Student{groupStudents.length !== 1 ? 's' : ''}
+                                      </span>
+                                      <span style={{ color: '#324158', fontSize: '12px', fontWeight: '700' }}>
+                                        {isExpanded ? 'Hide' : 'View'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {isExpanded && (
+                                    <div style={{ padding: '16px', background: '#fff' }}>
+                                      <div style={{ marginBottom: '12px' }}>
+                                        <input
+                                          type="text"
+                                          value={groupStudentSearch[groupId] || ''}
+                                          onChange={(e) => handleGroupStudentSearchChange(groupId, e.target.value)}
+                                          placeholder="Search students in this GD group by name, ID, email, mobile..."
+                                          style={{
+                                            width: '100%',
+                                            padding: '10px 12px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '8px',
+                                            fontSize: '13px',
+                                            background: '#ffffff',
+                                          }}
+                                        />
+                                      </div>
+
+                                      {groupStudents.length === 0 ? (
+                                        <div style={{ textAlign: 'center', color: '#9ca3af', padding: '20px' }}>
+                                          <p>No students in this GD group</p>
+                                        </div>
+                                      ) : visibleGroupStudents.length === 0 ? (
+                                        <div style={{ textAlign: 'center', color: '#9ca3af', padding: '20px' }}>
+                                          <p>No students match this search</p>
+                                        </div>
+                                      ) : (
+                                        <div style={{ overflowX: 'auto' }}>
+                                          <table className="data-table view-students-table" style={{ minWidth: '920px', marginBottom: 0 }}>
+                                            <thead>
+                                              <tr>
+                                                <th>#</th>
+                                                <th>ID</th>
+                                                <th>Student</th>
+                                                <th>Email</th>
+                                                <th>Mobile</th>
+                                                <th>Type</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {visibleGroupStudents.map((student, index) => {
+                                                const isStudentObject = student && typeof student === 'object';
+                                                const studentId = isStudentObject ? student._id : String(student || '');
+                                                const menuId = `${group.id || 'gd-group'}-${studentId || index}`;
+                                                const studentName = isStudentObject ? student.name : 'Unknown';
+                                                const internId = isStudentObject ? student.internId : '-';
+                                                const studentEmail = isStudentObject ? student.email : '-';
+                                                const studentMobile = isStudentObject ? student.mobile : '-';
+                                                const studentType = isStudentObject ? student.studentType : '-';
+                                                const studentStatus = isStudentObject ? student.status : '-';
+                                                return (
+                                                  <tr key={studentId}>
+                                                    <td>{index + 1}</td>
+                                                    <td>{internId}</td>
+                                                    <td>{studentName}</td>
+                                                    <td><span style={{ wordBreak: 'break-word' }}>{studentEmail}</span></td>
+                                                    <td>{studentMobile || '-'}</td>
+                                                    <td>{studentType}</td>
+                                                    <td>
+                                                      <span className={`status-badge ${(studentStatus || '').toLowerCase() === 'active' ? 'status-active' : (studentStatus || '').toLowerCase() === 'completed' ? 'status-completed' : 'status-inactive'}`}>
+                                                        {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : '-'}
+                                                      </span>
+                                                    </td>
+                                                    <td style={{ position: 'relative' }}>
+                                                      <button
+                                                        data-assignment-menu-toggle
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+
+                                                          if (!isStudentObject || !student._id) return;
+                                                          setOpenAssignmentMenuId((prev) => (prev === menuId ? null : menuId));
+                                                        }}
+                                                        style={{
+                                                          background: 'transparent',
+                                                          color: '#0f172a',
+                                                          border: '1px solid #d1d5db',
+                                                          borderRadius: '8px',
+                                                          width: '36px',
+                                                          height: '36px',
+                                                          cursor: !isStudentObject || !student._id ? 'not-allowed' : 'pointer',
+                                                          fontSize: '20px',
+                                                          display: 'flex',
+                                                          alignItems: 'center',
+                                                          justifyContent: 'center',
+                                                        }}
+                                                        disabled={!isStudentObject || !student._id}
+                                                        aria-label="Open actions"
+                                                      >
+                                                        ⋮
+                                                      </button>
+
+                                                      {openAssignmentMenuId === menuId && (
+                                                        <div
+                                                          data-assignment-menu
+                                                          style={{
+                                                            position: 'absolute',
+                                                            right: 0,
+                                                            top: '42px',
+                                                            background: 'white',
+                                                            border: '1px solid #e5e7eb',
+                                                            borderRadius: '12px',
+                                                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                                                            zIndex: 1000,
+                                                            minWidth: '160px',
+                                                            overflow: 'hidden',
+                                                          }}
+                                                        >
+                                                          <button
+                                                            onClick={() => {
+                                                              openStudentRecords(student, setOpenAssignmentMenuId);
+                                                            }}
+                                                            style={{
+                                                              width: '100%',
+                                                              padding: '12px 16px',
+                                                              background: 'white',
+                                                              border: 'none',
+                                                              textAlign: 'left',
+                                                              cursor: 'pointer',
+                                                              fontSize: '14px',
+                                                              fontWeight: '500',
+                                                              color: '#0f172a',
+                                                            }}
+                                                            onMouseEnter={(e) => (e.currentTarget.style.background = '#f9fafb')}
+                                                            onMouseLeave={(e) => (e.currentTarget.style.background = 'white')}
+                                                          >
+                                                            Conduct Interview
+                                                          </button>
+                                                        </div>
+                                                      )}
+                                                    </td>
+                                                  </tr>
+                                                );
+                                              })}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1241,26 +2418,47 @@ function TrainerDashboard() {
                                                   overflow: "hidden",
                                                 }}
                                               >
-                                                <button
-                                                  onClick={() => {
-                                                    openStudentRecords(student, setOpenAssignmentMenuId);
-                                                  }}
-                                                  style={{
-                                                    width: "100%",
-                                                    padding: "12px 16px",
-                                                    background: "white",
-                                                    border: "none",
-                                                    textAlign: "left",
-                                                    cursor: "pointer",
-                                                    fontSize: "14px",
-                                                    fontWeight: "500",
-                                                    color: "#0f172a",
-                                                  }}
-                                                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-                                                  onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
-                                                >
-                                                  View Details
-                                                </button>
+                                                {activeTab === "activity-individuals" || activeTab === "activity-groups" ? (
+                                                  <button
+                                                    onClick={() => openStudentRecords(student, setOpenAssignmentMenuId)}
+                                                    style={{
+                                                      width: "100%",
+                                                      padding: "12px 16px",
+                                                      background: "white",
+                                                      border: "none",
+                                                      textAlign: "left",
+                                                      cursor: "pointer",
+                                                      fontSize: "14px",
+                                                      fontWeight: "500",
+                                                      color: "#0f172a",
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                                                  >
+                                                    Conduct Interview
+                                                  </button>
+                                                ) : (
+                                                  <button
+                                                    onClick={() => {
+                                                      openStudentRecords(student, setOpenAssignmentMenuId);
+                                                    }}
+                                                    style={{
+                                                      width: "100%",
+                                                      padding: "12px 16px",
+                                                      background: "white",
+                                                      border: "none",
+                                                      textAlign: "left",
+                                                      cursor: "pointer",
+                                                      fontSize: "14px",
+                                                      fontWeight: "500",
+                                                      color: "#0f172a",
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                                                  >
+                                                    View Details
+                                                  </button>
+                                                )}
                                               </div>
                                             )}
                                           </td>
@@ -1749,6 +2947,7 @@ function TrainerDashboard() {
                       studentId={selectedStudent._id}
                       activeTab={currentStudentTab}
                       studentInfo={selectedStudent}
+                      interviewOnly={interviewOnlyMode}
                       onTabChange={(tabKey) => {
                         setSelectedStudentTab(tabKey);
                         setRecordHistorySearch("");
@@ -2711,6 +3910,7 @@ function TrainerDashboard() {
           )}
         </div>
       </main>
+      </ErrorBoundary>
     </div>
   );
 }

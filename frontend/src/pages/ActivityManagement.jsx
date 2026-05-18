@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { adminAPI } from "../services/api";
 import "./ActivityManagement.css";
 
@@ -86,8 +86,10 @@ export default function ActivityManagement({ onNavigate }) {
         const [search, setSearch] = useState('');
 
         const [gdStep, setGdStep] = useState(1);
-        const [gdForm, setGdForm] = useState({ title: '', date: '', startTime: '09:00', groupMode: 'Auto', groupSize: 5 });
+        const [gdForm, setGdForm] = useState({ title: '', date: '', startTime: '09:00', groupMode: 'Auto', groupSize: 5, interviewer: '', otherInterviewerName: '' });
         const [gdGroups, setGdGroups] = useState([]);
+        const [gdSelectedGroups, setGdSelectedGroups] = useState([]);
+        const gdTitleRef = useRef(null);
 
         const [assessStep, setAssessStep] = useState(1);
         const [assessForm, setAssessForm] = useState({ type: 'Technical', title: '', description: '', date: '', time: '09:00', duration: 60, link: '' });
@@ -174,12 +176,37 @@ export default function ActivityManagement({ onNavigate }) {
         }
 
         function saveGd() {
+          // Prepare interviewer info similar to interview flow
+          let trainerId = null;
+          let interviewerName = null;
+          if (gdForm.interviewer && gdForm.interviewer !== '__other') {
+            trainerId = gdForm.interviewer;
+            const selectedTrainer = trainers.find(t => String(t.id) === String(gdForm.interviewer));
+            interviewerName = selectedTrainer ? selectedTrainer.name : null;
+          } else if (gdForm.interviewer === '__other') {
+            interviewerName = gdForm.otherInterviewerName || null;
+          }
+
           // Attempt backend call (not implemented in every API) then update UI
-          const activity = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: `${gdForm.date} ${gdForm.startTime}`, createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'Admin', status: 'Scheduled', details: { form: gdForm, groups: gdGroups } };
+          const activity = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: `${gdForm.date} ${gdForm.startTime}`, createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'Admin', status: 'Scheduled', details: { form: { ...gdForm, trainerId, interviewerName }, groups: gdGroups } };
+
+          // Validate interviewer when backend present (mirror interview flow)
+          if (adminAPI && adminAPI.createGd && !trainerId && !interviewerName) {
+            alert('Please select or enter an interviewer before scheduling the GD.');
+            return;
+          }
+
           // If backend API exists, call it (placeholder)
           if (adminAPI && adminAPI.createGd) {
-            adminAPI.createGd({ ...gdForm, groups: gdGroups }).then(() => { pushActivity(activity); }).catch(() => { pushActivity(activity); });
+            adminAPI.createGd({ ...gdForm, groups: gdGroups, trainerId, interviewerName }).then(() => { pushActivity(activity); }).catch(() => { pushActivity(activity); });
           } else pushActivity(activity);
+          // Also persist a lightweight scheduled GD to localStorage so other connected clients (interns/trainers) can pick it up when the backend integration is missing.
+          try {
+            const existing = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
+            existing.unshift(activity);
+            localStorage.setItem('scheduledGDs', JSON.stringify(existing.slice(0, 200)));
+          } catch (e) { /* ignore storage errors */ }
+
           setActiveFlow(null); setModalOpen(false); setGdStep(1); setGdGroups([]);
         }
 
@@ -188,7 +215,7 @@ export default function ActivityManagement({ onNavigate }) {
           if (adminAPI && adminAPI.createAssessment) {
             adminAPI.createAssessment({ ...assessForm, assigned: assessSelected }).then(() => pushActivity(activity)).catch(() => pushActivity(activity));
           } else pushActivity(activity);
-          setActiveFlow(null); setModalOpen(false); setAssessStep(1); setAssessSelected([]);
+          setActiveFlow(null); setModalOpen(false); setAssessStep(1); setAssessSelected([]); setAssessForm({ type: 'Technical', title: '', description: '', date: '', time: '09:00', duration: 60, link: '' }); setSearch('');
         }
 
         /* --- New visual components inside the file --- */
@@ -291,6 +318,12 @@ export default function ActivityManagement({ onNavigate }) {
         /* Minimal flow modal content placeholder — opens existing flows when requested */
         function FlowModal({ flow }) {
           if (!flow) return null;
+          useEffect(() => {
+            if (flow === 'gd' && modalOpen && gdStep === 1 && gdTitleRef && gdTitleRef.current) {
+              try { gdTitleRef.current.focus(); } catch (e) {}
+            }
+          }, [flow, modalOpen, gdStep]);
+
           return (
             <div className="nm-modal">
               <div className="nm-modal-header">
@@ -476,48 +509,138 @@ export default function ActivityManagement({ onNavigate }) {
                   <div>
                     {gdStep === 1 && (
                       <div>
-                        <label>GD Title</label>
-                        <input value={gdForm.title} onChange={e => setGdForm(f => ({ ...f, title: e.target.value }))} />
-                        <label>Date</label>
-                        <input type="date" value={gdForm.date} onChange={e => setGdForm(f => ({ ...f, date: e.target.value }))} />
-                        <label>Start Time</label>
-                        <input type="time" value={gdForm.startTime} onChange={e => setGdForm(f => ({ ...f, startTime: e.target.value }))} />
-                        <label>Group Mode</label>
-                        <select value={gdForm.groupMode} onChange={e => setGdForm(f => ({ ...f, groupMode: e.target.value }))}>
-                          <option value="Auto">Auto Group</option>
-                          <option value="Manual">Manual</option>
-                        </select>
-                        {gdForm.groupMode === 'Auto' && (
-                          <>
-                            <label>Group Size</label>
-                            <input type="number" value={gdForm.groupSize} onChange={e => setGdForm(f => ({ ...f, groupSize: Number(e.target.value) }))} />
-                            <div style={{ marginTop:12 }}><button className="nm-btn-primary" onClick={() => createGdGroups()}>Generate Groups</button></div>
-                          </>
-                        )}
-                        {gdForm.groupMode === 'Manual' && (
-                          <>
-                            <p>Select students and click <strong>Create Group</strong></p>
-                            <div style={{ maxHeight:200, overflow:'auto' }}>
-                              {students.map(s => (
-                                <div key={s.id} style={{ display:'flex', justifyContent:'space-between', padding:6 }}>
-                                  <div>{s.name} • {s.psmsId}</div>
-                                  <div><input type="checkbox" checked={selectedStudents.includes(s.id)} onChange={() => toggleStudent(s.id)} /></div>
-                                </div>
-                              ))}
+                        <div className="nm-form-grid">
+                          <div className="nm-form-row">
+                            <label>GD Title</label>
+                            <input
+                              ref={gdTitleRef}
+                              value={gdForm.title}
+                              onChange={e => setGdForm(f => ({ ...f, title: e.target.value }))}
+                              onMouseDown={e => e.stopPropagation()}
+                              onClick={e => e.stopPropagation()}
+                              onKeyDown={e => e.stopPropagation()}
+                              onKeyUp={e => e.stopPropagation()}
+                              onBlur={() => { /* keep default behavior; focus will be restored if lost unexpectedly */ }}
+                            />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Date</label>
+                            <input type="date" value={gdForm.date} onChange={e => setGdForm(f => ({ ...f, date: e.target.value }))} />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Start Time</label>
+                            <input type="time" value={gdForm.startTime} onChange={e => setGdForm(f => ({ ...f, startTime: e.target.value }))} />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Group Mode</label>
+                            <select value={gdForm.groupMode} onChange={e => setGdForm(f => ({ ...f, groupMode: e.target.value }))}>
+                              <option value="Auto">Auto Group</option>
+                              <option value="Manual">Manual</option>
+                            </select>
+                          </div>
+
+                          {gdForm.groupMode === 'Auto' && (
+                            <div className="nm-form-row">
+                              <label>Group Size</label>
+                              <input type="number" value={gdForm.groupSize} onChange={e => setGdForm(f => ({ ...f, groupSize: Number(e.target.value) }))} />
                             </div>
-                            <div style={{ marginTop:8 }}>
-                              <button className="nm-btn-primary" onClick={() => { if (selectedStudents.length){ const groupMembers = students.filter(x => selectedStudents.includes(x.id)); setGdGroups(prev=>[...prev, groupMembers]); setSelectedStudents([]); setGdStep(4); } }}>Create Group</button>
+                          )}
+
+                          <div className="nm-form-row">
+                            <label>Interviewer</label>
+                            <select value={gdForm.interviewer} onChange={e => setGdForm(f => ({ ...f, interviewer: e.target.value }))}>
+                              <option value="">Select interviewer</option>
+                              {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                              <option value="__other">Other...</option>
+                            </select>
+                          </div>
+                          {gdForm.interviewer === '__other' && (
+                            <div className="nm-form-row">
+                              <label>Interviewer Name</label>
+                              <input value={gdForm.otherInterviewerName} onChange={e => setGdForm(f => ({ ...f, otherInterviewerName: e.target.value }))} placeholder="Enter interviewer name" />
                             </div>
-                          </>
-                        )}
+                          )}
+
+                          {gdForm.groupMode === 'Manual' && (
+                            <div className="nm-form-row" style={{ gridColumn: '1 / -1' }}>
+                              <label>Select Existing Groups</label>
+                              <div style={{ maxHeight:200, overflow:'auto', border:'1px solid #eef6ff', padding:8, borderRadius:6 }}>
+                                {groups.length === 0 && <div className="nm-muted">No groups found. Create groups in Group Management first.</div>}
+                                {groups.map(g => {
+                                  const gid = g._id||g.id;
+                                  const label = g.groupName||g.name||g.title||g.groupNumber||`Group ${gid}`;
+                                  return (
+                                    <div key={gid} style={{ display:'flex', justifyContent:'space-between', padding:6 }}>
+                                      <div>{label} <small style={{opacity:0.7}}>({Array.isArray(g.students)?g.students.length: (Array.isArray(g.studentIds)?g.studentIds.length:0)} members)</small></div>
+                                      <div><input type="checkbox" checked={gdSelectedGroups.map(String).includes(String(gid))} onChange={() => {
+                                        setGdSelectedGroups(prev => prev.map(String).includes(String(gid)) ? prev.filter(x=>String(x)!==String(gid)) : [...prev, gid]);
+                                      }} /></div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="nm-form-actions">
+                          <button className="nm-btn-ghost" onClick={() => setGdStep(1)}>← Back</button>
+                          {gdForm.groupMode === 'Auto' ? (
+                            <button className="nm-btn-primary" onClick={() => createGdGroups()}>Generate Groups</button>
+                          ) : (
+                            <button className="nm-btn-primary" onClick={() => {
+                              if (gdSelectedGroups.length){
+                                const created = gdSelectedGroups.map(gid => {
+                                  const g = groups.find(x => String(x._id||x.id) === String(gid));
+                                  let members = [];
+                                  if (g) {
+                                    if (Array.isArray(g.students) && g.students.length) {
+                                      members = g.students.map(s => {
+                                        if (typeof s === 'object') return { id: s._id||s.id, name: s.name||s.fullName||s.email||String(s._id||s.id), psmsId: s.internId||s.psmsId||s.registrationId||s.mobile||'' };
+                                        const found = students.find(st => String(st.id) === String(s));
+                                        return found ? { id: found.id, name: found.name, psmsId: found.psmsId } : { id: s, name: String(s), psmsId: '' };
+                                      });
+                                    } else if (Array.isArray(g.studentIds) && g.studentIds.length) {
+                                      members = g.studentIds.map(id => {
+                                        const found = students.find(st => String(st.id) === String(id));
+                                        return found ? { id: found.id, name: found.name, psmsId: found.psmsId } : { id, name: String(id), psmsId: '' };
+                                      });
+                                    }
+                                  }
+                                  return members;
+                                }).filter(Boolean);
+                                setGdGroups(created);
+                                setGdSelectedGroups([]);
+                                setGdStep(4);
+                              } else alert('Select at least one group to include in GD');
+                            }}>Create Group</button>
+                          )}
+                        </div>
                       </div>
                     )}
 
                     {gdStep === 4 && (
                       <div>
                         <h4>Preview Groups</h4>
-                        {gdGroups.map((g, idx) => (<div key={idx} style={{ padding:8, borderBottom:'1px solid #f1f5f9' }}><strong>Group {idx+1}</strong><ul>{g.map(s => <li key={s.id}>{s.name}</li>)}</ul></div>))}
-                        <div style={{ marginTop:12 }}><button className="nm-btn-primary" onClick={() => saveGd()}>Save & Notify</button></div>
+                        <div style={{ maxHeight: 320, overflow:'auto', borderTop:'1px solid #f1f5f9', marginTop:8 }}>
+                          {gdGroups.length === 0 && <div className="nm-muted">No groups created yet.</div>}
+                          {gdGroups.map((g, idx) => (
+                            <div key={idx} style={{ padding:8, borderBottom:'1px solid #f1f5f9' }}>
+                              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                                <strong>Group {idx+1}</strong>
+                                <div>{g.length} members</div>
+                              </div>
+                              <ul style={{ marginTop:8 }}>{g.map(s => <li key={s.id}>{s.name}</li>)}</ul>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="nm-form-actions">
+                          <button className="nm-btn-ghost" onClick={() => setGdStep(1)}>← Back</button>
+                          <button className="nm-btn-primary" onClick={() => saveGd()}>Save & Notify</button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -527,42 +650,151 @@ export default function ActivityManagement({ onNavigate }) {
                   <div>
                     {assessStep === 1 && (
                       <div>
-                        <label>Type</label>
-                        <select value={assessForm.type} onChange={e => setAssessForm(f => ({ ...f, type: e.target.value }))}><option>Technical</option><option>Coding</option><option>Aptitude</option><option>Other</option></select>
-                        <label>Title</label>
-                        <input value={assessForm.title} onChange={e => setAssessForm(f => ({ ...f, title: e.target.value }))} />
-                        <label>Date</label>
-                        <input type="date" value={assessForm.date} onChange={e => setAssessForm(f => ({ ...f, date: e.target.value }))} />
-                        <label>Assign To</label>
-                        <select onChange={e => { const v = e.target.value; if (v === '__group'){ setAssessSelected([]); } else { setAssessSelected([]); } }}>
-                          <option value="__individual">Individual Students</option>
-                          <option value="__group">Group / Batch</option>
-                        </select>
-                        <div style={{ marginTop:12 }}><button className="nm-btn-primary" onClick={() => setAssessStep(2)}>Next → Select Students</button></div>
+                        <div className="nm-form-grid">
+                          <div className="nm-form-row">
+                            <label>Assessment Type</label>
+                            <select value={assessForm.type} onChange={e => setAssessForm(f => ({ ...f, type: e.target.value }))}>
+                              <option value="Technical">Technical</option>
+                              <option value="Coding">Coding</option>
+                              <option value="Aptitude">Aptitude</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Assessment Title</label>
+                            <input 
+                              value={assessForm.title} 
+                              onChange={e => setAssessForm(f => ({ ...f, title: e.target.value }))} 
+                              placeholder="e.g., Technical Round 1"
+                            />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Description</label>
+                            <textarea 
+                              value={assessForm.description} 
+                              onChange={e => setAssessForm(f => ({ ...f, description: e.target.value }))} 
+                              placeholder="Assessment details and instructions"
+                              style={{ minHeight: '80px', fontFamily: 'inherit', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                            />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Date</label>
+                            <input type="date" value={assessForm.date} onChange={e => setAssessForm(f => ({ ...f, date: e.target.value }))} />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Start Time</label>
+                            <input type="time" value={assessForm.time} onChange={e => setAssessForm(f => ({ ...f, time: e.target.value }))} />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Duration (minutes)</label>
+                            <input 
+                              type="number" 
+                              value={assessForm.duration} 
+                              onChange={e => setAssessForm(f => ({ ...f, duration: Number(e.target.value) }))}
+                              min="15"
+                              step="15"
+                            />
+                          </div>
+
+                          <div className="nm-form-row">
+                            <label>Assessment Link / URL</label>
+                            <input 
+                              type="url"
+                              value={assessForm.link} 
+                              onChange={e => setAssessForm(f => ({ ...f, link: e.target.value }))} 
+                              placeholder="https://example.com/assessment"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="nm-form-actions">
+                          <button className="nm-btn-ghost" onClick={() => setModalOpen(false)}>Cancel</button>
+                          <button className="nm-btn-primary" onClick={() => setAssessStep(2)}>Next → Select Students</button>
+                        </div>
                       </div>
                     )}
 
                     {assessStep === 2 && (
                       <div>
-                        <div style={{ marginBottom:8 }}>
-                          <label>Or select a Group</label>
-                          <select onChange={e => {
-                            const gid = e.target.value;
-                            if (!gid) return;
-                            const g = groups.find(x => (x._id||x.id)==gid);
-                            if (g) {
-                              let ids = [];
-                              if (Array.isArray(g.students) && g.students.length) ids = g.students.map(s=>s._id||s.id||s);
-                              else if (Array.isArray(g.studentIds)) ids = g.studentIds;
-                              setAssessSelected(ids);
-                            }
-                          }}>
-                            <option value="">-- Select Group (optional) --</option>
-                            {groups.map(g => <option key={g._id||g.id} value={g._id||g.id}>{g.groupName||g.name||g.title||g.groupNumber||`Group ${g._id||g.id}`}</option>)}
+                        <div style={{ marginBottom: '16px' }}>
+                          <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px' }}>Select Existing Group (Optional)</label>
+                          <select 
+                            onChange={e => {
+                              const gid = e.target.value;
+                              if (!gid) return;
+                              const g = groups.find(x => String(x._id || x.id) === String(gid));
+                              if (g) {
+                                let ids = [];
+                                if (Array.isArray(g.students) && g.students.length) {
+                                  ids = g.students.map(s => s._id || s.id || s);
+                                } else if (Array.isArray(g.studentIds)) {
+                                  ids = g.studentIds;
+                                }
+                                setAssessSelected(ids);
+                              }
+                            }}
+                            style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                          >
+                            <option value="">-- Select Group (auto-select members) --</option>
+                            {groups.map(g => (
+                              <option key={g._id || g.id} value={g._id || g.id}>
+                                {g.groupName || g.name || g.title || g.groupNumber || `Group ${g._id || g.id}`}
+                                {' '}
+                                <small>({Array.isArray(g.students) ? g.students.length : (Array.isArray(g.studentIds) ? g.studentIds.length : 0)} members)</small>
+                              </option>
+                            ))}
                           </select>
                         </div>
-                        <div style={{ maxHeight:240, overflow:'auto' }}>{students.map(s => (<div key={s.id} style={{ display:'flex', justifyContent:'space-between', padding:6 }}><div>{s.name}</div><div><input type="checkbox" checked={assessSelected.includes(s.id)} onChange={() => setAssessSelected(prev => prev.includes(s.id)?prev.filter(x=>x!==s.id):[...prev,s.id])} /></div></div>))}</div>
-                        <div style={{ marginTop:12 }}><button className="nm-btn-primary" onClick={() => saveAssessment()}>Save & Notify</button></div>
+
+                        <div style={{ marginBottom: '12px' }}>
+                          <input 
+                            className="nm-search" 
+                            placeholder="Search students..." 
+                            value={search} 
+                            onChange={e => setSearch(e.target.value)}
+                            style={{ width: '100%' }}
+                          />
+                        </div>
+
+                        <div style={{ maxHeight: '240px', overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px' }}>
+                          {students.length === 0 ? (
+                            <div className="nm-muted">No students found</div>
+                          ) : (
+                            students
+                              .filter(s => !search || (s.name || '').toLowerCase().includes(search.toLowerCase()) || (s.psmsId || '').toLowerCase().includes(search.toLowerCase()))
+                              .map(s => (
+                                <div key={s.id} className="nm-student-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
+                                  <div style={{ flex: 1 }}>
+                                    {s.name}
+                                    {s.psmsId && <div style={{ fontSize: '12px', color: '#9ca3af' }}>ID: {s.psmsId}</div>}
+                                  </div>
+                                  <div>
+                                    <input 
+                                      type="checkbox" 
+                                      checked={assessSelected.map(String).includes(String(s.id))} 
+                                      onChange={() => setAssessSelected(prev => prev.map(String).includes(String(s.id)) ? prev.filter(x => String(x) !== String(s.id)) : [...prev, s.id])} 
+                                    />
+                                  </div>
+                                </div>
+                              ))
+                          )}
+                        </div>
+
+                        <div className="nm-form-actions" style={{ marginTop: '16px' }}>
+                          <button className="nm-btn-ghost" onClick={() => setAssessStep(1)}>← Back</button>
+                          <button 
+                            className="nm-btn-primary" 
+                            onClick={() => saveAssessment()}
+                            disabled={assessSelected.length === 0}
+                          >
+                            Save & Send Assessment ({assessSelected.length} student{assessSelected.length !== 1 ? 's' : ''})
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

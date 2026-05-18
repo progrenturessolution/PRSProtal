@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, selectedStudent, setSelectedStudent, selectedStudentTab, setSelectedStudentTab }) {
+function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, selectedStudent, setSelectedStudent, selectedStudentTab, setSelectedStudentTab, openConductGd }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [activityOpen, setActivityOpen] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -15,7 +16,16 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
       return;
     }
 
-    setUser(JSON.parse(storedUser));
+    try {
+      setUser(JSON.parse(storedUser));
+    } catch (err) {
+      console.error('Failed to parse stored user', err);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('userRole');
+      navigate('/');
+      return;
+    }
   }, [navigate]);
 
   const handleLogout = () => {
@@ -104,26 +114,66 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
         </li>
 
         <li
-          className={activeTab === "scheduled-individuals" ? "active" : ""}
-          onClick={() => handleMenuClick("scheduled-individuals")}
+          className={(activeTab === "activity-individuals" || activeTab === "activity-groups" || activeTab === "scheduled-gds") ? "active parent" : "parent"}
+          onClick={() => setActivityOpen(!activityOpen)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v4m0 8v4m8-8h-4M4 12H8" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z"
+              />
+            </svg>
+            Activity Management
+          </div>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: '18px', height: '18px' }}>
+            {activityOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            )}
           </svg>
-          Individual Interviews
         </li>
 
-        <li
-          className={activeTab === "scheduled-groups" ? "active" : ""}
-          onClick={() => handleMenuClick("scheduled-groups")}
-        >
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-          </svg>
-          Group Interviews
-        </li>
+        {activityOpen && (
+          <>
+            <li
+              className={activeTab === "activity-individuals" ? "active" : ""}
+              onClick={() => handleMenuClick("activity-individuals")}
+              style={{ paddingLeft: '32px' }}
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v4m0 8v4m8-8h-4M4 12H8" />
+              </svg>
+              Individual Interviews
+            </li>
 
-        
+            <li
+              className={activeTab === "activity-groups" ? "active" : ""}
+              onClick={() => handleMenuClick("activity-groups")}
+              style={{ paddingLeft: '32px' }}
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+              </svg>
+              Group Interviews
+            </li>
+
+            <li
+              className={activeTab === "scheduled-gds" ? "active" : ""}
+              onClick={() => handleMenuClick("scheduled-gds")}
+              style={{ paddingLeft: '32px' }}
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h8M8 12h8M8 17h8" />
+              </svg>
+              Conduct GD
+            </li>
+          </>
+        )}
 
         <li
           className={activeTab === "notifications" ? "active" : ""}
