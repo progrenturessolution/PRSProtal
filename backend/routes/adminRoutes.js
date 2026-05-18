@@ -237,6 +237,7 @@ router.delete('/groups/:id', verifyToken, verifyAdmin, adminController.deleteStu
 
 // Schedule interview
 router.post('/schedule-interview', verifyToken, verifyAdmin, adminController.scheduleInterview);
+router.post('/schedule-assessment', verifyToken, verifyAdmin, adminController.scheduleAssessment);
 
 module.exports = router;
 

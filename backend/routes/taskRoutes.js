@@ -53,6 +53,9 @@ router.get('/intern/tasks', verifyToken, taskController.getInternTasks);
 router.put('/intern/update-task/:taskId', verifyToken, taskController.updateTaskProgress);
 router.post('/intern/team-message/:taskId', verifyToken, taskController.sendTeamMessage);
 
+// Intern: fetch scheduled work assignments assigned by admin to their trainer
+router.get('/intern/my-assignments', verifyToken, trainerController.getMyWorkAssignments);
+
 // Intern: fetch own uploaded documents
 router.get('/intern/my-documents', verifyToken, adminController.getStudentDocuments);
 

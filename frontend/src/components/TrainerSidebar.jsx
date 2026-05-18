@@ -163,6 +163,17 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             </li>
 
             <li
+              className={activeTab === "scheduled-assignments" ? "active" : ""}
+              onClick={() => handleMenuClick("scheduled-assignments")}
+              style={{ paddingLeft: '32px' }}
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 100-4H5a2 2 0 100 4" />
+              </svg>
+              Schedule Assessment
+            </li>
+
+            <li
               className={activeTab === "scheduled-gds" ? "active" : ""}
               onClick={() => handleMenuClick("scheduled-gds")}
               style={{ paddingLeft: '32px' }}

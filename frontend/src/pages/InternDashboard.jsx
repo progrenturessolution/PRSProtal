@@ -16,6 +16,7 @@ function InternDashboard() {
   const [interviews, setInterviews] = useState([]);
   const [scheduledInterviews, setScheduledInterviews] = useState([]);
   const [scheduledGds, setScheduledGds] = useState([]);
+  const [scheduledAssignments, setScheduledAssignments] = useState([]);
   const [aptitude, setAptitude] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [trainings, setTrainings] = useState([]);
@@ -154,6 +155,56 @@ function InternDashboard() {
     }
   };
 
+  const loadScheduledAssessments = async () => {
+    try {
+      const [notifResp] = await Promise.allSettled([internAPI.getMyNotifications()]);
+      const notificationItems = [];
+
+      if (notifResp.status === 'fulfilled' && notifResp.value?.data?.success) {
+        const notes = notifResp.value.data.notifications || [];
+        notes
+          .filter((note) => note.notificationType === 'Test/Assessment')
+          .forEach((note) => {
+            notificationItems.push({
+              _id: note._id,
+              type: 'Assessment',
+              title: note.title,
+              dateTime: note.createdAt,
+              createdBy: note.createdBy?.email || note.createdBy?.name || 'Admin',
+              status: 'Scheduled',
+              details: { notification: note },
+            });
+          });
+      }
+
+      let localItems = [];
+      try {
+        const rawActs = JSON.parse(localStorage.getItem('recentActivities') || '[]');
+        const myIdCandidates = [user?._id, user?.id, user?.internId, user?.psmsId].map(String).filter(Boolean);
+        localItems = (rawActs || []).filter((act) =>
+          act.type === 'Assignment' &&
+          Array.isArray(act.details?.assigned) &&
+          act.details.assigned.some((a) => myIdCandidates.includes(String(a)) || String(a) === String(user?._id) || String(a) === String(user?.internId))
+        );
+      } catch (e) {
+        localItems = [];
+      }
+
+      const seen = new Set();
+      const merged = [...notificationItems, ...localItems].filter((item) => {
+        const key = item._id ? `n:${item._id}` : `${item.title || ''}_${item.dateTime || ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      setScheduledAssignments(merged);
+    } catch (error) {
+      console.error('Failed to load scheduled assessments:', error);
+      setScheduledAssignments([]);
+    }
+  };
+
   const handleSectionClick = async (section) => {
     setActiveSection(section);
     setSidebarOpen(false);
@@ -186,6 +237,7 @@ function InternDashboard() {
           if (schedResp.data && schedResp.data.success) {
             setScheduledInterviews(schedResp.data.interviews || []);
           }
+          await loadScheduledAssessments();
           // Merge any locally-persisted scheduled GDs that include this intern
           try {
             const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
@@ -225,6 +277,9 @@ function InternDashboard() {
             });
             setScheduledGds(myGds || []);
           } catch (e) { setScheduledGds([]); }
+          break;
+        case "scheduled-assignments":
+          await loadScheduledAssessments();
           break;
         case "aptitude":
           const aptResp = await internAPI.getMyAptitude();
@@ -779,6 +834,13 @@ function InternDashboard() {
               >
                 Scheduled GDs
               </li>
+              <li
+                className={activeSection === "scheduled-assignments" ? "active" : ""}
+                onClick={() => handleSectionClick("scheduled-assignments")}
+                style={{ cursor: "pointer", paddingLeft: '28px' }}
+              >
+                Schedule Assessment
+              </li>
             </>
           )}
           <li
@@ -1312,6 +1374,50 @@ function InternDashboard() {
                 </div>
               </div>
             )}
+          </>
+        )}
+
+        {/* Scheduled Assignments Section */}
+        {activeSection === "scheduled-assignments" && (
+          <>
+            <div className="content-header">
+              <h1>Schedule Assessment</h1>
+              <p>Assignments assigned to you</p>
+            </div>
+
+            <div className="card student-history-card">
+              <h2>Upcoming Assignments</h2>
+              {scheduledAssignments.length === 0 ? (
+                <p className="record-history-empty">No scheduled assessments yet</p>
+              ) : (
+                <div className="table-container">
+                  <table className="data-table view-students-table interview-schedule-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Mode</th>
+                        <th>Assigned On</th>
+                        <th>Due</th>
+                        <th>Assigned By</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scheduledAssignments.map((a, idx) => (
+                        <tr key={a._id || a.title || idx}>
+                          <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                          <td>{a.details?.notification?.assessmentMeta?.assessmentMode || a.details?.form?.mode || (Array.isArray(a.details?.assigned) && a.details.assigned.length > 1 ? 'Group' : 'Individual')}</td>
+                          <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
+                          <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                          <td>{a.createdBy || '-'}</td>
+                          <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </>
         )}
 

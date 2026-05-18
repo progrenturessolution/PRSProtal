@@ -123,6 +123,9 @@ export const adminAPI = {
 
   // Schedule interviews
   scheduleInterview: (data) => api.post("/admin/schedule-interview", data),
+  createAssessment: (data) => api.post('/admin/schedule-assessment', data),
+  // Schedule assignments (tasks/assignments with due date)
+  scheduleAssignment: (data) => api.post("/admin/schedule-assignment", data),
 };
 
 // Trainer APIs
@@ -143,6 +146,8 @@ export const trainerAPI = {
   updateStudentStatus: (studentId, status) =>
     api.patch(`/trainer/students/${studentId}/status`, { status }),
   getScheduledInterviews: () => api.get("/trainer/scheduled-interviews"),
+  getNotifications: () => api.get('/trainer/notifications'),
+  getWorkAssignments: () => api.get("/trainer/work-assignments"),
 };
 
 // Task APIs

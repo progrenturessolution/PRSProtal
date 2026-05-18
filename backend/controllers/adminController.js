@@ -941,6 +941,7 @@ exports.assignGroupsToTrainer = async (req, res) => {
 exports.assignWorkToTrainer = async (req, res) => {
   try {
     const { trainerId, title, description, workDate, studentIds, groupIds } = req.body;
+    const adminId = req.user.id;
 
     if (!trainerId || !title || !description || !workDate) {
       return res.status(400).json({ success: false, message: 'Employee, title, description, and work date are required' });
@@ -963,6 +964,55 @@ exports.assignWorkToTrainer = async (req, res) => {
     trainer.workAssignments = trainer.workAssignments || [];
     trainer.workAssignments.push(workItem);
     await trainer.save();
+
+    // Create notifications for trainer and affected students
+    try {
+      const recipientInternIds = new Set();
+
+      if (Array.isArray(studentIds) && studentIds.length > 0) {
+        studentIds.forEach((id) => recipientInternIds.add(String(id)));
+      }
+
+      if (Array.isArray(groupIds) && groupIds.length > 0) {
+        const groups = await StudentGroup.find({ _id: { $in: groupIds } }).select('students').lean();
+        groups.forEach((g) => {
+          (g.students || []).forEach((s) => recipientInternIds.add(String(s)));
+        });
+      }
+
+      const internRecipients = Array.from(recipientInternIds);
+
+      const notifDateStr = workDate ? new Date(workDate).toLocaleString() : new Date().toLocaleString();
+
+      // Notify interns (individual or group)
+      if (internRecipients.length > 0) {
+        const internNotification = new Notification({
+          title: `New Work Assignment: ${title}`,
+          message: `${description}\nDate: ${notifDateStr}`,
+          notificationType: 'General/Announcement',
+          sendTo: internRecipients.length === 1 ? 'Individual' : 'Group',
+          recipientIds: internRecipients,
+          recipientModel: 'Intern',
+          createdBy: adminId
+        });
+        await internNotification.save();
+      }
+
+      // Notify trainer as individual
+      const trainerNotification = new Notification({
+        title: `Assigned Work: ${title}`,
+        message: `${description}\nDate: ${notifDateStr}`,
+        notificationType: 'General/Announcement',
+        sendTo: 'Individual',
+        recipientIds: [trainerId],
+        recipientModel: 'Trainer',
+        createdBy: adminId
+      });
+      await trainerNotification.save();
+    } catch (notifyErr) {
+      console.error('Assign work — notification creation error:', notifyErr);
+      // continue without failing the main request
+    }
 
     res.status(201).json({ success: true, message: 'Work assigned successfully', workItem });
   } catch (error) {
@@ -2136,6 +2186,109 @@ exports.scheduleInterview = async (req, res) => {
   } catch (error) {
     console.error('Schedule interview error:', error);
     return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// Schedule assessment (admin) - creates notifications for trainer and students
+exports.scheduleAssessment = async (req, res) => {
+  try {
+    const { assigned = [], trainerId, type, title, description, date, time, link, groupId } = req.body;
+    const adminId = req.user.id;
+
+    // Normalize assigned student ids (array may be passed as string)
+    let studentIds = Array.isArray(assigned) ? assigned.slice() : [];
+    if (typeof assigned === 'string' && assigned.length) {
+      try { studentIds = JSON.parse(assigned); } catch (e) { studentIds = assigned.split(',').map(s => s.trim()).filter(Boolean); }
+    }
+
+    // If groupId provided, expand to member students
+    if (groupId) {
+      try {
+        const group = await StudentGroup.findById(groupId).select('students').lean();
+        if (group && Array.isArray(group.students)) {
+          group.students.forEach(s => studentIds.push(String(s)));
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // Deduplicate
+    studentIds = Array.from(new Set((studentIds || []).map(String)));
+
+    const assessmentMode = groupId || studentIds.length > 1 ? 'Group' : 'Individual';
+    let groupName = '';
+
+    if (groupId) {
+      try {
+        const group = await StudentGroup.findById(groupId).select('groupName').lean();
+        groupName = group?.groupName || '';
+      } catch (e) { /* ignore */ }
+    }
+
+    const assignedLabels = assessmentMode === 'Group'
+      ? [groupName || `Group ${groupId || ''}`.trim()].filter(Boolean)
+      : studentIds.map(String);
+
+    // Validate trainer
+    if (!trainerId) return res.status(400).json({ success: false, message: 'Trainer ID required' });
+    const trainer = await Trainer.findById(trainerId).select('name email');
+    if (!trainer) return res.status(404).json({ success: false, message: 'Trainer not found' });
+
+    // Build message text
+    const when = date ? `${date}${time ? ' ' + time : ''}` : (time || '');
+    const baseMessage = `${description || ''}${when ? '\nWhen: ' + when : ''}${link ? '\nLink: ' + link : ''}`;
+
+    // Create notification for trainer
+    try {
+      const trainerNotification = new Notification({
+        title: `Scheduled Assessment: ${title || (type || 'Assessment')}`,
+        message: baseMessage,
+        notificationType: 'Test/Assessment',
+        sendTo: 'Individual',
+        recipientIds: [trainerId],
+        recipientModel: 'Trainer',
+        assessmentMeta: {
+          assessmentMode,
+          groupId: groupId || undefined,
+          groupName,
+          assignedLabels,
+          assignedIds: studentIds
+        },
+        createdBy: adminId
+      });
+      await trainerNotification.save();
+    } catch (err) {
+      console.error('Failed to create trainer notification', err);
+    }
+
+    // Create notification(s) for students (if any)
+    if (studentIds.length > 0) {
+      try {
+        const studentNotification = new Notification({
+          title: `You are scheduled for: ${title || (type || 'Assessment')}`,
+          message: baseMessage,
+          notificationType: 'Test/Assessment',
+          sendTo: studentIds.length === 1 ? 'Individual' : 'Group',
+          recipientIds: studentIds,
+          recipientModel: 'Intern',
+          assessmentMeta: {
+            assessmentMode,
+            groupId: groupId || undefined,
+            groupName,
+            assignedLabels,
+            assignedIds: studentIds
+          },
+          createdBy: adminId
+        });
+        await studentNotification.save();
+      } catch (err) {
+        console.error('Failed to create student notification', err);
+      }
+    }
+
+    return res.status(201).json({ success: true, message: 'Assessment scheduled and notifications created' });
+  } catch (error) {
+    console.error('Schedule assessment error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

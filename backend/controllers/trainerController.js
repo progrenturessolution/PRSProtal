@@ -928,9 +928,25 @@ exports.updateMyProfile = async (req, res) => {
 exports.getMyNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const userRole = req.user.role; // 'intern' or 'trainer'
+    const explicitRole = req.user.role; // 'intern' or 'trainer'
 
     let notifications;
+    let userRole = explicitRole;
+
+    if (!userRole) {
+      const [trainerExists, internExists] = await Promise.all([
+        Trainer.exists({ _id: userId }),
+        Intern.exists({ _id: userId })
+      ]);
+
+      if (trainerExists) {
+        userRole = 'trainer';
+      } else if (internExists) {
+        userRole = 'intern';
+      }
+    }
+
+    const trainerLikeRoles = new Set(['trainer', 'hr', 'other']);
 
     if (userRole === 'intern') {
       // For interns
@@ -951,7 +967,7 @@ exports.getMyNotifications = async (req, res) => {
       })
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 });
-    } else if (userRole === 'trainer') {
+    } else if (trainerLikeRoles.has(String(userRole || '').toLowerCase()) || await Trainer.exists({ _id: userId })) {
       // For trainers
       notifications = await Notification.find({
         $or: [
@@ -989,6 +1005,57 @@ exports.getMyNotifications = async (req, res) => {
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+// Get scheduled work assignments that apply to the current intern
+exports.getMyWorkAssignments = async (req, res) => {
+  try {
+    const internId = req.user.id;
+
+    // Find groups the intern belongs to
+    const groups = await StudentGroup.find({ students: internId }).select('_id').lean();
+    const groupIds = groups.map(g => String(g._id));
+
+    // Find trainers who have workAssignments for this intern (direct or via groups)
+    const trainers = await Trainer.find({
+      $or: [
+        { 'workAssignments.assignedStudents': internId },
+        { 'workAssignments.assignedGroups': { $in: groupIds } }
+      ]
+    })
+      .select('name workAssignments')
+      .populate('workAssignments.assignedStudents', 'name email internId')
+      .populate('workAssignments.assignedGroups', 'groupName groupNumber')
+      .lean();
+
+    const assignments = [];
+
+    trainers.forEach((trainer) => {
+      (trainer.workAssignments || []).forEach((wa) => {
+        const assignedStudents = (wa.assignedStudents || []).map(s => String(s._id || s));
+        const assignedGroups = (wa.assignedGroups || []).map(g => String(g._id || g));
+
+        const forThisStudent = assignedStudents.includes(String(internId)) || assignedGroups.some(gid => groupIds.includes(gid));
+
+        if (forThisStudent) {
+          assignments.push({
+            trainer: { id: trainer._id, name: trainer.name },
+            title: wa.title,
+            description: wa.description,
+            workDate: wa.workDate,
+            assignedStudents: wa.assignedStudents,
+            assignedGroups: wa.assignedGroups,
+            createdAt: wa.createdAt
+          });
+        }
+      });
+    });
+
+    res.status(200).json({ success: true, count: assignments.length, assignments });
+  } catch (error) {
+    console.error('Get my work assignments error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -1039,6 +1106,36 @@ exports.getScheduledInterviews = async (req, res) => {
       message: 'Server error',
       error: error.message
     });
+  }
+};
+
+// Get work assignments for trainer (simple endpoint returning populated workAssignments)
+exports.getMyWorkAssignmentsForTrainer = async (req, res) => {
+  try {
+    const trainerId = req.user.id;
+
+    const trainer = await Trainer.findById(trainerId)
+      .select('workAssignments name')
+      .populate({
+        path: 'workAssignments.assignedStudents',
+        select: '_id name email internId'
+      })
+      .populate({
+        path: 'workAssignments.assignedGroups',
+        select: '_id groupName groupNumber'
+      })
+      .lean();
+
+    if (!trainer) {
+      return res.status(404).json({ success: false, message: 'Trainer not found' });
+    }
+
+    const workAssignments = trainer.workAssignments || [];
+
+    res.status(200).json({ success: true, count: workAssignments.length, workAssignments });
+  } catch (error) {
+    console.error('Get trainer work assignments error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

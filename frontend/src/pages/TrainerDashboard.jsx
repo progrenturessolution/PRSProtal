@@ -35,11 +35,13 @@ function TrainerDashboard() {
   const [interviews, setInterviews] = useState([]);
   const [scheduledInterviews, setScheduledInterviews] = useState([]);
   const [scheduledGds, setScheduledGds] = useState([]);
+  const [scheduledAssignments, setScheduledAssignments] = useState([]);
   const [selectedGd, setSelectedGd] = useState(null);
   const [showGdModal, setShowGdModal] = useState(false);
   const [aptitudes, setAptitudes] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [trainings, setTrainings] = useState([]);
+  const [workAssignmentsState, setWorkAssignmentsState] = useState([]);
   const [interviewFormData, setInterviewFormData] = useState({
     interviewType: "HR",
     attendanceStatus: "Present",
@@ -176,10 +178,12 @@ function TrainerDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [profileResult, studentsResult, scheduledInterviewsResult] = await Promise.allSettled([
+      const [profileResult, studentsResult, scheduledInterviewsResult, workAssignmentsResult, notificationsResult] = await Promise.allSettled([
         trainerAPI.getProfile(),
         trainerAPI.getAssignedStudents(),
         trainerAPI.getScheduledInterviews(),
+        trainerAPI.getWorkAssignments(),
+        trainerAPI.getNotifications(),
       ]);
 
       if (profileResult.status === "fulfilled" && profileResult.value.data.success) {
@@ -202,7 +206,87 @@ function TrainerDashboard() {
       if (scheduledInterviewsResult.status === "fulfilled" && scheduledInterviewsResult.value.data.success) {
         setScheduledInterviews(scheduledInterviewsResult.value.data.interviews || []);
       }
-      
+
+      if (workAssignmentsResult.status === 'fulfilled' && workAssignmentsResult.value.data.success) {
+        setWorkAssignmentsState(workAssignmentsResult.value.data.workAssignments || []);
+      }
+
+      // Merge Test/Assessment notifications into scheduledAssignments so they show under Schedule Assessment
+      if (notificationsResult.status === 'fulfilled' && notificationsResult.value.data.success) {
+        try {
+          const notes = notificationsResult.value.data.notifications || [];
+          const assessments = notes.filter(n => n.notificationType === 'Test/Assessment');
+          // map to activity-like objects used by the dashboard recentActivities logic
+          const mapped = assessments.map(n => ({ type: 'Assessment', title: n.title, dateTime: new Date(n.createdAt).toLocaleString(), createdBy: n.createdBy?.email || 'Admin', status: 'Scheduled', details: { notification: n } }));
+          // Append these to scheduledAssignments (avoid duplicates)
+          setScheduledAssignments(prev => {
+            const existingKeys = new Set(prev.map(a => JSON.stringify(a.details?.notification?._id || a)));
+            const toAdd = mapped.filter(m => !existingKeys.has(JSON.stringify(m.details?.notification?._id || m)));
+            return [...toAdd, ...(prev || [])];
+          });
+        } catch (e) { console.debug('Failed to merge notifications', e); }
+      }
+      try {
+        const raw = JSON.parse(localStorage.getItem('recentActivities') || '[]');
+        console.debug('TrainerDashboard: recentActivities raw', raw);
+        const trainerIdCandidates = [profileResult.status === 'fulfilled' && profileResult.value.data.user?._id, profileResult.status === 'fulfilled' && profileResult.value.data.user?.id, user?._id, user?.id].map(String).filter(Boolean);
+        const myAssignments = (raw || []).filter(act => {
+          // Allow flexible matching for type (case-insensitive, contains 'assign')
+          const atype = String(act.type || '').toLowerCase();
+          if (!atype.includes('assign')) return false; // skip non-assignment-like items
+          try {
+            // candidate ids and names for matching
+            const trainerNames = [];
+            if (profileResult.status === 'fulfilled' && profileResult.value.data.user?.name) trainerNames.push(String(profileResult.value.data.user.name).toLowerCase());
+            if (user && user.name) trainerNames.push(String(user.name).toLowerCase());
+
+            // check common fields that may contain trainer id
+            const possibleTrainerIds = new Set();
+            const f = act.details?.form || {};
+            [f.trainerId, f.interviewer, f.interviewerId, f.assignedTrainerId, act.trainerId, act.interviewer, act.interviewerId, act.assignedTrainerId].forEach(x => { if (x) possibleTrainerIds.add(String(x)); });
+
+            for (const pid of possibleTrainerIds) {
+              if (trainerIdCandidates.includes(String(pid))) return true;
+            }
+
+            // check interviewer/trainer name fields
+            const interviewerName = (f.interviewerName || f.otherInterviewerName || act.details?.interviewerName || act.details?.otherInterviewerName || f.trainerName || act.trainerName || '');
+            if (interviewerName && trainerNames.includes(String(interviewerName).toLowerCase())) return true;
+
+            // fallback: check assigned students intersection with trainer's assigned students
+            if (Array.isArray(act.details?.assigned) && act.details.assigned.length) {
+              const assignedIds = act.details.assigned.map(String);
+              const trainerStudents = (profileResult.status === 'fulfilled' && Array.isArray(profileResult.value.data.user?.assignedStudents)) ? (profileResult.value.data.user.assignedStudents || []).map(s => String(s._id || s.id || s)) : [];
+              if (trainerStudents.some(ts => assignedIds.includes(ts))) return true;
+            }
+
+            // last resort: stringify the activity and search for trainer id or name
+            const text = JSON.stringify(act).toLowerCase();
+            for (const tid of trainerIdCandidates) {
+              if (text.includes(String(tid).toLowerCase())) return true;
+            }
+            for (const tn of trainerNames) {
+              if (text.includes(tn)) return true;
+            }
+          } catch (e) { console.debug('TrainerDashboard: assignment match error', e); }
+          return false;
+        });
+        console.debug('TrainerDashboard: trainerIdCandidates', trainerIdCandidates, 'myAssignments count', myAssignments.length);
+        // Merge local recentActivities assignments with any existing assignments (notifications)
+        setScheduledAssignments(prev => {
+          const existing = Array.isArray(prev) ? prev : [];
+          const combined = Array.isArray(myAssignments) ? [...myAssignments, ...existing] : [...existing];
+          // dedupe by a simple key: title + dateTime or notification id if present
+          const seen = new Set();
+          const deduped = [];
+          for (const a of combined) {
+            const notifId = a.details?.notification?._id;
+            const key = notifId ? `n:${notifId}` : `${(a.title||'')}_${(a.dateTime||a.details?.form?.date||'')}`;
+            if (!seen.has(key)) { seen.add(key); deduped.push(a); }
+          }
+          return deduped;
+        });
+      } catch (e) { console.debug('TrainerDashboard: failed reading recentActivities', e); setScheduledAssignments([]); }
       // merge scheduled GDs into the view area if any
       // (we will render both scheduledInterviews and scheduledGds together where appropriate)
 
@@ -225,6 +309,12 @@ function TrainerDashboard() {
       console.error("Error fetching trainer dashboard data:", error);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === 'scheduled-assignments' && user) {
+      fetchDashboardData();
+    }
+  }, [activeTab, user]);
 
   const fetchStudentRecords = async (studentId) => {
     try {
@@ -657,7 +747,8 @@ function TrainerDashboard() {
   }
 
   const assignedGroups = trainerProfile?.assignedGroups || [];
-  const workAssignments = trainerProfile?.workAssignments || [];
+  // prefer explicit workAssignments state fetched from API; fallback to profile data
+  const workAssignments = (workAssignmentsState && workAssignmentsState.length ? workAssignmentsState : (trainerProfile?.workAssignments || []));
   const currentStudentTab = selectedStudentTab || "interviews";
 
   const normalizedGroupSearch = groupSearchQuery.trim().toLowerCase();
@@ -1114,6 +1205,46 @@ function TrainerDashboard() {
                             <td>
                               <span className="status-badge status-pending">{interview.status || 'Scheduled'}</span>
                             </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "scheduled-assignments" && (
+            <div className="premium-card" style={{ marginTop: "24px" }}>
+              <div className="premium-card-header">
+                <h2>Schedule Assessment</h2>
+              </div>
+              <div style={{ padding: "16px 20px" }}>
+                {scheduledAssignments.length === 0 ? (
+                  <p className="record-history-empty">No scheduled assessments yet</p>
+                ) : (
+                  <div className="table-container">
+                    <table className="data-table view-students-table interview-schedule-table">
+                      <thead>
+                        <tr>
+                          <th>Title</th>
+                          <th>Mode</th>
+                          <th>Assigned On</th>
+                          <th>Due</th>
+                          <th>Assigned To</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {scheduledAssignments.map((a, idx) => (
+                          <tr key={a._id || a.title || idx}>
+                            <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                            <td>{a.details?.notification?.assessmentMeta?.assessmentMode || a.details?.form?.mode || (Array.isArray(a.details?.assigned) && a.details.assigned.length > 1 ? 'Group' : 'Individual')}</td>
+                            <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
+                            <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                            <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
+                            <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
                           </tr>
                         ))}
                       </tbody>

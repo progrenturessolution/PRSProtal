@@ -28,6 +28,25 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     enum: ['Intern', 'Trainer', 'Admin']
   },
+  assessmentMeta: {
+    assessmentMode: {
+      type: String,
+      enum: ['Individual', 'Group']
+    },
+    groupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'StudentGroup'
+    },
+    groupName: {
+      type: String,
+      trim: true
+    },
+    assignedLabels: [String],
+    assignedIds: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Intern'
+    }]
+  },
   attachment: {
     filename: String,
     filepath: String,
