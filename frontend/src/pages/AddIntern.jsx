@@ -287,7 +287,6 @@ function AddIntern({ onInternAdded, onBack }) {
               className="back-button back-button-primary"
               onClick={onBack}
             >
-              <span className="back-arrow">←</span>
               Back to View All Students
             </button>
           </div>

@@ -239,5 +239,11 @@ router.delete('/groups/:id', verifyToken, verifyAdmin, adminController.deleteStu
 router.post('/schedule-interview', verifyToken, verifyAdmin, adminController.scheduleInterview);
 router.post('/schedule-assessment', verifyToken, verifyAdmin, adminController.scheduleAssessment);
 
+// Activities: create and list recent activities
+router.post('/activities', verifyToken, verifyAdmin, adminController.createActivity);
+router.get('/activities', verifyToken, verifyAdmin, adminController.getRecentActivities);
+router.patch('/activities/:id', verifyToken, verifyAdmin, adminController.updateActivity);
+router.delete('/activities/:id', verifyToken, verifyAdmin, adminController.deleteActivity);
+
 module.exports = router;
 

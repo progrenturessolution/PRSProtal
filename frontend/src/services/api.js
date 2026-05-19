@@ -126,6 +126,11 @@ export const adminAPI = {
   createAssessment: (data) => api.post('/admin/schedule-assessment', data),
   // Schedule assignments (tasks/assignments with due date)
   scheduleAssignment: (data) => api.post("/admin/schedule-assignment", data),
+  // Activities
+  createActivity: (data) => api.post('/admin/activities', data),
+  getActivities: (params) => api.get('/admin/activities', { params }),
+  updateActivity: (id, data) => api.patch(`/admin/activities/${id}`, data),
+  deleteActivity: (id) => api.delete(`/admin/activities/${id}`),
 };
 
 // Trainer APIs

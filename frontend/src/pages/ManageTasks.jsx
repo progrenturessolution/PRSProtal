@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { taskAPI } from "../services/api";
 
-function ManageTasks({ onTaskApproved }) {
+function ManageTasks({ onTaskApproved, onBack }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -323,21 +323,27 @@ function ManageTasks({ onTaskApproved }) {
 
   return (
     <>
-      <div className="premium-page-header">
+      <div className="premium-page-header" style={{ justifyContent: 'space-between', alignItems: 'center', display: 'flex' }}>
         <div className="header-left">
           <h1>Manage Tasks</h1>
-          <p className="header-subtitle">
-            Monitor and manage all assigned tasks
-          </p>
+          <p className="header-subtitle">Monitor and manage all assigned tasks</p>
         </div>
-        <div className="header-right">
-          <div className="date-badge">
-            {new Date().toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="header-right" style={{ marginRight: 8 }}>
+            <div className="date-badge">
+              {new Date().toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </div>
           </div>
+          {onBack && (
+            <button onClick={onBack} className="back-button back-button-primary" title="Back to Activity Management">
+              Back
+            </button>
+          )}
         </div>
       </div>
 

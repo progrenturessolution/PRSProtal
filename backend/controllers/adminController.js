@@ -10,6 +10,7 @@ const Interview = require('../models/Interview');
 const Aptitude = require('../models/Aptitude');
 const Assessment = require('../models/Assessment');
 const Training = require('../models/Training');
+const Activity = require('../models/Activity');
 
 const PASSWORD_SALT_ROUNDS = (() => {
   const defaultRounds = process.env.NODE_ENV === 'production' ? 10 : 4;
@@ -2092,6 +2093,8 @@ exports.deleteStudentGroup = async (req, res) => {
 // Schedule interview for students
 exports.scheduleInterview = async (req, res) => {
   try {
+    // DEBUG: log incoming payload for troubleshooting
+    try { console.debug('scheduleInterview payload:', req.body); } catch (e) {}
     const {
       studentIds,
       trainerId,
@@ -2178,14 +2181,104 @@ exports.scheduleInterview = async (req, res) => {
       createdInterviews.push(saved);
     }
 
-    return res.status(201).json({
-      success: true,
-      message: `${createdInterviews.length} interview(s) scheduled successfully`,
-      interviews: createdInterviews
-    });
+      // Record a summary activity for the admin activity feed
+      try {
+        // try to resolve trainer human-readable name
+        let interviewerName = '';
+        try {
+          const trainerObj = await Trainer.findById(resolvedTrainerId).select('name email customRole');
+          if (trainerObj) interviewerName = trainerObj.customRole ? `${trainerObj.name} (${trainerObj.customRole})` : trainerObj.name;
+        } catch (er) { /* ignore */ }
+
+        const studentIdList = createdInterviews.map(i => String(i.studentId));
+        const activityDetails = {
+          interviewCount: createdInterviews.length,
+          slots: createdInterviews.map(i => ({ studentId: i.studentId, date: i.date, startTime: i.startTime })),
+          mode,
+          interviewType,
+          trainerId: resolvedTrainerId,
+          interviewerId: resolvedTrainerId,
+          interviewerName,
+          studentIds: studentIdList,
+          assigned: studentIdList
+        };
+        if (groupId) activityDetails.groupId = groupId;
+
+        const activity = new Activity({
+          type: 'Interview',
+          title: `${interviewType} Interview (${mode})`,
+          dateTime: new Date(`${date}T${startTime}:00`),
+          createdBy: req.user?.id || null,
+          createdByModel: 'Admin',
+          status: 'Scheduled',
+          details: activityDetails
+        });
+        await activity.save();
+      } catch (e) { console.error('Failed to save activity record for interviews', e); }
+
+      return res.status(201).json({
+        success: true,
+        message: `${createdInterviews.length} interview(s) scheduled successfully`,
+        interviews: createdInterviews
+      });
   } catch (error) {
-    console.error('Schedule interview error:', error);
-    return res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error('Schedule interview error:', error && (error.stack || error));
+    return res.status(500).json({ success: false, message: error?.message || 'Server error', stack: error?.stack });
+  }
+};
+
+// Create an activity record (generic)
+exports.createActivity = async (req, res) => {
+  try {
+    const { type, title, dateTime, status, details } = req.body;
+    if (!type) return res.status(400).json({ success: false, message: 'Activity type required' });
+    const createdBy = req.user && req.user.id ? req.user.id : null;
+    const createdByModel = req.user && req.user.role ? (req.user.role === 'admin' ? 'Admin' : req.user.role === 'trainer' ? 'Trainer' : 'Intern') : 'Admin';
+    const activity = new Activity({ type, title, dateTime: dateTime ? new Date(dateTime) : undefined, createdBy, createdByModel, status: status || 'Scheduled', details: details || {} });
+    const saved = await activity.save();
+    return res.status(201).json({ success: true, activity: saved });
+  } catch (error) {
+    console.error('Create activity error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get recent activities (admin)
+exports.getRecentActivities = async (req, res) => {
+  try {
+    const limit = Math.min(50, Number(req.query.limit) || 20);
+    const activities = await Activity.find({}).sort({ createdAt: -1 }).limit(limit).lean();
+    return res.status(200).json({ success: true, count: activities.length, activities });
+  } catch (error) {
+    console.error('Get recent activities error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Update an activity (admin)
+exports.updateActivity = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body || {};
+    const activity = await Activity.findByIdAndUpdate(id, updates, { new: true }).lean();
+    if (!activity) return res.status(404).json({ success: false, message: 'Activity not found' });
+    return res.status(200).json({ success: true, activity });
+  } catch (error) {
+    console.error('Update activity error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Delete an activity (admin)
+exports.deleteActivity = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const removed = await Activity.findByIdAndDelete(id);
+    if (!removed) return res.status(404).json({ success: false, message: 'Activity not found' });
+    return res.status(200).json({ success: true, message: 'Activity deleted' });
+  } catch (error) {
+    console.error('Delete activity error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 
@@ -2284,6 +2377,20 @@ exports.scheduleAssessment = async (req, res) => {
         console.error('Failed to create student notification', err);
       }
     }
+
+    // Create activity record for admin feed
+    try {
+      const activity = new Activity({
+        type: 'Assessment',
+        title: title || (type || 'Assessment'),
+        dateTime: date ? new Date(`${date}T${time || '00:00'}:00`) : undefined,
+        createdBy: req.user?.id || null,
+        createdByModel: 'Admin',
+        status: 'Scheduled',
+        details: { type, title, description, link, assigned: studentIds, trainerId, groupId }
+      });
+      await activity.save();
+    } catch (e) { console.error('Failed to save activity record for assessment', e); }
 
     return res.status(201).json({ success: true, message: 'Assessment scheduled and notifications created' });
   } catch (error) {

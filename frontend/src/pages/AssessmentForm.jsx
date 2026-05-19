@@ -102,8 +102,7 @@ function AssessmentForm() {
             onClick={handleBack}
             title="Go back to previous page"
           >
-            <span className="back-arrow">←</span>
-            <span>Back</span>
+            Back
           </button>
           <div className="student-records-header-copy">
             <h1>Assessment Evaluation</h1>

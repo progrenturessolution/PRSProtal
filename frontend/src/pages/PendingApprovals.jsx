@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { taskAPI } from '../services/api';
 
-function PendingApprovals({ onTaskApproved }) {
+function PendingApprovals({ onTaskApproved, onBack }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -102,9 +102,18 @@ function PendingApprovals({ onTaskApproved }) {
 
   return (
     <>
-      <div className="content-header">
-        <h1>Pending Task Approvals</h1>
-        <p>Review and approve tasks submitted by interns</p>
+      <div className="content-header-with-back" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="content-header">
+          <h1>Pending Task Approvals</h1>
+          <p>Review and approve tasks submitted by interns</p>
+        </div>
+        <div>
+          {onBack && (
+            <button onClick={onBack} className="back-button back-button-primary" title="Back to Activity Management">
+              Back
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (

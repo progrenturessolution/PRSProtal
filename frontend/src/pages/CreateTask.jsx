@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { adminAPI, taskAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-function CreateTask({ onTaskCreated }) {
+function CreateTask({ onTaskCreated, onBack }) {
   const [interns, setInterns] = useState([]);
   const [assignmentType, setAssignmentType] = useState("individual");
   const [individualSearchQuery, setIndividualSearchQuery] = useState("");
@@ -262,9 +262,18 @@ function CreateTask({ onTaskCreated }) {
 
   return (
     <>
-      <div className="content-header">
-        <h1>Create & Assign Task</h1>
-        <p>Assign a new task to an intern</p>
+      <div className="content-header-with-back" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="content-header">
+          <h1>Create & Assign Task</h1>
+          <p>Assign a new task to an intern</p>
+        </div>
+        <div>
+          {onBack && (
+            <button onClick={onBack} className="back-button back-button-primary" title="Back to Activity Management">
+              Back
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="card" style={{ overflow: "visible" }}>
@@ -645,15 +654,22 @@ function CreateTask({ onTaskCreated }) {
             </div>
           )}
 
-          <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? (
-              <LoadingSpinner text="Creating Task..." inline size="sm" />
-            ) : assignmentType === "team" ? (
-              `Assign to ${selectedTeamMembers.length} Team Members`
-            ) : (
-              "Create & Assign Task"
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
+            {onBack && (
+              <button type="button" className="nm-btn ghost" onClick={onBack}>
+                Close
+              </button>
             )}
-          </button>
+            <button type="submit" className="submit-btn" disabled={loading}>
+              {loading ? (
+                <LoadingSpinner text="Creating Task..." inline size="sm" />
+              ) : assignmentType === "team" ? (
+                `Assign to ${selectedTeamMembers.length} Team Members`
+              ) : (
+                "Create & Assign Task"
+              )}
+            </button>
+          </div>
         </form>
       </div>
     </>

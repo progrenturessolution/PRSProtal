@@ -17,6 +17,7 @@ import Reports from "./Reports";
 import ManageRepresentatives from "./ManageRepresentatives";
 import RepresentativePayoutManagement from "./RepresentativePayoutManagement";
 import GroupManagement from "./GroupManagement";
+import ActivityManagementNew from "./ActivityManagementNew";
 import { adminAPI, taskAPI } from "../services/api";
 import logo from "../assets/logo.png";
 
@@ -114,6 +115,47 @@ function AdminDashboard() {
       setActiveMenu(menuKey);
     }
   };
+
+  // Listen for hash changes so other pages (ActivityManagement) can request opening sidebar sections
+  useEffect(() => {
+    const mapHashToMenu = (hash) => {
+      if (!hash) return null;
+      const h = String(hash || '').trim();
+      if (h === '#create-task') return 'create-task';
+      if (h === '#manage-tasks') return 'manage-tasks';
+      if (h === '#pending-approvals') return 'pending-approvals';
+      return null;
+    };
+
+    const applyHash = () => {
+      try {
+        const menu = mapHashToMenu(window.location.hash);
+        if (menu) {
+          setActiveMenu(menu);
+          setSidebarOpen(true);
+        }
+      } catch (e) { /* ignore */ }
+    };
+
+    // apply immediately on mount
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    // also listen for programmatic menu open events
+    const openMenuHandler = (e) => {
+      try {
+        const menu = e?.detail?.menu;
+        if (menu) {
+          setActiveMenu(menu);
+          setSidebarOpen(true);
+        }
+      } catch (err) { /* ignore */ }
+    };
+    window.addEventListener('openAdminMenu', openMenuHandler);
+    return () => {
+      window.removeEventListener('hashchange', applyHash);
+      window.removeEventListener('openAdminMenu', openMenuHandler);
+    };
+  }, []);
 
   const renderContent = () => {
     switch (activeMenu) {
@@ -485,11 +527,11 @@ function AdminDashboard() {
         return <ArchivedStudents key="archived-students" />;
 
       case "create-task":
-        return <CreateTask key="create-task" onTaskCreated={fetchTaskStats} />;
+        return <CreateTask key="create-task" onTaskCreated={fetchTaskStats} onBack={() => setActiveMenu('activity-management')} />;
 
       case "manage-tasks":
         return (
-          <ManageTasks key="manage-tasks" onTaskApproved={fetchTaskStats} />
+          <ManageTasks key="manage-tasks" onTaskApproved={fetchTaskStats} onBack={() => setActiveMenu('activity-management')} />
         );
 
       case "pending-approvals":
@@ -497,6 +539,7 @@ function AdminDashboard() {
           <PendingApprovals
             key="pending-approvals"
             onTaskApproved={fetchTaskStats}
+            onBack={() => setActiveMenu('activity-management')}
           />
         );
 
@@ -539,7 +582,8 @@ function AdminDashboard() {
       case "representative-payout":
         return <RepresentativePayoutManagement key="representative-payout" />;
 
-      /* Activity and Activities panels removed */
+      case "activity-management":
+        return <ActivityManagementNew />;
       default:
         return (
           <div className="content-header">
@@ -758,74 +802,7 @@ function AdminDashboard() {
             Documents
           </li>
 
-          <li
-            className={activeMenu === "create-task" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("create-task");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-            Create task
-          </li>
-
-          <li
-            className={activeMenu === "manage-tasks" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("manage-tasks");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            manage task
-          </li>
-
-          <li
-            className={activeMenu === "pending-approvals" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("pending-approvals");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            pending apporval
-            {taskStats.pendingApprovalTasks > 0 && (
-              <span
-                style={{
-                  marginLeft: "8px",
-                  background: "#0f172a",
-                  color: "white",
-                  padding: "2px 8px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  fontWeight: 700,
-                }}
-              >
-                {taskStats.pendingApprovalTasks}
-              </span>
-            )}
-          </li>
+          {/* Create/manage task & pending-approvals moved to Activity Management actions; removed from sidebar */}
 
           <li
             className={activeMenu === "notifications" ? "active" : ""}
@@ -899,7 +876,23 @@ function AdminDashboard() {
             reports
           </li>
 
-          {/* Activity Management and Activities menu removed */}
+          <li
+            className={activeMenu === "activity-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("activity-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Activity Management
+          </li>
         </ul>
 
         <button className="logout-btn" onClick={handleLogout}>
