@@ -98,6 +98,7 @@ export default function ActivityManagement({ onNavigate }) {
           const gdTimeRef = useRef(null);
           const gdGroupSizeRef = useRef(null);
           const gdInterviewerOtherRef = useRef(null);
+          const assessInterviewerOtherRef = useRef(null);
         const assignDescRef = useRef(null);
         const assessTitleRef = useRef(null);
         const assessDescRef = useRef(null);
@@ -119,14 +120,33 @@ export default function ActivityManagement({ onNavigate }) {
 
         function openFlow(flow) { setActiveFlow(flow); setModalOpen(true); }
 
+        function normalizeInterviewDate(rawDate) {
+          const value = String(rawDate || '').trim();
+          if (!value) return '';
+          if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+          const match = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+          if (match) {
+            const [, day, month, year] = match;
+            return `${year}-${month}-${day}`;
+          }
+          return '';
+        }
+
         // Simple helpers to add activities locally (keeps backend intact for real calls)
         function pushActivity(a) { setActivities(prev => [a, ...prev].slice(0, 40)); }
 
         function toggleStudent(id) { setSelectedStudents(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]); }
 
-        function generateSlots() {
-          const { date, startTime, perGap } = interviewForm;
-          if (!date || !startTime) return;
+        function generateSlots(formValues = interviewForm) {
+          const { date, startTime, perGap } = formValues;
+          if (!date || !startTime) {
+            alert('Please select an interview date and start time first.');
+            return;
+          }
+          if (!selectedStudents.length) {
+            alert('Please select at least one student before generating the schedule.');
+            return;
+          }
           const [h, m] = startTime.split(':').map(Number);
           const base = new Date(date);
           base.setHours(h, m, 0, 0);
@@ -148,13 +168,13 @@ export default function ActivityManagement({ onNavigate }) {
         }
 
         function handleInterviewGenerate() {
-          const date = interviewDateRef && interviewDateRef.current ? interviewDateRef.current.value : interviewForm.date;
+          const date = normalizeInterviewDate(interviewDateRef && interviewDateRef.current ? interviewDateRef.current.value : interviewForm.date);
           const startTime = interviewTimeRef && interviewTimeRef.current ? interviewTimeRef.current.value : interviewForm.startTime;
           const perGap = interviewPerGapRef && interviewPerGapRef.current ? Number(interviewPerGapRef.current.value) : interviewForm.perGap;
           const otherInterviewerName = interviewerOtherRef && interviewerOtherRef.current ? interviewerOtherRef.current.value : interviewForm.otherInterviewerName;
-          setInterviewForm(f => ({ ...f, date, startTime, perGap, otherInterviewerName }));
-          // Wait for state to settle then generate slots
-          setTimeout(() => generateSlots(), 0);
+          const nextForm = { ...interviewForm, date, startTime, perGap, otherInterviewerName };
+          setInterviewForm(nextForm);
+          generateSlots(nextForm);
         }
 
         function saveInterviewSchedule() {
@@ -211,16 +231,21 @@ export default function ActivityManagement({ onNavigate }) {
           // Prepare interviewer info similar to interview flow
           let trainerId = null;
           let interviewerName = null;
+          const title = gdTitleRef && gdTitleRef.current ? gdTitleRef.current.value : gdForm.title;
+          const date = gdDateRef && gdDateRef.current ? gdDateRef.current.value : gdForm.date;
+          const startTime = gdTimeRef && gdTimeRef.current ? gdTimeRef.current.value : gdForm.startTime;
+          const groupSize = gdGroupSizeRef && gdGroupSizeRef.current ? Number(gdGroupSizeRef.current.value) : gdForm.groupSize;
+          const otherInterviewerName = gdInterviewerOtherRef && gdInterviewerOtherRef.current ? gdInterviewerOtherRef.current.value : gdForm.otherInterviewerName;
           if (gdForm.interviewer && gdForm.interviewer !== '__other') {
             trainerId = gdForm.interviewer;
             const selectedTrainer = trainers.find(t => String(t.id) === String(gdForm.interviewer));
             interviewerName = selectedTrainer ? selectedTrainer.name : null;
           } else if (gdForm.interviewer === '__other') {
-            interviewerName = gdForm.otherInterviewerName || null;
+            interviewerName = otherInterviewerName || null;
           }
 
           // Attempt backend call (not implemented in every API) then update UI
-          const activity = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: `${gdForm.date} ${gdForm.startTime}`, createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'Admin', status: 'Scheduled', details: { form: { ...gdForm, trainerId, interviewerName }, groups: gdGroups } };
+          const activity = { type: 'GD', title: title || 'Group Discussion', dateTime: `${date} ${startTime}`, createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'Admin', status: 'Scheduled', details: { form: { ...gdForm, title, date, startTime, groupSize, otherInterviewerName, trainerId, interviewerName }, groups: gdGroups } };
 
           // Validate interviewer when backend present (mirror interview flow)
           if (adminAPI && adminAPI.createGd && !trainerId && !interviewerName) {
@@ -230,8 +255,17 @@ export default function ActivityManagement({ onNavigate }) {
 
           // If backend API exists, call it (placeholder)
           if (adminAPI && adminAPI.createGd) {
-            adminAPI.createGd({ ...gdForm, groups: gdGroups, trainerId, interviewerName }).then(() => { pushActivity(activity); }).catch(() => { pushActivity(activity); });
-          } else pushActivity(activity);
+            adminAPI.createGd({ ...gdForm, title, date, startTime, groupSize, otherInterviewerName, groups: gdGroups, trainerId, interviewerName }).then(() => {
+              pushActivity(activity);
+              alert('GD scheduled successfully.');
+            }).catch(() => {
+              pushActivity(activity);
+              alert('GD scheduled locally. Backend sync failed, but the schedule was saved in the UI.');
+            });
+          } else {
+            pushActivity(activity);
+            alert('GD scheduled successfully.');
+          }
           // Also persist a lightweight scheduled GD to localStorage so other connected clients (interns/trainers) can pick it up when the backend integration is missing.
           try {
             const existing = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
@@ -243,23 +277,34 @@ export default function ActivityManagement({ onNavigate }) {
         }
 
         function saveAssessment() {
+          alert('Scheduling assessment...');
           // Prepare interviewer info
           let trainerId = null;
           let interviewerName = null;
+          const otherInterviewerName = assessInterviewerOtherRef && assessInterviewerOtherRef.current ? assessInterviewerOtherRef.current.value : assessForm.otherInterviewerName;
           if (assessForm.interviewer && assessForm.interviewer !== '__other') {
             trainerId = assessForm.interviewer;
             const selectedTrainer = trainers.find(t => String(t.id) === String(assessForm.interviewer));
             interviewerName = selectedTrainer ? selectedTrainer.name : null;
           } else if (assessForm.interviewer === '__other') {
-            interviewerName = assessForm.otherInterviewerName || null;
+            interviewerName = otherInterviewerName || null;
           }
 
           const payload = { ...assessForm, assigned: assessSelected, trainerId, interviewerName };
-          const activity = { type: 'Assessment', title: assessForm.title || assessForm.type, dateTime: `${assessForm.date} ${assessForm.time}`, createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'Admin', status: 'Scheduled', details: { form: { ...assessForm, trainerId, interviewerName }, assigned: assessSelected } };
+          const activity = { type: 'Assessment', title: assessForm.title || assessForm.type, dateTime: `${assessForm.date} ${assessForm.time}`, createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'Admin', status: 'Scheduled', details: { form: { ...assessForm, otherInterviewerName, trainerId, interviewerName }, assigned: assessSelected } };
 
           if (adminAPI && adminAPI.createAssessment) {
-            adminAPI.createAssessment(payload).then(() => pushActivity(activity)).catch(() => pushActivity(activity));
-          } else pushActivity(activity);
+            adminAPI.createAssessment(payload).then(() => {
+              pushActivity(activity);
+              alert('Assessment scheduled successfully.');
+            }).catch(() => {
+              pushActivity(activity);
+              alert('Assessment scheduled locally. Backend sync failed, but the schedule was saved in the UI.');
+            });
+          } else {
+            pushActivity(activity);
+            alert('Assessment scheduled successfully.');
+          }
 
           setActiveFlow(null); setModalOpen(false); setAssessStep(1); setAssessSelected([]); setAssessForm({ type: 'Technical', title: '', description: '', date: '', time: '09:00', duration: 60, link: '', interviewer: '', otherInterviewerName: '' }); setSearch('');
         }
@@ -318,6 +363,7 @@ export default function ActivityManagement({ onNavigate }) {
         }
 
         function saveAssignment() {
+          alert('Scheduling assignment...');
           // Prepare interviewer info
           let trainerId = null;
           let interviewerName = null;
@@ -334,8 +380,17 @@ export default function ActivityManagement({ onNavigate }) {
           const activity = { type: 'Assignment', title: assignForm.title || 'Assignment', dateTime: `${assignForm.date || assignForm.dueDate} ${assignForm.time || assignForm.dueTime}`, createdBy: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'Admin', status: 'Scheduled', details: { form: { ...assignForm, trainerId, interviewerName }, assigned: assignSelected } };
 
           if (adminAPI && adminAPI.scheduleAssignment) {
-            adminAPI.scheduleAssignment(payload).then(() => pushActivity(activity)).catch(() => pushActivity(activity));
-          } else pushActivity(activity);
+            adminAPI.scheduleAssignment(payload).then(() => {
+              pushActivity(activity);
+              alert('Assignment scheduled successfully.');
+            }).catch(() => {
+              pushActivity(activity);
+              alert('Assignment scheduled locally. Backend sync failed, but the schedule was saved in the UI.');
+            });
+          } else {
+            pushActivity(activity);
+            alert('Assignment scheduled successfully.');
+          }
 
           setActiveFlow(null); setModalOpen(false); setAssignStep(1); setAssignSelected([]); setAssignForm({ title: '', description: '', date: '', time: '09:00', dueDate: '', dueTime: '09:00', interviewer: '', otherInterviewerName: '' }); setSearch('');
         }
@@ -449,8 +504,72 @@ export default function ActivityManagement({ onNavigate }) {
         }
 
         /* Minimal flow modal content placeholder — opens existing flows when requested */
-        function FlowModal({ flow }) {
+        const FlowModal = useMemo(() => function FlowModal({ flow, ctx }) {
           if (!flow) return null;
+          const {
+            setModalOpen,
+            students,
+            trainers,
+            groups,
+            interviewForm,
+            setInterviewForm,
+            interviewStep,
+            setInterviewStep,
+            selectedStudents,
+            setSelectedStudents,
+            generatedSlots,
+            setGeneratedSlots,
+            search,
+            setSearch,
+            gdForm,
+            setGdForm,
+            gdStep,
+            setGdStep,
+            gdGroups,
+            setGdGroups,
+            gdSelectedGroups,
+            setGdSelectedGroups,
+            gdTitleRef,
+            gdDateRef,
+            gdTimeRef,
+            gdGroupSizeRef,
+            gdInterviewerOtherRef,
+            assessForm,
+            setAssessForm,
+            assessStep,
+            setAssessStep,
+            assessSelected,
+            setAssessSelected,
+            assessTitleRef,
+            assessDescRef,
+            assessDateRef,
+            assessTimeRef,
+            assessDurationRef,
+            assessLinkRef,
+            assessInterviewerOtherRef,
+            assignForm,
+            setAssignForm,
+            assignStep,
+            setAssignStep,
+            assignSelected,
+            setAssignSelected,
+            assignTitleRef,
+            assignDescRef,
+            assignDateRef,
+            assignTimeRef,
+            assignDueDateRef,
+            assignDueTimeRef,
+            interviewerOtherRef,
+            handleInterviewGenerate,
+            saveInterviewSchedule,
+            handleGdGenerate,
+            handleGdManualCreate,
+            saveGd,
+            handleAssessNext,
+            saveAssessment,
+            handleAssignNext,
+            saveAssignment,
+          } = ctx;
           // Intentionally not auto-focusing inputs here to avoid stealing focus
           // during user typing. Focus is managed by the browser/user interaction.
 
@@ -473,18 +592,6 @@ export default function ActivityManagement({ onNavigate }) {
               }
             }
 
-            function onFocusOut(e) {
-              const related = e.relatedTarget || document.activeElement;
-              // Debug log to help identify external focus stealers
-              console.debug('Modal focusout:', { target: e.target, related, pointerDown });
-              if (!modalEl.contains(related) && !pointerDown) {
-                if (lastFocused && typeof lastFocused.focus === 'function') {
-                  // restore focus asynchronously to avoid interfering with event chain
-                  setTimeout(() => { try { lastFocused.focus(); } catch (err) {} }, 0);
-                }
-              }
-            }
-
             function onKeyDown(e) {
               if (modalEl.contains(e.target)) {
                 // Prevent outside handlers from reacting to typing inside modal
@@ -501,7 +608,6 @@ export default function ActivityManagement({ onNavigate }) {
             document.addEventListener('pointerdown', onPointerDown, true);
             document.addEventListener('pointerup', onPointerUp, true);
             document.addEventListener('focusin', onFocusIn, true);
-            document.addEventListener('focusout', onFocusOut, true);
             document.addEventListener('keydown', onKeyDown, true);
             document.addEventListener('keyup', onKeyUp, true);
 
@@ -509,7 +615,6 @@ export default function ActivityManagement({ onNavigate }) {
               document.removeEventListener('pointerdown', onPointerDown, true);
               document.removeEventListener('pointerup', onPointerUp, true);
               document.removeEventListener('focusin', onFocusIn, true);
-              document.removeEventListener('focusout', onFocusOut, true);
               document.removeEventListener('keydown', onKeyDown, true);
               document.removeEventListener('keyup', onKeyUp, true);
             };
@@ -573,15 +678,30 @@ export default function ActivityManagement({ onNavigate }) {
 
                       <div className="nm-form-row">
                         <label>Date</label>
-                        <input ref={interviewDateRef} type="date" defaultValue={interviewForm.date} />
+                        <input
+                          ref={interviewDateRef}
+                          type="date"
+                          value={interviewForm.date}
+                          onChange={e => setInterviewForm(f => ({ ...f, date: e.target.value }))}
+                        />
                       </div>
                       <div className="nm-form-row">
                         <label>Start Time</label>
-                        <input ref={interviewTimeRef} type="time" defaultValue={interviewForm.startTime} />
+                        <input
+                          ref={interviewTimeRef}
+                          type="time"
+                          value={interviewForm.startTime}
+                          onChange={e => setInterviewForm(f => ({ ...f, startTime: e.target.value }))}
+                        />
                       </div>
                       <div className="nm-form-row">
                         <label>Per Interview (mins)</label>
-                        <input ref={interviewPerGapRef} type="number" defaultValue={interviewForm.perGap} />
+                        <input
+                          ref={interviewPerGapRef}
+                          type="number"
+                          value={interviewForm.perGap}
+                          onChange={e => setInterviewForm(f => ({ ...f, perGap: Number(e.target.value) || 0 }))}
+                        />
                       </div>
                       <div className="nm-form-row">
                         <label>Interviewer</label>
@@ -594,7 +714,12 @@ export default function ActivityManagement({ onNavigate }) {
                       {interviewForm.interviewer === '__other' && (
                         <div className="nm-form-row">
                           <label>Interviewer Name</label>
-                          <input ref={interviewerOtherRef} defaultValue={interviewForm.otherInterviewerName} placeholder="Enter interviewer name" />
+                          <input
+                            ref={interviewerOtherRef}
+                            value={interviewForm.otherInterviewerName}
+                            onChange={e => setInterviewForm(f => ({ ...f, otherInterviewerName: e.target.value }))}
+                            placeholder="Enter interviewer name"
+                          />
                         </div>
                       )}
                     </div>
@@ -661,7 +786,7 @@ export default function ActivityManagement({ onNavigate }) {
 
                         <div className="nm-form-actions">
                           <button className="nm-btn-ghost" onClick={() => setInterviewStep(1)}>← Back</button>
-                          <button className="nm-btn-primary" onClick={() => generateSlots()}>Generate Schedule</button>
+                          <button className="nm-btn-primary" onClick={() => handleInterviewGenerate()}>Generate Schedule</button>
                         </div>
                       </div>
                     )}
@@ -706,7 +831,8 @@ export default function ActivityManagement({ onNavigate }) {
                             <label>GD Title</label>
                             <input
                               ref={gdTitleRef}
-                              defaultValue={gdForm.title}
+                              value={gdForm.title}
+                              onChange={e => setGdForm(f => ({ ...f, title: e.target.value }))}
                               placeholder="GD Topic / Title"
                               onMouseDown={e => e.stopPropagation()}
                               onClick={e => e.stopPropagation()}
@@ -717,12 +843,22 @@ export default function ActivityManagement({ onNavigate }) {
 
                           <div className="nm-form-row">
                             <label>Date</label>
-                            <input ref={gdDateRef} type="date" defaultValue={gdForm.date} />
+                            <input
+                              ref={gdDateRef}
+                              type="date"
+                              value={gdForm.date}
+                              onChange={e => setGdForm(f => ({ ...f, date: e.target.value }))}
+                            />
                           </div>
 
                           <div className="nm-form-row">
                             <label>Start Time</label>
-                            <input ref={gdTimeRef} type="time" defaultValue={gdForm.startTime} />
+                            <input
+                              ref={gdTimeRef}
+                              type="time"
+                              value={gdForm.startTime}
+                              onChange={e => setGdForm(f => ({ ...f, startTime: e.target.value }))}
+                            />
                           </div>
 
                           <div className="nm-form-row">
@@ -736,7 +872,12 @@ export default function ActivityManagement({ onNavigate }) {
                           {gdForm.groupMode === 'Auto' && (
                             <div className="nm-form-row">
                               <label>Group Size</label>
-                              <input ref={gdGroupSizeRef} type="number" defaultValue={gdForm.groupSize} />
+                              <input
+                                ref={gdGroupSizeRef}
+                                type="number"
+                                value={gdForm.groupSize}
+                                onChange={e => setGdForm(f => ({ ...f, groupSize: Number(e.target.value) || 0 }))}
+                              />
                             </div>
                           )}
 
@@ -751,7 +892,7 @@ export default function ActivityManagement({ onNavigate }) {
                           {gdForm.interviewer === '__other' && (
                             <div className="nm-form-row">
                               <label>Interviewer Name</label>
-                              <input value={gdForm.otherInterviewerName} onChange={e => setGdForm(f => ({ ...f, otherInterviewerName: e.target.value }))} placeholder="Enter interviewer name" />
+                              <input ref={gdInterviewerOtherRef} defaultValue={gdForm.otherInterviewerName} placeholder="Enter interviewer name" />
                             </div>
                           )}
 
@@ -829,62 +970,32 @@ export default function ActivityManagement({ onNavigate }) {
 
                           <div className="nm-form-row">
                             <label>Assessment Title</label>
-                            <input 
-                              ref={assessTitleRef}
-                              defaultValue={assessForm.title}
-                              placeholder="e.g., Technical Round 1"
-                              onPointerDown={e => e.stopPropagation()}
-                              onMouseDown={e => e.stopPropagation()}
-                              onClick={e => e.stopPropagation()}
-                              onKeyDown={e => e.stopPropagation()}
-                              onKeyUp={e => e.stopPropagation()}
-                            />
+                            <input ref={assessTitleRef} value={assessForm.title} onChange={e => setAssessForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g., Technical Round 1" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} onKeyUp={e => e.stopPropagation()} />
                           </div>
 
                           <div className="nm-form-row">
                             <label>Description</label>
-                            <textarea 
-                              ref={assessDescRef}
-                              defaultValue={assessForm.description}
-                              placeholder="Assessment details and instructions"
-                              style={{ minHeight: '80px', fontFamily: 'inherit', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
-                              onPointerDown={e => e.stopPropagation()}
-                              onMouseDown={e => e.stopPropagation()}
-                              onClick={e => e.stopPropagation()}
-                              onKeyDown={e => e.stopPropagation()}
-                              onKeyUp={e => e.stopPropagation()}
-                            />
+                            <textarea ref={assessDescRef} value={assessForm.description} onChange={e => setAssessForm(f => ({ ...f, description: e.target.value }))} placeholder="Assessment details and instructions" style={{ minHeight: '80px', fontFamily: 'inherit', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} onKeyUp={e => e.stopPropagation()} />
                           </div>
 
                           <div className="nm-form-row">
                             <label>Date</label>
-                            <input ref={assessDateRef} type="date" defaultValue={assessForm.date} />
+                            <input ref={assessDateRef} type="date" value={assessForm.date} onChange={e => setAssessForm(f => ({ ...f, date: e.target.value }))} />
                           </div>
 
                           <div className="nm-form-row">
                             <label>Start Time</label>
-                            <input ref={assessTimeRef} type="time" defaultValue={assessForm.time} />
+                            <input ref={assessTimeRef} type="time" value={assessForm.time} onChange={e => setAssessForm(f => ({ ...f, time: e.target.value }))} />
                           </div>
 
                           <div className="nm-form-row">
                             <label>Duration (minutes)</label>
-                              <input 
-                              ref={assessDurationRef}
-                              type="number" 
-                              defaultValue={assessForm.duration}
-                              min="15"
-                              step="15"
-                            />
+                            <input ref={assessDurationRef} type="number" value={assessForm.duration} onChange={e => setAssessForm(f => ({ ...f, duration: Number(e.target.value) || 0 }))} min="15" step="15" />
                           </div>
 
                           <div className="nm-form-row">
                             <label>Assessment Link / URL</label>
-                            <input 
-                              ref={assessLinkRef}
-                              type="url"
-                              defaultValue={assessForm.link}
-                              placeholder="https://example.com/assessment"
-                            />
+                            <input ref={assessLinkRef} type="url" value={assessForm.link} onChange={e => setAssessForm(f => ({ ...f, link: e.target.value }))} placeholder="https://example.com/assessment" />
                           </div>
 
                           <div className="nm-form-row">
@@ -896,12 +1007,10 @@ export default function ActivityManagement({ onNavigate }) {
                             </select>
                           </div>
 
-                          {assessForm.interviewer === '__other' && (
-                            <div className="nm-form-row">
-                              <label>Interviewer Name</label>
-                              <input value={assessForm.otherInterviewerName || ''} onChange={e => setAssessForm(f => ({ ...f, otherInterviewerName: e.target.value }))} placeholder="Enter interviewer name" />
-                            </div>
-                          )}
+                          <div className="nm-form-row" style={{ display: assessForm.interviewer === '__other' ? 'block' : 'none' }}>
+                            <label>Interviewer Name</label>
+                            <input ref={assessInterviewerOtherRef} defaultValue={assessForm.otherInterviewerName || ''} placeholder="Enter interviewer name" />
+                          </div>
                         </div>
 
                         <div className="nm-form-actions">
@@ -910,6 +1019,44 @@ export default function ActivityManagement({ onNavigate }) {
                         </div>
                       </div>
                     )}
+
+                    {assessStep === 2 && (
+                      <div>
+                        <div style={{ marginBottom: '16px' }}>
+                          <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px' }}>Select Existing Group (Optional)</label>
+                          <select onChange={e => { const gid = e.target.value; if (!gid) return; const g = groups.find(x => String(x._id || x.id) === String(gid)); if (g) { let ids = []; if (Array.isArray(g.students) && g.students.length) { ids = g.students.map(s => s._id || s.id || s); } else if (Array.isArray(g.studentIds)) { ids = g.studentIds; } setAssessSelected(ids); } }} style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}>
+                            <option value="">-- Select Group (auto-select members) --</option>
+                            {groups.map(g => <option key={g._id || g.id} value={g._id || g.id}>{g.groupName || g.name || g.title || g.groupNumber || `Group ${g._id || g.id}`}</option>)}
+                          </select>
+                        </div>
+
+                        <div style={{ marginBottom: '12px' }}>
+                          <input className="nm-search" placeholder="Search students..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
+                        </div>
+
+                        <div style={{ maxHeight: '240px', overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px' }}>
+                          {students.length === 0 ? <div className="nm-muted">No students found</div> : students.filter(s => !search || (s.name || '').toLowerCase().includes(search.toLowerCase()) || (s.psmsId || '').toLowerCase().includes(search.toLowerCase())).map(s => (
+                            <div key={s.id} className="nm-student-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
+                              <div style={{ flex: 1 }}>
+                                {s.name}
+                                {s.psmsId && <div style={{ fontSize: '12px', color: '#9ca3af' }}>ID: {s.psmsId}</div>}
+                              </div>
+                              <div>
+                                <input type="checkbox" checked={assessSelected.map(String).includes(String(s.id))} onChange={() => setAssessSelected(prev => prev.map(String).includes(String(s.id)) ? prev.filter(x => String(x) !== String(s.id)) : [...prev, s.id])} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="nm-form-actions" style={{ marginTop: '16px' }}>
+                          <button className="nm-btn-ghost" onClick={() => setAssessStep(1)}>← Back</button>
+                          <button className="nm-btn-primary" onClick={() => saveAssessment()} disabled={assessSelected.length === 0}>Save & Send Assessment ({assessSelected.length} student{assessSelected.length !== 1 ? 's' : ''})</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {flow === 'assignment' && (
                   <div>
                     {assignStep === 1 && (
@@ -917,77 +1064,19 @@ export default function ActivityManagement({ onNavigate }) {
                         <div className="nm-form-grid">
                           <div className="nm-form-row">
                             <label>Assignment Title</label>
-                            <input
-                              ref={assignTitleRef}
-                              value={assignForm.title}
-                              onChange={e => { setAssignForm(f => ({ ...f, title: e.target.value })); setTimeout(() => { try { e.target.focus(); const len = (e.target.value||'').length; if (typeof e.target.setSelectionRange === 'function') e.target.setSelectionRange(len,len); } catch (err) {} }, 0); }}
-                              placeholder="e.g., Project Deliverable 1"
-                              onFocus={e => {
-                                try {
-                                  e.stopPropagation();
-                                  const el = assignTitleRef && assignTitleRef.current;
-                                  if (el && typeof el.setSelectionRange === 'function') {
-                                    const len = (el.value || '').length;
-                                    el.setSelectionRange(len, len);
-                                  }
-                                } catch (err) {}
-                              }}
-                              onPointerDown={e => e.stopPropagation()}
-                              onMouseDown={e => e.stopPropagation()}
-                              onClick={e => e.stopPropagation()}
-                              onKeyDown={e => e.stopPropagation()}
-                              onKeyUp={e => e.stopPropagation()}
-                              onBlur={() => {}}
-                            />
+                            <input ref={assignTitleRef} value={assignForm.title} onChange={e => setAssignForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g., Project Deliverable 1" onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} onKeyUp={e => e.stopPropagation()} />
                           </div>
 
                           <div className="nm-form-row">
                             <label>Description</label>
-                            <textarea
-                              ref={assignDescRef}
-                              value={assignForm.description}
-                              onChange={e => { setAssignForm(f => ({ ...f, description: e.target.value })); setTimeout(() => { try { e.target.focus(); const len = (e.target.value||'').length; if (typeof e.target.setSelectionRange === 'function') e.target.setSelectionRange(len,len); } catch (err) {} }, 0); }}
-                              placeholder="Assignment details and instructions"
-                              style={{ minHeight: '80px', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
-                              onFocus={e => {
-                                try {
-                                  e.stopPropagation();
-                                  const el = assignDescRef && assignDescRef.current;
-                                  if (el && typeof el.setSelectionRange === 'function') {
-                                    const len = (el.value || '').length;
-                                    el.setSelectionRange(len, len);
-                                  }
-                                } catch (err) {}
-                              }}
-                              onPointerDown={e => e.stopPropagation()}
-                              onMouseDown={e => e.stopPropagation()}
-                              onClick={e => e.stopPropagation()}
-                              onKeyDown={e => e.stopPropagation()}
-                              onKeyUp={e => e.stopPropagation()}
-                              onBlur={() => {}}
-                            />
+                            <textarea ref={assignDescRef} value={assignForm.description} onChange={e => setAssignForm(f => ({ ...f, description: e.target.value }))} placeholder="Assignment details and instructions" style={{ minHeight: '80px', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }} onPointerDown={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} onKeyUp={e => e.stopPropagation()} />
                           </div>
 
-                          <div className="nm-form-row">
-                            <label>Assign Date</label>
-                            <input ref={assignDateRef} type="date" defaultValue={assignForm.date} />
-                          </div>
+                          <div className="nm-form-row"><label>Assign Date</label><input ref={assignDateRef} type="date" defaultValue={assignForm.date} /></div>
+                          <div className="nm-form-row"><label>Assign Time</label><input ref={assignTimeRef} type="time" defaultValue={assignForm.time} /></div>
+                          <div className="nm-form-row"><label>Due Date</label><input ref={assignDueDateRef} type="date" defaultValue={assignForm.dueDate} /></div>
+                          <div className="nm-form-row"><label>Due Time</label><input ref={assignDueTimeRef} type="time" defaultValue={assignForm.dueTime} /></div>
 
-                          <div className="nm-form-row">
-                            <label>Assign Time</label>
-                            <input ref={assignTimeRef} type="time" defaultValue={assignForm.time} />
-                          </div>
-
-                          <div className="nm-form-row">
-                            <label>Due Date</label>
-                            <input ref={assignDueDateRef} type="date" defaultValue={assignForm.dueDate} />
-                          </div>
-
-                          <div className="nm-form-row">
-                            <label>Due Time</label>
-                            <input ref={assignDueTimeRef} type="time" defaultValue={assignForm.dueTime} />
-                          </div>
-                          
                           <div className="nm-form-row">
                             <label>Interviewer</label>
                             <select value={assignForm.interviewer || ''} onChange={e => setAssignForm(f => ({ ...f, interviewer: e.target.value }))}>
@@ -997,12 +1086,10 @@ export default function ActivityManagement({ onNavigate }) {
                             </select>
                           </div>
 
-                          {assignForm.interviewer === '__other' && (
-                            <div className="nm-form-row">
-                              <label>Interviewer Name</label>
-                              <input value={assignForm.otherInterviewerName || ''} onChange={e => setAssignForm(f => ({ ...f, otherInterviewerName: e.target.value }))} placeholder="Enter interviewer name" />
-                            </div>
-                          )}
+                          <div className="nm-form-row" style={{ display: assignForm.interviewer === '__other' ? 'block' : 'none' }}>
+                            <label>Interviewer Name</label>
+                            <input value={assignForm.otherInterviewerName || ''} onChange={e => setAssignForm(f => ({ ...f, otherInterviewerName: e.target.value }))} placeholder="Enter interviewer name" />
+                          </div>
                         </div>
 
                         <div className="nm-form-actions">
@@ -1014,25 +1101,15 @@ export default function ActivityManagement({ onNavigate }) {
 
                     {assignStep === 2 && (
                       <div>
-                        <div style={{ marginBottom: '12px' }}>
-                          <input className="nm-search" placeholder="Search students..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} />
-                        </div>
+                        <div style={{ marginBottom: '12px' }}><input className="nm-search" placeholder="Search students..." value={search} onChange={e => setSearch(e.target.value)} style={{ width: '100%' }} /></div>
 
                         <div style={{ maxHeight: '240px', overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px' }}>
-                          {students.length === 0 ? (
-                            <div className="nm-muted">No students found</div>
-                          ) : (
-                            students
-                              .filter(s => !search || (s.name || '').toLowerCase().includes(search.toLowerCase()) || (s.psmsId || '').toLowerCase().includes(search.toLowerCase()))
-                              .map(s => (
-                                <div key={s.id} className="nm-student-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
-                                  <div style={{ flex: 1 }}>{s.name}{s.psmsId && <div style={{ fontSize: '12px', color: '#9ca3af' }}>ID: {s.psmsId}</div>}</div>
-                                  <div>
-                                    <input type="checkbox" checked={assignSelected.map(String).includes(String(s.id))} onChange={() => setAssignSelected(prev => prev.map(String).includes(String(s.id)) ? prev.filter(x => String(x) !== String(s.id)) : [...prev, s.id])} />
-                                  </div>
-                                </div>
-                              ))
-                          )}
+                          {students.length === 0 ? <div className="nm-muted">No students found</div> : students.filter(s => !search || (s.name || '').toLowerCase().includes(search.toLowerCase()) || (s.psmsId || '').toLowerCase().includes(search.toLowerCase())).map(s => (
+                            <div key={s.id} className="nm-student-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
+                              <div style={{ flex: 1 }}>{s.name}{s.psmsId && <div style={{ fontSize: '12px', color: '#9ca3af' }}>ID: {s.psmsId}</div>}</div>
+                              <div><input type="checkbox" checked={assignSelected.map(String).includes(String(s.id))} onChange={() => setAssignSelected(prev => prev.map(String).includes(String(s.id)) ? prev.filter(x => String(x) !== String(s.id)) : [...prev, s.id])} /></div>
+                            </div>
+                          ))}
                         </div>
 
                         <div className="nm-form-actions" style={{ marginTop: '16px' }}>
@@ -1043,91 +1120,10 @@ export default function ActivityManagement({ onNavigate }) {
                     )}
                   </div>
                 )}
-
-                    {assessStep === 2 && (
-                      <div>
-                        <div style={{ marginBottom: '16px' }}>
-                          <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px' }}>Select Existing Group (Optional)</label>
-                          <select 
-                            onChange={e => {
-                              const gid = e.target.value;
-                              if (!gid) return;
-                              const g = groups.find(x => String(x._id || x.id) === String(gid));
-                              if (g) {
-                                let ids = [];
-                                if (Array.isArray(g.students) && g.students.length) {
-                                  ids = g.students.map(s => s._id || s.id || s);
-                                } else if (Array.isArray(g.studentIds)) {
-                                  ids = g.studentIds;
-                                }
-                                setAssessSelected(ids);
-                              }
-                            }}
-                            style={{ width: '100%', padding: '8px', border: '1px solid #d1d5db', borderRadius: '6px' }}
-                          >
-                            <option value="">-- Select Group (auto-select members) --</option>
-                            {groups.map(g => (
-                              <option key={g._id || g.id} value={g._id || g.id}>
-                                {g.groupName || g.name || g.title || g.groupNumber || `Group ${g._id || g.id}`}
-                                {' '}
-                                <small>({Array.isArray(g.students) ? g.students.length : (Array.isArray(g.studentIds) ? g.studentIds.length : 0)} members)</small>
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div style={{ marginBottom: '12px' }}>
-                          <input 
-                            className="nm-search" 
-                            placeholder="Search students..." 
-                            value={search} 
-                            onChange={e => setSearch(e.target.value)}
-                            style={{ width: '100%' }}
-                          />
-                        </div>
-
-                        <div style={{ maxHeight: '240px', overflow: 'auto', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '8px' }}>
-                          {students.length === 0 ? (
-                            <div className="nm-muted">No students found</div>
-                          ) : (
-                            students
-                              .filter(s => !search || (s.name || '').toLowerCase().includes(search.toLowerCase()) || (s.psmsId || '').toLowerCase().includes(search.toLowerCase()))
-                              .map(s => (
-                                <div key={s.id} className="nm-student-row" style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
-                                  <div style={{ flex: 1 }}>
-                                    {s.name}
-                                    {s.psmsId && <div style={{ fontSize: '12px', color: '#9ca3af' }}>ID: {s.psmsId}</div>}
-                                  </div>
-                                  <div>
-                                    <input 
-                                      type="checkbox" 
-                                      checked={assessSelected.map(String).includes(String(s.id))} 
-                                      onChange={() => setAssessSelected(prev => prev.map(String).includes(String(s.id)) ? prev.filter(x => String(x) !== String(s.id)) : [...prev, s.id])} 
-                                    />
-                                  </div>
-                                </div>
-                              ))
-                          )}
-                        </div>
-
-                        <div className="nm-form-actions" style={{ marginTop: '16px' }}>
-                          <button className="nm-btn-ghost" onClick={() => setAssessStep(1)}>← Back</button>
-                          <button 
-                            className="nm-btn-primary" 
-                            onClick={() => saveAssessment()}
-                            disabled={assessSelected.length === 0}
-                          >
-                            Save & Send Assessment ({assessSelected.length} student{assessSelected.length !== 1 ? 's' : ''})
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           );
-        }
+        }, []);
 
         return (
           <div className="nm-page">
@@ -1221,7 +1217,73 @@ export default function ActivityManagement({ onNavigate }) {
                   onKeyDownCapture={e => e.stopPropagation()}
                   onKeyUpCapture={e => e.stopPropagation()}
                 >
-                  <FlowModal flow={activeFlow} />
+                  <FlowModal
+                    flow={activeFlow}
+                    ctx={{
+                      setModalOpen,
+                      students,
+                      trainers,
+                      groups,
+                      interviewForm,
+                      setInterviewForm,
+                      interviewStep,
+                      setInterviewStep,
+                      selectedStudents,
+                      setSelectedStudents,
+                      generatedSlots,
+                      setGeneratedSlots,
+                      search,
+                      setSearch,
+                      gdForm,
+                      setGdForm,
+                      gdStep,
+                      setGdStep,
+                      gdGroups,
+                      setGdGroups,
+                      gdSelectedGroups,
+                      setGdSelectedGroups,
+                      gdTitleRef,
+                      gdDateRef,
+                      gdTimeRef,
+                      gdGroupSizeRef,
+                      gdInterviewerOtherRef,
+                      assessForm,
+                      setAssessForm,
+                      assessStep,
+                      setAssessStep,
+                      assessSelected,
+                      setAssessSelected,
+                      assessTitleRef,
+                      assessDescRef,
+                      assessDateRef,
+                      assessTimeRef,
+                      assessDurationRef,
+                      assessLinkRef,
+                      assessInterviewerOtherRef,
+                      assignForm,
+                      setAssignForm,
+                      assignStep,
+                      setAssignStep,
+                      assignSelected,
+                      setAssignSelected,
+                      assignTitleRef,
+                      assignDescRef,
+                      assignDateRef,
+                      assignTimeRef,
+                      assignDueDateRef,
+                      assignDueTimeRef,
+                      interviewerOtherRef,
+                      handleInterviewGenerate,
+                      saveInterviewSchedule,
+                      handleGdGenerate,
+                      handleGdManualCreate,
+                      saveGd,
+                      handleAssessNext,
+                      saveAssessment,
+                      handleAssignNext,
+                      saveAssignment,
+                    }}
+                  />
                 </div>
               </div>,
               document.body
