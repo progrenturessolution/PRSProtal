@@ -113,78 +113,7 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
           Assign Groups
         </li>
 
-        <li
-          className={(activeTab === "activity-individuals" || activeTab === "activity-groups" || activeTab === "scheduled-gds") ? "active parent" : "parent"}
-          onClick={() => setActivityOpen(!activityOpen)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z"
-              />
-            </svg>
-            Activity Management
-          </div>
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: '18px', height: '18px' }}>
-            {activityOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            )}
-          </svg>
-        </li>
-
-        {activityOpen && (
-          <>
-            <li
-              className={activeTab === "activity-individuals" ? "active" : ""}
-              onClick={() => handleMenuClick("activity-individuals")}
-              style={{ paddingLeft: '32px' }}
-            >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v4m0 8v4m8-8h-4M4 12H8" />
-              </svg>
-              Individual Interviews
-            </li>
-
-            <li
-              className={activeTab === "activity-groups" ? "active" : ""}
-              onClick={() => handleMenuClick("activity-groups")}
-              style={{ paddingLeft: '32px' }}
-            >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
-              </svg>
-              Group Interviews
-            </li>
-
-            <li
-              className={activeTab === "scheduled-assignments" ? "active" : ""}
-              onClick={() => handleMenuClick("scheduled-assignments")}
-              style={{ paddingLeft: '32px' }}
-            >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 100-4H5a2 2 0 100 4" />
-              </svg>
-              Schedule Assessment
-            </li>
-
-            <li
-              className={activeTab === "scheduled-gds" ? "active" : ""}
-              onClick={() => handleMenuClick("scheduled-gds")}
-              style={{ paddingLeft: '32px' }}
-            >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h8M8 12h8M8 17h8" />
-              </svg>
-              Conduct GD
-            </li>
-          </>
-        )}
+        {/* Activity Management removed for employees */}
 
         <li
           className={activeTab === "notifications" ? "active" : ""}

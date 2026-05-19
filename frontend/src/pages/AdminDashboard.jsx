@@ -16,7 +16,6 @@ import AccessManagement from "./AccessManagement";
 import Reports from "./Reports";
 import ManageRepresentatives from "./ManageRepresentatives";
 import RepresentativePayoutManagement from "./RepresentativePayoutManagement";
-import ActivityManagement from "./ActivityManagement";
 import ActivitiesPanel from "./ActivitiesPanel";
 import GroupManagement from "./GroupManagement";
 import { adminAPI, taskAPI } from "../services/api";
@@ -541,8 +540,7 @@ function AdminDashboard() {
       case "representative-payout":
         return <RepresentativePayoutManagement key="representative-payout" />;
 
-      case "activity-management":
-        return <ActivityManagement onNavigate={(m) => setActiveMenu(m)} />;
+      /* Activity Management removed */
       case "activities-panel":
         return <ActivitiesPanel onNavigate={(m) => { setActiveMenu(m); setSidebarOpen(false); }} />;
       default:
@@ -904,23 +902,7 @@ function AdminDashboard() {
             reports
           </li>
 
-          <li
-            className={activeMenu === "activity-management" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("activity-management");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            Activity Management
-          </li>
+          {/* Activity Management menu removed */}
 
           <li
             className={activeMenu === "activities-panel" ? "active" : ""}

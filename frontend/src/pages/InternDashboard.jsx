@@ -809,40 +809,7 @@ function InternDashboard() {
             Interviews
           </li>
 
-          <li
-            className={(activeSection === "scheduled-interviews") ? "active parent" : "parent"}
-            onClick={() => setActivityOpenIntern(!activityOpenIntern)}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-          >
-            <div>Activity Management</div>
-            <div style={{ fontSize: '12px' }}>{activityOpenIntern ? '▾' : '▸'}</div>
-          </li>
-
-          {activityOpenIntern && (
-            <>
-              <li
-                className={activeSection === "scheduled-interviews" ? "active" : ""}
-                onClick={() => handleSectionClick("scheduled-interviews")}
-                style={{ cursor: "pointer", paddingLeft: '28px' }}
-              >
-                Scheduled Interviews
-              </li>
-              <li
-                className={activeSection === "scheduled-gds" ? "active" : ""}
-                onClick={() => handleSectionClick("scheduled-gds")}
-                style={{ cursor: "pointer", paddingLeft: '28px' }}
-              >
-                Scheduled GDs
-              </li>
-              <li
-                className={activeSection === "scheduled-assignments" ? "active" : ""}
-                onClick={() => handleSectionClick("scheduled-assignments")}
-                style={{ cursor: "pointer", paddingLeft: '28px' }}
-              >
-                Schedule Assessment
-              </li>
-            </>
-          )}
+          {/* Activity Management removed for aspirants */}
           <li
             className={activeSection === "aptitude" ? "active" : ""}
             onClick={() => handleSectionClick("aptitude")}
