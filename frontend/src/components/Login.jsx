@@ -113,13 +113,7 @@ function Login() {
             </p>
           </div>
 
-          <div className="login-feature-list">
-            <div className="login-feature-item">Internship &amp; Training Program Management</div>
-            <div className="login-feature-item">Assignments, Assessments &amp; Activity Tracking</div>
-            <div className="login-feature-item">Skill Development &amp; Performance Monitoring</div>
-            <div className="login-feature-item">Certificates, Reports &amp; Learning Resources Access</div>
-            <div className="login-feature-item">Interview Preparation &amp; Placement Support</div>
-          </div>
+          {/* Left-side feature list removed per request */}
 
           <div className="login-footer-copy">
             <p>

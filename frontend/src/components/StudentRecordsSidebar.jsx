@@ -6,15 +6,25 @@ const tabs = [
   { key: "aptitude", label: "Aptitude" },
   { key: "assessments", label: "Assessments" },
   { key: "training", label: "Training" },
+  { key: "gd", label: "GD" },
 ];
 
-function StudentRecordsSidebar({ studentId, activeTab, onTabChange, studentInfo: providedStudentInfo, interviewOnly = false }) {
+function StudentRecordsSidebar({ studentId, activeTab, onTabChange, studentInfo: providedStudentInfo, interviewOnly = false, lockedTab = null }) {
   const location = useLocation();
   const navigate = useNavigate();
   const studentInfo = providedStudentInfo || location.state?.student || null;
   const [notice, setNotice] = useState("");
 
   const handleTabClick = (tab) => {
+    // If a lockedTab is set, prevent switching to other tabs but keep them visible
+    if (lockedTab && tab.key !== lockedTab) {
+      const lockedLabelObj = tabs.find(t => t.key === lockedTab);
+      const lockedLabel = lockedLabelObj ? lockedLabelObj.label : (lockedTab || 'records').toString().toUpperCase();
+      setNotice(`You can only record ${lockedLabel} from here.`);
+      setTimeout(() => setNotice(""), 3000);
+      return;
+    }
+
     if (interviewOnly && tab.key !== "interviews") {
       setNotice("You can only record Interviews from here.");
       setTimeout(() => setNotice(""), 3000);

@@ -6,6 +6,7 @@ import TrainerSidebar from "../components/TrainerSidebar";
 import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
 import ErrorBoundary from "../components/ErrorBoundary";
 import GdConductModal from "../components/GdConductModal";
+import GdStudentConductModal from "../components/GdStudentConductModal";
 
 function TrainerDashboard() {
   const navigate = useNavigate();
@@ -23,6 +24,9 @@ function TrainerDashboard() {
   const [openStudentMenuId, setOpenStudentMenuId] = useState(null);
   const [openAssignmentMenuId, setOpenAssignmentMenuId] = useState(null);
   const [openGdMenuId, setOpenGdMenuId] = useState(null);
+  const [openScheduledInterviewMenuId, setOpenScheduledInterviewMenuId] = useState(null);
+  const [openScheduledGroupMenuId, setOpenScheduledGroupMenuId] = useState(null);
+  const [openScheduledAssessmentMenuId, setOpenScheduledAssessmentMenuId] = useState(null);
   const [groupSearchQuery, setGroupSearchQuery] = useState("");
   const [groupStudentSearch, setGroupStudentSearch] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({});
@@ -38,6 +42,8 @@ function TrainerDashboard() {
   const [scheduledAssignments, setScheduledAssignments] = useState([]);
   const [selectedGd, setSelectedGd] = useState(null);
   const [showGdModal, setShowGdModal] = useState(false);
+  const [selectedGdStudentContext, setSelectedGdStudentContext] = useState(null);
+  const [showGdStudentModal, setShowGdStudentModal] = useState(false);
   const [aptitudes, setAptitudes] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [trainings, setTrainings] = useState([]);
@@ -83,6 +89,16 @@ function TrainerDashboard() {
     trainerRemarks: "",
   });
   const [showEditModal, setShowEditModal] = useState(false);
+  const [gdFormData, setGdFormData] = useState({
+    participation: "3",
+    communication: "3",
+    confidence: "3",
+    topicUnderstanding: "3",
+    leadership: "3",
+    overallRemark: "",
+    strengths: "",
+    improvementAreas: "",
+  });
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
@@ -96,6 +112,7 @@ function TrainerDashboard() {
   const [editError, setEditError] = useState("");
   const [globalError, setGlobalError] = useState(null);
   const [interviewOnlyMode, setInterviewOnlyMode] = useState(false);
+  const [lockedRecordTab, setLockedRecordTab] = useState(null); // when set, only this tab is available in student records
   
 
 
@@ -155,11 +172,32 @@ function TrainerDashboard() {
         }
         setOpenGdMenuId(null);
       }
+
+      if (openScheduledInterviewMenuId) {
+        if (e.target.closest("[data-scheduled-interview-menu]") || e.target.closest("[data-scheduled-interview-menu-toggle]")) {
+          return;
+        }
+        setOpenScheduledInterviewMenuId(null);
+      }
+
+      if (openScheduledGroupMenuId) {
+        if (e.target.closest("[data-scheduled-group-menu]") || e.target.closest("[data-scheduled-group-menu-toggle]")) {
+          return;
+        }
+        setOpenScheduledGroupMenuId(null);
+      }
+
+      if (openScheduledAssessmentMenuId) {
+        if (e.target.closest("[data-scheduled-assessment-menu]") || e.target.closest("[data-scheduled-assessment-menu-toggle]")) {
+          return;
+        }
+        setOpenScheduledAssessmentMenuId(null);
+      }
     };
 
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [openAssignmentMenuId, openStudentMenuId, openGdMenuId]);
+  }, [openAssignmentMenuId, openStudentMenuId, openGdMenuId, openScheduledInterviewMenuId, openScheduledGroupMenuId, openScheduledAssessmentMenuId]);
 
   useEffect(() => {
     const onError = (event) => {
@@ -178,12 +216,13 @@ function TrainerDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [profileResult, studentsResult, scheduledInterviewsResult, workAssignmentsResult, notificationsResult] = await Promise.allSettled([
+      const [profileResult, studentsResult, scheduledInterviewsResult, workAssignmentsResult, notificationsResult, scheduledGdsResult] = await Promise.allSettled([
         trainerAPI.getProfile(),
         trainerAPI.getAssignedStudents(),
         trainerAPI.getScheduledInterviews(),
         trainerAPI.getWorkAssignments(),
         trainerAPI.getNotifications(),
+        trainerAPI.getScheduledGDs(),
       ]);
 
       if (profileResult.status === "fulfilled" && profileResult.value.data.success) {
@@ -290,20 +329,47 @@ function TrainerDashboard() {
       // merge scheduled GDs into the view area if any
       // (we will render both scheduledInterviews and scheduledGds together where appropriate)
 
-      // Also read any locally-persisted scheduled GDs and include those assigned to this trainer
+      const trainerIdCandidates = [profileResult.status === 'fulfilled' && profileResult.value.data.user?._id, profileResult.status === 'fulfilled' && profileResult.value.data.user?.id, user?._id, user?.id].map(String).filter(Boolean);
+      const trainerNames = [];
+      if (profileResult.status === 'fulfilled' && profileResult.value.data.user?.name) trainerNames.push(String(profileResult.value.data.user.name).toLowerCase());
+      if (user && user.name) trainerNames.push(String(user.name).toLowerCase());
+
+      // Prefer backend scheduled GDs, with a localStorage fallback for older records.
       try {
-        const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
-        const trainerIdCandidates = [profileResult.status === 'fulfilled' && profileResult.value.data.user?._id, profileResult.status === 'fulfilled' && profileResult.value.data.user?.id, user?._id, user?.id].map(String).filter(Boolean);
-        const myGds = (raw || []).filter(act => {
-          try {
-            const trainerId = act.details?.form?.trainerId || act.details?.form?.interviewer;
-            const interviewerName = act.details?.form?.interviewerName || act.details?.form?.otherInterviewerName;
-            if (trainerId && trainerIdCandidates.includes(String(trainerId))) return true;
-            if (interviewerName && trainerProfile && (String(interviewerName) === String(trainerProfile.name) || String(interviewerName) === String(user?.name))) return true;
-          } catch (e) {}
-          return false;
-        });
-        setScheduledGds(myGds || []);
+        if (scheduledGdsResult.status === 'fulfilled' && scheduledGdsResult.value.data.success) {
+          setScheduledGds(scheduledGdsResult.value.data.activities || []);
+        } else {
+          const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
+          const myGds = (raw || []).filter((act) => {
+            try {
+              const details = act?.details || {};
+              const form = details.form || {};
+              const possibleTrainerIds = [
+                details.interviewerId,
+                details.trainerId,
+                details.assignedTrainerId,
+                form.interviewer,
+                form.interviewerId,
+                form.trainerId,
+                form.assignedTrainerId,
+                act.createdBy,
+              ].filter(Boolean).map(String);
+              if (possibleTrainerIds.some((value) => trainerIdCandidates.includes(String(value)))) return true;
+
+              const possibleTrainerNames = [
+                details.interviewerName,
+                details.trainerName,
+                details.otherInterviewerName,
+                form.interviewerName,
+                form.trainerName,
+                form.otherInterviewerName,
+              ].filter(Boolean).map((value) => String(value).toLowerCase());
+              if (possibleTrainerNames.some((value) => trainerNames.includes(value))) return true;
+            } catch (error) {}
+            return false;
+          });
+          setScheduledGds(myGds || []);
+        }
       } catch (e) { setScheduledGds([]); }
     } catch (error) {
       console.error("Error fetching trainer dashboard data:", error);
@@ -311,10 +377,17 @@ function TrainerDashboard() {
   };
 
   useEffect(() => {
-    if (activeTab === 'scheduled-assignments' && user) {
+    if ((activeTab === 'scheduled-assignments' || activeTab === 'scheduled-gds') && user) {
       fetchDashboardData();
     }
   }, [activeTab, user]);
+
+  // clear any locked tab when leaving the student-records view
+  useEffect(() => {
+    if (activeTab !== 'student-records' && lockedRecordTab) {
+      setLockedRecordTab(null);
+    }
+  }, [activeTab, lockedRecordTab]);
 
   const fetchStudentRecords = async (studentId) => {
     try {
@@ -521,6 +594,34 @@ function TrainerDashboard() {
     }
   };
 
+  const handleGdSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+    try {
+      const gdId = (selectedGd && (selectedGd._id || selectedGd.title)) || 'general';
+      const storageKey = `gdStudentEvaluations:${String(gdId)}`;
+      const studentIdVal = selectedStudent._id || selectedStudent.internId || selectedStudent.id;
+      const current = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      const next = current.filter((item) => String(item.studentId) !== String(studentIdVal));
+      next.push({
+        studentId: studentIdVal,
+        studentName: selectedStudent.name || selectedStudent.internId || "Student",
+        gdId: gdId,
+        gdTitle: (selectedGd && (selectedGd.title || selectedGd.details?.form?.title)) || "GD",
+        savedAt: new Date().toISOString(),
+        form: gdFormData,
+      });
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      setRecordSuccess("GD evaluation saved locally");
+      setTimeout(() => setRecordSuccess(""), 3000);
+      // refresh records if needed
+      fetchStudentRecords(selectedStudent._id).catch(() => {});
+    } catch (error) {
+      console.error('Failed to save GD record', error);
+      setRecordError('Failed to save GD record');
+    }
+  };
+
   const handleUpdateStatus = async (studentId, newStatus) => {
     try {
       await trainerAPI.updateStudentStatus(studentId, newStatus);
@@ -664,7 +765,7 @@ function TrainerDashboard() {
     }));
   };
 
-  const openStudentRecords = (student, sourceMenuSetter) => {
+  const openStudentRecords = (student, sourceMenuSetter, options = {}) => {
     try {
     // openStudentRecords called
       if (!student || typeof student !== "object" || !student._id) {
@@ -674,12 +775,21 @@ function TrainerDashboard() {
         return;
       }
 
-      // If we opened from Activity Management tabs, force interview-only mode
-      setInterviewOnlyMode(activeTab === "activity-individuals" || activeTab === "activity-groups");
+      // Determine interview-only mode:
+      // - If explicitly forced via options.forceInterviewOnly => true
+      // - Else if a defaultTab is provided, only set to true when it's 'interviews'
+      // - Otherwise, keep legacy behavior for activity management tabs
+      const defaultTab = options.defaultTab;
+      const interviewOnly = Boolean(options.forceInterviewOnly) || (defaultTab ? defaultTab === "interviews" : (activeTab === "activity-individuals" || activeTab === "activity-groups"));
+      setInterviewOnlyMode(interviewOnly);
+      // allow locking the records sidebar to a specific tab (e.g. 'gd' or 'assessments')
+      setLockedRecordTab(options.lockedTab || null);
+      // allow passing a GD context when opening student records (so the GD tab can be preselected)
+      setSelectedGd(options.gd || null);
       clearRecordMessages();
       setRecordHistorySearch("");
       setSelectedStudent(student);
-      setSelectedStudentTab("interviews");
+      setSelectedStudentTab(options.defaultTab || "interviews");
       setActiveTab("student-records");
       // fetch and handle errors internally
       fetchStudentRecords(student._id).catch((err) => {
@@ -742,6 +852,33 @@ function TrainerDashboard() {
     };
   };
 
+  const resolveAssessmentStudent = (assessment) => {
+    const candidateList = [];
+    if (Array.isArray(assessment?.details?.assigned)) candidateList.push(...assessment.details.assigned);
+    if (Array.isArray(assessment?.details?.notification?.assessmentMeta?.assignedIds)) candidateList.push(...assessment.details.notification.assessmentMeta.assignedIds);
+
+    for (const candidate of candidateList) {
+      if (candidate && typeof candidate === "object") {
+        const enriched = enrichStudentData(candidate);
+        if (enriched?._id) return enriched;
+      }
+
+      const candidateId = String(candidate || "").trim();
+      if (!candidateId) continue;
+
+      const found = (students || []).find((student) => {
+        const studentId = String(student?._id || student?.id || "");
+        const internId = String(student?.internId || "");
+        const name = String(student?.name || "").toLowerCase();
+        return studentId === candidateId || internId === candidateId || name === candidateId.toLowerCase();
+      });
+
+      if (found) return enrichStudentData(found);
+    }
+
+    return null;
+  };
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -781,6 +918,16 @@ function TrainerDashboard() {
     return values
       .filter((value) => value !== undefined && value !== null)
       .some((value) => String(value).toLowerCase().includes(normalizedHistorySearch));
+  };
+
+  const getScheduledInterviewMode = (interview) => {
+    const rawMode = interview?.mode || interview?.details?.form?.mode || interview?.details?.mode || (interview?.groupId || interview?.details?.groupId ? "Group" : "Individual");
+    return String(rawMode).toLowerCase() === "group" ? "Group" : "Individual";
+  };
+
+  const getScheduledAssessmentMode = (assessment) => {
+    const rawMode = assessment?.details?.notification?.assessmentMeta?.assessmentMode || assessment?.details?.form?.mode || assessment?.mode || (Array.isArray(assessment?.details?.assigned) && assessment.details.assigned.length > 1 ? "Group" : "Individual");
+    return String(rawMode).toLowerCase() === "group" ? "Group" : "Individual";
   };
 
   const filteredInterviews = interviews.filter((interview) =>
@@ -1136,7 +1283,7 @@ function TrainerDashboard() {
                 <h2>Scheduled — Individual Interviews</h2>
               </div>
               <div style={{ padding: "16px 20px" }}>
-                {scheduledInterviews.filter(s => (s.mode || 'Individual') === 'Individual').length === 0 ? (
+                {scheduledInterviews.filter((s) => getScheduledInterviewMode(s) === 'Individual').length === 0 ? (
                   <p className="record-history-empty">No individual scheduled interviews yet</p>
                 ) : (
                   <div className="table-container">
@@ -1148,10 +1295,11 @@ function TrainerDashboard() {
                           <th>Time</th>
                           <th>Interview Type</th>
                           <th>Status</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {scheduledInterviews.filter(s => (s.mode || 'Individual') === 'Individual').map((interview) => (
+                        {scheduledInterviews.filter((s) => getScheduledInterviewMode(s) === 'Individual').map((interview) => (
                           <tr key={interview._id}>
                             <td>{interview.studentId?.name || '-'}</td>
                             <td>{interview.date ? new Date(interview.date).toLocaleDateString() : '-'}</td>
@@ -1159,6 +1307,71 @@ function TrainerDashboard() {
                             <td>{interview.interviewType || '-'}</td>
                             <td>
                               <span className="status-badge status-pending">{interview.status || 'Scheduled'}</span>
+                            </td>
+                            <td style={{ position: "relative" }}>
+                              <button
+                                data-scheduled-interview-menu-toggle
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenScheduledInterviewMenuId((prev) => (prev === interview._id ? null : interview._id));
+                                }}
+                                style={{
+                                  background: "transparent",
+                                  color: "#0f172a",
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: "8px",
+                                  width: "36px",
+                                  height: "36px",
+                                  cursor: "pointer",
+                                  fontSize: "20px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  lineHeight: 1,
+                                }}
+                                aria-label={`Open actions for ${interview.studentId?.name || "student"}`}
+                              >
+                                ⋮
+                              </button>
+
+                              {openScheduledInterviewMenuId === interview._id && (
+                                <div
+                                  data-scheduled-interview-menu
+                                  style={{
+                                    position: "absolute",
+                                    right: 0,
+                                    top: "42px",
+                                    background: "#ffffff",
+                                    border: "1px solid #e5e7eb",
+                                    borderRadius: "12px",
+                                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                    zIndex: 1000,
+                                    minWidth: "170px",
+                                    overflow: "hidden",
+                                  }}
+                                >
+                                  <button
+                                    onClick={() => {
+                                      openStudentRecords(interview.studentId, setOpenScheduledInterviewMenuId, { forceInterviewOnly: true });
+                                    }}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px 16px",
+                                      background: "#ffffff",
+                                      border: "none",
+                                      textAlign: "left",
+                                      cursor: "pointer",
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                      color: "#0f172a",
+                                    }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                    onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
+                                  >
+                                    Conduct Interview
+                                  </button>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -1173,84 +1386,499 @@ function TrainerDashboard() {
             <GdConductModal gd={selectedGd} onClose={() => setShowGdModal(false)} onSave={() => { setShowGdModal(false); fetchDashboardData(); }} />
           )}
 
+          {showGdStudentModal && selectedGdStudentContext && (
+            <GdStudentConductModal
+              gd={selectedGdStudentContext.gd}
+              student={selectedGdStudentContext.student}
+              onClose={() => {
+                setShowGdStudentModal(false);
+                setSelectedGdStudentContext(null);
+              }}
+              onSave={() => {
+                setShowGdStudentModal(false);
+                setSelectedGdStudentContext(null);
+              }}
+            />
+          )}
+
           {activeTab === "scheduled-groups" && (
             <div className="premium-card" style={{ marginTop: "24px" }}>
               <div className="premium-card-header">
                 <h2>Scheduled — Group Interviews</h2>
               </div>
               <div style={{ padding: "16px 20px" }}>
-                {scheduledInterviews.filter(s => s.mode === 'Group').length === 0 ? (
-                  <p className="record-history-empty">No group scheduled interviews yet</p>
-                ) : (
-                  <div className="table-container">
-                    <table className="data-table view-students-table interview-schedule-table">
-                      <thead>
-                        <tr>
-                          <th>Group</th>
-                          <th>Student</th>
-                          <th>Date</th>
-                          <th>Time</th>
-                          <th>Interview Type</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {scheduledInterviews.filter(s => s.mode === 'Group').map((interview) => (
-                          <tr key={interview._id}>
-                            <td>{interview.groupName || (interview.groupId ? 'Group' : '-')}</td>
-                            <td>{interview.studentId?.name || '-'}</td>
-                            <td>{interview.date ? new Date(interview.date).toLocaleDateString() : '-'}</td>
-                            <td>{interview.startTime || '-'}</td>
-                            <td>{interview.interviewType || '-'}</td>
-                            <td>
-                              <span className="status-badge status-pending">{interview.status || 'Scheduled'}</span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                {(() => {
+                  const scheduledGroupInterviews = scheduledInterviews.filter((s) => getScheduledInterviewMode(s) === "Group");
+                  const groupedScheduledInterviews = scheduledGroupInterviews.reduce((acc, interview) => {
+                    const groupKey = String(interview.groupId || interview.details?.groupId || interview.groupName || interview.details?.form?.groupName || interview.title || "group");
+                    if (!acc[groupKey]) {
+                      acc[groupKey] = {
+                        id: groupKey,
+                        groupName: interview.groupName || interview.details?.form?.groupName || interview.title || "Unnamed Group",
+                        groupNumber: interview.groupNumber || interview.details?.form?.groupNumber || null,
+                        interviews: [],
+                      };
+                    }
+                    acc[groupKey].interviews.push(interview);
+                    return acc;
+                  }, {});
+
+                  const scheduledGroupCards = Object.values(groupedScheduledInterviews);
+
+                  const scheduledGroupQuery = groupSearchQuery.trim().toLowerCase();
+                  const filteredScheduledGroupCards = scheduledGroupCards.filter((group) => {
+                    if (!scheduledGroupQuery) return true;
+                    const baseMatch = [group.groupName, group.groupNumber]
+                      .filter(Boolean)
+                      .some((value) => String(value).toLowerCase().includes(scheduledGroupQuery));
+                    if (baseMatch) return true;
+                    return group.interviews.some((interview) => {
+                      const student = interview.studentId;
+                      return [student?.name, student?.internId, student?.email, student?.mobile, interview.interviewType, interview.status]
+                        .filter(Boolean)
+                        .some((value) => String(value).toLowerCase().includes(scheduledGroupQuery));
+                    });
+                  });
+
+                  if (scheduledGroupCards.length === 0) {
+                    return <p className="record-history-empty">No group scheduled interviews yet</p>;
+                  }
+
+                  if (filteredScheduledGroupCards.length === 0) {
+                    return <p className="record-history-empty">No group scheduled interviews match this search</p>;
+                  }
+
+                  return (
+                    <div style={{ overflowX: "auto" }}>
+                      <div style={{ marginBottom: "12px" }}>
+                        <input
+                          type="text"
+                          value={groupSearchQuery}
+                          onChange={(e) => setGroupSearchQuery(e.target.value)}
+                          placeholder="Search scheduled groups by group name, student name, ID, email..."
+                          style={{
+                            width: "100%",
+                            padding: "11px 14px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "10px",
+                            fontSize: "14px",
+                            background: "#ffffff",
+                          }}
+                        />
+                      </div>
+
+                      {filteredScheduledGroupCards.map((group) => {
+                        const groupInterviews = Array.isArray(group.interviews) ? group.interviews : [];
+                        const groupId = group.id;
+                        const isExpanded = !!expandedGroups[groupId];
+                        const groupStudentQuery = (groupStudentSearch[groupId] || "").trim().toLowerCase();
+                        const visibleGroupInterviews = groupInterviews.filter((interview) => {
+                          if (!groupStudentQuery) return true;
+                          const student = interview.studentId || {};
+                          return [student.name, student.internId, student.email, student.mobile, interview.interviewType, interview.status]
+                            .filter(Boolean)
+                            .some((value) => String(value).toLowerCase().includes(groupStudentQuery));
+                        });
+
+                        return (
+                          <div key={groupId} style={{ marginBottom: "16px", border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
+                            <div
+                              style={{
+                                padding: "16px",
+                                background: "#f9fafb",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                transition: "all 0.2s ease",
+                                borderBottom: isExpanded ? "1px solid #e5e7eb" : "none",
+                                cursor: "pointer",
+                              }}
+                              onClick={() => handleToggleGroup(groupId)}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
+                                <div>
+                                  <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "15px" }}>
+                                    {group.groupName || "Unnamed Group"}
+                                  </div>
+                                  <div style={{ fontSize: "13px", color: "#9ca3af", marginTop: "2px" }}>
+                                    Group #: {group.groupNumber || "-"}
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "13px", color: "#6b7280" }}>
+                                <span style={{ background: "#dbeafe", color: "#1e40af", padding: "4px 12px", borderRadius: "999px", fontWeight: "600" }}>
+                                  {groupInterviews.length} Student{groupInterviews.length !== 1 ? "s" : ""}
+                                </span>
+                                <span style={{ color: "#324158", fontSize: "12px", fontWeight: "700" }}>
+                                  {isExpanded ? "Hide" : "View"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div style={{ padding: "16px", background: "#fff" }}>
+                                <div style={{ marginBottom: "12px" }}>
+                                  <input
+                                    type="text"
+                                    value={groupStudentSearch[groupId] || ""}
+                                    onChange={(e) => handleGroupStudentSearchChange(groupId, e.target.value)}
+                                    placeholder="Search students in this scheduled group by name, ID, email, mobile..."
+                                    style={{
+                                      width: "100%",
+                                      padding: "10px 12px",
+                                      border: "1px solid #d1d5db",
+                                      borderRadius: "8px",
+                                      fontSize: "13px",
+                                      background: "#ffffff",
+                                    }}
+                                  />
+                                </div>
+
+                                {groupInterviews.length === 0 ? (
+                                  <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                                    <p>No students in this scheduled group</p>
+                                  </div>
+                                ) : visibleGroupInterviews.length === 0 ? (
+                                  <div style={{ textAlign: "center", color: "#9ca3af", padding: "20px" }}>
+                                    <p>No students match this search</p>
+                                  </div>
+                                ) : (
+                                  <div style={{ overflowX: "auto" }}>
+                                    <table className="data-table view-students-table" style={{ minWidth: "1100px", marginBottom: 0 }}>
+                                      <thead>
+                                        <tr>
+                                          <th style={{ minWidth: "40px", width: "40px" }}>#</th>
+                                          <th style={{ minWidth: "80px", width: "80px" }}>ID</th>
+                                          <th style={{ minWidth: "120px", width: "120px" }}>Student</th>
+                                          <th style={{ minWidth: "150px", width: "150px" }}>Email</th>
+                                          <th style={{ minWidth: "100px", width: "100px" }}>Mobile</th>
+                                          <th style={{ minWidth: "90px", width: "90px" }}>Date</th>
+                                          <th style={{ minWidth: "80px", width: "80px" }}>Time</th>
+                                          <th style={{ minWidth: "100px", width: "100px" }}>Type</th>
+                                          <th style={{ minWidth: "80px", width: "80px" }}>Status</th>
+                                          <th style={{ minWidth: "60px", width: "60px" }}>Actions</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {visibleGroupInterviews.map((interview, index) => {
+                                          const student = enrichStudentData(interview.studentId || {});
+                                          const isStudentObject = student && typeof student === "object";
+                                          const studentId = isStudentObject ? student._id : String(student || "");
+                                          const menuId = `${groupId}-${studentId || index}`;
+                                          return (
+                                            <tr key={menuId}>
+                                              <td>{index + 1}</td>
+                                              <td>{isStudentObject ? student.internId || "-" : "-"}</td>
+                                              <td>{isStudentObject ? student.name || "-" : "-"}</td>
+                                              <td><span style={{ wordBreak: "break-word" }}>{isStudentObject ? student.email || "-" : "-"}</span></td>
+                                              <td>{isStudentObject ? student.mobile || "-" : "-"}</td>
+                                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : interview.dateTime ? new Date(interview.dateTime).toLocaleDateString() : "-"}</td>
+                                              <td>{interview.startTime || interview.details?.form?.startTime || "-"}</td>
+                                              <td>{interview.interviewType || "-"}</td>
+                                              <td>
+                                                <span className="status-badge status-pending">{interview.status || "Scheduled"}</span>
+                                              </td>
+                                              <td style={{ position: "relative" }}>
+                                                <button
+                                                  data-assignment-menu-toggle
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (!isStudentObject || !student._id) return;
+                                                    setOpenAssignmentMenuId((prev) => (prev === menuId ? null : menuId));
+                                                  }}
+                                                  style={{
+                                                    background: "transparent",
+                                                    color: "#0f172a",
+                                                    border: "1px solid #d1d5db",
+                                                    borderRadius: "8px",
+                                                    width: "36px",
+                                                    height: "36px",
+                                                    cursor: !isStudentObject || !student._id ? "not-allowed" : "pointer",
+                                                    fontSize: "20px",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                  }}
+                                                  disabled={!isStudentObject || !student._id}
+                                                  aria-label="Open actions"
+                                                >
+                                                  ⋮
+                                                </button>
+
+                                                {openAssignmentMenuId === menuId && (
+                                                  <div
+                                                    data-assignment-menu
+                                                    style={{
+                                                      position: "absolute",
+                                                      right: 0,
+                                                      top: "42px",
+                                                      background: "white",
+                                                      border: "1px solid #e5e7eb",
+                                                      borderRadius: "12px",
+                                                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                                      zIndex: 1000,
+                                                      minWidth: "160px",
+                                                      overflow: "hidden",
+                                                    }}
+                                                  >
+                                                    <button
+                                                      onClick={() => {
+                                                        openStudentRecords(student, setOpenAssignmentMenuId, { forceInterviewOnly: true });
+                                                      }}
+                                                      style={{
+                                                        width: "100%",
+                                                        padding: "12px 16px",
+                                                        background: "white",
+                                                        border: "none",
+                                                        textAlign: "left",
+                                                        cursor: "pointer",
+                                                        fontSize: "14px",
+                                                        fontWeight: "500",
+                                                        color: "#0f172a",
+                                                      }}
+                                                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                                      onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                                                    >
+                                                        Conduct Interview
+                                                    </button>
+                                                  </div>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
 
           {activeTab === "scheduled-assignments" && (
-            <div className="premium-card" style={{ marginTop: "24px" }}>
-              <div className="premium-card-header">
-                <h2>Schedule Assessment</h2>
-              </div>
-              <div style={{ padding: "16px 20px" }}>
-                {scheduledAssignments.length === 0 ? (
-                  <p className="record-history-empty">No scheduled assessments yet</p>
-                ) : (
-                  <div className="table-container">
-                    <table className="data-table view-students-table interview-schedule-table">
-                      <thead>
-                        <tr>
-                          <th>Title</th>
-                          <th>Mode</th>
-                          <th>Assigned On</th>
-                          <th>Due</th>
-                          <th>Assigned To</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {scheduledAssignments.map((a, idx) => (
-                          <tr key={a._id || a.title || idx}>
-                            <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                            <td>{a.details?.notification?.assessmentMeta?.assessmentMode || a.details?.form?.mode || (Array.isArray(a.details?.assigned) && a.details.assigned.length > 1 ? 'Group' : 'Individual')}</td>
-                            <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
-                            <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
-                            <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
-                            <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+            <div style={{ marginTop: "24px" }}>
+              <div className="premium-card" style={{ marginBottom: "16px" }}>
+                <div className="premium-card-header">
+                  <h2>Schedule Assessment — Individual</h2>
+                </div>
+                <div style={{ padding: "16px 20px" }}>
+                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").length === 0 ? (
+                    <p className="record-history-empty">No individual scheduled assessments yet</p>
+                  ) : (
+                    <div className="table-container">
+                      <table className="data-table view-students-table interview-schedule-table">
+                        <thead>
+                          <tr>
+                            <th>Title</th>
+                            <th>Assigned On</th>
+                            <th>Due</th>
+                            <th>Assigned To</th>
+                            <th>Status</th>
+                            <th>Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                        </thead>
+                        <tbody>
+                          {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => (
+                            <tr key={a._id || a.title || idx}>
+                              <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                              <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
+                              <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                              <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
+                              <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                              <td style={{ position: "relative" }}>
+                                <button
+                                  data-scheduled-assessment-menu-toggle
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenScheduledAssessmentMenuId((prev) => (prev === (a._id || idx) ? null : (a._id || idx)));
+                                  }}
+                                  style={{
+                                    background: "transparent",
+                                    color: "#0f172a",
+                                    border: "1px solid #d1d5db",
+                                    borderRadius: "8px",
+                                    width: "36px",
+                                    height: "36px",
+                                    cursor: "pointer",
+                                    fontSize: "20px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    lineHeight: 1,
+                                  }}
+                                  aria-label={`Open actions for ${a.title || 'assessment'}`}
+                                >
+                                  ⋮
+                                </button>
+
+                                {openScheduledAssessmentMenuId === (a._id || idx) && (
+                                  <div
+                                    data-scheduled-assessment-menu
+                                    style={{
+                                      position: "absolute",
+                                      right: 0,
+                                      top: "42px",
+                                      background: "#ffffff",
+                                      border: "1px solid #e5e7eb",
+                                      borderRadius: "12px",
+                                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                      zIndex: 1000,
+                                      minWidth: "180px",
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <button
+                                      onClick={() => {
+                                        const student = resolveAssessmentStudent(a);
+                                        if (!student) {
+                                          alert("No specific student found for this assessment.");
+                                          setOpenScheduledAssessmentMenuId(null);
+                                          return;
+                                        }
+                                        openStudentRecords(student, setOpenScheduledAssessmentMenuId, { defaultTab: "assessments", lockedTab: "assessments" });
+                                      }}
+                                      style={{
+                                        width: "100%",
+                                        padding: "12px 16px",
+                                        background: "#ffffff",
+                                        border: "none",
+                                        textAlign: "left",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "500",
+                                        color: "#0f172a",
+                                      }}
+                                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                      onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
+                                    >
+                                      Conduct Assessment
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="premium-card" style={{ marginTop: "0" }}>
+                <div className="premium-card-header">
+                  <h2>Schedule Assessment — Group</h2>
+                </div>
+                <div style={{ padding: "16px 20px" }}>
+                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").length === 0 ? (
+                    <p className="record-history-empty">No group scheduled assessments yet</p>
+                  ) : (
+                    <div className="table-container">
+                      <table className="data-table view-students-table interview-schedule-table">
+                        <thead>
+                          <tr>
+                            <th>Title</th>
+                            <th>Assigned On</th>
+                            <th>Due</th>
+                            <th>Assigned To</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => (
+                            <tr key={a._id || a.title || idx}>
+                              <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                              <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
+                              <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                              <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
+                              <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                              <td style={{ position: "relative" }}>
+                                <button
+                                  data-scheduled-assessment-menu-toggle
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenScheduledAssessmentMenuId((prev) => (prev === (a._id || idx) ? null : (a._id || idx)));
+                                  }}
+                                  style={{
+                                    background: "transparent",
+                                    color: "#0f172a",
+                                    border: "1px solid #d1d5db",
+                                    borderRadius: "8px",
+                                    width: "36px",
+                                    height: "36px",
+                                    cursor: "pointer",
+                                    fontSize: "20px",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    lineHeight: 1,
+                                  }}
+                                  aria-label={`Open actions for ${a.title || 'assessment'}`}
+                                >
+                                  ⋮
+                                </button>
+
+                                {openScheduledAssessmentMenuId === (a._id || idx) && (
+                                  <div
+                                    data-scheduled-assessment-menu
+                                    style={{
+                                      position: "absolute",
+                                      right: 0,
+                                      top: "42px",
+                                      background: "#ffffff",
+                                      border: "1px solid #e5e7eb",
+                                      borderRadius: "12px",
+                                      boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                      zIndex: 1000,
+                                      minWidth: "180px",
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    <button
+                                      onClick={() => {
+                                        const student = resolveAssessmentStudent(a);
+                                        if (!student) {
+                                          alert("No specific student found for this assessment.");
+                                          setOpenScheduledAssessmentMenuId(null);
+                                          return;
+                                        }
+                                        openStudentRecords(student, setOpenScheduledAssessmentMenuId, { defaultTab: "assessments", lockedTab: "assessments" });
+                                      }}
+                                      style={{
+                                        width: "100%",
+                                        padding: "12px 16px",
+                                        background: "#ffffff",
+                                        border: "none",
+                                        textAlign: "left",
+                                        cursor: "pointer",
+                                        fontSize: "14px",
+                                        fontWeight: "500",
+                                        color: "#0f172a",
+                                      }}
+                                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                      onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
+                                    >
+                                      Conduct Assessment
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1732,13 +2360,14 @@ function TrainerDashboard() {
                       const allScheduledGdGroups = [];
                       (scheduledGds || []).forEach((gd) => {
                         const rawGroups = gd.details?.groups || gd.details?.form?.groups || [];
-                        (rawGroups || []).forEach((group, groupIdx) => {
+                          (rawGroups || []).forEach((group, groupIdx) => {
                           if (Array.isArray(group)) {
                             allScheduledGdGroups.push({
                               id: `gd-${gd._id || gd.title || groupIdx}-group-${groupIdx}`,
                               groupName: gd.title || gd.details?.form?.title || `GD Group ${groupIdx + 1}`,
                               groupNumber: groupIdx + 1,
                               students: group,
+                              parentGd: gd,
                             });
                           } else if (group && typeof group === 'object') {
                             allScheduledGdGroups.push({
@@ -1746,6 +2375,7 @@ function TrainerDashboard() {
                               groupName: group.groupName || gd.title || `GD Group ${groupIdx + 1}`,
                               groupNumber: group.groupNumber || groupIdx + 1,
                               students: Array.isArray(group.students) ? group.students : (Array.isArray(group.members) ? group.members : []),
+                              parentGd: gd,
                             });
                           }
                         });
@@ -1926,7 +2556,8 @@ function TrainerDashboard() {
                                                     >
                                                       <button
                                                         onClick={() => {
-                                                          openStudentRecords(enrichedStudent, setOpenAssignmentMenuId);
+                                                          // Open student records and select GD tab, providing GD context
+                                                          openStudentRecords(enrichedStudent, setOpenAssignmentMenuId, { defaultTab: 'gd', gd: group.parentGd || null, lockedTab: 'gd' });
                                                         }}
                                                         style={{
                                                           width: "100%",
@@ -1942,7 +2573,7 @@ function TrainerDashboard() {
                                                         onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
                                                         onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
                                                       >
-                                                        Conduct Interview
+                                                        Conduct GD
                                                       </button>
                                                     </div>
                                                   )}
@@ -3079,6 +3710,7 @@ function TrainerDashboard() {
                       activeTab={currentStudentTab}
                       studentInfo={selectedStudent}
                       interviewOnly={interviewOnlyMode}
+                      lockedTab={lockedRecordTab}
                       onTabChange={(tabKey) => {
                         setSelectedStudentTab(tabKey);
                         setRecordHistorySearch("");
@@ -3598,6 +4230,83 @@ function TrainerDashboard() {
 
                   </div>
                 )}
+
+                {!recordsLoading && currentStudentTab === "gd" && (
+                  <div className="record-section">
+                    <h2 className="record-form-title">Conduct GD — Student</h2>
+                    <div className="record-intro-card">
+                      <strong>GD Evaluation</strong>
+                      <p>Rate student's participation, communication, confidence and add feedback.</p>
+                    </div>
+                    <form onSubmit={handleGdSubmit} className="record-form-grid">
+                      <div className="form-group">
+                        <label>Participation</label>
+                        <select value={gdFormData.participation} onChange={(e) => setGdFormData({ ...gdFormData, participation: e.target.value })} required>
+                          <option value="1">1 - Very Low</option>
+                          <option value="2">2 - Low</option>
+                          <option value="3">3 - Average</option>
+                          <option value="4">4 - Good</option>
+                          <option value="5">5 - Excellent</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Communication</label>
+                        <select value={gdFormData.communication} onChange={(e) => setGdFormData({ ...gdFormData, communication: e.target.value })} required>
+                          <option value="1">1 - Very Low</option>
+                          <option value="2">2 - Low</option>
+                          <option value="3">3 - Average</option>
+                          <option value="4">4 - Good</option>
+                          <option value="5">5 - Excellent</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Confidence</label>
+                        <select value={gdFormData.confidence} onChange={(e) => setGdFormData({ ...gdFormData, confidence: e.target.value })} required>
+                          <option value="1">1 - Very Low</option>
+                          <option value="2">2 - Low</option>
+                          <option value="3">3 - Average</option>
+                          <option value="4">4 - Good</option>
+                          <option value="5">5 - Excellent</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Topic Understanding</label>
+                        <select value={gdFormData.topicUnderstanding} onChange={(e) => setGdFormData({ ...gdFormData, topicUnderstanding: e.target.value })} required>
+                          <option value="1">1 - Very Low</option>
+                          <option value="2">2 - Low</option>
+                          <option value="3">3 - Average</option>
+                          <option value="4">4 - Good</option>
+                          <option value="5">5 - Excellent</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Leadership</label>
+                        <select value={gdFormData.leadership} onChange={(e) => setGdFormData({ ...gdFormData, leadership: e.target.value })} required>
+                          <option value="1">1 - Very Low</option>
+                          <option value="2">2 - Low</option>
+                          <option value="3">3 - Average</option>
+                          <option value="4">4 - Good</option>
+                          <option value="5">5 - Excellent</option>
+                        </select>
+                      </div>
+                      <div className="form-group full-width">
+                        <label>Strengths</label>
+                        <textarea rows={3} value={gdFormData.strengths} onChange={(e) => setGdFormData({ ...gdFormData, strengths: e.target.value })} />
+                      </div>
+                      <div className="form-group full-width">
+                        <label>Improvement Areas</label>
+                        <textarea rows={3} value={gdFormData.improvementAreas} onChange={(e) => setGdFormData({ ...gdFormData, improvementAreas: e.target.value })} />
+                      </div>
+                      <div className="form-group full-width">
+                        <label>Overall Remark</label>
+                        <textarea rows={4} value={gdFormData.overallRemark} onChange={(e) => setGdFormData({ ...gdFormData, overallRemark: e.target.value })} />
+                      </div>
+                      <button type="submit" className="submit-btn record-submit-btn record-submit-btn-compact">
+                        Save GD Evaluation
+                      </button>
+                    </form>
+                  </div>
+                )}
                   </div>
                 </div>
 
@@ -3605,13 +4314,15 @@ function TrainerDashboard() {
                   <div className="record-history record-history-below">
                     <div className="record-history-toolbar" style={{ marginBottom: "10px" }}>
                       <h2 className="record-history-title" style={{ marginBottom: 0 }}>
-                        {currentStudentTab === "interviews"
-                          ? "Interview History"
-                          : currentStudentTab === "aptitude"
-                            ? "Aptitude Test History"
-                            : currentStudentTab === "assessments"
-                              ? "Assessment History"
-                              : "Training History"}
+                            {currentStudentTab === "interviews"
+                              ? "Interview History"
+                              : currentStudentTab === "aptitude"
+                                ? "Aptitude Test History"
+                                : currentStudentTab === "assessments"
+                                  ? "Assessment History"
+                                  : currentStudentTab === "gd"
+                                    ? "GD Evaluations"
+                                    : "Training History"}
                       </h2>
                       <input
                         type="text"

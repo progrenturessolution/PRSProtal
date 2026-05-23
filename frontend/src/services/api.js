@@ -151,6 +151,7 @@ export const trainerAPI = {
   updateStudentStatus: (studentId, status) =>
     api.patch(`/trainer/students/${studentId}/status`, { status }),
   getScheduledInterviews: () => api.get("/trainer/scheduled-interviews"),
+  getScheduledGDs: () => api.get("/trainer/scheduled-gds"),
   getNotifications: () => api.get('/trainer/notifications'),
   getWorkAssignments: () => api.get("/trainer/work-assignments"),
 };
@@ -190,6 +191,7 @@ export const internAPI = {
   getMyAptitude: () => api.get("/task/intern/my-aptitude"),
   getMyAssessments: () => api.get("/task/intern/my-assessments"),
   getMyTraining: () => api.get("/task/intern/my-training"),
+  getMyScheduledGDs: () => api.get("/task/intern/my-scheduled-gds"),
   getMyNotifications: () => api.get("/task/intern/my-notifications"),
   getMyJobPostings: () => api.get("/task/intern/my-job-postings"),
   getMyAssignedCertificates: () => api.get("/task/intern/my-certificates"),

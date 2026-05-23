@@ -746,6 +746,176 @@ export default function ActivityManagementNew() {
     return interviewForm.mode === 'Group' ? 'Group' : 'Individual';
   }
 
+  function formatReportDate(value) {
+    if (!value) return '-';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '-';
+    return parsed.toLocaleDateString('en-GB');
+  }
+
+  function formatReportTime(value) {
+    if (!value) return '-';
+    const text = String(value).trim();
+    const parsed = new Date(text);
+    if (!Number.isNaN(parsed.getTime()) && /[-T]/.test(text)) {
+      return parsed.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    const match = text.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+    if (match) {
+      const hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      const date = new Date();
+      date.setHours(hours, minutes, 0, 0);
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    return text;
+  }
+
+  function getStudentRecord(studentId) {
+    const normalizedId = String(studentId || '');
+    return students.find((student) => String(student._id) === normalizedId || String(student.id) === normalizedId || student.internId === normalizedId || student.email === normalizedId || student.name === normalizedId);
+  }
+
+  function getActivityDetailReport(activity) {
+    const details = activity?.details || {};
+    const normalizedType = String(activity?.type || '').toLowerCase();
+    const activityDate = activity?.dateTime || details.dateTime || details.date || '';
+    const modeLabel = String(details.mode || activity?.mode || getActivityModeLabel(activity) || '').toLowerCase();
+    const isGroupInterview = normalizedType.includes('interview') && modeLabel === 'group';
+    const interviewerId = details.interviewerId || details.trainerId || details.interviewer || details.interviewerName || activity?.interviewer || activity?.interviewerName || '';
+    const interviewerName = (() => {
+      if (!interviewerId) return '-';
+      const found = trainers.find((trainer) => String(trainer._id || trainer.id) === String(interviewerId) || trainer.name === interviewerId || trainer.email === interviewerId);
+      return found ? (found.customRole ? `${found.name} (${found.customRole})` : found.name) : String(details.interviewerName || interviewerId);
+    })();
+    const assignedIds = (() => {
+      const assigned = details.studentIds || details.assigned || details.students || activity?.assigned || [];
+      const list = Array.isArray(assigned) ? assigned : (typeof assigned === 'string' ? assigned.split(',').map((item) => item.trim()).filter(Boolean) : []);
+      return list.map((item) => String(item));
+    })();
+
+    if (normalizedType.includes('interview')) {
+      const groupRecord = details.groupId
+        ? groups.find((group) => String(group._id || group.id || group.groupNumber || group.groupName) === String(details.groupId))
+        : null;
+      const groupMembers = isGroupInterview
+        ? (groupRecord ? getGroupMemberList(groupRecord) : assignedIds.map((studentId) => getStudentRecord(studentId)).filter(Boolean))
+        : [];
+      const perGapMinutes = Number(details.perGap || 15);
+      const slots = Array.isArray(details.slots) && details.slots.length
+        ? details.slots
+        : assignedIds.map((studentId, index) => ({ studentId, startTime: activity?.dateTime ? new Date(new Date(activity.dateTime).getTime() + index * perGapMinutes * 60000).toISOString() : details.startTime }));
+      const resolvedIndividualStudent = !isGroupInterview
+        ? (getStudentRecord(assignedIds[0]) || getStudentRecord(slots[0]?.studentId) || getStudentRecord(slots[0]?.student) || null)
+        : null;
+
+      return {
+        kind: 'interview',
+        isGroupInterview,
+        groupName: groupRecord?.groupName || groupRecord?.groupNumber || details.groupId || '',
+        groupMembers,
+        resolvedIndividualStudent,
+        title: 'Weekly Interview Schedule - SMS Program',
+        kicker: 'INTERVIEW SCHEDULE - SMS PROGRAM',
+        meta: [
+          { label: 'Interview Type', value: details.interviewType || '-' },
+          { label: 'Date', value: formatReportDate(activityDate) },
+          { label: 'Interviewer', value: interviewerName },
+          { label: 'Mode', value: getActivityModeLabel(activity) },
+          ...(isGroupInterview ? [{ label: 'Group', value: groupRecord?.groupName || groupRecord?.groupNumber || details.groupId || 'Group schedule' }] : [])
+        ],
+        columns: isGroupInterview ? ['Slot No.', 'Time Slot', 'Student Name', 'PSMS ID'] : ['Slot No.', 'Time Slot', 'Student Name', 'PSMS ID'],
+        rows: (isGroupInterview ? groupMembers : slots).map((entry, index) => {
+          const rawStudentId = String((entry && typeof entry === 'object') ? (entry.studentId || entry.student || entry._id || entry.id || entry.internId || entry.email || entry.name || '') : (entry || assignedIds[index] || ''));
+          const student = getStudentRecord(rawStudentId) || (resolvedIndividualStudent && !isGroupInterview ? resolvedIndividualStudent : null);
+          const slot = isGroupInterview && groupRecord ? slots[index] : entry;
+          const startTime = slot?.startTime || slot?.time || details.startTime || '';
+          let timeSlot = '-';
+          if (slot?.date && slot?.startTime) {
+            timeSlot = `${formatReportTime(slot.startTime)}`;
+          } else if (activityDate && details.perGap) {
+            const baseTime = new Date(activityDate);
+            if (!Number.isNaN(baseTime.getTime())) {
+              const slotStart = new Date(baseTime.getTime() + index * perGapMinutes * 60000);
+              const slotEnd = new Date(slotStart.getTime() + perGapMinutes * 60000);
+              timeSlot = `${slotStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })} - ${slotEnd.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+            }
+          } else {
+            timeSlot = formatReportTime(startTime);
+          }
+
+          return {
+            slotNo: `Slot ${index + 1}`,
+            timeSlot,
+            studentName: student?.name || rawStudentId || '-',
+            psmsId: student?.internId || 'NA'
+          };
+        })
+      };
+    }
+
+    if (normalizedType.includes('gd')) {
+      const groupsList = Array.isArray(details.groups) ? details.groups : [];
+      return {
+        kind: 'gd',
+        title: 'Group Discussion Schedule - SMS Program',
+        kicker: 'DISCUSSION FLOW',
+        meta: [
+          { label: 'GD Title', value: activity?.title || details.form?.title || 'Group Discussion' },
+          { label: 'Date', value: formatReportDate(activityDate) },
+          { label: 'Interviewer', value: interviewerName },
+          { label: 'Group Mode', value: details.form?.groupMode || details.groupMode || 'Auto' }
+        ],
+        columns: ['Group No.', 'Group Name', 'Students', 'Date & Time'],
+        rows: groupsList.map((groupEntry, index) => {
+          const members = Array.isArray(groupEntry)
+            ? groupEntry
+            : (Array.isArray(groupEntry?.students) ? groupEntry.students : []);
+          const groupName = groupEntry?.groupName || groupEntry?.groupNumber || `Group ${index + 1}`;
+          const studentsText = members.length
+            ? members.map((member) => {
+                const student = getStudentRecord(member?._id || member?.id || member?.internId || member);
+                return student?.name || member?.name || String(member?.internId || member?._id || member?.id || member);
+              }).join(', ')
+            : '-';
+          return {
+            slotNo: `Group ${index + 1}`,
+            timeSlot: groupName,
+            studentName: studentsText,
+            psmsId: formatReportDate(activityDate)
+          };
+        })
+      };
+    }
+
+    return {
+      kind: 'assessment',
+      title: 'Assessment Schedule - SMS Program',
+      kicker: 'ASSESSMENT FLOW',
+      meta: [
+        { label: 'Assessment Type', value: details.form?.type || activity?.type || 'Assessment' },
+        { label: 'Date', value: formatReportDate(activityDate) },
+        { label: 'Interviewer', value: interviewerName },
+        { label: 'Duration', value: `${details.form?.duration || details.duration || '-'} mins` }
+      ],
+      columns: ['Slot No.', 'Student Name', 'PSMS ID', 'Date & Time'],
+      rows: assignedIds.length ? assignedIds.map((studentId, index) => {
+        const student = getStudentRecord(studentId);
+        const dateTimeText = activityDate
+          ? `${formatReportDate(activityDate)} ${formatReportTime(details.form?.time || activity?.dateTime || details.time || '')}`
+          : '-';
+        return {
+          slotNo: `Slot ${index + 1}`,
+          studentName: student?.name || studentId || '-',
+          psmsId: student?.internId || 'NA',
+          timeSlot: dateTimeText
+        };
+      }) : []
+    };
+  }
+
   return (
     <div className="am-page">
       <div className="am-header">
@@ -796,136 +966,95 @@ export default function ActivityManagementNew() {
 
       {/* View Activity Modal */}
       {viewActivity && (
-        <div className="profile-modal-overlay" onClick={() => setViewActivity(null)}>
-          <div className="profile-modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '980px' }}>
-            <div className="profile-header" style={{ background: '#324158' }}>
-              <button className="profile-close-btn" onClick={() => setViewActivity(null)}>×</button>
+        <div className="am-report-overlay" onClick={() => setViewActivity(null)}>
+          <div className="am-report-container" onClick={(event) => event.stopPropagation()}>
 
-              <div className="profile-avatar">
-                {String(getActivityTypeLabel(viewActivity) || 'A')
-                  .split(' ')
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((part) => part[0])
-                  .join('')
-                  .toUpperCase()}
-              </div>
+            {(() => {
+              const report = getActivityDetailReport(viewActivity);
+              return (
+                <div className="am-report-paper">
+                  <button type="button" className="am-modal-close-btn am-report-close" onClick={() => setViewActivity(null)} aria-label="Close activity details">×</button>
 
-              <h2 className="profile-name">{viewActivity.title || getActivityTypeLabel(viewActivity)}</h2>
-              <div className="profile-badges">
-                <span className="profile-badge">{getActivityTypeLabel(viewActivity)}</span>
-                <span className="profile-badge">Mode: {getActivityModeLabel(viewActivity)}</span>
-                <span className="profile-badge">{viewActivity.status || 'Scheduled'}</span>
-              </div>
-            </div>
+                  <div className="am-report-header">
+                    <div className="am-report-brand-row">
+                      <div className="am-report-brand am-report-brand-primary">Progrentures Solution Pvt. Ltd.</div>
+                    </div>
+                    <div className="am-report-divider" />
+                    <h2>{report.title}</h2>
+                  </div>
 
-            <div className="profile-body">
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Activity Summary
-                </h3>
-                <div className="profile-info-grid">
-                  <div className="profile-field"><label>Activity Type</label><div className="field-value">{getActivityTypeLabel(viewActivity)}</div></div>
-                  <div className="profile-field"><label>Mode</label><div className="field-value">{getActivityModeLabel(viewActivity)}</div></div>
-                  <div className="profile-field"><label>Status</label><div className="field-value">{viewActivity.status || 'Scheduled'}</div></div>
-                  <div className="profile-field"><label>Date & Time</label><div className="field-value">{viewActivity.dateTime ? new Date(viewActivity.dateTime).toLocaleString() : '-'}</div></div>
-                  <div className="profile-field"><label>Created By</label><div className="field-value">{viewActivity.createdByModel || '-'}</div></div>
-                  <div className="profile-field"><label>Last Updated</label><div className="field-value">{viewActivity.updatedAt ? new Date(viewActivity.updatedAt).toLocaleString() : (viewActivity.createdAt ? new Date(viewActivity.createdAt).toLocaleString() : '-')}</div></div>
+                  <div className="am-report-meta">
+                    {report.meta.map((item) => (
+                      <div key={item.label} className="am-report-meta-line">
+                        <strong>{item.label}:</strong>
+                        <span>{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {!report.isGroupInterview && report.resolvedIndividualStudent && (
+                    <div className="am-report-student-box">
+                      <div className="am-report-student-title">Student Details</div>
+                      <div className="am-report-student-grid">
+                        <div><strong>Name:</strong> <span>{report.resolvedIndividualStudent.name || '-'}</span></div>
+                        <div><strong>PSMS ID:</strong> <span>{report.resolvedIndividualStudent.internId || 'NA'}</span></div>
+                        <div><strong>Email:</strong> <span>{report.resolvedIndividualStudent.email || '-'}</span></div>
+                        <div><strong>Mobile:</strong> <span>{report.resolvedIndividualStudent.mobile || report.resolvedIndividualStudent.phone || '-'}</span></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {report.isGroupInterview && (
+                    <div className="am-report-group-box">
+                      <div className="am-report-group-title">Group Members</div>
+                      <div className="am-report-group-chips">
+                        {(report.groupMembers || []).map((member) => {
+                          const student = getStudentRecord(member?._id || member?.id || member?.internId || member?.email || member?.name || member);
+                          const label = student?.name || member?.name || String(member?.internId || member?.email || member?._id || member?.id || member);
+                          return (
+                            <span key={String(member?._id || member?.id || member?.internId || member?.email || label)} className="am-report-chip">
+                              {label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="am-report-section-title">{report.kicker === 'DISCUSSION FLOW' ? 'Group Discussion Details' : report.kicker === 'ASSESSMENT FLOW' ? 'Assessment Details' : (report.isGroupInterview ? 'Group Interview Details' : 'Interview Slots & Students')}</div>
+
+                  <div className="am-report-table-wrap">
+                    {report.rows.length ? (
+                      <table className="am-report-table">
+                        <thead>
+                          <tr>
+                            {report.columns.map((column) => <th key={column}>{column}</th>)}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {report.rows.map((row, index) => {
+                            const cells = report.kind === 'assessment'
+                              ? [row.slotNo, row.studentName, row.psmsId, row.timeSlot]
+                              : [row.slotNo, row.timeSlot, row.studentName, row.psmsId];
+                            return (
+                              <tr key={`${row.slotNo}-${index}`}>
+                                {cells.map((cell, cellIndex) => <td key={`${row.slotNo}-${cellIndex}`}>{cell}</td>)}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="am-report-empty">No participant details available</div>
+                    )}
+                  </div>
+
+                  <div className="am-report-footer">
+                    <button type="button" className="nm-btn ghost" onClick={() => setViewActivity(null)}>Close</button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Schedule Details
-                </h3>
-                <div className="profile-info-grid">
-                  <div className="profile-field"><label>Title</label><div className="field-value">{viewActivity.title || '-'}</div></div>
-                  <div className="profile-field"><label>Interviewer</label><div className="field-value">{(function(){
-                    const t = viewActivity.details?.interviewerId || viewActivity.details?.trainerId || viewActivity.details?.interviewer || viewActivity.details?.interviewerName || viewActivity.interviewer || viewActivity.interviewerName;
-                    if (!t) return '-';
-                    const found = trainers.find(tr => String(tr._id) === String(t) || String(tr.id) === String(t) || tr.name === t || tr.email === t);
-                    return found ? (found.name + (found.customRole ? ` (${found.customRole})` : '')) : String(viewActivity.details?.interviewerName || t);
-                  })()}</div></div>
-                  <div className="profile-field"><label>Group</label><div className="field-value">{viewActivity.details?.groupId ? (function(){ const g = groups.find(gr=>String(gr._id)===String(viewActivity.details.groupId)); return g ? (g.groupName||g.groupNumber||g._id) : viewActivity.details.groupId; })() : (viewActivity.details?.groups ? `${(viewActivity.details.groups||[]).length} group(s)` : (getActivityModeLabel(viewActivity) === 'Group' ? 'Group schedule' : '-'))}</div></div>
-                  <div className="profile-field"><label>Gap / Duration</label><div className="field-value">{viewActivity.details?.perGap ? `${viewActivity.details.perGap} mins` : (viewActivity.details?.duration ? `${viewActivity.details.duration} mins` : '-')}</div></div>
-                  <div className="profile-field"><label>Interview Type</label><div className="field-value">{viewActivity.details?.interviewType || '-'}</div></div>
-                  <div className="profile-field"><label>Slots</label><div className="field-value">{viewActivity.details?.interviewCount || viewActivity.details?.slots?.length || '-'}</div></div>
-                </div>
-              </div>
-
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Participants
-                </h3>
-                <div className="profile-info-grid">
-                  {(function(){
-                    const assigned = viewActivity.details?.studentIds || viewActivity.details?.assigned || viewActivity.details?.students || viewActivity.assigned || [];
-                    const list = Array.isArray(assigned) ? assigned : (typeof assigned === 'string' ? assigned.split(',').map(s=>s.trim()) : []);
-                    if (!list.length) {
-                      return [
-                        <div key="empty-participants" className="profile-info-card">
-                          <div className="profile-info-label">Students</div>
-                          <div className="profile-info-value">No students assigned</div>
-                        </div>
-                      ];
-                    }
-                    return list.map((id) => {
-                      const found = students.find(s=>String(s._id)===String(id) || String(s.id)===String(id) || s.internId===id || s.email===id || s.name===id);
-                      return (
-                        <div key={id} className="profile-info-card">
-                          <div className="profile-info-label">Student</div>
-                          <div className="profile-info-value">{found ? found.name : id}</div>
-                          <div style={{ marginTop: 6, fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>{found?.internId || found?.email || 'Assigned participant'}</div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Form Values
-                </h3>
-                <div className="profile-details-grid">
-                  {(function(){
-                    const snapshot = viewActivity.details?.form || viewActivity.details || {};
-                    const entries = Object.entries(snapshot).filter(([key, value]) => value !== undefined && value !== null && key !== '_id');
-                    if (!entries.length) {
-                      return [
-                        <div key="empty-form" className="profile-detail-card type-domain">
-                          <div className="profile-detail-label color-indigo">Form Values</div>
-                          <div className="profile-detail-value">No form snapshot available</div>
-                        </div>
-                      ];
-                    }
-                    return entries.slice(0, 12).map(([key, value]) => {
-                      const displayValue = Array.isArray(value)
-                        ? value.length
-                          ? `${value.length} item(s)`
-                          : 'No items'
-                        : typeof value === 'object'
-                          ? JSON.stringify(value)
-                          : String(value);
-                      return (
-                        <div key={key} className="profile-detail-card type-domain">
-                          <div className="profile-detail-label color-indigo">{key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase())}</div>
-                          <div className="profile-detail-value">{displayValue}</div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-
-              <div className="profile-actions" style={{ marginTop: 0 }}>
-                <button className="profile-btn profile-btn-primary" onClick={() => setViewActivity(null)}>Close</button>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1037,6 +1166,14 @@ export default function ActivityManagementNew() {
                 <h3>Schedule Interview</h3>
                 <p className="am-modal-note">Set the interview details, pick students, and preview slots before saving.</p>
               </div>
+              <button
+                type="button"
+                className="am-modal-close-btn"
+                onClick={() => { setShowInterviewModal(false); setEditingInterviewActivityId(null); }}
+                aria-label="Close interview schedule form"
+              >
+                ×
+              </button>
             </div>
 
             <div className="am-modal-summary-grid">
@@ -1253,6 +1390,14 @@ export default function ActivityManagementNew() {
                 <h3>Schedule GD Round</h3>
                 <p className="am-modal-note">Create the GD topic, decide the grouping method, and preview the final groups.</p>
               </div>
+              <button
+                type="button"
+                className="am-modal-close-btn"
+                onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}
+                aria-label="Close GD schedule form"
+              >
+                ×
+              </button>
             </div>
 
             <div className="am-modal-summary-grid">
@@ -1431,6 +1576,14 @@ export default function ActivityManagementNew() {
                 <h3>Schedule Assessment</h3>
                 <p className="am-modal-note">Define the assessment, assign students, and save the final schedule.</p>
               </div>
+              <button
+                type="button"
+                className="am-modal-close-btn"
+                onClick={() => { setShowAssessmentModal(false); setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); }}
+                aria-label="Close assessment schedule form"
+              >
+                ×
+              </button>
             </div>
 
             <div className="am-modal-summary-grid">

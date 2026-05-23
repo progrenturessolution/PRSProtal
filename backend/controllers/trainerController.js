@@ -9,6 +9,7 @@ const Training = require('../models/Training');
 const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const StudentGroup = require('../models/StudentGroup');
+const Activity = require('../models/Activity');
 
 const getAccessibleStudentIds = async (trainerId) => {
   const trainer = await Trainer.findById(trainerId)
@@ -1109,6 +1110,65 @@ exports.getScheduledInterviews = async (req, res) => {
   }
 };
 
+// Get scheduled GD rounds for trainer
+exports.getScheduledGDs = async (req, res) => {
+  try {
+    const trainerId = req.user.id;
+
+    const trainer = await Trainer.findById(trainerId).select('name email mobile').lean();
+    if (!trainer) {
+      return res.status(404).json({ success: false, message: 'Trainer not found' });
+    }
+
+    const trainerTokens = new Set([
+      trainerId,
+      trainer._id,
+      trainer.name,
+      trainer.email,
+    ].filter(Boolean).map((value) => String(value).toLowerCase()));
+
+    const activities = await Activity.find({ type: 'GD' })
+      .sort({ dateTime: 1, createdAt: 1 })
+      .lean();
+
+    const scheduledGds = activities.filter((activity) => {
+      const details = activity.details || {};
+      const form = details.form || {};
+      const candidateValues = [
+        activity.createdBy,
+        details.interviewerId,
+        details.trainerId,
+        details.assignedTrainerId,
+        form.interviewer,
+        form.interviewerId,
+        form.trainerId,
+        form.assignedTrainerId,
+        details.interviewerName,
+        details.trainerName,
+        details.otherInterviewerName,
+        form.interviewerName,
+        form.trainerName,
+        form.otherInterviewerName,
+      ].filter(Boolean).map((value) => String(value).toLowerCase());
+
+      return candidateValues.some((value) => trainerTokens.has(value));
+    });
+
+    res.status(200).json({
+      success: true,
+      count: scheduledGds.length,
+      activities: scheduledGds,
+    });
+  } catch (error) {
+    console.error('Get scheduled GDs error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message,
+    });
+  }
+};
+
 // Get work assignments for trainer (simple endpoint returning populated workAssignments)
 exports.getMyWorkAssignmentsForTrainer = async (req, res) => {
   try {
@@ -1164,6 +1224,35 @@ exports.getMyScheduledInterviews = async (req, res) => {
       message: 'Server error',
       error: error.message
     });
+  }
+};
+
+// Get scheduled GDs for the logged-in intern
+exports.getMyScheduledGDs = async (req, res) => {
+  try {
+    const studentId = String(req.user.id);
+
+    const activities = await Activity.find({ type: 'GD' }).sort({ dateTime: 1, createdAt: 1 }).lean();
+
+    const myGds = activities.filter((activity) => {
+      try {
+        const details = activity.details || {};
+        const groups = details.groups || [];
+        for (const g of groups) {
+          const members = Array.isArray(g) ? g : (g.members || []);
+          for (const m of members) {
+            const mid = String(m?._id || m?.id || m?.studentId || m?.internId || m?.psmsId || m || "");
+            if (mid && mid === studentId) return true;
+          }
+        }
+      } catch (e) { /* ignore malformed group */ }
+      return false;
+    });
+
+    res.status(200).json({ success: true, count: myGds.length, activities: myGds });
+  } catch (error) {
+    console.error('Get my scheduled GDs error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };
 

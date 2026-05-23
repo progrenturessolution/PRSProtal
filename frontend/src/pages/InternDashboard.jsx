@@ -260,22 +260,28 @@ function InternDashboard() {
           break;
         case "scheduled-gds":
           try {
-            const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
-            const myIdCandidates = [user?._id, user?.id, user?.internId, user?.psmsId].map(String).filter(Boolean);
-            const myGds = (raw || []).filter(act => {
-              try {
-                const groups = act.details?.groups || [];
-                for (const g of groups) {
-                  const members = Array.isArray(g) ? g : (g.members || []);
-                  for (const m of members) {
-                    const mid = (m._id || m.id || m.studentId || m.psmsId || m.internId || m).toString();
-                    if (myIdCandidates.includes(mid)) return true;
+            const resp = await internAPI.getMyScheduledGDs();
+            if (resp.data && resp.data.success) {
+              setScheduledGds(resp.data.activities || []);
+            } else {
+              // fallback to localStorage for older entries
+              const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
+              const myIdCandidates = [user?._id, user?.id, user?.internId, user?.psmsId].map(String).filter(Boolean);
+              const myGds = (raw || []).filter(act => {
+                try {
+                  const groups = act.details?.groups || [];
+                  for (const g of groups) {
+                    const members = Array.isArray(g) ? g : (g.members || []);
+                    for (const m of members) {
+                      const mid = (m._id || m.id || m.studentId || m.psmsId || m.internId || m).toString();
+                      if (myIdCandidates.includes(mid)) return true;
+                    }
                   }
-                }
-              } catch (e) {}
-              return false;
-            });
-            setScheduledGds(myGds || []);
+                } catch (e) {}
+                return false;
+              });
+              setScheduledGds(myGds || []);
+            }
           } catch (e) { setScheduledGds([]); }
           break;
         case "scheduled-assignments":
@@ -400,6 +406,60 @@ function InternDashboard() {
     F: "Fail",
     C: "Clear",
     P: "Pass",
+  };
+
+  const getScheduledInterviewMode = (interview) => {
+    const rawMode = interview?.mode || interview?.details?.form?.mode || interview?.details?.mode || (interview?.groupId || interview?.details?.groupId ? "Group" : "Individual");
+    return String(rawMode).toLowerCase() === "group" ? "Group" : "Individual";
+  };
+
+  const getScheduledAssessmentMode = (assessment) => {
+    const rawMode = assessment?.details?.notification?.assessmentMeta?.assessmentMode || assessment?.details?.form?.mode || assessment?.mode || (Array.isArray(assessment?.details?.assigned) && assessment.details.assigned.length > 1 ? "Group" : "Individual");
+    return String(rawMode).toLowerCase() === "group" ? "Group" : "Individual";
+  };
+
+  const getGdInterviewer = (gd) => {
+    try {
+      const details = gd.details || {};
+      const form = details.form || {};
+      // common places where interviewer/trainer name may be stored
+      return (
+        form.interviewerName ||
+        details.interviewerName ||
+        details.trainerName ||
+        form.trainerName ||
+        (details.interviewerId && details.interviewerId.name) ||
+        (details.trainerId && details.trainerId.name) ||
+        gd.createdByName ||
+        gd.createdBy ||
+        '-'
+      );
+    } catch (e) {
+      return '-';
+    }
+  };
+
+  const getGdGroupLabelForUser = (gd) => {
+    try {
+      const groups = gd.details?.groups || gd.groups || [];
+      const myIds = [user?._id, user?.id, user?.internId, user?.psmsId].map(String).filter(Boolean);
+      // find group that contains current user
+      for (const g of groups) {
+        const members = Array.isArray(g) ? g : (g.members || []);
+        for (const m of members) {
+          const mid = String(m?._id || m?.id || m?.studentId || m?.internId || m || "");
+          if (myIds.includes(mid)) {
+            return g.groupName || g.groupNumber || g.name || g.title || (`Group ${g.groupNumber || ''}`).trim();
+          }
+        }
+      }
+      // fallback: if groups exist return count or joined names
+      if (groups.length === 0) return '-';
+      const names = groups.map(g => g.groupName || g.groupNumber || g.name || g.title).filter(Boolean);
+      return names.length ? names.join(', ') : `${groups.length}`;
+    } catch (e) {
+      return '-';
+    }
   };
 
   const filteredInterviews = interviews.filter((interview) => {
@@ -807,6 +867,29 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Interviews
+          </li>
+          <li
+            className={activeSection === "scheduled-interviews" ? "active" : ""}
+            onClick={() => handleSectionClick("scheduled-interviews")}
+            style={{ cursor: "pointer" }}
+          >
+            Scheduled Interviews
+          </li>
+
+          <li
+            className={activeSection === "scheduled-gds" ? "active" : ""}
+            onClick={() => handleSectionClick("scheduled-gds")}
+            style={{ cursor: "pointer" }}
+          >
+            Schedule GD Round
+          </li>
+
+          <li
+            className={activeSection === "scheduled-assignments" ? "active" : ""}
+            onClick={() => handleSectionClick("scheduled-assignments")}
+            style={{ cursor: "pointer" }}
+          >
+            Schedule Assessment
           </li>
 
           {/* Activity Management removed for aspirants */}
@@ -1352,17 +1435,16 @@ function InternDashboard() {
               <p>Assignments assigned to you</p>
             </div>
 
-            <div className="card student-history-card">
-              <h2>Upcoming Assignments</h2>
-              {scheduledAssignments.length === 0 ? (
-                <p className="record-history-empty">No scheduled assessments yet</p>
+            <div className="card student-history-card" style={{ marginBottom: "16px" }}>
+              <h2>Upcoming Assignments — Individual</h2>
+              {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").length === 0 ? (
+                <p className="record-history-empty">No individual scheduled assessments yet</p>
               ) : (
                 <div className="table-container">
                   <table className="data-table view-students-table interview-schedule-table">
                     <thead>
                       <tr>
                         <th>Title</th>
-                        <th>Mode</th>
                         <th>Assigned On</th>
                         <th>Due</th>
                         <th>Assigned By</th>
@@ -1370,10 +1452,41 @@ function InternDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {scheduledAssignments.map((a, idx) => (
+                      {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => (
                         <tr key={a._id || a.title || idx}>
                           <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                          <td>{a.details?.notification?.assessmentMeta?.assessmentMode || a.details?.form?.mode || (Array.isArray(a.details?.assigned) && a.details.assigned.length > 1 ? 'Group' : 'Individual')}</td>
+                          <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
+                          <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                          <td>{a.createdBy || '-'}</td>
+                          <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="card student-history-card">
+              <h2>Upcoming Assignments — Group</h2>
+              {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").length === 0 ? (
+                <p className="record-history-empty">No group scheduled assessments yet</p>
+              ) : (
+                <div className="table-container">
+                  <table className="data-table view-students-table interview-schedule-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Assigned On</th>
+                        <th>Due</th>
+                        <th>Assigned By</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => (
+                        <tr key={a._id || a.title || idx}>
+                          <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
                           <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
                           <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
                           <td>{a.createdBy || '-'}</td>
@@ -2199,7 +2312,7 @@ function InternDashboard() {
                             <td>{(interview.date || interview.dateTime || interview.details?.form?.date) ? new Date(interview.date || interview.dateTime || interview.details?.form?.date).toLocaleDateString() : "-"}</td>
                             <td>{interview.startTime || interview.details?.form?.startTime || interview.dateTime?.split(' ')[1] || "-"}</td>
                             <td>{interview.type === 'GD' || (interview.details?.form && interview.type === 'GD') ? 'Group Discussion' : (interview.interviewType || interview.type || "-")}</td>
-                            <td>{interview.mode || (interview.type === 'GD' ? 'Group' : 'Individual')}</td>
+                            <td>{getScheduledInterviewMode(interview)}</td>
                             <td>{interview.trainerId?.name || interview.details?.form?.interviewerName || interview.details?.form?.trainerId || "-"}</td>
                             <td>
                               <span className="status-badge status-pending">
@@ -2248,8 +2361,8 @@ function InternDashboard() {
                           <td>{gd.title || gd.details?.form?.title || 'Group Discussion'}</td>
                           <td>{(gd.date || gd.dateTime || gd.details?.form?.date) ? new Date(gd.date || gd.dateTime || gd.details?.form?.date).toLocaleDateString() : '-'}</td>
                           <td>{gd.startTime || gd.details?.form?.startTime || '-'}</td>
-                          <td>{(gd.details?.groups || gd.groups || []).length || gd.details?.groups?.length || '-'}</td>
-                          <td>{gd.details?.form?.interviewerName || gd.details?.form?.trainerId || '-'}</td>
+                          <td>{getGdGroupLabelForUser(gd)}</td>
+                          <td>{getGdInterviewer(gd)}</td>
                           <td><span className="status-badge status-pending">{gd.status || 'Scheduled'}</span></td>
                         </tr>
                       ))}

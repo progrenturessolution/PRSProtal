@@ -21,6 +21,9 @@ router.patch('/students/:studentId/status', trainerController.updateStudentStatu
 // Get scheduled interviews
 router.get('/scheduled-interviews', trainerController.getScheduledInterviews);
 
+// Get scheduled GD rounds
+router.get('/scheduled-gds', trainerController.getScheduledGDs);
+
 // Get trainer work assignments
 router.get('/work-assignments', trainerController.getMyWorkAssignmentsForTrainer);
 // Get trainer notifications (includes Test/Assessment)
