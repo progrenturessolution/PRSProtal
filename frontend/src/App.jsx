@@ -1,8 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import AdminLogin from './components/AdminLogin';
-import InternLogin from './components/InternLogin';
-import RepresentativeLogin from './components/RepresentativeLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import InternDashboard from './pages/InternDashboard';
 import TrainerDashboard from './pages/TrainerDashboard';
@@ -12,15 +9,27 @@ import AptitudeForm from './pages/AptitudeForm';
 import AssessmentForm from './pages/AssessmentForm';
 import TrainingForm from './pages/TrainingForm';
 import StudentDetailReport from './pages/StudentDetailReport';
+import UnderMaintenance from './pages/UnderMaintenance';
+
+function LoginGate() {
+  const hasMaintenancePass = sessionStorage.getItem('maintenancePass') === 'true';
+
+  if (!hasMaintenancePass) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Login />;
+}
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/intern-login" element={<InternLogin />} />
-        <Route path="/representative-login" element={<RepresentativeLogin />} />
+        <Route path="/" element={<UnderMaintenance />} />
+        <Route path="/login" element={<LoginGate />} />
+        <Route path="/admin-login" element={<UnderMaintenance />} />
+        <Route path="/intern-login" element={<UnderMaintenance />} />
+        <Route path="/representative-login" element={<UnderMaintenance />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/intern-dashboard" element={<InternDashboard />} />
         <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
