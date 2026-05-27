@@ -6,6 +6,16 @@ const jobPostingSchema = new mongoose.Schema({
     required: true,
     enum: ['Job', 'Internship']
   },
+  company: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  location: {
+    type: String,
+    required: true,
+    trim: true
+  },
   domain: {
     type: String,
     required: true,
@@ -24,6 +34,11 @@ const jobPostingSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  requirements: {
+    type: String,
+    required: true,
+    trim: true
+  },
   applicationLink: {
     type: String,
     trim: true
@@ -31,6 +46,13 @@ const jobPostingSchema = new mongoose.Schema({
   applicationInstructions: {
     type: String,
     trim: true
+  },
+  salary: {
+    type: String,
+    trim: true
+  },
+  deadline: {
+    type: Date
   },
   postedBy: {
     type: mongoose.Schema.Types.ObjectId,

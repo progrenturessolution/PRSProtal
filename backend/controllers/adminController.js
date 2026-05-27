@@ -1225,16 +1225,38 @@ exports.getAllNotifications = async (req, res) => {
 exports.createJobPosting = async (req, res) => {
   try {
     const adminId = req.user.id;
-    const { opportunityType, domain, title, eligibilityCriteria, description, applicationLink, applicationInstructions } = req.body;
-
-    const jobPosting = new JobPosting({
+    const {
       opportunityType,
+      company,
+      location,
       domain,
       title,
       eligibilityCriteria,
+      eligibility,
       description,
+      requirements,
       applicationLink,
       applicationInstructions,
+      salary,
+      deadline
+    } = req.body;
+
+    const normalizedEligibility = eligibilityCriteria || eligibility || requirements;
+    const normalizedDescription = description || requirements;
+
+    const jobPosting = new JobPosting({
+      opportunityType,
+      company,
+      location,
+      domain,
+      title,
+      eligibilityCriteria: normalizedEligibility,
+      description: normalizedDescription,
+      requirements,
+      applicationLink,
+      applicationInstructions,
+      salary,
+      deadline,
       postedBy: adminId,
       postedByModel: 'Admin'
     });

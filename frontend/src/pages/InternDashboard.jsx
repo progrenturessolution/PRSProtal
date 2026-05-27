@@ -83,7 +83,6 @@ function InternDashboard() {
       navigate("/");
       return;
     }
-
     setUser(parsedUser);
     setLoading(false); // Show dashboard immediately
     
@@ -419,7 +418,7 @@ function InternDashboard() {
           try {
             const jobsResp = await internAPI.getMyJobPostings();
             if (jobsResp.data && jobsResp.data.success) {
-              setJobPostings(jobsResp.data.jobPostings || []);
+              setJobPostings(jobsResp.data.postings || []);
             }
           } catch (e) {
             console.error('Failed to fetch job postings:', e);
@@ -712,6 +711,19 @@ function InternDashboard() {
     });
   };
 
+  const hasDisplayValue = (value) => {
+    if (value === 0) return true;
+    if (value === false) return true;
+    if (value === null || value === undefined) return false;
+    return String(value).trim() !== "";
+  };
+
+  const formatPostingDate = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString();
+  };
+
   if (!user) {
     return <div>Loading...</div>;
   }
@@ -874,6 +886,13 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Job & Internship Updates
+          </li>
+          <li
+            className={activeSection === "reports" ? "active" : ""}
+            onClick={() => navigate("/intern/reports")}
+            style={{ cursor: "pointer" }}
+          >
+            Reports
           </li>
         </ul>
 
@@ -2969,130 +2988,70 @@ function InternDashboard() {
                         border: "1px solid #e5e7eb",
                       }}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "start",
-                          marginBottom: "15px",
-                        }}
-                      >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: "16px", marginBottom: "16px", flexWrap: "wrap" }}>
                         <div>
-                          <h3
-                            style={{
-                              margin: "0 0 5px 0",
-                              color: "#0f172a",
-                              fontSize: "16px",
-                              fontWeight: 600,
-                            }}
-                          >
+                          <h3 style={{ margin: "0 0 8px 0", color: "#0f172a", fontSize: "18px", fontWeight: 700 }}>
                             {posting.title}
                           </h3>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              padding: "4px 10px",
-                              backgroundColor:
-                                posting.opportunityType === "Job"
-                                  ? "#dbeafe"
-                                  : "#f0fdf4",
-                              color:
-                                posting.opportunityType === "Job"
-                                  ? "#0c4a6e"
-                                  : "#166534",
-                              borderRadius: "12px",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                              marginRight: "8px",
-                            }}
-                          >
-                            {posting.opportunityType}
-                          </span>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              padding: "4px 10px",
-                              backgroundColor: "#f3e8ff",
-                              color: "#6b21a8",
-                              borderRadius: "12px",
-                              fontSize: "12px",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {posting.domain}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "repeat(auto-fit, minmax(200px, 1fr))",
-                          gap: "12px",
-                          marginBottom: "15px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            padding: "12px",
-                            background: "white",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: "12px",
-                              color: "#6b7280",
-                              marginBottom: "4px",
-                            }}
-                          >
-                            Eligibility
-                          </div>
-                          <div style={{ fontSize: "13px", color: "#0f172a" }}>
-                            {posting.eligibilityCriteria}
+                          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                            {hasDisplayValue(posting.opportunityType) && (
+                              <span style={{ display: "inline-block", padding: "4px 10px", backgroundColor: posting.opportunityType === "Job" ? "#dbeafe" : "#f0fdf4", color: posting.opportunityType === "Job" ? "#0c4a6e" : "#166534", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>
+                                {posting.opportunityType}
+                              </span>
+                            )}
+                            {hasDisplayValue(posting.status) && (
+                              <span style={{ display: "inline-block", padding: "4px 10px", backgroundColor: posting.status === "closed" ? "#fee2e2" : "#dcfce7", color: posting.status === "closed" ? "#991b1b" : "#166534", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>
+                                {posting.status}
+                              </span>
+                            )}
                           </div>
                         </div>
+                        {hasDisplayValue(posting.applicationLink) && (
+                          <a href={posting.applicationLink} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "10px 18px", background: "#0f172a", color: "white", borderRadius: "6px", textDecoration: "none", fontWeight: 600, fontSize: "14px", alignSelf: "flex-start" }}>
+                            Apply Now →
+                          </a>
+                        )}
                       </div>
 
-                      <div
-                        style={{
-                          padding: "12px",
-                          background: "white",
-                          borderRadius: "8px",
-                          marginBottom: "15px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            color: "#374151",
-                            lineHeight: "1.6",
-                          }}
-                        >
-                          {posting.description}
-                        </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px", marginBottom: "15px" }}>
+                        {[
+                          { label: "Company", value: posting.company },
+                          { label: "Domain", value: posting.domain },
+                          { label: "Location", value: posting.location },
+                          { label: "Salary / Stipend", value: posting.salary },
+                          { label: "Deadline", value: formatPostingDate(posting.deadline) },
+                          { label: "Posted By", value: posting.postedBy?.name || posting.postedBy?.email },
+                          { label: "Posted On", value: formatPostingDate(posting.createdAt) },
+                        ].filter((field) => hasDisplayValue(field.value)).map((field) => (
+                          <div key={field.label} style={{ padding: "12px", background: "white", borderRadius: "8px" }}>
+                            <div style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px" }}>{field.label}</div>
+                            <div style={{ fontSize: "13px", color: "#0f172a", fontWeight: 600, wordBreak: "break-word" }}>{field.value}</div>
+                          </div>
+                        ))}
                       </div>
 
-                      {posting.applicationLink && (
-                        <a
-                          href={posting.applicationLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: "inline-block",
-                            padding: "10px 20px",
-                            background: "#3b82f6",
-                            color: "white",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                            fontSize: "14px",
-                          }}
-                        >
-                          Apply Now →
-                        </a>
-                      )}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "12px" }}>
+                        {[
+                          { label: "Eligibility Criteria", value: posting.eligibilityCriteria },
+                          { label: "Requirements", value: posting.requirements },
+                          { label: "Description", value: posting.description },
+                          { label: "Application Instructions", value: posting.applicationInstructions },
+                          { label: "Application Link", value: posting.applicationLink, link: true },
+                        ].filter((field) => hasDisplayValue(field.value)).map((field) => (
+                          <div key={field.label} style={{ padding: "12px", background: "white", borderRadius: "8px" }}>
+                            <div style={{ fontSize: "12px", color: "#6b7280", marginBottom: "6px", fontWeight: 600 }}>{field.label}</div>
+                            <div style={{ fontSize: "13px", color: "#374151", lineHeight: "1.6", whiteSpace: "pre-wrap" }}>
+                              {field.link ? (
+                                <a href={field.value} target="_blank" rel="noreferrer" style={{ color: "#2563eb", fontWeight: 600, wordBreak: "break-word" }}>
+                                  {field.value}
+                                </a>
+                              ) : (
+                                field.value
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3100,6 +3059,7 @@ function InternDashboard() {
             </div>
           </>
         )}
+
       </main>
 
     </div>

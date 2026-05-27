@@ -108,6 +108,7 @@ export const adminAPI = {
   // Job postings
   createJobPosting: (jobData) => api.post("/admin/job-postings", jobData),
   getAllJobPostings: () => api.get("/admin/job-postings"),
+  getJobPostings: () => api.get("/admin/job-postings"),
 
   // Documents
   uploadStudentDocument: (studentId, formData) =>
@@ -194,6 +195,7 @@ export const internAPI = {
   getMyScheduledGDs: () => api.get("/task/intern/my-scheduled-gds"),
   getMyNotifications: () => api.get("/task/intern/my-notifications"),
   getMyJobPostings: () => api.get("/task/intern/my-job-postings"),
+  getMyStudentRecords: () => api.get("/task/intern/my-records"),
   getMyAssignedCertificates: () => api.get("/task/intern/my-certificates"),
 };
 

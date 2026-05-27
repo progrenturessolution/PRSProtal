@@ -30,10 +30,9 @@ function JobsInternships() {
 
   const fetchPostings = async () => {
     try {
-      // Note: This endpoint needs to be implemented in the backend
-      const response = await adminAPI.getJobPostings();
+      const response = await adminAPI.getAllJobPostings();
       if (response.data.success) {
-        setPostings(response.data.postings);
+        setPostings(response.data.jobPostings || []);
       }
     } catch (error) {
       console.error("Failed to fetch job postings:", error);
@@ -54,7 +53,22 @@ function JobsInternships() {
     setSuccess("");
 
     try {
-      const response = await adminAPI.createJobPosting(formData);
+      const payload = {
+        opportunityType: formData.opportunityType,
+        company: formData.company,
+        location: formData.location,
+        domain: formData.domain,
+        title: formData.title,
+        eligibilityCriteria: formData.eligibility,
+        description: formData.description,
+        requirements: formData.requirements,
+        applicationLink: formData.applicationLink,
+        applicationInstructions: formData.applicationInstructions,
+        salary: formData.salary,
+        deadline: formData.deadline || undefined,
+      };
+
+      const response = await adminAPI.createJobPosting(payload);
 
       if (response.data.success) {
         setSuccess("Job/Internship posting created successfully!");

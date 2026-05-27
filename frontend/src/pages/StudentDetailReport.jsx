@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { adminAPI } from "../services/api";
+import { adminAPI, internAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import "./StudentDetailReport.css";
 
@@ -17,6 +17,62 @@ function StudentDetailReport() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState("");
+
+  const getRecordDate = (record) => record?.date || record?.createdAt || record?.updatedAt || null;
+
+  const getMonthKey = (dateValue) => {
+    if (!dateValue) return "";
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  };
+
+  const formatMonthLabel = (monthKey) => {
+    if (!monthKey) return "";
+    const [year, month] = monthKey.split("-").map(Number);
+    if (!year || !month) return monthKey;
+    return new Date(year, month - 1, 1).toLocaleDateString("en-IN", {
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const allMonthOptions = useMemo(() => {
+    const keys = [
+      ...(records.interviews || []),
+      ...(records.aptitudes || []),
+      ...(records.assessments || []),
+      ...(records.trainings || []),
+    ]
+      .map((record) => getMonthKey(getRecordDate(record)))
+      .filter(Boolean);
+
+    return Array.from(new Set(keys)).sort((a, b) => b.localeCompare(a));
+  }, [records]);
+
+  const filteredRecords = useMemo(() => {
+    if (!selectedMonth) {
+      return { interviews: [], aptitudes: [], assessments: [], trainings: [] };
+    }
+
+    const filterByMonth = (items) =>
+      (items || []).filter((item) => getMonthKey(getRecordDate(item)) === selectedMonth);
+
+    return {
+      interviews: filterByMonth(records.interviews),
+      aptitudes: filterByMonth(records.aptitudes),
+      assessments: filterByMonth(records.assessments),
+      trainings: filterByMonth(records.trainings),
+    };
+  }, [records, selectedMonth]);
+
+  const hasSelectedMonth = Boolean(selectedMonth);
+  const hasFilteredRecords =
+    filteredRecords.interviews.length > 0 ||
+    filteredRecords.aptitudes.length > 0 ||
+    filteredRecords.assessments.length > 0 ||
+    filteredRecords.trainings.length > 0;
 
   const getInterviewOverallLevel = (interview) =>
     interview.interviewType === "Technical"
@@ -47,35 +103,21 @@ function StudentDetailReport() {
       setLoading(true);
       setError("");
 
-      // Fetch all students to find the one we need
-      const studentsResponse = await adminAPI.getAllInterns();
-      if (studentsResponse.data.success) {
-        const foundStudent = studentsResponse.data.interns.find(
-          (s) => s._id === studentId
-        );
-        setStudent(foundStudent);
+      const isSelfReport = !studentId;
+      const recordsResponse = isSelfReport
+        ? await internAPI.getMyStudentRecords()
+        : await adminAPI.getStudentRecords(studentId);
 
-        if (!foundStudent) {
-          setError("Student not found");
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Fetch student activity records for all record modules
-      try {
-        const recordsResponse = await adminAPI.getStudentRecords(studentId);
-        if (recordsResponse.data.success) {
-          setStudent(recordsResponse.data.data.student || foundStudent);
-          setRecords({
-            interviews: recordsResponse.data.data.interviews || [],
-            aptitudes: recordsResponse.data.data.aptitudes || [],
-            assessments: recordsResponse.data.data.assessments || [],
-            trainings: recordsResponse.data.data.trainings || [],
-          });
-        }
-      } catch (err) {
-        console.log("Could not fetch admin student records");
+      if (recordsResponse.data.success) {
+        setStudent(recordsResponse.data.data.student);
+        setRecords({
+          interviews: recordsResponse.data.data.interviews || [],
+          aptitudes: recordsResponse.data.data.aptitudes || [],
+          assessments: recordsResponse.data.data.assessments || [],
+          trainings: recordsResponse.data.data.trainings || [],
+        });
+      } else {
+        setError("Failed to load student data");
       }
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -86,6 +128,8 @@ function StudentDetailReport() {
   };
 
   const downloadReportPDF = () => {
+    if (!hasSelectedMonth || !hasFilteredRecords) return;
+
     setDownloading(true);
     try {
       let htmlContent = `
@@ -116,6 +160,7 @@ function StudentDetailReport() {
           <body>
             <div class="header">
               <h1>Student Assessment Report</h1>
+              <p>Month: <strong>${formatMonthLabel(selectedMonth)}</strong></p>
               <p>${new Date().toLocaleDateString('en-IN')}</p>
             </div>
 
@@ -172,7 +217,7 @@ function StudentDetailReport() {
             </div>
       `;
 
-      if (records.interviews?.length > 0) {
+      if (filteredRecords.interviews?.length > 0) {
         htmlContent += `
           <div class="section">
             <div class="section-title">Interview Records</div>
@@ -186,7 +231,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                ${records.interviews.map(interview => {
+                ${filteredRecords.interviews.map(interview => {
                   const overallLevel = getInterviewOverallLevel(interview);
                   return `
                   <tr>
@@ -202,7 +247,7 @@ function StudentDetailReport() {
         `;
       }
 
-      if (records.aptitudes?.length > 0) {
+      if (filteredRecords.aptitudes?.length > 0) {
         htmlContent += `
           <div class="section">
             <div class="section-title">Aptitude Test Records</div>
@@ -216,7 +261,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                ${records.aptitudes.map(apt => `
+                ${filteredRecords.aptitudes.map(apt => `
                   <tr>
                     <td>${apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>Round ${apt.roundNumber}</td>
@@ -230,7 +275,7 @@ function StudentDetailReport() {
         `;
       }
 
-      if (records.assessments?.length > 0) {
+      if (filteredRecords.assessments?.length > 0) {
         htmlContent += `
           <div class="section">
             <div class="section-title">Assessment Records</div>
@@ -244,7 +289,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                ${records.assessments.map(assess => `
+                ${filteredRecords.assessments.map(assess => `
                   <tr>
                     <td>${assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${assess.assessmentType}</td>
@@ -258,7 +303,7 @@ function StudentDetailReport() {
         `;
       }
 
-      if (records.trainings?.length > 0) {
+      if (filteredRecords.trainings?.length > 0) {
         htmlContent += `
           <div class="section">
             <div class="section-title">Training Records</div>
@@ -271,7 +316,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                ${records.trainings.map(training => `
+                ${filteredRecords.trainings.map(training => `
                   <tr>
                     <td>${training.date ? new Date(training.date).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${training.attendance}</td>
@@ -307,6 +352,8 @@ function StudentDetailReport() {
   };
 
   const downloadReportExcel = async () => {
+    if (!hasSelectedMonth || !hasFilteredRecords) return;
+
     setDownloading(true);
     try {
       const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
@@ -314,6 +361,7 @@ function StudentDetailReport() {
       const ws_data = [
         ["Student Assessment Report"],
         ["Generated on", new Date().toLocaleDateString('en-IN')],
+        ["Month", formatMonthLabel(selectedMonth)],
         [],
         ["Student Information"],
         ["Name", student.name],
@@ -330,10 +378,10 @@ function StudentDetailReport() {
         ["Trainings", records.trainings?.length || 0],
       ];
 
-      if (records.interviews?.length > 0) {
+      if (filteredRecords.interviews?.length > 0) {
         ws_data.push([], ["Interview Records"]);
         ws_data.push(["Date", "Type", "Overall", "Level Crossed"]);
-        records.interviews.forEach(interview => {
+        filteredRecords.interviews.forEach(interview => {
           const overallLevel = getInterviewOverallLevel(interview);
           ws_data.push([
             interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A',
@@ -344,10 +392,10 @@ function StudentDetailReport() {
         });
       }
 
-      if (records.aptitudes?.length > 0) {
+      if (filteredRecords.aptitudes?.length > 0) {
         ws_data.push([], ["Aptitude Test Records"]);
         ws_data.push(["Date", "Round", "Score", "Result"]);
-        records.aptitudes.forEach(apt => {
+        filteredRecords.aptitudes.forEach(apt => {
           ws_data.push([
             apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A',
             `Round ${apt.roundNumber}`,
@@ -357,10 +405,10 @@ function StudentDetailReport() {
         });
       }
 
-      if (records.assessments?.length > 0) {
+      if (filteredRecords.assessments?.length > 0) {
         ws_data.push([], ["Assessment Records"]);
         ws_data.push(["Date", "Type", "Score", "Status"]);
-        records.assessments.forEach(assess => {
+        filteredRecords.assessments.forEach(assess => {
           ws_data.push([
             assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A',
             assess.assessmentType,
@@ -370,10 +418,10 @@ function StudentDetailReport() {
         });
       }
 
-      if (records.trainings?.length > 0) {
+      if (filteredRecords.trainings?.length > 0) {
         ws_data.push([], ["Training Records"]);
         ws_data.push(["Date", "Attendance", "Engagement"]);
-        records.trainings.forEach(training => {
+        filteredRecords.trainings.forEach(training => {
           ws_data.push([
             training.date ? new Date(training.date).toLocaleDateString('en-IN') : 'N/A',
             training.attendance,
@@ -386,7 +434,7 @@ function StudentDetailReport() {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Student Report");
 
-      XLSX.writeFile(wb, `Student_Report_${student.internId}_${new Date().toISOString().split("T")[0]}.xlsx`);
+      XLSX.writeFile(wb, `Student_Report_${student.internId}_${selectedMonth}.xlsx`);
     } catch (err) {
       console.error("Error generating Excel:", err);
     } finally {
@@ -484,6 +532,49 @@ function StudentDetailReport() {
         </div>
       </div>
 
+      {/* Month Filter */}
+      <div className="report-filter-card">
+        <div className="report-filter-header">
+          <div>
+            <span className="report-filter-kicker">Report Filter</span>
+            <h3>Choose a month to view records</h3>
+            <p>Only records from the selected month will be shown.</p>
+          </div>
+          <div className="report-filter-badge">{allMonthOptions.length} months available</div>
+        </div>
+
+        <div className="report-filter-grid">
+          <div className="detail-item report-filter-field">
+            <span className="detail-label">Month</span>
+            <div className="report-select-wrap">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="report-month-select"
+              >
+                <option value="">Select a month</option>
+                {allMonthOptions.map((monthKey) => (
+                  <option key={monthKey} value={monthKey}>
+                    {formatMonthLabel(monthKey)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <span className="report-filter-help">
+              {selectedMonth ? `Showing ${formatMonthLabel(selectedMonth)}` : "Pick a month to load records"}
+            </span>
+          </div>
+
+          <button
+            onClick={() => setSelectedMonth("")}
+            className="btn-back-new report-clear-button"
+            disabled={!selectedMonth}
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
       {/* Student Info Card */}
       <div className="student-info-card">
         <div className="student-info-header">
@@ -527,38 +618,51 @@ function StudentDetailReport() {
       <div className="summary-stats">
         <div className="stat-card interview-card">
           <div className="stat-content">
-            <div className="stat-value">{records.interviews?.length || 0}</div>
+            <div className="stat-value">{selectedMonth ? filteredRecords.interviews.length : 0}</div>
             <div className="stat-label">Interviews</div>
           </div>
         </div>
         <div className="stat-card aptitude-card">
           <div className="stat-content">
-            <div className="stat-value">{records.aptitudes?.length || 0}</div>
+            <div className="stat-value">{selectedMonth ? filteredRecords.aptitudes.length : 0}</div>
             <div className="stat-label">Aptitude Tests</div>
           </div>
         </div>
         <div className="stat-card assessment-card">
           <div className="stat-content">
-            <div className="stat-value">{records.assessments?.length || 0}</div>
+            <div className="stat-value">{selectedMonth ? filteredRecords.assessments.length : 0}</div>
             <div className="stat-label">Assessments</div>
           </div>
         </div>
         <div className="stat-card training-card">
           <div className="stat-content">
-            <div className="stat-value">{records.trainings?.length || 0}</div>
+            <div className="stat-value">{selectedMonth ? filteredRecords.trainings.length : 0}</div>
             <div className="stat-label">Trainings</div>
           </div>
         </div>
       </div>
 
+      {!selectedMonth ? (
+        <div className="empty-state">
+          <div className="empty-icon">🗓️</div>
+          <p>Please select a month to view the report</p>
+        </div>
+      ) : !hasFilteredRecords ? (
+        <div className="empty-state">
+          <div className="empty-icon">📭</div>
+          <p>No report found for {formatMonthLabel(selectedMonth)}</p>
+        </div>
+      ) : (
+        <>
+
       {/* Interview Records */}
-      {records.interviews && records.interviews.length > 0 && (
+      {filteredRecords.interviews.length > 0 && (
         <div className="record-section">
           <div className="section-header">
             <div className="header-title">
               <div>
                 <h3>Interview Records</h3>
-                <p className="record-count">{records.interviews.length} interviews conducted</p>
+                <p className="record-count">{filteredRecords.interviews.length} interviews conducted</p>
               </div>
             </div>
           </div>
@@ -578,7 +682,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                {records.interviews.map((interview, idx) => (
+                {filteredRecords.interviews.map((interview, idx) => (
                   <tr key={idx} className="table-row">
                     <td className="date-cell">
                       {interview.date
@@ -629,13 +733,13 @@ function StudentDetailReport() {
       )}
 
       {/* Aptitude Tests */}
-      {records.aptitudes && records.aptitudes.length > 0 && (
+      {filteredRecords.aptitudes.length > 0 && (
         <div className="record-section">
           <div className="section-header">
             <div className="header-title">
               <div>
                 <h3>Aptitude Test Records</h3>
-                <p className="record-count">{records.aptitudes.length} tests completed</p>
+                <p className="record-count">{filteredRecords.aptitudes.length} tests completed</p>
               </div>
             </div>
           </div>
@@ -651,7 +755,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                {records.aptitudes.map((aptitude, idx) => (
+                {filteredRecords.aptitudes.map((aptitude, idx) => (
                   <tr key={idx} className="table-row">
                     <td className="date-cell">
                       {aptitude.createdAt
@@ -677,13 +781,13 @@ function StudentDetailReport() {
       )}
 
       {/* Assessments */}
-      {records.assessments && records.assessments.length > 0 && (
+      {filteredRecords.assessments.length > 0 && (
         <div className="record-section">
           <div className="section-header">
             <div className="header-title">
               <div>
                 <h3>Assessment Records</h3>
-                <p className="record-count">{records.assessments.length} assessments</p>
+                <p className="record-count">{filteredRecords.assessments.length} assessments</p>
               </div>
             </div>
           </div>
@@ -699,7 +803,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                {records.assessments.map((assessment, idx) => (
+                {filteredRecords.assessments.map((assessment, idx) => (
                   <tr key={idx} className="table-row">
                     <td className="date-cell">
                       {assessment.createdAt
@@ -731,13 +835,13 @@ function StudentDetailReport() {
       )}
 
       {/* Trainings */}
-      {records.trainings && records.trainings.length > 0 && (
+      {filteredRecords.trainings.length > 0 && (
         <div className="record-section">
           <div className="section-header">
             <div className="header-title">
               <div>
                 <h3>Training Records</h3>
-                <p className="record-count">{records.trainings.length} trainings attended</p>
+                <p className="record-count">{filteredRecords.trainings.length} trainings attended</p>
               </div>
             </div>
           </div>
@@ -753,7 +857,7 @@ function StudentDetailReport() {
                 </tr>
               </thead>
               <tbody>
-                {records.trainings.map((training, idx) => (
+                {filteredRecords.trainings.map((training, idx) => (
                   <tr key={idx} className="table-row">
                     <td className="date-cell">
                       {training.date
@@ -789,15 +893,8 @@ function StudentDetailReport() {
       )}
 
       {/* Empty State */}
-      {!records.interviews?.length &&
-        !records.aptitudes?.length &&
-        !records.assessments?.length &&
-        !records.trainings?.length && (
-          <div className="empty-state">
-            <div className="empty-icon">📋</div>
-            <p>No assessment records found for this student</p>
-          </div>
-        )}
+      </>
+      )}
     </div>
   );
 }

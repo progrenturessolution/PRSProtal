@@ -71,6 +71,7 @@ router.get('/intern/my-scheduled-gds', verifyToken, trainerController.getMySched
 router.patch('/intern/my-profile', verifyToken, trainerController.updateMyProfile);
 router.get('/intern/my-notifications', verifyToken, trainerController.getMyNotifications);
 router.get('/intern/my-job-postings', verifyToken, trainerController.getMyJobPostings);
+router.get('/intern/my-records', verifyToken, trainerController.getMyStudentRecords);
 router.get('/intern/my-certificates', verifyToken, certificateController.getStudentCertificates);
 
 module.exports = router;
