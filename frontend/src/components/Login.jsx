@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI, representativeAPI } from '../services/api';
 import logo from '../assets/logo.png';
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('admin');
   const [formData, setFormData] = useState({
     email: '',
@@ -81,10 +82,14 @@ function Login() {
         localStorage.setItem('user', user);
         localStorage.setItem('userRole', activeTab);
 
-        navigate(dashboardRouteMap[activeTab] || '/', { replace: true });
+        const redirectTo = (location?.state?.from?.pathname) || dashboardRouteMap[activeTab] || '/';
+        navigate(redirectTo, { replace: true });
       }
     } catch (err) {
-      setError(getErrorMessage(err));
+      const serverMessage = err.response?.data?.message;
+      const status = err.response?.status;
+      setError(serverMessage || getErrorMessage(err));
+      // Do not show browser alert; UI displays server message via setError
     } finally {
       setLoading(false);
     }

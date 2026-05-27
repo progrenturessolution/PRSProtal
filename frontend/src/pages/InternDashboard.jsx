@@ -141,6 +141,76 @@ function InternDashboard() {
     }
   };
 
+  const handleEditClick = () => {
+    setEditFormData({
+      studentType: user?.studentType || "Internship",
+      internId: user?.internId || "",
+      name: user?.name || "",
+      email: user?.email || "",
+      mobile: user?.mobile || "",
+      currentDesignation: user?.currentDesignation || "",
+      domain: user?.domain || "",
+      joiningDate: user?.joiningDate ? new Date(user.joiningDate).toISOString().split('T')[0] : "",
+      endingDate: user?.endingDate ? new Date(user.endingDate).toISOString().split('T')[0] : "",
+      duration: user?.duration || "",
+      collegeName: user?.collegeName || "",
+      branch: user?.branch || "",
+      yearOfStudy: user?.yearOfStudy || "",
+      suggestedDomain: user?.suggestedDomain || "",
+      currentQualification: user?.currentQualification || "",
+      instituteName: user?.instituteName || "",
+      instituteLocation: user?.instituteLocation || "",
+      enrolmentDate: user?.enrolmentDate ? new Date(user.enrolmentDate).toISOString().split('T')[0] : "",
+      enrolBatchMonth: user?.enrolBatchMonth || "",
+      totalFees: user?.totalFees || "",
+      firstPaymentAmount: user?.firstPaymentAmount || "",
+      firstPaymentDate: user?.firstPaymentDate ? new Date(user.firstPaymentDate).toISOString().split('T')[0] : "",
+      secondPaymentAmount: user?.secondPaymentAmount || "",
+      secondPaymentDate: user?.secondPaymentDate ? new Date(user.secondPaymentDate).toISOString().split('T')[0] : "",
+      finalPaymentAmount: user?.finalPaymentAmount || "",
+      finalPaymentDate: user?.finalPaymentDate ? new Date(user.finalPaymentDate).toISOString().split('T')[0] : "",
+      completedFees: user?.completedFees || "",
+      pendingFees: user?.pendingFees || "",
+      password: "",
+      confirmPassword: "",
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setEditError("");
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setEditLoading(true);
+      setEditError("");
+      const payload = { ...editFormData };
+      const response = await internAPI.updateMyProfile(payload);
+      if (response.data.success) {
+        setUser(response.data.user || user);
+        localStorage.setItem("user", JSON.stringify(response.data.user || user));
+        setShowEditModal(false);
+        setProfileSuccess("Profile updated successfully");
+        setTimeout(() => setProfileSuccess(""), 4000);
+      } else {
+        setEditError(response.data.message || "Failed to update profile");
+      }
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      setEditError(err.response?.data?.message || "Failed to update profile");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const fetchAssignedCertificates = async () => {
     try {
       const certResp = await internAPI.getMyAssignedCertificates();
@@ -282,7 +352,28 @@ function InternDashboard() {
               });
               setScheduledGds(myGds || []);
             }
-          } catch (e) { setScheduledGds([]); }
+          } catch (e) {
+            // fallback to localStorage for older entries
+            try {
+              const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
+              const myIdCandidates = [user?._id, user?.id, user?.internId, user?.psmsId].map(String).filter(Boolean);
+              const myGds = (raw || []).filter(act => {
+                try {
+                  const groups = act.details?.groups || [];
+                  for (const g of groups) {
+                    const members = Array.isArray(g) ? g : (g.members || []);
+                    for (const m of members) {
+                      const mid = (m._id || m.id || m.studentId || m.psmsId || m.internId || m).toString();
+                      if (myIdCandidates.includes(mid)) return true;
+                    }
+                  }
+                } catch (e) {}
+                return false;
+              });
+              setScheduledGds(myGds || []);
+            } catch (e2) { setScheduledGds([]); }
+          }
+          await loadScheduledAssessments();
           break;
         case "scheduled-assignments":
           await loadScheduledAssessments();
@@ -290,7 +381,7 @@ function InternDashboard() {
         case "aptitude":
           const aptResp = await internAPI.getMyAptitude();
           if (aptResp.data && aptResp.data.success) {
-            setAptitude(aptResp.data.aptitudeRecords || []);
+            setAptitude(aptResp.data.aptitude || []);
           }
           break;
         case "assessments":
@@ -300,9 +391,9 @@ function InternDashboard() {
           }
           break;
         case "training":
-          const trainingResp = await internAPI.getMyTraining();
-          if (trainingResp.data && trainingResp.data.success) {
-            setTrainings(trainingResp.data.trainings || []);
+          const trResp = await internAPI.getMyTraining();
+          if (trResp.data && trResp.data.success) {
+            setTrainings(trResp.data.training || []);
           }
           break;
         case "notifications":
@@ -311,32 +402,35 @@ function InternDashboard() {
             setNotifications(notifResp.data.notifications || []);
           }
           break;
-        case "jobs":
-          const jobsResp = await internAPI.getMyJobPostings();
-          if (jobsResp.data && jobsResp.data.success) {
-            setJobPostings(jobsResp.data.postings || []);
+        case "groups":
+          if (!groupsLoading) {
+            setGroupsLoading(true);
+            try {
+              const grpResp = await internAPI.getMyGroups();
+              if (grpResp.data && grpResp.data.success) {
+                setGroups(grpResp.data.groups || []);
+              }
+            } finally {
+              setGroupsLoading(false);
+            }
           }
           break;
-        case "groups":
-          setGroupsLoading(true);
+        case "jobs":
           try {
-            const groupsResp = await internAPI.getMyGroups();
-            if (groupsResp.data && groupsResp.data.success) {
-              setGroups(groupsResp.data.groups || []);
-            } else {
-              setGroups([]);
+            const jobsResp = await internAPI.getMyJobPostings();
+            if (jobsResp.data && jobsResp.data.success) {
+              setJobPostings(jobsResp.data.jobPostings || []);
             }
-          } finally {
-            setGroupsLoading(false);
+          } catch (e) {
+            console.error('Failed to fetch job postings:', e);
+            setJobPostings([]);
           }
+          break;
+        default:
           break;
       }
     } catch (err) {
-      console.error(`Failed to fetch ${section}:`, err);
-      if (section === "groups") {
-        setGroups([]);
-        setGroupsLoading(false);
-      }
+      console.error(`Failed to load ${section}:`, err);
     }
   };
 
@@ -535,167 +629,6 @@ function InternDashboard() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/");
-  };
-
-  const handleEditClick = () => {
-    setEditFormData({
-      studentType: user?.studentType || "Internship",
-      internId: user?.internId || "",
-      name: user?.name || "",
-      email: user?.email || "",
-      mobile: user?.mobile || "",
-      currentDesignation: user?.currentDesignation || "",
-      domain: user?.domain || "",
-      joiningDate: user?.joiningDate ? new Date(user.joiningDate).toISOString().split("T")[0] : "",
-      endingDate: user?.endingDate ? new Date(user.endingDate).toISOString().split("T")[0] : "",
-      duration: user?.duration || "",
-      collegeName: user?.collegeName || "",
-      branch: user?.branch || "",
-      yearOfStudy: user?.yearOfStudy || "",
-      suggestedDomain: user?.suggestedDomain || "",
-      currentQualification: user?.currentQualification || "",
-      instituteName: user?.instituteName || "",
-      instituteLocation: user?.instituteLocation || "",
-      enrolmentDate: user?.enrolmentDate ? new Date(user.enrolmentDate).toISOString().split("T")[0] : "",
-      enrolBatchMonth: user?.enrolBatchMonth || "",
-      totalFees: user?.totalFees || "",
-      firstPaymentAmount: user?.firstPaymentAmount || "",
-      firstPaymentDate: user?.firstPaymentDate ? new Date(user.firstPaymentDate).toISOString().split("T")[0] : "",
-      secondPaymentAmount: user?.secondPaymentAmount || "",
-      secondPaymentDate: user?.secondPaymentDate ? new Date(user.secondPaymentDate).toISOString().split("T")[0] : "",
-      finalPaymentAmount: user?.finalPaymentAmount || "",
-      finalPaymentDate: user?.finalPaymentDate ? new Date(user.finalPaymentDate).toISOString().split("T")[0] : "",
-      completedFees: user?.completedFees || "",
-      pendingFees: user?.pendingFees || "",
-      password: "",
-      confirmPassword: "",
-    });
-    setEditError("");
-    setShowEditModal(true);
-  };
-
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleCloseModal = () => {
-    setShowEditModal(false);
-    setEditError("");
-    setEditFormData({
-      studentType: "Internship",
-      internId: "",
-      name: "",
-      email: "",
-      mobile: "",
-      currentDesignation: "",
-      domain: "",
-      joiningDate: "",
-      endingDate: "",
-      duration: "",
-      collegeName: "",
-      branch: "",
-      yearOfStudy: "",
-      suggestedDomain: "",
-      currentQualification: "",
-      instituteName: "",
-      instituteLocation: "",
-      enrolmentDate: "",
-      enrolBatchMonth: "",
-      totalFees: "",
-      firstPaymentAmount: "",
-      firstPaymentDate: "",
-      secondPaymentAmount: "",
-      secondPaymentDate: "",
-      finalPaymentAmount: "",
-      finalPaymentDate: "",
-      completedFees: "",
-      pendingFees: "",
-      password: "",
-      confirmPassword: "",
-    });
-  };
-
-  const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    setEditError("");
-    setEditLoading(true);
-
-    if (!editFormData.name.trim()) {
-      setEditError("Name is required");
-      setEditLoading(false);
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!editFormData.email.trim() || !emailRegex.test(editFormData.email)) {
-      setEditError("Please enter a valid email address");
-      setEditLoading(false);
-      return;
-    }
-
-    if (
-      editFormData.password &&
-      editFormData.password !== editFormData.confirmPassword
-    ) {
-      setEditError("Passwords do not match");
-      setEditLoading(false);
-      return;
-    }
-
-    try {
-      const payload = {
-        studentType: editFormData.studentType,
-        internId: editFormData.internId,
-        name: editFormData.name,
-        email: editFormData.email,
-        mobile: editFormData.mobile,
-        currentDesignation: editFormData.currentDesignation,
-        domain: editFormData.domain,
-        joiningDate: editFormData.joiningDate,
-        endingDate: editFormData.endingDate,
-        duration: editFormData.duration,
-        collegeName: editFormData.collegeName,
-        branch: editFormData.branch,
-        yearOfStudy: editFormData.yearOfStudy,
-        suggestedDomain: editFormData.suggestedDomain,
-        currentQualification: editFormData.currentQualification,
-        instituteName: editFormData.instituteName,
-        instituteLocation: editFormData.instituteLocation,
-        enrolmentDate: editFormData.enrolmentDate,
-        enrolBatchMonth: editFormData.enrolBatchMonth,
-        totalFees: editFormData.totalFees,
-        firstPaymentAmount: editFormData.firstPaymentAmount,
-        firstPaymentDate: editFormData.firstPaymentDate,
-        secondPaymentAmount: editFormData.secondPaymentAmount,
-        secondPaymentDate: editFormData.secondPaymentDate,
-        finalPaymentAmount: editFormData.finalPaymentAmount,
-        finalPaymentDate: editFormData.finalPaymentDate,
-        completedFees: editFormData.completedFees,
-        pendingFees: editFormData.pendingFees,
-      };
-
-      if (editFormData.password) {
-        payload.password = editFormData.password;
-      }
-
-      const response = await internAPI.updateMyProfile(payload);
-      if (response.data.success) {
-        const updatedUser = response.data.user;
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        setProfileSuccess("Profile updated successfully!");
-        setTimeout(() => setProfileSuccess(""), 4000);
-        setShowEditModal(false);
-      }
-    } catch (err) {
-      setEditError(err.response?.data?.message || "Failed to update profile");
-    } finally {
-      setEditLoading(false);
-    }
   };
 
   const getStatusColor = (status) => {
@@ -974,124 +907,135 @@ function InternDashboard() {
               </div>
             )}
 
-            <div className="premium-card">
-              <div className="premium-card-header">
-                <h2>Personal Information</h2>
-              </div>
-
-              <div className="profile-info-grid">
-                <div className="profile-field">
-                  <label>Full Name</label>
-                  <div className="field-value">{user.name}</div>
-                </div>
-                <div className="profile-field">
-                  <label>Email Address</label>
-                  <div className="field-value mono-text">{user.email}</div>
-                </div>
-                <div className="profile-field">
-                  <label>Mobile Number</label>
-                  <div className="field-value mono-text">{user.mobile || "Not available"}</div>
-                </div>
-                <div className="profile-field">
-                  <label>Student ID</label>
-                  <div className="field-value mono-text">{user.internId || "Not available"}</div>
-                </div>
-                <div className="profile-field">
-                  <label>Student Type</label>
-                  <div className="field-value">
-                    <span className="badge-neutral">{user.studentType || "Internship"}</span>
+            <div className="profile-top-card">
+              <div className="profile-top-left">
+                <div className="profile-top-avatar">{(user.name || 'U').charAt(0).toUpperCase()}</div>
+                <div className="profile-top-meta">
+                  <div className="profile-top-name">{user.name}</div>
+                  <div className="profile-top-sub">{user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : ''}</div>
+                  <div className="profile-top-badges">
+                    <span className="profile-top-badge">{user.studentType || 'Internship'}</span>
+                    <span className="profile-top-badge small">{user.status || 'active'}</span>
                   </div>
                 </div>
-                <div className="profile-field">
-                  <label>Current Designation</label>
-                  <div className="field-value">{user.currentDesignation || "Not Set"}</div>
+              </div>
+              <div className="profile-top-right">
+                <label className="switch-label">Inactive</label>
+                <div className="toggle-wrapper">
+                  <input type="checkbox" checked={(user.status || '').toLowerCase() !== 'active'} readOnly />
                 </div>
-                <div className="profile-field">
-                  <label>Status</label>
-                  <div className="field-value">
-                    <span className="badge-neutral">{user.status || "active"}</span>
+                <button className="btn-edit" onClick={handleEditClick}>Edit</button>
+              </div>
+            </div>
+
+            <div className="profile-sections">
+              <div className="section-card">
+                <h3>Personal Details</h3>
+                <div className="section-grid">
+                  <div className="field-col">
+                    <label>Full Name</label>
+                    <div className="field-value">{user.name}</div>
+                  </div>
+                  <div className="field-col">
+                    <label>Student ID</label>
+                    <div className="field-value mono-text">{user.internId || 'Not available'}</div>
+                  </div>
+                  <div className="field-col">
+                    <label>Student Type</label>
+                    <div className="field-value">{user.studentType || 'Internship'}</div>
+                  </div>
+                  <div className="field-col">
+                    <label>Current Designation</label>
+                    <div className="field-value">{user.currentDesignation || 'Not Set'}</div>
+                  </div>
+                  <div className="field-col">
+                    <label>Joined On</label>
+                    <div className="field-value">{user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : 'Not set'}</div>
+                  </div>
+                  <div className="field-col">
+                    <label>Duration</label>
+                    <div className="field-value">{user.duration || 'Not set'}</div>
                   </div>
                 </div>
-                <div className="profile-field">
-                  <label>Joined On</label>
-                  <div className="field-value">{user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : "Not set"}</div>
-                </div>
-                <div className="profile-field">
-                  <label>Ending Date</label>
-                  <div className="field-value">{user.endingDate ? new Date(user.endingDate).toLocaleDateString() : "Not set"}</div>
-                </div>
-                <div className="profile-field">
-                  <label>Duration</label>
-                  <div className="field-value">{user.duration || "Not set"}</div>
-                </div>
-
-                {user.studentType === "Internship" ? (
-                  <>
-                    <div className="profile-field">
-                      <label>Domain</label>
-                      <div className="field-value">{user.domain || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>College Name</label>
-                      <div className="field-value">{user.collegeName || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Branch</label>
-                      <div className="field-value">{user.branch || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Year of Study</label>
-                      <div className="field-value">{user.yearOfStudy || "Not set"}</div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="profile-field">
-                      <label>Suggested Domain</label>
-                      <div className="field-value">{user.suggestedDomain || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Current Qualification</label>
-                      <div className="field-value">{user.currentQualification || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Institute Name</label>
-                      <div className="field-value">{user.instituteName || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Institute Location</label>
-                      <div className="field-value">{user.instituteLocation || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Enrolment Date</label>
-                      <div className="field-value">{user.enrolmentDate ? new Date(user.enrolmentDate).toLocaleDateString() : "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Batch Month</label>
-                      <div className="field-value">{user.enrolBatchMonth || "Not set"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Total Fees</label>
-                      <div className="field-value">{user.totalFees || "0"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Completed Fees</label>
-                      <div className="field-value">{user.completedFees || "0"}</div>
-                    </div>
-                    <div className="profile-field">
-                      <label>Pending Fees</label>
-                      <div className="field-value">{user.pendingFees || "0"}</div>
-                    </div>
-                  </>
-                )}
               </div>
 
-              <div className="info-banner">
-                <strong>Update Your Information</strong>
-                <p>
-                  Click the "Edit Profile" button above to update your name,
-                  email, mobile number, or password.
-                </p>
+              <div className="section-card">
+                <h3>Contact Details</h3>
+                <div className="section-grid">
+                  <div className="field-col">
+                    <label>Email Address</label>
+                    <div className="field-value mono-text">{user.email}</div>
+                  </div>
+                  <div className="field-col">
+                    <label>Mobile Number</label>
+                    <div className="field-value mono-text">{user.mobile || 'Not available'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="section-card">
+                <h3>Academics / Program</h3>
+                <div className="section-grid">
+                  {user.studentType === 'Internship' ? (
+                    <>
+                      <div className="field-col">
+                        <label>Domain</label>
+                        <div className="field-value">{user.domain || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>College Name</label>
+                        <div className="field-value">{user.collegeName || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Branch</label>
+                        <div className="field-value">{user.branch || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Year of Study</label>
+                        <div className="field-value">{user.yearOfStudy || 'Not set'}</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="field-col">
+                        <label>Suggested Domain</label>
+                        <div className="field-value">{user.suggestedDomain || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Current Qualification</label>
+                        <div className="field-value">{user.currentQualification || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Institute Name</label>
+                        <div className="field-value">{user.instituteName || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Institute Location</label>
+                        <div className="field-value">{user.instituteLocation || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Enrolment Date</label>
+                        <div className="field-value">{user.enrolmentDate ? new Date(user.enrolmentDate).toLocaleDateString() : 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Batch Month</label>
+                        <div className="field-value">{user.enrolBatchMonth || 'Not set'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Total Fees</label>
+                        <div className="field-value">{user.totalFees || '0'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Completed Fees</label>
+                        <div className="field-value">{user.completedFees || '0'}</div>
+                      </div>
+                      <div className="field-col">
+                        <label>Pending Fees</label>
+                        <div className="field-value">{user.pendingFees || '0'}</div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 

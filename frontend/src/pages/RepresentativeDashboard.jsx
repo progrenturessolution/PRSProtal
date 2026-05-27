@@ -176,7 +176,7 @@ function RepresentativeDashboard() {
     const stored = localStorage.getItem('user');
     const role = localStorage.getItem('userRole');
     if (!stored || role !== 'representative') {
-      navigate('/representative-login');
+      navigate('/');
       return;
     }
     setUser(JSON.parse(stored));

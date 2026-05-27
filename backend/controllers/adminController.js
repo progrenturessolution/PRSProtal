@@ -534,24 +534,28 @@ exports.getStats = async (req, res) => {
 exports.updateInternStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, message } = req.body;
 
-      // Accept valid statuses (case-insensitive)
-      const allowed = ['active', 'completed', 'inactive'];
-      if (!status || !allowed.includes(String(status).toLowerCase())) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid status. Allowed: active, completed, inactive'
-        });
-      }
+    // Accept valid statuses (case-insensitive)
+    const allowed = ['active', 'completed', 'inactive'];
+    if (!status || !allowed.includes(String(status).toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Allowed: active, completed, inactive'
+      });
+    }
 
-      const normalizedStatus = String(status).toLowerCase();
+    const normalizedStatus = String(status).toLowerCase();
 
-    const intern = await Intern.findByIdAndUpdate(
-      id,
-      { status: normalizedStatus },
-      { new: true }
-    ).select('-password');
+    const updates = { status: normalizedStatus };
+    if (normalizedStatus === 'inactive') {
+      updates.inactiveMessage = String(message || '').trim();
+    } else {
+      // Clear inactive message when activating or completing
+      updates.inactiveMessage = '';
+    }
+
+    const intern = await Intern.findByIdAndUpdate(id, updates, { new: true }).select('-password');
 
     if (!intern) {
       return res.status(404).json({

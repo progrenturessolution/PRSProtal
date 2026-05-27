@@ -23,6 +23,12 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
   const [certificateName, setCertificateName] = useState("");
   const [uploadingCert, setUploadingCert] = useState(false);
   const [certificateUploadStatus, setCertificateUploadStatus] = useState(null);
+  // Inactive message modal state
+  const [showInactiveModal, setShowInactiveModal] = useState(false);
+  const [inactiveModalStudent, setInactiveModalStudent] = useState(null);
+  const [inactiveModalMessage, setInactiveModalMessage] = useState('');
+  const [inactiveModalLoading, setInactiveModalLoading] = useState(false);
+  const [inactiveModalError, setInactiveModalError] = useState('');
 
   const certificateTypeOptions = [
     { value: "offerLetter", label: "Internship Offer letter" },
@@ -169,28 +175,54 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
     }
   };
 
-  const handleStatusToggle = async (student) => {
-    const current = (student.status || "").toLowerCase();
-    const newStatus = current === "active" ? "inactive" : "active";
+  const handleMarkCompleted = async (student) => {
+    const confirmComplete = window.confirm(
+      `Mark "${student.name}" as completed?\n\nThis will prevent the student from logging in.`,
+    );
+
+    if (!confirmComplete) return;
 
     try {
-      // Send normalized lower-case status to backend
-      await adminAPI.updateInternStatus(student._id, newStatus);
-      // Update UI with capitalized label for readability
-      const label = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      await adminAPI.updateInternStatus(student._id, 'completed');
       setInterns(
         interns.map((intern) =>
-          intern._id === student._id ? { ...intern, status: label } : intern,
+          intern._id === student._id ? { ...intern, status: 'Completed' } : intern,
         ),
       );
       setOpenMenuId(null);
-      // Show inline info message instead of alert
-      setInfoMessage(
-        `Student ${newStatus === "active" ? "activated" : "deactivated"} successfully`,
-      );
-      setTimeout(() => setInfoMessage(""), 4000);
+      setInfoMessage(`"${student.name}" marked as completed`);
+      setTimeout(() => setInfoMessage(''), 4000);
     } catch (err) {
-      setError("Failed to update status");
+      console.error('Failed to mark completed:', err);
+      setError(err.response?.data?.message || 'Failed to mark student as completed');
+      setTimeout(() => setError(''), 4000);
+    }
+  };
+
+  const handleStatusToggle = async (student) => {
+    const current = (student.status || "").toLowerCase();
+    const newStatus = current === "active" ? "inactive" : "active";
+    // If switching to inactive, open modal to collect message
+    if (newStatus === 'inactive') {
+      setInactiveModalStudent(student);
+      setInactiveModalMessage('');
+      setInactiveModalError('');
+      setShowInactiveModal(true);
+      return;
+    }
+
+    try {
+      // Activate directly
+      await adminAPI.updateInternStatus(student._id, newStatus, '');
+      const label = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      setInterns(
+        interns.map((intern) => (intern._id === student._id ? { ...intern, status: label, inactiveMessage: '' } : intern)),
+      );
+      setOpenMenuId(null);
+      setInfoMessage(`Student activated successfully`);
+      setTimeout(() => setInfoMessage(''), 4000);
+    } catch (err) {
+      setError('Failed to update status');
       console.error(err);
     }
   };
@@ -504,6 +536,92 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
           {error}
         </div>
       )}
+
+      {/* Inactive Message Modal */}
+      {showInactiveModal && inactiveModalStudent &&
+        createPortal(
+          <div
+            className="profile-modal-overlay"
+            onClick={() => {
+              if (!inactiveModalLoading) setShowInactiveModal(false);
+            }}
+          >
+            <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="profile-header" style={{ background: '#324158' }}>
+                <button
+                  className="profile-close-btn"
+                  onClick={() => {
+                    if (!inactiveModalLoading) setShowInactiveModal(false);
+                  }}
+                >
+                  ×
+                </button>
+                <div className="profile-avatar">{(inactiveModalStudent.name || 'S').charAt(0).toUpperCase()}</div>
+                <h2 className="profile-name">Mark Inactive</h2>
+                <div className="profile-badges">
+                  <span className="profile-badge">PIID: {inactiveModalStudent.internId || '-'}</span>
+                </div>
+              </div>
+
+              <div className="profile-body">
+                <div className="profile-section">
+                  <h3 className="profile-section-title">
+                    <span className="profile-section-bar" />Provide a short message for the student
+                  </h3>
+                  <textarea
+                    value={inactiveModalMessage}
+                    onChange={(e) => setInactiveModalMessage(e.target.value)}
+                    placeholder="E.g. Suspended due to policy violation. Contact admin to reactivate."
+                    style={{ width: '100%', minHeight: 100, padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+                    maxLength={300}
+                  />
+                  {inactiveModalError && <div style={{ color: '#dc2626', marginTop: 8 }}>{inactiveModalError}</div>}
+                </div>
+
+                <div className="profile-actions" style={{ marginTop: 12 }}>
+                  <button
+                    className="profile-btn profile-btn-primary"
+                    onClick={async () => {
+                      if (inactiveModalLoading) return;
+                      const msg = String(inactiveModalMessage || '').trim();
+                      if (!msg) {
+                        setInactiveModalError('Please enter a short message to show to the student');
+                        return;
+                      }
+                      try {
+                        setInactiveModalLoading(true);
+                        await adminAPI.updateInternStatus(inactiveModalStudent._id, 'inactive', msg);
+                        setInterns(interns.map((i) => (i._id === inactiveModalStudent._id ? { ...i, status: 'Inactive', inactiveMessage: msg } : i)));
+                        setShowInactiveModal(false);
+                        setOpenMenuId(null);
+                        setInfoMessage(`"${inactiveModalStudent.name}" marked as inactive`);
+                        setTimeout(() => setInfoMessage(''), 4000);
+                      } catch (err) {
+                        console.error('Failed to mark inactive:', err);
+                        setInactiveModalError(err.response?.data?.message || 'Failed to mark inactive');
+                      } finally {
+                        setInactiveModalLoading(false);
+                      }
+                    }}
+                  >
+                    {inactiveModalLoading ? 'Saving...' : 'Save & Mark Inactive'}
+                  </button>
+
+                  <button
+                    className="profile-btn profile-btn-ghost"
+                    onClick={() => {
+                      if (!inactiveModalLoading) setShowInactiveModal(false);
+                    }}
+                    style={{ marginLeft: 8 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {infoMessage && (
         <div className="success-message" style={{ marginBottom: "20px" }}>
@@ -846,6 +964,25 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
                               : "Mark Active"}
                           </button>
                           <button
+                            onClick={() => handleMarkCompleted(student)}
+                            style={{
+                              width: "100%",
+                              padding: "12px 16px",
+                              background: "white",
+                              border: "none",
+                              textAlign: "left",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              color: "#075985",
+                              borderTop: "1px solid #f3f4f6",
+                            }}
+                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                            onMouseLeave={(e) => (e.target.style.background = "white")}
+                          >
+                            Mark Completed
+                          </button>
+                          <button
                             onClick={() => handleDelete(student._id, student.name)}
                             style={{
                               width: "100%",
@@ -917,6 +1054,13 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
                     {selectedStudent.status || "Active"}
                   </span>
                 </div>
+                {((selectedStudent.status || '').toLowerCase() === 'inactive' && (selectedStudent.inactiveMessage || '').trim()) && (
+                  <div style={{ marginTop: 12, padding: '10px 12px', background: '#fff7ed', border: '1px solid #fcd34d', borderRadius: 8 }}>
+                    <strong style={{ display: 'block', marginBottom: 4 }}>Inactive note</strong>
+                    <div style={{ color: '#92400e' }}>{selectedStudent.inactiveMessage}</div>
+                    <div style={{ marginTop: 8, color: '#92400e', fontSize: 13 }}>Contact admin to make yourself active.</div>
+                  </div>
+                )}
               </div>
 
               <div className="profile-body">

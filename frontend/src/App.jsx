@@ -3,6 +3,7 @@ import Login from './components/Login';
 import AdminLogin from './components/AdminLogin';
 import InternLogin from './components/InternLogin';
 import RepresentativeLogin from './components/RepresentativeLogin';
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminDashboard from './pages/AdminDashboard';
 import InternDashboard from './pages/InternDashboard';
 import TrainerDashboard from './pages/TrainerDashboard';
@@ -18,18 +19,81 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/intern-login" element={<InternLogin />} />
-        <Route path="/representative-login" element={<RepresentativeLogin />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/intern-dashboard" element={<InternDashboard />} />
-        <Route path="/trainer-dashboard" element={<TrainerDashboard />} />
-        <Route path="/representative-dashboard" element={<RepresentativeDashboard />} />
-        <Route path="/trainer/student/:studentId/interviews" element={<InterviewForm />} />
-        <Route path="/trainer/student/:studentId/aptitude" element={<AptitudeForm />} />
-        <Route path="/trainer/student/:studentId/assessments" element={<AssessmentForm />} />
-        <Route path="/trainer/student/:studentId/training" element={<TrainingForm />} />
-        <Route path="/admin/student/:studentId/report" element={<StudentDetailReport />} />
+        <Route path="/admin-login" element={<Login />} />
+        <Route path="/intern-login" element={<Login />} />
+        <Route path="/representative-login" element={<Login />} />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/intern-dashboard"
+          element={
+            <ProtectedRoute allowedRole="intern">
+              <InternDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trainer-dashboard"
+          element={
+            <ProtectedRoute allowedRole="trainer">
+              <TrainerDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/representative-dashboard"
+          element={
+            <ProtectedRoute allowedRole="representative">
+              <RepresentativeDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trainer/student/:studentId/interviews"
+          element={
+            <ProtectedRoute allowedRole="trainer">
+              <InterviewForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trainer/student/:studentId/aptitude"
+          element={
+            <ProtectedRoute allowedRole="trainer">
+              <AptitudeForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trainer/student/:studentId/assessments"
+          element={
+            <ProtectedRoute allowedRole="trainer">
+              <AssessmentForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trainer/student/:studentId/training"
+          element={
+            <ProtectedRoute allowedRole="trainer">
+              <TrainingForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/student/:studentId/report"
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <StudentDetailReport />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

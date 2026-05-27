@@ -77,8 +77,8 @@ export const adminAPI = {
   getAllInterns: () => api.get("/admin/interns"),
   getStats: () => api.get("/admin/stats"),
   deleteIntern: (id) => api.delete(`/admin/intern/${id}`),
-  updateInternStatus: (id, status) =>
-    api.patch(`/admin/intern/${id}/status`, { status }),
+  updateInternStatus: (id, status, message) =>
+    api.patch(`/admin/intern/${id}/status`, { status, message }),
   updateIntern: (id, data) => api.patch(`/admin/intern/${id}`, data),
   deleteAllInterns: () => api.delete("/admin/delete-all-interns"),
   getStudentRecords: (studentId) => api.get(`/admin/students/${studentId}/records`),

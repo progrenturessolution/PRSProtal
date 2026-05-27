@@ -47,7 +47,7 @@ function AdminDashboard() {
     const userRole = localStorage.getItem("userRole");
 
     if (!token || !userData || userRole !== "admin") {
-      navigate("/admin-login");
+      navigate("/");
       return;
     }
 

@@ -126,6 +126,21 @@ exports.internLogin = async (req, res) => {
       });
     }
 
+    // Block login for completed interns
+    const internStatus = (intern.status || '').toLowerCase();
+    if (internStatus === 'completed') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your internship is completed'
+      });
+    }
+    // Block login for inactive interns and return admin-provided message if any
+    if (internStatus === 'inactive') {
+      const baseMsg = (intern.inactiveMessage && intern.inactiveMessage.trim()) || 'Your account is inactive';
+      const appended = baseMsg + ' Contact admin to make yourself active.';
+      return res.status(403).json({ success: false, message: appended });
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { id: intern._id, internId: intern.internId, role: intern.role },
