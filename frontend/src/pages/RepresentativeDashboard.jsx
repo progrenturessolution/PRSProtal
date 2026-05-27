@@ -598,6 +598,11 @@ function RepresentativeDashboard() {
 
   const certificateCount = assignedDocs.filter((doc) => doc.filepath).length;
 
+  const profileDisplayName = profile?.name || user?.name || 'Representative';
+  const profileRole = profile?.designation || user?.role || 'Representative';
+  const profileStatus = profile?.status || user?.status || 'active';
+  const profileInitial = profileDisplayName ? profileDisplayName.charAt(0).toUpperCase() : 'R';
+
   return (
     <div className="dashboard">
       {/* Mobile menu button */}
@@ -746,99 +751,148 @@ function RepresentativeDashboard() {
                 </div>
               )}
 
-              <div className="premium-card">
-                <div className="premium-card-header">
-                  <h2>Personal Information</h2>
-                </div>
-
-                <div className="profile-info-grid">
-                  <div className="profile-field">
-                    <label>Full Name</label>
-                    <div className="field-value">{profileName}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Email Address</label>
-                    <div className="field-value mono-text">{profileEmail}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Mobile Number</label>
-                    <div className="field-value mono-text">{profileMobile}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Role</label>
-                    <div className="field-value">
-                      <span className="badge-neutral">{profileDesignation}</span>
+              <div className="profile-top-card">
+                <div className="profile-top-left">
+                  <div className="profile-top-avatar">{profileInitial}</div>
+                  <div className="profile-top-meta">
+                    <div className="profile-top-name">{profileDisplayName}</div>
+                    <div className="profile-top-sub">
+                      {profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : ''}
+                    </div>
+                    <div className="profile-top-badges">
+                      <span className="profile-top-badge">{profileRole}</span>
+                      <span className="profile-top-badge small">{profileStatus}</span>
                     </div>
                   </div>
-                  <div className="profile-field">
-                    <label>PGIR ID</label>
-                    <div className="field-value mono-text">{profile?.pgirId || 'Not available'}</div>
+                </div>
+                <div className="profile-top-right">
+                  <label className="switch-label">Inactive</label>
+                  <div className="toggle-wrapper">
+                    <input type="checkbox" checked={String(profileStatus).toLowerCase() !== 'active'} readOnly />
                   </div>
-                  <div className="profile-field">
-                    <label>College</label>
-                    <div className="field-value">{profile?.college || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Course</label>
-                    <div className="field-value">{profile?.course || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Department</label>
-                    <div className="field-value">{profile?.department || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Year</label>
-                    <div className="field-value">{profile?.year || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>UPI ID</label>
-                    <div className="field-value mono-text">{profile?.upiId || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>UPI Mobile Number</label>
-                    <div className="field-value mono-text">{profile?.upiMobileNumber || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Joining Date</label>
-                    <div className="field-value">{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Instagram Profile</label>
-                    <div className="field-value">{profile?.instagramProfile || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>LinkedIn Profile</label>
-                    <div className="field-value">{profile?.linkedinProfile || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Application Form Link</label>
-                    <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.internshipApplicationFormLink || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Internship Sheet Link</label>
-                    <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.internshipSheetLink || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Sheet Links</label>
-                    <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.sheetLinks || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Internship Promo Message</label>
-                    <div className="field-value" style={{ whiteSpace: 'pre-wrap' }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>SMS Promo Message</label>
-                    <div className="field-value" style={{ whiteSpace: 'pre-wrap' }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
+                  <button className="btn-edit" onClick={startEdit}>Edit</button>
+                </div>
+              </div>
+
+              <div className="profile-sections">
+                <div className="section-card">
+                  <h3>Personal Details</h3>
+                  <div className="section-grid">
+                    <div className="field-col">
+                      <label>Full Name</label>
+                      <div className="field-value">{profile?.name || user?.name || 'Not available'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Employee ID</label>
+                      <div className="field-value mono-text">{profile?.pgirId || profile?.representativeId || 'Not available'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Role</label>
+                      <div className="field-value">{profileRole}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Joining Date</label>
+                      <div className="field-value">{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : 'Not available'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Account Status</label>
+                      <div className="field-value">{profileStatus}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Profile Created</label>
+                      <div className="field-value">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-IN') : 'Not available'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Last Updated</label>
+                      <div className="field-value">{profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('en-IN') : 'Not available'}</div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="info-banner">
-                  <strong>Update Your Information</strong>
-                  <p>
-                    Click the "Edit Profile" button above to update your academic,
-                    contact, links, social and promotional details from one place.
-                  </p>
+                <div className="section-card">
+                  <h3>Contact Details</h3>
+                  <div className="section-grid">
+                    <div className="field-col">
+                      <label>Email Address</label>
+                      <div className="field-value mono-text">{profile?.email || user?.email || 'Not available'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Mobile Number</label>
+                      <div className="field-value mono-text">{profile?.mobile || user?.mobile || 'Not available'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>UPI ID</label>
+                      <div className="field-value mono-text">{profile?.upiId || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>UPI Mobile Number</label>
+                      <div className="field-value mono-text">{profile?.upiMobileNumber || 'Not provided'}</div>
+                    </div>
+                  </div>
                 </div>
+
+                <div className="section-card">
+                  <h3>Work Profile</h3>
+                  <div className="section-grid">
+                    <div className="field-col">
+                      <label>College</label>
+                      <div className="field-value">{profile?.college || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Course</label>
+                      <div className="field-value">{profile?.course || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Department</label>
+                      <div className="field-value">{profile?.department || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Year</label>
+                      <div className="field-value">{profile?.year || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Instagram Profile</label>
+                      <div className="field-value">{profile?.instagramProfile || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>LinkedIn Profile</label>
+                      <div className="field-value">{profile?.linkedinProfile || 'Not provided'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section-card">
+                  <h3>Links & Messages</h3>
+                  <div className="section-grid">
+                    <div className="field-col">
+                      <label>Application Form Link</label>
+                      <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.internshipApplicationFormLink || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Internship Sheet Link</label>
+                      <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.internshipSheetLink || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Sheet Links</label>
+                      <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.sheetLinks || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>Internship Promo Message</label>
+                      <div className="field-value" style={{ whiteSpace: 'pre-wrap' }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>SMS Promo Message</label>
+                      <div className="field-value" style={{ whiteSpace: 'pre-wrap' }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="info-banner">
+                <strong>Update Your Information</strong>
+                <p>
+                  Click the "Edit Profile" button above to update your details, links, and promotional content from one place.
+                </p>
               </div>
 
               {showEditModal && (

@@ -976,6 +976,11 @@ function TrainerDashboard() {
     ),
   );
 
+  const profileDisplayName = user?.name || "Trainer";
+  const profileRole = user?.customRole || user?.role || "Trainer";
+  const profileStatus = user?.status || "active";
+  const profileInitial = profileDisplayName.charAt(0).toUpperCase();
+
   return (
     <div className="dashboard">
       {/* Mobile Menu Button */}
@@ -4535,77 +4540,85 @@ function TrainerDashboard() {
                 </div>
               )}
 
-              <div className="premium-card">
-                <div className="premium-card-header">
-                  <h2>Personal Information</h2>
+              <div className="profile-top-card">
+                <div className="profile-top-left">
+                  <div className="profile-top-avatar">{profileInitial}</div>
+                  <div className="profile-top-meta">
+                    <div className="profile-top-name">{profileDisplayName}</div>
+                    {user?.joiningDate && (
+                      <div className="profile-top-sub">
+                        {new Date(user.joiningDate).toLocaleDateString()}
+                      </div>
+                    )}
+                    <div className="profile-top-badges">
+                      {profileRole && <span className="profile-top-badge">{profileRole}</span>}
+                      {profileStatus && <span className="profile-top-badge small">{profileStatus}</span>}
+                    </div>
+                  </div>
                 </div>
+                <div className="profile-top-right">
+                  <label className="switch-label">Inactive</label>
+                  <div className="toggle-wrapper">
+                    <input type="checkbox" checked={String(profileStatus).toLowerCase() !== "active"} readOnly />
+                  </div>
+                  <button className="btn-edit" onClick={handleEditClick}>Edit</button>
+                </div>
+              </div>
 
-                <div className="profile-info-grid">
-                  <div className="profile-field">
-                    <label>Full Name</label>
-                    <div className="field-value">{user?.name}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Email Address</label>
-                    <div className="field-value mono-text">{user?.email}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Mobile Number</label>
-                    <div className="field-value mono-text">
-                      {user?.mobile || "Not available"}
+              <div className="profile-sections">
+                {[
+                  {
+                    title: "Personal Details",
+                    fields: [
+                      { label: "Full Name", value: user?.name },
+                      { label: "Employee ID", value: user?.trainerId || user?.employeeId, mono: true },
+                      { label: "Role", value: profileRole },
+                      { label: "Joining Date", value: user?.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : null },
+                      { label: "Account Status", value: profileStatus },
+                      { label: "Profile Created", value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : null },
+                      { label: "Last Updated", value: user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : null },
+                      { label: "Total Students", value: students.length },
+                      { label: "Assigned Groups", value: assignedGroups.length },
+                      { label: "Work Assignments", value: workAssignments.length },
+                    ].filter((field) => field.value !== null && field.value !== undefined && String(field.value).trim() !== ""),
+                  },
+                  {
+                    title: "Contact Details",
+                    fields: [
+                      { label: "Email Address", value: user?.email, mono: true },
+                      { label: "Mobile Number", value: user?.mobile, mono: true },
+                    ].filter((field) => field.value !== null && field.value !== undefined && String(field.value).trim() !== ""),
+                  },
+                  {
+                    title: "Work Summary",
+                    fields: [
+                      { label: "Custom Role", value: user?.customRole },
+                    ].filter((field) => field.value !== null && field.value !== undefined && String(field.value).trim() !== ""),
+                  },
+                ]
+                  .filter((section) => section.fields.length > 0)
+                  .map((section) => (
+                    <div className="section-card" key={section.title}>
+                      <h3>{section.title}</h3>
+                      <div className="section-grid">
+                        {section.fields.map((field) => (
+                          <div className="field-col" key={field.label}>
+                            <label>{field.label}</label>
+                            <div className={`field-value ${field.mono ? "mono-text" : ""}`}>
+                              {field.value}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Role</label>
-                    <div className="field-value">
-                      <span className="badge-neutral">
-                        {user?.role || "Trainer"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Custom Role</label>
-                    <div className="field-value">{user?.customRole || "Not available"}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Joining Date</label>
-                    <div className="field-value">{user?.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : "Not available"}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Account Status</label>
-                    <div className="field-value">
-                      <span className="badge-neutral">{user?.status || "active"}</span>
-                    </div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Total Students</label>
-                    <div className="field-value">{students.length}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Assigned Groups</label>
-                    <div className="field-value">{assignedGroups.length}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Work Assignments</label>
-                    <div className="field-value">{workAssignments.length}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Profile Created</label>
-                    <div className="field-value">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Not available"}</div>
-                  </div>
-                  <div className="profile-field">
-                    <label>Last Updated</label>
-                    <div className="field-value">{user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : "Not available"}</div>
-                  </div>
-                </div>
+                  ))}
+              </div>
 
-                <div className="info-banner">
-                  <strong>Update Your Information</strong>
-                  <p>
-                    Click the "Edit Profile" button above to update your name,
-                    email, mobile, joining date, custom role, or password.
-                  </p>
-                </div>
+              <div className="info-banner">
+                <strong>Update Your Information</strong>
+                <p>
+                  Click the "Edit Profile" button above to update your name, email, mobile, joining date, custom role, or password.
+                </p>
               </div>
 
               {/* Edit Profile Modal */}
