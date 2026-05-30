@@ -766,7 +766,7 @@ function InternDashboard() {
             <img src={logo} alt="PRS Portal" className="sidebar-logo" />
           </div>
           <h2>PRS PORTAL</h2>
-          <p>Intern Portal</p>
+          <p>Aspirant Portal</p>
         </div>
 
         <div
@@ -926,133 +926,184 @@ function InternDashboard() {
               </div>
             )}
 
-            <div className="profile-top-card">
-              <div className="profile-top-left">
-                <div className="profile-top-avatar">{(user.name || 'U').charAt(0).toUpperCase()}</div>
-                <div className="profile-top-meta">
-                  <div className="profile-top-name">{user.name}</div>
-                  <div className="profile-top-sub">{user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : ''}</div>
-                  <div className="profile-top-badges">
-                    <span className="profile-top-badge">{user.studentType || 'Internship'}</span>
-                    <span className="profile-top-badge small">{user.status || 'active'}</span>
+            <div className="profile-summary-card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32 }}>
+                  {(user.name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 700 }}>{user.name}</div>
+                    <div style={{ color: '#64748b', marginTop: 4 }}>
+                      {user.internId || ''} • {user.studentType || 'Internship'}
+                      <span style={{ marginLeft: 10, fontSize: 12, color: '#475569', fontWeight: 700 }}>
+                        {(user.status || 'active').toUpperCase()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="profile-top-right">
-                <label className="switch-label">Inactive</label>
-                <div className="toggle-wrapper">
-                  <input type="checkbox" checked={(user.status || '').toLowerCase() !== 'active'} readOnly />
-                </div>
-                <button className="btn-edit" onClick={handleEditClick}>Edit</button>
               </div>
             </div>
 
-            <div className="profile-sections">
-              <div className="section-card">
-                <h3>Personal Details</h3>
-                <div className="section-grid">
-                  <div className="field-col">
-                    <label>Full Name</label>
-                    <div className="field-value">{user.name}</div>
-                  </div>
-                  <div className="field-col">
-                    <label>Student ID</label>
-                    <div className="field-value mono-text">{user.internId || 'Not available'}</div>
-                  </div>
-                  <div className="field-col">
-                    <label>Student Type</label>
-                    <div className="field-value">{user.studentType || 'Internship'}</div>
-                  </div>
-                  <div className="field-col">
-                    <label>Current Designation</label>
-                    <div className="field-value">{user.currentDesignation || 'Not Set'}</div>
-                  </div>
-                  <div className="field-col">
-                    <label>Joined On</label>
-                    <div className="field-value">{user.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : 'Not set'}</div>
-                  </div>
-                  <div className="field-col">
-                    <label>Duration</label>
-                    <div className="field-value">{user.duration || 'Not set'}</div>
-                  </div>
-                </div>
+            <div className="section-card">
+              <h3>Personal Details</h3>
+              <div className="section-grid">
+                <div className="field-col"><label>Full Name</label><div className="field-value">{user.name || '-'}</div></div>
+                <div className="field-col"><label>Student ID</label><div className="field-value mono-text">{user.internId || '-'}</div></div>
+                <div className="field-col"><label>Student Type</label><div className="field-value">{user.studentType || '-'}</div></div>
+                {hasDisplayValue(user.currentDesignation) && <div className="field-col"><label>Current Designation</label><div className="field-value">{user.currentDesignation}</div></div>}
+                {hasDisplayValue(user.assignedTrainer) && <div className="field-col"><label>Assigned Trainer</label><div className="field-value">{user.assignedTrainer?.name || user.assignedTrainer}</div></div>}
+                {hasDisplayValue(user.addedByRepresentative) && <div className="field-col"><label>Added By (Representative)</label><div className="field-value">{user.addedByRepresentative?.name || user.addedByRepresentative}</div></div>}
+                {hasDisplayValue(user.status) && <div className="field-col"><label>Status</label><div className="field-value">{user.status}</div></div>}
               </div>
+            </div>
 
+            {(hasDisplayValue(user.email) || hasDisplayValue(user.mobile)) && (
               <div className="section-card">
                 <h3>Contact Details</h3>
                 <div className="section-grid">
-                  <div className="field-col">
-                    <label>Email Address</label>
-                    <div className="field-value mono-text">{user.email}</div>
-                  </div>
-                  <div className="field-col">
-                    <label>Mobile Number</label>
-                    <div className="field-value mono-text">{user.mobile || 'Not available'}</div>
-                  </div>
+                  {hasDisplayValue(user.email) && <div className="field-col"><label>Email</label><div className="field-value mono-text">{user.email}</div></div>}
+                  {hasDisplayValue(user.mobile) && <div className="field-col"><label>Mobile</label><div className="field-value mono-text">{user.mobile}</div></div>}
                 </div>
               </div>
+            )}
 
+            {user.studentType === 'Internship' && (hasDisplayValue(user.domain) || hasDisplayValue(user.duration) || hasDisplayValue(user.joiningDate) || hasDisplayValue(user.endingDate) || hasDisplayValue(user.stipendType) || hasDisplayValue(user.stipendAmount)) && (
               <div className="section-card">
-                <h3>Academics / Program</h3>
+                <h3>Program Details</h3>
                 <div className="section-grid">
-                  {user.studentType === 'Internship' ? (
-                    <>
-                      <div className="field-col">
-                        <label>Domain</label>
-                        <div className="field-value">{user.domain || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>College Name</label>
-                        <div className="field-value">{user.collegeName || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Branch</label>
-                        <div className="field-value">{user.branch || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Year of Study</label>
-                        <div className="field-value">{user.yearOfStudy || 'Not set'}</div>
-                      </div>
-                    </>
+                  {hasDisplayValue(user.domain) && <div className="field-col"><label>Domain</label><div className="field-value">{user.domain}</div></div>}
+                  {hasDisplayValue(user.duration) && <div className="field-col"><label>Duration</label><div className="field-value">{user.duration}</div></div>}
+                  {hasDisplayValue(user.joiningDate) && <div className="field-col"><label>Joining Date</label><div className="field-value">{new Date(user.joiningDate).toLocaleDateString()}</div></div>}
+                  {hasDisplayValue(user.endingDate) && <div className="field-col"><label>Ending Date</label><div className="field-value">{new Date(user.endingDate).toLocaleDateString()}</div></div>}
+                  {hasDisplayValue(user.stipendType) && <div className="field-col"><label>Stipend Type</label><div className="field-value">{user.stipendType}</div></div>}
+                  {hasDisplayValue(user.stipendAmount) && <div className="field-col"><label>Stipend Amount</label><div className="field-value">{`Rs. ${user.stipendAmount}`}</div></div>}
+                </div>
+              </div>
+            )}
+
+            {user.studentType === 'Internship' ? (
+              (hasDisplayValue(user.collegeName) || hasDisplayValue(user.branch) || hasDisplayValue(user.yearOfStudy)) && (
+                <div className="section-card">
+                  <h3>Academic Details</h3>
+                  <div className="section-grid">
+                    {hasDisplayValue(user.collegeName) && <div className="field-col"><label>College</label><div className="field-value">{user.collegeName}</div></div>}
+                    {hasDisplayValue(user.branch) && <div className="field-col"><label>Branch</label><div className="field-value">{user.branch}</div></div>}
+                    {hasDisplayValue(user.yearOfStudy) && <div className="field-col"><label>Year of Study</label><div className="field-value">{user.yearOfStudy}</div></div>}
+                  </div>
+                </div>
+              )
+            ) : (
+              (hasDisplayValue(user.suggestedDomain) || hasDisplayValue(user.currentQualification) || hasDisplayValue(user.instituteName) || hasDisplayValue(user.instituteLocation) || hasDisplayValue(user.enrolmentDate) || hasDisplayValue(user.enrolBatchMonth)) && (
+                <div className="section-card">
+                  <h3>Academic Details</h3>
+                  <div className="section-grid">
+                    {hasDisplayValue(user.suggestedDomain) && <div className="field-col"><label>Suggested Domain</label><div className="field-value">{user.suggestedDomain}</div></div>}
+                    {hasDisplayValue(user.currentQualification) && <div className="field-col"><label>Current Qualification</label><div className="field-value">{user.currentQualification}</div></div>}
+                    {hasDisplayValue(user.instituteName) && <div className="field-col"><label>Institute</label><div className="field-value">{user.instituteName}</div></div>}
+                    {hasDisplayValue(user.instituteLocation) && <div className="field-col"><label>Institute Location</label><div className="field-value">{user.instituteLocation}</div></div>}
+                    {hasDisplayValue(user.enrolmentDate) && <div className="field-col"><label>Enrolment Date</label><div className="field-value">{new Date(user.enrolmentDate).toLocaleDateString()}</div></div>}
+                    {hasDisplayValue(user.enrolBatchMonth) && <div className="field-col"><label>Batch Month</label><div className="field-value">{user.enrolBatchMonth}</div></div>}
+                    {hasDisplayValue(user.totalFees) && <div className="field-col"><label>Total Fees</label><div className="field-value">{user.totalFees}</div></div>}
+                  </div>
+                </div>
+              )
+            )}
+
+            {(hasDisplayValue(user.totalFees) || hasDisplayValue(user.completedFees) || hasDisplayValue(user.pendingFees) || hasDisplayValue(user.paymentAmount) || hasDisplayValue(user.dateOfPayment) || hasDisplayValue(user.transactionId)) && (
+              <div className="section-card">
+                <h3>Fees & Payments</h3>
+                <div className="section-grid">
+                  {hasDisplayValue(user.totalFees) && <div className="field-col"><label>Total Fees</label><div className="field-value">{user.totalFees}</div></div>}
+                  {hasDisplayValue(user.completedFees) && <div className="field-col"><label>Completed Fees</label><div className="field-value">{user.completedFees}</div></div>}
+                  {hasDisplayValue(user.pendingFees) && <div className="field-col"><label>Pending Fees</label><div className="field-value">{user.pendingFees}</div></div>}
+                  {hasDisplayValue(user.paymentAmount) && <div className="field-col"><label>Payment Amount</label><div className="field-value">{user.paymentAmount}</div></div>}
+                  {hasDisplayValue(user.dateOfPayment) && <div className="field-col"><label>Payment Date</label><div className="field-value">{new Date(user.dateOfPayment).toLocaleDateString()}</div></div>}
+                  {hasDisplayValue(user.transactionId) && <div className="field-col"><label>Transaction ID</label><div className="field-value mono-text">{user.transactionId}</div></div>}
+                </div>
+              </div>
+            )}
+
+            <div className="section-card">
+              <h3>Documents</h3>
+              <div className="section-grid">
+                <div className="field-col" style={{ gridColumn: '1 / -1' }}>
+                  {user.documents && Object.keys(user.documents || {}).length > 0 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                      {user.documents.offerLetter?.filename && (
+                        <div className="doc-item" style={{ padding: 12, border: '1px solid #e6eef5', borderRadius: 8 }}>
+                          <div style={{ fontWeight: 700 }}>Offer Letter</div>
+                          <div style={{ color: '#475569', fontSize: 13, marginTop: 6 }}>{user.documents.offerLetter.filename}</div>
+                          {user.documents.offerLetter.uploadedAt && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{new Date(user.documents.offerLetter.uploadedAt).toLocaleDateString()}</div>}
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                            <a className="btn-secondary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.offerLetter.filename}`} target="_blank" rel="noreferrer">View</a>
+                            <a className="btn-primary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.offerLetter.filename}`} download>Download</a>
+                          </div>
+                        </div>
+                      )}
+
+                      {user.documents.welcomeLetter?.filename && (
+                        <div className="doc-item" style={{ padding: 12, border: '1px solid #e6eef5', borderRadius: 8 }}>
+                          <div style={{ fontWeight: 700 }}>Welcome Letter</div>
+                          <div style={{ color: '#475569', fontSize: 13, marginTop: 6 }}>{user.documents.welcomeLetter.filename}</div>
+                          {user.documents.welcomeLetter.uploadedAt && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{new Date(user.documents.welcomeLetter.uploadedAt).toLocaleDateString()}</div>}
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                            <a className="btn-secondary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.welcomeLetter.filename}`} target="_blank" rel="noreferrer">View</a>
+                            <a className="btn-primary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.welcomeLetter.filename}`} download>Download</a>
+                          </div>
+                        </div>
+                      )}
+
+                      {user.documents.paymentReceipt?.filename && (
+                        <div className="doc-item" style={{ padding: 12, border: '1px solid #e6eef5', borderRadius: 8 }}>
+                          <div style={{ fontWeight: 700 }}>Payment Receipt</div>
+                          <div style={{ color: '#475569', fontSize: 13, marginTop: 6 }}>{user.documents.paymentReceipt.filename}</div>
+                          {user.documents.paymentReceipt.uploadedAt && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{new Date(user.documents.paymentReceipt.uploadedAt).toLocaleDateString()}</div>}
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                            <a className="btn-secondary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.paymentReceipt.filename}`} target="_blank" rel="noreferrer">View</a>
+                            <a className="btn-primary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.paymentReceipt.filename}`} download>Download</a>
+                          </div>
+                        </div>
+                      )}
+
+                      {user.documents.completionCertificate?.filename && (
+                        <div className="doc-item" style={{ padding: 12, border: '1px solid #e6eef5', borderRadius: 8 }}>
+                          <div style={{ fontWeight: 700 }}>Completion Certificate</div>
+                          <div style={{ color: '#475569', fontSize: 13, marginTop: 6 }}>{user.documents.completionCertificate.filename}</div>
+                          {user.documents.completionCertificate.uploadedAt && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{new Date(user.documents.completionCertificate.uploadedAt).toLocaleDateString()}</div>}
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                            <a className="btn-secondary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.completionCertificate.filename}`} target="_blank" rel="noreferrer">View</a>
+                            <a className="btn-primary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.completionCertificate.filename}`} download>Download</a>
+                          </div>
+                        </div>
+                      )}
+
+                      {user.documents.experienceLetter?.filename && (
+                        <div className="doc-item" style={{ padding: 12, border: '1px solid #e6eef5', borderRadius: 8 }}>
+                          <div style={{ fontWeight: 700 }}>Experience Letter</div>
+                          <div style={{ color: '#475569', fontSize: 13, marginTop: 6 }}>{user.documents.experienceLetter.filename}</div>
+                          {user.documents.experienceLetter.uploadedAt && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{new Date(user.documents.experienceLetter.uploadedAt).toLocaleDateString()}</div>}
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                            <a className="btn-secondary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.experienceLetter.filename}`} target="_blank" rel="noreferrer">View</a>
+                            <a className="btn-primary" href={`${UPLOADS_BASE}/uploads/students/${user.documents.experienceLetter.filename}`} download>Download</a>
+                          </div>
+                        </div>
+                      )}
+
+                      {user.documents.otherCertificates && user.documents.otherCertificates.length > 0 && user.documents.otherCertificates.map((c, idx) => (
+                        <div key={idx} className="doc-item" style={{ padding: 12, border: '1px solid #e6eef5', borderRadius: 8 }}>
+                          <div style={{ fontWeight: 700 }}>{c.name || `Document ${idx + 1}`}</div>
+                          <div style={{ color: '#475569', fontSize: 13, marginTop: 6 }}>{c.filename}</div>
+                          {c.uploadedAt && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6 }}>{new Date(c.uploadedAt).toLocaleDateString()}</div>}
+                          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                            <a className="btn-secondary" href={`${UPLOADS_BASE}/uploads/students/${c.filename}`} target="_blank" rel="noreferrer">View</a>
+                            <a className="btn-primary" href={`${UPLOADS_BASE}/uploads/students/${c.filename}`} download>Download</a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    <>
-                      <div className="field-col">
-                        <label>Suggested Domain</label>
-                        <div className="field-value">{user.suggestedDomain || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Current Qualification</label>
-                        <div className="field-value">{user.currentQualification || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Institute Name</label>
-                        <div className="field-value">{user.instituteName || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Institute Location</label>
-                        <div className="field-value">{user.instituteLocation || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Enrolment Date</label>
-                        <div className="field-value">{user.enrolmentDate ? new Date(user.enrolmentDate).toLocaleDateString() : 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Batch Month</label>
-                        <div className="field-value">{user.enrolBatchMonth || 'Not set'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Total Fees</label>
-                        <div className="field-value">{user.totalFees || '0'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Completed Fees</label>
-                        <div className="field-value">{user.completedFees || '0'}</div>
-                      </div>
-                      <div className="field-col">
-                        <label>Pending Fees</label>
-                        <div className="field-value">{user.pendingFees || '0'}</div>
-                      </div>
-                    </>
+                    <div className="field-value">No documents uploaded</div>
                   )}
                 </div>
               </div>

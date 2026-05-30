@@ -36,6 +36,8 @@ const initialStudentForm = {
   completedFees: '',
   pendingFees: '',
   currentDesignation: '',
+  stipendType: 'Unstipend',
+  stipendAmount: '',
 };
 
 /* ─────────────── Sidebar ─────────────── */
@@ -53,7 +55,7 @@ function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, user
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
     )},
-    { key: 'my-students', label: 'My Students', icon: (
+    { key: 'my-students', label: 'Assigned Students', icon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     )},
@@ -154,7 +156,7 @@ function RepresentativeDashboard() {
   const [payouts, setPayouts] = useState([]);
   const [payoutsLoading, setPayoutsLoading] = useState(false);
 
-  // My students filter state
+  // Assigned students filter state
   const [studentsLoading, setStudentsLoading] = useState(false);
   const [filters, setFilters] = useState({ name: '', mobile: '', dateFrom: '', dateTo: '' });
   const [deleteSuccess, setDeleteSuccess] = useState('');
@@ -340,6 +342,11 @@ function RepresentativeDashboard() {
       (!studentForm.internId || !studentForm.domain || !studentForm.joiningDate || !studentForm.duration || !studentForm.collegeName || !studentForm.branch || !studentForm.yearOfStudy)
     ) {
       setStudentFormError('For internship, PIID, domain, joining date, duration, college, branch and year of study are required');
+      return;
+    }
+
+    if (studentForm.studentType === 'Internship' && studentForm.stipendType === 'Stipend' && (!studentForm.stipendAmount || Number(studentForm.stipendAmount) <= 0)) {
+      setStudentFormError('Please enter stipend amount for stipend-based internships');
       return;
     }
 
@@ -721,7 +728,7 @@ function RepresentativeDashboard() {
                     </svg>
                   </div>
                   <div className="action-card-content">
-                    <h3>My Students</h3>
+                    <h3>Assigned Students</h3>
                     <p>View and track all your students</p>
                   </div>
                   <button className="action-card-btn" onClick={() => setActiveTab('my-students')}>View</button>
@@ -1286,6 +1293,19 @@ function RepresentativeDashboard() {
                           <input type="text" name="yearOfStudy" value={studentForm.yearOfStudy} onChange={handleStudentChange} placeholder="e.g. 2nd Year" required />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label>Stipend Type</label>
+                          <select name="stipendType" value={studentForm.stipendType} onChange={handleStudentChange}>
+                            <option value="Unstipend">Unstipend</option>
+                            <option value="Stipend">Stipend</option>
+                          </select>
+                        </div>
+                        {studentForm.stipendType === 'Stipend' && (
+                          <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label>Stipend Amount (Rs.)</label>
+                            <input type="number" name="stipendAmount" value={studentForm.stipendAmount} onChange={handleStudentChange} placeholder="Enter stipend amount" />
+                          </div>
+                        )}
+                        <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Ending Date</label>
                           <input type="date" name="endingDate" value={studentForm.endingDate} onChange={handleStudentChange} />
                         </div>
@@ -1404,12 +1424,12 @@ function RepresentativeDashboard() {
             </>
           )}
 
-          {/* ─── MY STUDENTS ─── */}
+          {/* ─── ASSIGNED STUDENTS ─── */}
           {activeTab === 'my-students' && (
             <>
               <div className="premium-page-header">
                 <div className="header-left">
-                  <h1>My Students</h1>
+                  <h1>Assigned Students</h1>
                   <p className="header-subtitle">All students added by you</p>
                 </div>
                 <div className="header-right">

@@ -234,6 +234,8 @@ exports.addIntern = async (req, res) => {
       internData.collegeName = collegeName;
       internData.branch = branch;
       internData.yearOfStudy = yearOfStudy;
+      internData.stipendType = req.body.stipendType || 'Unstipend';
+      if (req.body.stipendType === 'Stipend' && req.body.stipendAmount) internData.stipendAmount = String(req.body.stipendAmount);
       // endingDate is optional, can be calculated later if needed
       if (endingDate) {
         internData.endingDate = endingDate;
@@ -304,16 +306,12 @@ exports.addIntern = async (req, res) => {
     const intern = new Intern(internData);
     await intern.save();
 
+    // Return saved intern (without password) so frontend gets all persisted fields
+    const saved = await Intern.findById(intern._id).select('-password').populate('addedByRepresentative', 'name');
     res.status(201).json({
       success: true,
       message: 'Student added successfully',
-      intern: {
-        id: intern._id,
-        name: intern.name,
-        email: intern.email,
-        internId: intern.internId,
-        studentType: intern.studentType
-      }
+      intern: saved
     });
 
   } catch (error) {
@@ -619,6 +617,7 @@ exports.updateIntern = async (req, res) => {
       'pendingFees',
       'lastPaymentDate',
       'currentDesignation'
+      ,'stipendType','stipendAmount'
     ];
 
     const updates = {};

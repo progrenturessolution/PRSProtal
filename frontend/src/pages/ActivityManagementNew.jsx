@@ -1336,8 +1336,8 @@ export default function ActivityManagementNew() {
               </div>
 
               <div className="am-actions-row">
-                <button className="nm-btn" onClick={generateInterviewSlots}>Generate Schedule</button>
-                <button className="nm-btn ghost" onClick={() => { setShowInterviewModal(false); setEditingInterviewActivityId(null); }}>Close</button>
+                <button className="nm-btn primary" onClick={generateInterviewSlots}>Generate Schedule</button>
+                <button className="nm-btn primary" onClick={() => { setShowInterviewModal(false); setEditingInterviewActivityId(null); }}>Close</button>
               </div>
 
               {generatedSlots.length > 0 && (
@@ -1519,8 +1519,8 @@ export default function ActivityManagementNew() {
               </div>
 
               <div className="am-actions-row">
-                <button className="nm-btn" onClick={createGdGroups}>Create Groups</button>
-                <button className="nm-btn ghost" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}>Close</button>
+                <button className="nm-btn primary" onClick={createGdGroups}>Create Groups</button>
+                <button className="nm-btn primary" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}>Close</button>
               </div>
 
               {gdGroups.length > 0 && (
@@ -1724,8 +1724,8 @@ export default function ActivityManagementNew() {
               </div>
 
               <div className="am-actions-row">
-                <button className="nm-btn" onClick={generateAssessmentSlots}>Generate Schedule</button>
-                <button className="nm-btn ghost" onClick={() => { setShowAssessmentModal(false); setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); }}>Close</button>
+                <button className="nm-btn primary" onClick={generateAssessmentSlots}>Generate Schedule</button>
+                <button className="nm-btn primary" onClick={() => { setShowAssessmentModal(false); setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); }}>Close</button>
               </div>
 
               {(generatedSlots.length > 0 || assessSelected.length > 0) ? (

@@ -273,6 +273,8 @@ exports.addStudent = async (req, res) => {
       internData.collegeName = collegeName;
       internData.branch = branch;
       internData.yearOfStudy = yearOfStudy;
+      internData.stipendType = req.body.stipendType || 'Unstipend';
+      if (req.body.stipendType === 'Stipend' && req.body.stipendAmount) internData.stipendAmount = String(req.body.stipendAmount);
       if (endingDate) {
         internData.endingDate = endingDate;
       }
@@ -334,16 +336,10 @@ exports.addStudent = async (req, res) => {
     await intern.save();
 
     res.status(201).json({
-      success: true,
-      message: 'Student added successfully',
-      intern: {
-        id: intern._id,
-        name: intern.name,
-        email: intern.email,
-        internId: intern.internId,
-        studentType: intern.studentType
-      }
-    });
+        success: true,
+        message: 'Student added successfully',
+        intern: await Intern.findById(intern._id).select('-password').populate('addedByRepresentative', 'name')
+      });
   } catch (error) {
     console.error('Add student error:', error);
 
@@ -430,6 +426,7 @@ exports.updateStudent = async (req, res) => {
       'completedFees',
       'pendingFees',
       'lastPaymentDate'
+      ,'stipendType','stipendAmount'
     ];
 
     const updates = {};

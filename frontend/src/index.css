@@ -40,6 +40,14 @@ body {
   position: relative;
 }
 
+/* Make headlines visually simpler across the site */
+h1, h2, h3, h4, h5, h6 {
+  font-family: inherit;
+  font-weight: 600 !important;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;

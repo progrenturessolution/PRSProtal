@@ -3287,7 +3287,7 @@ function TrainerDashboard() {
             <>
               <div className="premium-page-header">
                 <div className="header-left">
-                  <h1 style={{ color: "#324158" }}>My Students</h1>
+                  <h1 style={{ color: "#324158" }}>Assigned Students</h1>
                   <p className="header-subtitle">
                     Search and manage your assigned students
                   </p>

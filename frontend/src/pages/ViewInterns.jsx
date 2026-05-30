@@ -287,6 +287,8 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
       lastPaymentDate: student.lastPaymentDate
         ? new Date(student.lastPaymentDate).toISOString().slice(0, 10)
         : "",
+      stipendType: student.stipendType || 'Unstipend',
+      stipendAmount: student.stipendAmount || '',
     });
     setShowEditModal(true);
     setOpenMenuId(null);
@@ -1098,6 +1100,7 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
                     {selectedStudent.studentType === "Internship" ? (
                       <>
                         <div className="profile-field"><label>Domain</label><div className="field-value">{selectedStudent.domain || "Not set"}</div></div>
+                        <div className="profile-field"><label>Stipend</label><div className="field-value">{(selectedStudent.stipendType === 'Stipend') ? `Stipend — Rs. ${selectedStudent.stipendAmount || '0'}` : (selectedStudent.stipendType || 'Unstipend')}</div></div>
                         <div className="profile-field"><label>College Name</label><div className="field-value">{selectedStudent.collegeName || "Not set"}</div></div>
                         <div className="profile-field"><label>Branch</label><div className="field-value">{selectedStudent.branch || "Not set"}</div></div>
                         <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || "Not set"}</div></div>
@@ -1411,6 +1414,19 @@ function ViewInterns({ onInternDeleted, onAddStudentClick }) {
                         onChange={(e) => handleEditChange("duration", e.target.value)}
                       />
                     </div>
+                    <div className="profile-field">
+                      <label>Stipend Type</label>
+                      <select value={editForm.stipendType} onChange={(e) => handleEditChange('stipendType', e.target.value)}>
+                        <option value="Unstipend">Unstipend</option>
+                        <option value="Stipend">Stipend</option>
+                      </select>
+                    </div>
+                    {editForm.stipendType === 'Stipend' && (
+                      <div className="profile-field">
+                        <label>Stipend Amount (Rs.)</label>
+                        <input value={editForm.stipendAmount} onChange={(e) => handleEditChange('stipendAmount', e.target.value)} />
+                      </div>
+                    )}
                   </div>
                 </div>
 

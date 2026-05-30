@@ -38,6 +38,8 @@ function AddIntern({ onInternAdded, onBack }) {
     pendingFees: "",
     lastPaymentDate: "",
     currentDesignation: "",
+    stipendType: "Unstipend",
+    stipendAmount: "",
   });
   const [welcomeFile, setWelcomeFile] = useState(null);
   const [offerFile, setOfferFile] = useState(null);
@@ -136,6 +138,12 @@ function AddIntern({ onInternAdded, onBack }) {
           return;
         }
 
+        if (formData.stipendType === 'Stipend' && (!formData.stipendAmount || Number(formData.stipendAmount) <= 0)) {
+          setError('Please enter the stipend amount for stipend-based internships');
+          setLoading(false);
+          return;
+        }
+
         submitData.internId = formData.internId;
         submitData.domain = selectedDomain;
         submitData.joiningDate = formData.joiningDate;
@@ -143,6 +151,8 @@ function AddIntern({ onInternAdded, onBack }) {
         submitData.collegeName = formData.collegeName;
         submitData.branch = formData.branch;
         submitData.yearOfStudy = formData.yearOfStudy;
+        submitData.stipendType = formData.stipendType || 'Unstipend';
+        if (formData.stipendType === 'Stipend') submitData.stipendAmount = formData.stipendAmount || '';
 
         console.log("Internship data being sent:", {
           domain: submitData.domain,
@@ -251,6 +261,8 @@ function AddIntern({ onInternAdded, onBack }) {
           pendingFees: "",
           lastPaymentDate: "",
           currentDesignation: "",
+          stipendType: "Unstipend",
+          stipendAmount: "",
         });
 
         if (onInternAdded) {
@@ -547,6 +559,26 @@ function AddIntern({ onInternAdded, onBack }) {
                   required
                 />
               </div>
+
+              <div className="form-group">
+                <label>Stipend Type</label>
+                <select name="stipendType" value={formData.stipendType} onChange={handleChange}>
+                  <option value="Unstipend">Unstipend</option>
+                  <option value="Stipend">Stipend</option>
+                </select>
+              </div>
+              {formData.stipendType === 'Stipend' && (
+                <div className="form-group">
+                  <label>Stipend Amount (Rs.)</label>
+                  <input
+                    type="number"
+                    name="stipendAmount"
+                    value={formData.stipendAmount}
+                    onChange={handleChange}
+                    placeholder="Enter stipend amount"
+                  />
+                </div>
+              )}
 
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                 <label>Internship Offer Letter (PDF)</label>

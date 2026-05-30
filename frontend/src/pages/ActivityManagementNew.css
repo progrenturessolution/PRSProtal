@@ -1,4 +1,4 @@
-.am-page { padding: 28px; font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color:#0f172a }
+.am-page { padding: 28px; font-family: inherit; color:#0f172a }
 .am-header h1 { margin: 0 0 6px 0; font-size:20px }
 .am-sub { color:#475569; margin-top:4px; margin-bottom:16px }
 .am-actions { display:flex; gap:14px; margin-bottom:20px }
@@ -246,10 +246,10 @@
 .am-assigned-list { display:flex; flex-direction:column; gap:6px }
 .am-assigned-item { padding:8px 10px; background:#fff; border:1px solid #eef6ff; border-radius:8px }
 .nm-btn { padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; cursor:pointer }
-.nm-btn.primary { background:#0ea5b7; color:white; border-color:#0891b2 }
+.nm-btn.primary { background:#324158; color:#ffffff; border-color:transparent }
 /* Ensure am-confirm-btn overrides the more specific .nm-btn.primary rule */
 .nm-btn.primary.am-confirm-btn,
-.am-confirm-btn { background:#141D30; color:#fff; border-color:transparent; box-shadow:0 10px 20px rgba(20,29,48,0.18); padding:10px 16px }
+.am-confirm-btn { background:#324158; color:#ffffff; border-color:transparent; box-shadow:0 10px 20px rgba(20,29,48,0.18); padding:10px 16px }
 .nm-btn.primary.am-confirm-btn:hover,
 .am-confirm-btn:hover { filter:brightness(0.98) }
 .nm-btn.ghost { background:transparent; border-color:transparent; color:#64748b }

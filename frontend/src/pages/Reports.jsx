@@ -4,7 +4,7 @@ import { adminAPI, taskAPI } from "../services/api";
 
 function Reports() {
   const navigate = useNavigate();
-  const [reportType, setReportType] = useState("overview");
+  const [reportType, setReportType] = useState("tasks");
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalInterns: 0,
@@ -1485,38 +1485,6 @@ function Reports() {
             gap: "4px",
           }}
         >
-          <button
-            onClick={() => setReportType("overview")}
-            style={{
-              padding: "10px 22px",
-              borderRadius: "8px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 600,
-              transition: "all 0.2s",
-              background: reportType === "overview" ? "#324158" : "transparent",
-              color: reportType === "overview" ? "white" : "#64748b",
-            }}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setReportType("students")}
-            style={{
-              padding: "10px 22px",
-              borderRadius: "8px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 600,
-              transition: "all 0.2s",
-              background: reportType === "students" ? "#324158" : "transparent",
-              color: reportType === "students" ? "white" : "#64748b",
-            }}
-          >
-            Students
-          </button>
           <button
             onClick={() => setReportType("tasks")}
             style={{

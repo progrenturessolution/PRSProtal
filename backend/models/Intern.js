@@ -62,6 +62,16 @@ const internSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  stipendType: {
+    type: String,
+    trim: true,
+    default: 'Unstipend'
+  },
+  stipendAmount: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   // SMS Program specific fields
   gender: {
     type: String,
