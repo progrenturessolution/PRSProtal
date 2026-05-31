@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 
-function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, selectedStudent, setSelectedStudent, selectedStudentTab, setSelectedStudentTab, openConductGd }) {
+function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, selectedStudent, setSelectedStudent, selectedStudentTab, setSelectedStudentTab, openConductGd, showNotificationDot = false }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [activityOpen, setActivityOpen] = useState(true);
@@ -127,6 +127,7 @@ function TrainerSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, 
             />
           </svg>
           Notifications
+          {showNotificationDot && <span className="sidebar-notification-dot" aria-hidden="true" />}
         </li>
         {/* Activities parent - collapsible */}
         <li

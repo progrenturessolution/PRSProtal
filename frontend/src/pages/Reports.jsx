@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminAPI, taskAPI } from "../services/api";
 
-function Reports() {
+function Reports({ initialReportType = "tasks" }) {
   const navigate = useNavigate();
-  const [reportType, setReportType] = useState("tasks");
+  const [reportType, setReportType] = useState(initialReportType);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     totalInterns: 0,
@@ -45,6 +45,10 @@ function Reports() {
   useEffect(() => {
     fetchReportsData();
   }, []);
+
+  useEffect(() => {
+    setReportType(initialReportType);
+  }, [initialReportType]);
 
   const fetchReportsData = async () => {
     try {

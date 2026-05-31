@@ -11,6 +11,7 @@ import GdStudentConductModal from "../components/GdStudentConductModal";
 function TrainerDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+  const notificationStorageKey = "trainer-notifications-last-seen";
   const [user, setUser] = useState(null);
   const [students, setStudents] = useState([]);
   const [trainerProfile, setTrainerProfile] = useState(null);
@@ -40,6 +41,8 @@ function TrainerDashboard() {
   const [scheduledInterviews, setScheduledInterviews] = useState([]);
   const [scheduledGds, setScheduledGds] = useState([]);
   const [scheduledAssignments, setScheduledAssignments] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const [selectedGd, setSelectedGd] = useState(null);
   const [showGdModal, setShowGdModal] = useState(false);
   const [selectedGdStudentContext, setSelectedGdStudentContext] = useState(null);
@@ -113,6 +116,13 @@ function TrainerDashboard() {
   const [globalError, setGlobalError] = useState(null);
   const [interviewOnlyMode, setInterviewOnlyMode] = useState(false);
   const [lockedRecordTab, setLockedRecordTab] = useState(null); // when set, only this tab is available in student records
+
+  const getLatestNotificationTimestamp = (items = []) => {
+    return items.reduce((latest, item) => {
+      const value = item?.createdAt ? new Date(item.createdAt).getTime() : 0;
+      return value > latest ? value : latest;
+    }, 0);
+  };
   
 
 
@@ -254,6 +264,10 @@ function TrainerDashboard() {
       if (notificationsResult.status === 'fulfilled' && notificationsResult.value.data.success) {
         try {
           const notes = notificationsResult.value.data.notifications || [];
+          setNotifications(notes);
+          const latestTimestamp = getLatestNotificationTimestamp(notes);
+          const lastSeenTimestamp = Number(localStorage.getItem(notificationStorageKey) || 0);
+          setHasUnreadNotifications(latestTimestamp > lastSeenTimestamp);
           const assessments = notes.filter(n => n.notificationType === 'Test/Assessment');
           // map to activity-like objects used by the dashboard recentActivities logic
           const mapped = assessments.map(n => ({ type: 'Assessment', title: n.title, dateTime: new Date(n.createdAt).toLocaleString(), createdBy: n.createdBy?.email || 'Admin', status: 'Scheduled', details: { notification: n } }));
@@ -377,10 +391,20 @@ function TrainerDashboard() {
   };
 
   useEffect(() => {
-    if ((activeTab === 'scheduled-assignments' || activeTab === 'scheduled-gds') && user) {
+    if ((activeTab === 'scheduled-assignments' || activeTab === 'scheduled-gds' || activeTab === 'notifications') && user) {
       fetchDashboardData();
     }
   }, [activeTab, user]);
+
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      const latestTimestamp = getLatestNotificationTimestamp(notifications);
+      localStorage.setItem(notificationStorageKey, String(latestTimestamp || Date.now()));
+      if (hasUnreadNotifications) {
+        setHasUnreadNotifications(false);
+      }
+    }
+  }, [activeTab, notifications, hasUnreadNotifications]);
 
   // clear any locked tab when leaving the student-records view
   useEffect(() => {
@@ -1007,6 +1031,7 @@ function TrainerDashboard() {
         setActiveTab={setActiveTab} 
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
+        showNotificationDot={hasUnreadNotifications}
         openConductGd={() => {
           const gd = {
             _id: `live-gd-${Date.now()}`,
@@ -4492,22 +4517,55 @@ function TrainerDashboard() {
               </div>
 
               <div className="premium-card">
-                <div className="premium-empty-state">
-                  <div className="empty-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                      />
-                    </svg>
+                {Array.isArray(notifications) && notifications.length > 0 ? (
+                  <div className="notifications-list">
+                    {notifications.map((notification) => {
+                      const createdAt = notification.createdAt || notification.updatedAt || notification.date;
+                      const message = notification.message || notification.description || notification.body || "";
+                      const title = notification.title || notification.subject || notification.notificationType || "Notification";
+
+                      return (
+                        <div key={notification._id || `${title}-${createdAt}`} className="notification-item">
+                          <div className="notification-header">
+                            <h4 className="notification-title">{title}</h4>
+                            <span className="notification-time">
+                              {createdAt ? new Date(createdAt).toLocaleString() : ""}
+                            </span>
+                          </div>
+                          {message ? <div className="notification-message">{message}</div> : null}
+                          {(notification.attachment || notification.file || notification.image) ? (
+                            <div className="notification-attachment">
+                              <a
+                                href={notification.attachment || notification.file || notification.image}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                View attachment
+                              </a>
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="empty-title">No notifications</p>
-                  <p className="empty-subtitle">
-                    You're all caught up! New updates will appear here
-                  </p>
-                </div>
+                ) : (
+                  <div className="premium-empty-state">
+                    <div className="empty-icon">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                        />
+                      </svg>
+                    </div>
+                    <p className="empty-title">No notifications</p>
+                    <p className="empty-subtitle">
+                      You're all caught up! New updates will appear here
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}

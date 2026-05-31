@@ -454,14 +454,20 @@ function StudentDetailReport() {
             <h1>Student Report</h1>
             <p>Complete assessment and training records</p>
           </div>
-          <button onClick={() => navigate(-1)} className="btn-back-new">
-            ← Back to Reports
+          <button
+            onClick={() => navigate("/admin-dashboard#reports-assessments")}
+            className="btn-back-new"
+          >
+            ← Back to Activity Records
           </button>
         </div>
         <div className="error-card">
           <div className="error-icon">⚠️</div>
           <p className="error-message">{error || "Student not found"}</p>
-          <button onClick={() => navigate(-1)} className="btn-retry">
+          <button
+            onClick={() => navigate("/admin-dashboard#reports-assessments")}
+            className="btn-retry"
+          >
             Go Back
           </button>
         </div>
@@ -526,7 +532,10 @@ function StudentDetailReport() {
           >
             Excel
           </button>
-          <button onClick={() => navigate(-1)} className="btn-back-new">
+          <button
+            onClick={() => navigate("/admin-dashboard#reports-assessments")}
+            className="btn-back-new"
+          >
             ← Back
           </button>
         </div>

@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { adminAPI, UPLOADS_BASE } from "../services/api";
 
-function ViewInterns({ onInternDeleted, onAddStudentClick }) {
+function ViewInterns({
+  onInternDeleted,
+  onAddStudentClick,
+}) {
   const [interns, setInterns] = useState([]);
   const [filteredInterns, setFilteredInterns] = useState([]);
   const [loading, setLoading] = useState(true);

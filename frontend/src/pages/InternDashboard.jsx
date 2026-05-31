@@ -6,6 +6,7 @@ import logo from "../assets/logo.png";
 
 function InternDashboard() {
   const navigate = useNavigate();
+  const notificationStorageKey = "intern-notifications-last-seen";
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,8 @@ function InternDashboard() {
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [assignedCerts, setAssignedCerts] = useState([]);
   const [taskView, setTaskView] = useState('individual');
+  const [activityMenuOpen, setActivityMenuOpen] = useState(true);
+  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const [error, setError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
@@ -91,7 +94,41 @@ function InternDashboard() {
     
     // Refresh profile in background (don't block UI)
     fetchProfileDetails();
+
+    // Refresh notification badge in background
+    refreshNotificationBadge(parsedUser);
   }, [navigate]);
+
+  const getLatestNotificationTimestamp = (items = []) => {
+    return items.reduce((latest, item) => {
+      const value = item?.createdAt ? new Date(item.createdAt).getTime() : 0;
+      return value > latest ? value : latest;
+    }, 0);
+  };
+
+  const refreshNotificationBadge = async (currentUser = user) => {
+    try {
+      const response = await internAPI.getMyNotifications();
+      const notes = response.data?.notifications || [];
+      const latestTimestamp = getLatestNotificationTimestamp(notes);
+      const lastSeenTimestamp = Number(localStorage.getItem(notificationStorageKey) || 0);
+      const isUnread = latestTimestamp > lastSeenTimestamp;
+      setHasUnreadNotifications(isUnread);
+
+      if (currentUser && activeSection === "notifications") {
+        localStorage.setItem(notificationStorageKey, String(latestTimestamp || Date.now()));
+        setHasUnreadNotifications(false);
+      }
+    } catch (err) {
+      console.error("Failed to refresh notification badge:", err);
+    }
+  };
+
+  const markNotificationsAsSeen = (items = notifications) => {
+    const latestTimestamp = getLatestNotificationTimestamp(items);
+    localStorage.setItem(notificationStorageKey, String(latestTimestamp || Date.now()));
+    setHasUnreadNotifications(false);
+  };
 
   const fetchProfileDetails = async () => {
     try {
@@ -275,6 +312,9 @@ function InternDashboard() {
   };
 
   const handleSectionClick = async (section) => {
+    if (["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(section)) {
+      setActivityMenuOpen(true);
+    }
     setActiveSection(section);
     setSidebarOpen(false);
 
@@ -399,6 +439,7 @@ function InternDashboard() {
           const notifResp = await internAPI.getMyNotifications();
           if (notifResp.data && notifResp.data.success) {
             setNotifications(notifResp.data.notifications || []);
+            markNotificationsAsSeen(notifResp.data.notifications || []);
           }
           break;
         case "groups":
@@ -793,13 +834,6 @@ function InternDashboard() {
             My Profile
           </li>
           <li
-            className={activeSection === "program" ? "active" : ""}
-            onClick={() => handleSectionClick("program")}
-            style={{ cursor: "pointer" }}
-          >
-            My Program
-          </li>
-          <li
             className={activeSection === "tasks" ? "active" : ""}
             onClick={() => handleSectionClick("tasks")}
             style={{ cursor: "pointer" }}
@@ -814,30 +848,39 @@ function InternDashboard() {
             Interviews
           </li>
           <li
-            className={activeSection === "scheduled-interviews" ? "active" : ""}
-            onClick={() => handleSectionClick("scheduled-interviews")}
+            className={`sidebar-activity-parent ${["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(activeSection) ? "active" : ""}`}
+            onClick={() => setActivityMenuOpen((prev) => !prev)}
             style={{ cursor: "pointer" }}
           >
-            Scheduled Interviews
+            <span>Activity Management</span>
+            <span className={`sidebar-activity-caret ${activityMenuOpen ? "open" : ""}`}>▾</span>
           </li>
+          {activityMenuOpen && (
+            <ul className="sidebar-activity-submenu">
+              <li
+                className={activeSection === "scheduled-interviews" ? "active" : ""}
+                onClick={() => handleSectionClick("scheduled-interviews")}
+                style={{ cursor: "pointer" }}
+              >
+                Scheduled Interviews
+              </li>
+              <li
+                className={activeSection === "scheduled-gds" ? "active" : ""}
+                onClick={() => handleSectionClick("scheduled-gds")}
+                style={{ cursor: "pointer" }}
+              >
+                Schedule GD Round
+              </li>
+              <li
+                className={activeSection === "scheduled-assignments" ? "active" : ""}
+                onClick={() => handleSectionClick("scheduled-assignments")}
+                style={{ cursor: "pointer" }}
+              >
+                Schedule Assessment
+              </li>
+            </ul>
+          )}
 
-          <li
-            className={activeSection === "scheduled-gds" ? "active" : ""}
-            onClick={() => handleSectionClick("scheduled-gds")}
-            style={{ cursor: "pointer" }}
-          >
-            Schedule GD Round
-          </li>
-
-          <li
-            className={activeSection === "scheduled-assignments" ? "active" : ""}
-            onClick={() => handleSectionClick("scheduled-assignments")}
-            style={{ cursor: "pointer" }}
-          >
-            Schedule Assessment
-          </li>
-
-          {/* Activity Management removed for aspirants */}
           <li
             className={activeSection === "aptitude" ? "active" : ""}
             onClick={() => handleSectionClick("aptitude")}
@@ -872,6 +915,7 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Notifications
+            {hasUnreadNotifications && <span className="sidebar-notification-dot" aria-hidden="true" />}
           </li>
           <li
             className={activeSection === "groups" ? "active" : ""}

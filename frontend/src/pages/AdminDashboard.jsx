@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AddIntern from "./AddIntern";
 import ViewInterns from "./ViewInterns";
@@ -23,7 +24,9 @@ import logo from "../assets/logo.png";
 
 function AdminDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeMenu, setActiveMenu] = useState("dashboard");
+  const [reportsInitialTab, setReportsInitialTab] = useState("tasks");
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({
@@ -53,6 +56,16 @@ function AdminDashboard() {
 
     setUser(JSON.parse(userData));
   }, [navigate]);
+
+  useEffect(() => {
+    const state = location.state || {};
+    if (state.activeMenu) {
+      setActiveMenu(state.activeMenu);
+    }
+    if (state.reportType) {
+      setReportsInitialTab(state.reportType);
+    }
+  }, [location.state]);
 
   // Fetch stats on mount and when activeMenu changes
   useEffect(() => {
@@ -124,15 +137,20 @@ function AdminDashboard() {
       if (h === '#create-task') return 'create-task';
       if (h === '#manage-tasks') return 'manage-tasks';
       if (h === '#pending-approvals') return 'pending-approvals';
+      if (h === '#reports' || h === '#reports-assessments') return 'reports';
       return null;
     };
 
     const applyHash = () => {
       try {
-        const menu = mapHashToMenu(window.location.hash);
+        const hash = String(window.location.hash || '').trim();
+        const menu = mapHashToMenu(hash);
         if (menu) {
           setActiveMenu(menu);
           setSidebarOpen(true);
+          if (hash === '#reports-assessments') {
+            setReportsInitialTab('assessments');
+          }
         }
       } catch (e) { /* ignore */ }
     };
@@ -570,7 +588,7 @@ function AdminDashboard() {
         return <AccessManagement key="access-management" />;
 
       case "reports":
-        return <Reports key="reports" />;
+        return <Reports key="reports" initialReportType={reportsInitialTab} />;
 
       case "representatives":
         return (

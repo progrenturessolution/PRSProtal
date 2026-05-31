@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { adminRepAPI } from "../services/api";
 
+const formatMonthLabel = (value) => {
+  if (!value) return "-";
+  const text = String(value).trim();
+  if (/^\d{4}-\d{2}$/.test(text)) {
+    const [year, month] = text.split("-").map(Number);
+    const date = new Date(year, month - 1, 1);
+    return date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+  }
+  return text;
+};
+
 const emptyForm = {
   id: "",
   representativeId: "",
@@ -89,7 +100,7 @@ function RepresentativePayoutManagement() {
     setFormData({
       id: entry._id,
       representativeId: entry.representative?._id || "",
-      monthLabel: entry.monthLabel || "",
+      monthLabel: /^\d{4}-\d{2}$/.test(String(entry.monthLabel || "")) ? entry.monthLabel : "",
       weekLabel: entry.weekLabel || "",
       weekStartDate: entry.weekStartDate ? new Date(entry.weekStartDate).toISOString().slice(0, 10) : "",
       weekEndDate: entry.weekEndDate ? new Date(entry.weekEndDate).toISOString().slice(0, 10) : "",
@@ -202,7 +213,7 @@ function RepresentativePayoutManagement() {
                   ))}
                 </select>
               </div>
-              <div className="form-group"><label>Month *</label><input name="monthLabel" value={formData.monthLabel} onChange={handleInput} placeholder="March / March-April" required /></div>
+              <div className="form-group"><label>Month *</label><input type="month" name="monthLabel" value={formData.monthLabel} onChange={handleInput} required /></div>
               <div className="form-group"><label>Week *</label><input name="weekLabel" value={formData.weekLabel} onChange={handleInput} placeholder="Sunday-Saturday" required /></div>
               <div className="form-group"><label>Week Start *</label><input type="date" name="weekStartDate" value={formData.weekStartDate} onChange={handleInput} required /></div>
               <div className="form-group"><label>Week End *</label><input type="date" name="weekEndDate" value={formData.weekEndDate} onChange={handleInput} required /></div>
@@ -236,7 +247,7 @@ function RepresentativePayoutManagement() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "10px" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Month</label>
-                <input name="month" value={filters.month} onChange={handleFilterChange} placeholder="March" />
+                <input type="month" name="month" value={filters.month} onChange={handleFilterChange} />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label>PGIR</label>
@@ -289,7 +300,7 @@ function RepresentativePayoutManagement() {
                     ) : (
                       payouts.map((item) => (
                         <tr key={item._id}>
-                          <td>{item.monthLabel}</td>
+                          <td>{formatMonthLabel(item.monthLabel)}</td>
                           <td>{item.weekLabel}</td>
                           <td>{item.representative?.name || "-"}</td>
                           <td>{item.totalEnrollmentCount}</td>

@@ -1,4 +1,5 @@
 import { useState, useEffect, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import { adminAPI, UPLOADS_BASE } from '../services/api';
 
 function SMSProgramManagement() {
@@ -10,6 +11,11 @@ function SMSProgramManagement() {
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [documentModalStudent, setDocumentModalStudent] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [showInactiveModal, setShowInactiveModal] = useState(false);
+  const [inactiveModalStudent, setInactiveModalStudent] = useState(null);
+  const [inactiveModalMessage, setInactiveModalMessage] = useState('');
+  const [inactiveModalLoading, setInactiveModalLoading] = useState(false);
+  const [inactiveModalError, setInactiveModalError] = useState('');
   const [showCertificateUpload, setShowCertificateUpload] = useState(false);
   const [certificateFile, setCertificateFile] = useState(null);
   const [certificateType, setCertificateType] = useState('offerLetter');
@@ -429,19 +435,50 @@ function SMSProgramManagement() {
     const current = (student.status || '').toLowerCase();
     const nextStatus = current === 'active' ? 'inactive' : 'active';
 
+    if (nextStatus === 'inactive') {
+      setInactiveModalStudent(student);
+      setInactiveModalMessage('');
+      setInactiveModalError('');
+      setShowInactiveModal(true);
+      return;
+    }
+
     try {
       await adminAPI.updateInternStatus(student._id, nextStatus);
       const label = nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1);
       setStudents((prev) =>
-        prev.map((s) => (s._id === student._id ? { ...s, status: label } : s)),
+        prev.map((s) =>
+          s._id === student._id ? { ...s, status: label, inactiveMessage: '' } : s,
+        ),
       );
       setSelectedStudent((prev) =>
-        prev && prev._id === student._id ? { ...prev, status: label } : prev,
+        prev && prev._id === student._id ? { ...prev, status: label, inactiveMessage: '' } : prev,
       );
       setOpenMenuId(null);
+      setInfoMessage('Student activated successfully');
+      setTimeout(() => setInfoMessage(''), 4000);
     } catch (err) {
       console.error('Status update error:', err);
       alert('Failed to update status.');
+    }
+  };
+
+  const handleMarkCompleted = async (student) => {
+    const confirmed = window.confirm(`Mark ${student.name} as completed?`);
+    if (!confirmed) return;
+
+    try {
+      await adminAPI.updateInternStatus(student._id, 'completed');
+      setStudents((prev) =>
+        prev.map((s) => (s._id === student._id ? { ...s, status: 'Completed' } : s)),
+      );
+      setSelectedStudent((prev) =>
+        prev && prev._id === student._id ? { ...prev, status: 'Completed' } : prev,
+      );
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error('Mark completed error:', err);
+      alert('Failed to mark student as completed.');
     }
   };
 
@@ -696,7 +733,11 @@ function SMSProgramManagement() {
                               View Profile
                             </button>
                             <button
-                              onClick={() => handleViewProgress(student)}
+                              onClick={() => {
+                                setSelectedStudent(student);
+                                handleEditClick();
+                                setOpenMenuId(null);
+                              }}
                               style={{
                                 width: '100%',
                                 padding: '10px 14px',
@@ -713,7 +754,7 @@ function SMSProgramManagement() {
                               onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                               onMouseLeave={(e) => e.target.style.background = 'white'}
                             >
-                              View Progress
+                              Edit Details
                             </button>
                             <button
                               onClick={() => handleManageCertificates(student)}
@@ -733,8 +774,21 @@ function SMSProgramManagement() {
                               onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                               onMouseLeave={(e) => e.target.style.background = 'white'}
                             >
-                              Manage Certificates
+                              Certificates
                             </button>
+                            <div
+                              style={{
+                                padding: '8px 14px 6px',
+                                borderTop: '1px solid #f3f4f6',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                letterSpacing: '0.08em',
+                                color: '#94a3b8',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              More
+                            </div>
                             <button
                               onClick={() => handleStatusToggle(student)}
                               style={{
@@ -754,6 +808,26 @@ function SMSProgramManagement() {
                               onMouseLeave={(e) => e.target.style.background = 'white'}
                             >
                               {student.status?.toLowerCase() === 'active' ? 'Mark Inactive' : 'Mark Active'}
+                            </button>
+                            <button
+                              onClick={() => handleMarkCompleted(student)}
+                              style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                background: 'white',
+                                border: 'none',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                color: '#075985',
+                                transition: 'background 0.2s',
+                                borderTop: '1px solid #f3f4f6'
+                              }}
+                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                              onMouseLeave={(e) => e.target.style.background = 'white'}
+                            >
+                              Mark Completed
                             </button>
                             <button
                               onClick={() => handleDeleteStudent(student)}
@@ -1518,6 +1592,100 @@ function SMSProgramManagement() {
             </div>
           </div>
         </div>
+      )}
+      {showInactiveModal && inactiveModalStudent && createPortal(
+        <div
+          className="profile-modal-overlay"
+          onClick={() => {
+            if (!inactiveModalLoading) setShowInactiveModal(false);
+          }}
+        >
+          <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-header" style={{ background: '#324158' }}>
+              <button
+                className="profile-close-btn"
+                onClick={() => {
+                  if (!inactiveModalLoading) setShowInactiveModal(false);
+                }}
+              >
+                ×
+              </button>
+              <div className="profile-avatar">{(inactiveModalStudent.name || 'S').charAt(0).toUpperCase()}</div>
+              <h2 className="profile-name">Mark Inactive</h2>
+              <div className="profile-badges">
+                <span className="profile-badge">PIID: {inactiveModalStudent.internId || '-'}</span>
+              </div>
+            </div>
+
+            <div className="profile-body">
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />Provide a short message for the student
+                </h3>
+                <textarea
+                  value={inactiveModalMessage}
+                  onChange={(e) => setInactiveModalMessage(e.target.value)}
+                  placeholder="E.g. Suspended due to policy violation. Contact admin to reactivate."
+                  style={{ width: '100%', minHeight: 100, padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+                  maxLength={300}
+                />
+                {inactiveModalError && <div style={{ color: '#dc2626', marginTop: 8 }}>{inactiveModalError}</div>}
+              </div>
+
+              <div className="profile-actions" style={{ marginTop: 12 }}>
+                <button
+                  className="profile-btn profile-btn-primary"
+                  onClick={async () => {
+                    if (inactiveModalLoading) return;
+                    const msg = String(inactiveModalMessage || '').trim();
+                    if (!msg) {
+                      setInactiveModalError('Please enter a short message to show to the student');
+                      return;
+                    }
+                    try {
+                      setInactiveModalLoading(true);
+                      await adminAPI.updateInternStatus(inactiveModalStudent._id, 'inactive', msg);
+                      setStudents((prev) =>
+                        prev.map((s) =>
+                          s._id === inactiveModalStudent._id
+                            ? { ...s, status: 'Inactive', inactiveMessage: msg }
+                            : s,
+                        ),
+                      );
+                      setSelectedStudent((prev) =>
+                        prev && prev._id === inactiveModalStudent._id
+                          ? { ...prev, status: 'Inactive', inactiveMessage: msg }
+                          : prev,
+                      );
+                      setShowInactiveModal(false);
+                      setOpenMenuId(null);
+                      setInfoMessage(`"${inactiveModalStudent.name}" marked as inactive`);
+                      setTimeout(() => setInfoMessage(''), 4000);
+                    } catch (err) {
+                      console.error('Failed to mark inactive:', err);
+                      setInactiveModalError(err.response?.data?.message || 'Failed to mark inactive');
+                    } finally {
+                      setInactiveModalLoading(false);
+                    }
+                  }}
+                >
+                  {inactiveModalLoading ? 'Saving...' : 'Save & Mark Inactive'}
+                </button>
+
+                <button
+                  className="profile-btn profile-btn-ghost"
+                  onClick={() => {
+                    if (!inactiveModalLoading) setShowInactiveModal(false);
+                  }}
+                  style={{ marginLeft: 8 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body,
       )}
     </>
   );
