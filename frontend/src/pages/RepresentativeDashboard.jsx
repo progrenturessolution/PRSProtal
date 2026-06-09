@@ -41,7 +41,7 @@ const initialStudentForm = {
 };
 
 /* ─────────────── Sidebar ─────────────── */
-function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, user, onLogout }) {
+function RepSidebar({ activeTab, onSelectTab, sidebarOpen, setSidebarOpen, user, onLogout, showNotificationDot = false }) {
   const items = [
     { key: 'overview', label: 'Dashboard Overview', icon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -93,10 +93,11 @@ function RepSidebar({ activeTab, setActiveTab, sidebarOpen, setSidebarOpen, user
           <li
             key={item.key}
             className={activeTab === item.key ? 'active' : ''}
-            onClick={() => { setActiveTab(item.key); setSidebarOpen(false); }}
+            onClick={() => onSelectTab(item.key)}
           >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">{item.icon}</svg>
             {item.label}
+            {item.key === 'notifications' && showNotificationDot && <span className="sidebar-notification-dot" aria-hidden="true" />}
           </li>
         ))}
       </ul>
@@ -165,6 +166,9 @@ function RepresentativeDashboard() {
   const [showStudentEditModal, setShowStudentEditModal] = useState(false);
   const [studentEditForm, setStudentEditForm] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState('');
 
   const calculatePendingFees = (data) => {
     const total = Number(data.totalFees || 0);
@@ -186,6 +190,7 @@ function RepresentativeDashboard() {
     fetchStudents();
     fetchStudentStats();
     fetchPayouts();
+    fetchNotifications();
   }, [navigate]);
 
   const fetchProfile = async () => {
@@ -233,6 +238,42 @@ function RepresentativeDashboard() {
       console.error('Fetch payout history error:', err);
     } finally {
       setPayoutsLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setNotificationsLoading(true);
+      setNotificationsError('');
+      const res = await representativeAPI.getMyNotifications();
+      if (res.data.success) {
+        setNotifications(res.data.notifications || []);
+      } else {
+        setNotifications([]);
+      }
+    } catch (err) {
+      console.error('Fetch notification error:', err);
+      setNotificationsError(err.response?.data?.message || 'Failed to load notifications');
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const markNotificationsRead = async () => {
+    try {
+      await representativeAPI.markNotificationsRead();
+    } catch (err) {
+      console.error('Mark notifications read error:', err);
+    }
+  };
+
+  const handleSelectTab = async (tabKey) => {
+    setActiveTab(tabKey);
+    setSidebarOpen(false);
+
+    if (tabKey === 'notifications') {
+      await markNotificationsRead();
+      await fetchNotifications();
     }
   };
 
@@ -386,6 +427,7 @@ function RepresentativeDashboard() {
         setSmsPaymentFile(null);
         fetchStudents();
         fetchStudentStats();
+        fetchNotifications();
         setTimeout(() => { setStudentFormSuccess(''); setActiveTab('my-students'); }, 1800);
       }
     } catch (err) {
@@ -623,11 +665,12 @@ function RepresentativeDashboard() {
 
       <RepSidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        onSelectTab={handleSelectTab}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         user={user}
         onLogout={handleLogout}
+        showNotificationDot={notifications.some((notification) => !notification.isRead)}
       />
 
       <main className="main-content">
@@ -643,6 +686,19 @@ function RepresentativeDashboard() {
                 </div>
                 <div className="header-right">
                   <button className="logout-btn" onClick={handleLogout}>Logout</button>
+                </div>
+              </div>
+              
+              <div className="section-card">
+                <h3>Admin Actions</h3>
+                <div className="section-grid" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'center' }}>
+                  <div className="field-col">
+                    <label>Quick Actions</label>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button className="btn-primary" onClick={() => setActiveTab('add-student')}>Add Student</button>
+                      <button className="btn-secondary" onClick={() => setActiveTab('my-students')}>View Students</button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2478,16 +2534,56 @@ function RepresentativeDashboard() {
                 </div>
               </div>
               <div className="premium-card">
-                <div className="premium-empty-state">
-                  <div className="empty-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
+                {notificationsLoading ? (
+                  <div className="premium-empty-state">
+                    <div className="empty-icon">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M4.93 4.93l14.14 14.14M20.07 4.93L5.93 19.07" />
+                      </svg>
+                    </div>
+                    <p className="empty-title">Loading notifications</p>
+                    <p className="empty-subtitle">Please wait while we fetch your latest updates</p>
                   </div>
-                  <p className="empty-title">No notifications</p>
-                  <p className="empty-subtitle">You're all caught up! New updates will appear here</p>
-                </div>
+                ) : notificationsError ? (
+                  <div className="premium-empty-state">
+                    <div className="empty-icon">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86l-7.42 12.8A2 2 0 004.59 20h14.82a2 2 0 001.72-3.34l-7.42-12.8a2 2 0 00-3.42 0z" />
+                      </svg>
+                    </div>
+                    <p className="empty-title">Could not load notifications</p>
+                    <p className="empty-subtitle">{notificationsError}</p>
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="premium-empty-state">
+                    <div className="empty-icon">
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                    </div>
+                    <p className="empty-title">No notifications</p>
+                    <p className="empty-subtitle">You're all caught up! New updates will appear here</p>
+                  </div>
+                ) : (
+                  <div className="notification-list">
+                    {notifications.map((notification) => (
+                      <div key={notification._id} className={`notification-card ${notification.isRead ? 'read' : 'unread'}`}>
+                        <div className="notification-card-header">
+                          <div>
+                            <h3>{notification.title}</h3>
+                            <p>{notification.message}</p>
+                          </div>
+                          {!notification.isRead && <span className="notification-read-pill">New</span>}
+                        </div>
+                        <div className="notification-card-meta">
+                          <span>{notification.notificationType || 'General'}</span>
+                          <span>{new Date(notification.createdAt).toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}

@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const Representative = require('../models/Representative');
 const Intern = require('../models/Intern');
 const RepresentativePayout = require('../models/RepresentativePayout');
+const RepresentativeNotification = require('../models/RepresentativeNotification');
+const { createRepresentativeNotification } = require('../utils/representativeNotification');
 
 // Generate unique Intern ID based on type with new format
 // Format: PRS/MAR26004/DJS (PRS = internship, PSMS = SMS program)
@@ -335,6 +337,15 @@ exports.addStudent = async (req, res) => {
     const intern = new Intern(internData);
     await intern.save();
 
+    createRepresentativeNotification({
+      representativeId: req.user.id,
+      title: 'Student added',
+      message: `${name} (${intern.internId}) was added successfully under ${studentType}.`,
+      notificationType: 'Student',
+    }).catch((notifyErr) => {
+      console.error('Create representative notification error:', notifyErr);
+    });
+
     res.status(201).json({
         success: true,
         message: 'Student added successfully',
@@ -452,6 +463,15 @@ exports.updateStudent = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Student not found' });
     }
 
+    createRepresentativeNotification({
+      representativeId: req.user.id,
+      title: 'Student updated',
+      message: `${student.name} (${student.internId}) was updated successfully.`,
+      notificationType: 'Student',
+    }).catch((notifyErr) => {
+      console.error('Create representative notification error:', notifyErr);
+    });
+
     res.status(200).json({ success: true, message: 'Student updated successfully', student });
   } catch (error) {
     console.error('Update student error:', error);
@@ -554,6 +574,46 @@ exports.getMyPayouts = async (req, res) => {
     res.status(200).json({ success: true, count: payouts.length, payouts });
   } catch (error) {
     console.error('Get representative payouts error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Get representative notifications
+exports.getMyNotifications = async (req, res) => {
+  try {
+    const notifications = await RepresentativeNotification.find({ representative: req.user.id })
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    const unreadCount = notifications.filter((notification) => !notification.isRead).length;
+
+    res.status(200).json({
+      success: true,
+      count: notifications.length,
+      unreadCount,
+      notifications,
+    });
+  } catch (error) {
+    console.error('Get representative notifications error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Mark representative notifications as read
+exports.markMyNotificationsRead = async (req, res) => {
+  try {
+    const result = await RepresentativeNotification.updateMany(
+      { representative: req.user.id, isRead: false },
+      { $set: { isRead: true, readAt: new Date() } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Notifications marked as read',
+      updatedCount: result.modifiedCount ?? result.nModified ?? 0,
+    });
+  } catch (error) {
+    console.error('Mark representative notifications read error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };

@@ -11,6 +11,7 @@ const Aptitude = require('../models/Aptitude');
 const Assessment = require('../models/Assessment');
 const Training = require('../models/Training');
 const Activity = require('../models/Activity');
+const { createRepresentativeNotification } = require('../utils/representativeNotification');
 
 const PASSWORD_SALT_ROUNDS = (() => {
   const defaultRounds = process.env.NODE_ENV === 'production' ? 10 : 4;
@@ -1920,6 +1921,17 @@ exports.upsertRepresentativePayout = async (req, res) => {
       payout = await RepresentativePayout.create(payload);
       payout = await RepresentativePayout.findById(payout._id).populate('representative', 'name pgirId email');
     }
+
+    createRepresentativeNotification({
+      representativeId: payout.representative?._id || representativeId,
+      title: id ? 'Payout updated' : 'New payout entry',
+      message: id
+        ? `Your payout entry for ${payout.monthLabel} (${payout.weekLabel}) was updated.`
+        : `A new payout entry for ${payout.monthLabel} (${payout.weekLabel}) is available.`,
+      notificationType: 'Payout',
+    }).catch((notifyErr) => {
+      console.error('Create representative payout notification error:', notifyErr);
+    });
 
     return res.status(200).json({ success: true, payout });
   } catch (error) {

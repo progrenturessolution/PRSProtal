@@ -56,5 +56,7 @@ router.get('/students/stats', verifyToken, verifyRep, repController.getMyStudent
 router.patch('/students/:id', verifyToken, verifyRep, repController.updateStudent);
 router.delete('/students/:id', verifyToken, verifyRep, repController.deleteStudent);
 router.get('/payouts', verifyToken, verifyRep, repController.getMyPayouts);
+router.get('/notifications', verifyToken, verifyRep, repController.getMyNotifications);
+router.patch('/notifications/read', verifyToken, verifyRep, repController.markMyNotificationsRead);
 
 module.exports = router;

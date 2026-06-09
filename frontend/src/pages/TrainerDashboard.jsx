@@ -4672,6 +4672,19 @@ function TrainerDashboard() {
                   ))}
               </div>
 
+              <div className="section-card">
+                <h3>Admin Actions</h3>
+                <div className="section-grid" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'center' }}>
+                  <div className="field-col">
+                    <label>Quick Actions</label>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button className="btn-primary" onClick={() => setActiveTab('students')}>View Students</button>
+                      <button className="btn-secondary" onClick={() => setActiveTab('assignments')}>View Assignments</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="info-banner">
                 <strong>Update Your Information</strong>
                 <p>

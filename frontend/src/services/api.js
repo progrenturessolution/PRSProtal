@@ -210,6 +210,8 @@ export const representativeAPI = {
   updateStudent: (id, data) => api.patch(`/representative/students/${id}`, data),
   deleteStudent: (id) => api.delete(`/representative/students/${id}`),
   getMyPayouts: () => api.get("/representative/payouts"),
+  getMyNotifications: () => api.get("/representative/notifications"),
+  markNotificationsRead: () => api.patch("/representative/notifications/read"),
 };
 
 // Admin representative management APIs (added to adminAPI)
