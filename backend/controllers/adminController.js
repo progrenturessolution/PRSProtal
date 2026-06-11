@@ -1138,6 +1138,25 @@ exports.createNotification = async (req, res) => {
 
     await notification.save();
 
+    if (notificationType === 'All') {
+      try {
+        const representatives = await Representative.find({}).select('_id');
+        await Promise.all(
+          representatives.map((rep) =>
+            createRepresentativeNotification({
+              representativeId: rep._id,
+              title: subject,
+              message,
+              notificationType: 'General/Announcement',
+              createdBy: adminId,
+            }),
+          ),
+        );
+      } catch (repNotifyError) {
+        console.error('Create representative notifications error:', repNotifyError);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: 'Notification created successfully',
@@ -1293,6 +1312,110 @@ exports.getAllJobPostings = async (req, res) => {
 
   } catch (error) {
     console.error('Get job postings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Update job posting
+exports.updateJobPosting = async (req, res) => {
+  try {
+    const postingId = req.params.id;
+    const updatePayload = {
+      opportunityType: req.body.opportunityType,
+      company: req.body.company,
+      location: req.body.location,
+      domain: req.body.domain,
+      title: req.body.title,
+      eligibilityCriteria: req.body.eligibilityCriteria,
+      description: req.body.description,
+      requirements: req.body.requirements,
+      applicationLink: req.body.applicationLink,
+      applicationInstructions: req.body.applicationInstructions,
+      salary: req.body.salary,
+      status: req.body.status,
+      deadline: req.body.deadline || undefined,
+    };
+
+    const updatedPosting = await JobPosting.findByIdAndUpdate(
+      postingId,
+      { $set: updatePayload },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedPosting) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job posting not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Job posting updated successfully',
+      jobPosting: updatedPosting
+    });
+  } catch (error) {
+    console.error('Update job posting error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Delete job posting
+exports.deleteJobPosting = async (req, res) => {
+  try {
+    const postingId = req.params.id;
+    const deletedPosting = await JobPosting.findByIdAndDelete(postingId);
+
+    if (!deletedPosting) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job posting not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Job posting deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete job posting error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Repost job posting
+exports.repostJobPosting = async (req, res) => {
+  try {
+    const postingId = req.params.id;
+    const repostedPosting = await JobPosting.findByIdAndUpdate(
+      postingId,
+      { status: 'active' },
+      { new: true }
+    );
+
+    if (!repostedPosting) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job posting not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Job posting reposted successfully',
+      jobPosting: repostedPosting
+    });
+  } catch (error) {
+    console.error('Repost job posting error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

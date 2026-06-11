@@ -1004,6 +1004,7 @@ function TrainerDashboard() {
   const profileRole = user?.customRole || user?.role || "Trainer";
   const profileStatus = user?.status || "active";
   const profileInitial = profileDisplayName.charAt(0).toUpperCase();
+  const hasDisplayValue = (value) => value !== null && value !== undefined && String(value).trim() !== "";
 
   return (
     <div className="dashboard">
@@ -4507,63 +4508,102 @@ function TrainerDashboard() {
 
           {activeTab === "notifications" && (
             <>
-              <div className="premium-page-header">
-                <div className="header-left">
-                  <h1>Notifications</h1>
-                  <p className="header-subtitle">
-                    Stay updated with recent activities
-                  </p>
-                </div>
+              <div className="content-header">
+                <h1>Notifications</h1>
+                <p>Important announcements and updates</p>
               </div>
 
-              <div className="premium-card">
-                {Array.isArray(notifications) && notifications.length > 0 ? (
-                  <div className="notifications-list">
-                    {notifications.map((notification) => {
-                      const createdAt = notification.createdAt || notification.updatedAt || notification.date;
-                      const message = notification.message || notification.description || notification.body || "";
-                      const title = notification.title || notification.subject || notification.notificationType || "Notification";
+              <div className="card">
+                {notifications.length === 0 ? (
+                  <div className="empty-state">
+                    <p>No notifications at this time.</p>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "15px",
+                    }}
+                  >
+                    {notifications.map((notif) => {
+                      const createdAt = notif.createdAt || notif.updatedAt || notif.date;
+                      const message = notif.message || notif.description || notif.body || "";
+                      const title = notif.title || notif.subject || notif.notificationType || "Notification";
+                      const attachmentUrl = notif.attachment?.filename
+                        ? `/uploads/notifications/${notif.attachment.filename}`
+                        : notif.attachment || notif.file || notif.image || "";
 
                       return (
-                        <div key={notification._id || `${title}-${createdAt}`} className="notification-item">
-                          <div className="notification-header">
-                            <h4 className="notification-title">{title}</h4>
-                            <span className="notification-time">
-                              {createdAt ? new Date(createdAt).toLocaleString() : ""}
+                        <div
+                          key={notif._id || `${title}-${createdAt}`}
+                          style={{
+                            padding: "16px",
+                            background:
+                              notif.notificationType === "General/Announcement"
+                                ? "#f9fafb"
+                                : "#eff6ff",
+                            borderRadius: "10px",
+                            border:
+                              "1px solid " +
+                              (notif.notificationType === "General/Announcement"
+                                ? "#e5e7eb"
+                                : "#bfdbfe"),
+                            borderLeft:
+                              "4px solid " +
+                              (notif.notificationType === "Interview"
+                                ? "#f59e0b"
+                                : notif.notificationType === "Test/Assessment"
+                                  ? "#3b82f6"
+                                  : notif.notificationType === "Certificate"
+                                    ? "#10b981"
+                                    : "#6b7280"),
+                          }}
+                        >
+                          <div style={{ marginBottom: "8px" }}>
+                            <h4
+                              style={{
+                                margin: "0 0 4px 0",
+                                color: "#0f172a",
+                                fontSize: "15px",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {title}
+                            </h4>
+                            <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                              {createdAt ? new Date(createdAt).toLocaleDateString() : ""}
+                              {createdAt ? ` at ${new Date(createdAt).toLocaleTimeString()}` : ""}
                             </span>
                           </div>
-                          {message ? <div className="notification-message">{message}</div> : null}
-                          {(notification.attachment || notification.file || notification.image) ? (
-                            <div className="notification-attachment">
-                              <a
-                                href={notification.attachment || notification.file || notification.image}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                View attachment
-                              </a>
-                            </div>
+                          <p
+                            style={{
+                              margin: "8px 0",
+                              color: "#374151",
+                              fontSize: "14px",
+                              lineHeight: "1.5",
+                            }}
+                          >
+                            {message}
+                          </p>
+                          {attachmentUrl ? (
+                            <a
+                              href={attachmentUrl.startsWith("/") ? attachmentUrl : attachmentUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{
+                                fontSize: "13px",
+                                color: "#3b82f6",
+                                marginTop: "8px",
+                                display: "inline-block",
+                              }}
+                            >
+                              Download Attachment
+                            </a>
                           ) : null}
                         </div>
                       );
                     })}
-                  </div>
-                ) : (
-                  <div className="premium-empty-state">
-                    <div className="empty-icon">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                        />
-                      </svg>
-                    </div>
-                    <p className="empty-title">No notifications</p>
-                    <p className="empty-subtitle">
-                      You're all caught up! New updates will appear here
-                    </p>
                   </div>
                 )}
               </div>
@@ -4598,93 +4638,62 @@ function TrainerDashboard() {
                 </div>
               )}
 
-              <div className="profile-top-card">
-                <div className="profile-top-left">
-                  <div className="profile-top-avatar">{profileInitial}</div>
-                  <div className="profile-top-meta">
-                    <div className="profile-top-name">{profileDisplayName}</div>
-                    {user?.joiningDate && (
-                      <div className="profile-top-sub">
-                        {new Date(user.joiningDate).toLocaleDateString()}
-                      </div>
-                    )}
-                    <div className="profile-top-badges">
-                      {profileRole && <span className="profile-top-badge">{profileRole}</span>}
-                      {profileStatus && <span className="profile-top-badge small">{profileStatus}</span>}
+              <div className="profile-summary-card" style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32 }}>
+                      {profileInitial}
                     </div>
-                  </div>
-                </div>
-                <div className="profile-top-right">
-                  <label className="switch-label">Inactive</label>
-                  <div className="toggle-wrapper">
-                    <input type="checkbox" checked={String(profileStatus).toLowerCase() !== "active"} readOnly />
-                  </div>
-                  <button className="btn-edit" onClick={handleEditClick}>Edit</button>
-                </div>
-              </div>
-
-              <div className="profile-sections">
-                {[
-                  {
-                    title: "Personal Details",
-                    fields: [
-                      { label: "Full Name", value: user?.name },
-                      { label: "Employee ID", value: user?.trainerId || user?.employeeId, mono: true },
-                      { label: "Role", value: profileRole },
-                      { label: "Joining Date", value: user?.joiningDate ? new Date(user.joiningDate).toLocaleDateString() : null },
-                      { label: "Account Status", value: profileStatus },
-                      { label: "Profile Created", value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : null },
-                      { label: "Last Updated", value: user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString() : null },
-                      { label: "Total Students", value: students.length },
-                      { label: "Assigned Groups", value: assignedGroups.length },
-                      { label: "Work Assignments", value: workAssignments.length },
-                    ].filter((field) => field.value !== null && field.value !== undefined && String(field.value).trim() !== ""),
-                  },
-                  {
-                    title: "Contact Details",
-                    fields: [
-                      { label: "Email Address", value: user?.email, mono: true },
-                      { label: "Mobile Number", value: user?.mobile, mono: true },
-                    ].filter((field) => field.value !== null && field.value !== undefined && String(field.value).trim() !== ""),
-                  },
-                  {
-                    title: "Work Summary",
-                    fields: [
-                      { label: "Custom Role", value: user?.customRole },
-                    ].filter((field) => field.value !== null && field.value !== undefined && String(field.value).trim() !== ""),
-                  },
-                ]
-                  .filter((section) => section.fields.length > 0)
-                  .map((section) => (
-                    <div className="section-card" key={section.title}>
-                      <h3>{section.title}</h3>
-                      <div className="section-grid">
-                        {section.fields.map((field) => (
-                          <div className="field-col" key={field.label}>
-                            <label>{field.label}</label>
-                            <div className={`field-value ${field.mono ? "mono-text" : ""}`}>
-                              {field.value}
-                            </div>
-                          </div>
-                        ))}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 20, fontWeight: 700 }}>{profileDisplayName}</div>
+                        <div style={{ color: "#64748b", marginTop: 4 }}>
+                          {user?.trainerId || user?.employeeId || ""} • {profileRole || "Trainer"}
+                          <span style={{ marginLeft: 10, fontSize: 12, color: "#475569", fontWeight: 700 }}>
+                            {(profileStatus || "active").toUpperCase()}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  ))}
-              </div>
-
-              <div className="section-card">
-                <h3>Admin Actions</h3>
-                <div className="section-grid" style={{ gridTemplateColumns: '1fr 1fr', alignItems: 'center' }}>
-                  <div className="field-col">
-                    <label>Quick Actions</label>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <button className="btn-primary" onClick={() => setActiveTab('students')}>View Students</button>
-                      <button className="btn-secondary" onClick={() => setActiveTab('assignments')}>View Assignments</button>
-                    </div>
                   </div>
                 </div>
-              </div>
 
+                <div className="section-card">
+                  <h3>Personal Details</h3>
+                  <div className="section-grid">
+                    <div className="field-col"><label>Full Name</label><div className="field-value">{user?.name || "-"}</div></div>
+                    <div className="field-col"><label>Employee ID</label><div className="field-value mono-text">{user?.trainerId || user?.employeeId || "-"}</div></div>
+                    <div className="field-col"><label>Role</label><div className="field-value">{profileRole || "-"}</div></div>
+                    <div className="field-col"><label>Account Status</label><div className="field-value">{profileStatus || "-"}</div></div>
+                    {hasDisplayValue(user?.joiningDate) && <div className="field-col"><label>Joining Date</label><div className="field-value">{new Date(user.joiningDate).toLocaleDateString()}</div></div>}
+                    {hasDisplayValue(user?.createdAt) && <div className="field-col"><label>Profile Created</label><div className="field-value">{new Date(user.createdAt).toLocaleDateString()}</div></div>}
+                    {hasDisplayValue(user?.updatedAt) && <div className="field-col"><label>Last Updated</label><div className="field-value">{new Date(user.updatedAt).toLocaleDateString()}</div></div>}
+                    <div className="field-col"><label>Total Students</label><div className="field-value">{students.length}</div></div>
+                    <div className="field-col"><label>Assigned Groups</label><div className="field-value">{assignedGroups.length}</div></div>
+                    <div className="field-col"><label>Work Assignments</label><div className="field-value">{workAssignments.length}</div></div>
+                  </div>
+                </div>
+
+                {(hasDisplayValue(user?.email) || hasDisplayValue(user?.mobile)) && (
+                  <div className="section-card">
+                    <h3>Contact Details</h3>
+                    <div className="section-grid">
+                      {hasDisplayValue(user?.email) && <div className="field-col"><label>Email Address</label><div className="field-value mono-text">{user.email}</div></div>}
+                      {hasDisplayValue(user?.mobile) && <div className="field-col"><label>Mobile Number</label><div className="field-value mono-text">{user.mobile}</div></div>}
+                    </div>
+                  </div>
+                )}
+
+                {hasDisplayValue(user?.customRole) && (
+                  <div className="section-card">
+                    <h3>Work Summary</h3>
+                    <div className="section-grid">
+                      <div className="field-col">
+                        <label>Custom Role</label>
+                        <div className="field-value">{user.customRole}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               <div className="info-banner">
                 <strong>Update Your Information</strong>
                 <p>

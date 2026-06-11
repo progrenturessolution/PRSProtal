@@ -42,6 +42,7 @@ function AdminDashboard() {
     pendingApprovalTasks: 0,
     completedTasks: 0,
   });
+  const [unreadJobPostings, setUnreadJobPostings] = useState(0);
 
   useEffect(() => {
     // Check if user is logged in
@@ -55,6 +56,13 @@ function AdminDashboard() {
     }
 
     setUser(JSON.parse(userData));
+    
+    // Initialize job postings last viewed time if not set
+    // Set to 1 week ago so existing postings show as unread initially
+    if (!localStorage.getItem('jobPostingsLastViewed')) {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      localStorage.setItem('jobPostingsLastViewed', oneWeekAgo.toISOString());
+    }
   }, [navigate]);
 
   useEffect(() => {
@@ -114,6 +122,53 @@ function AdminDashboard() {
     } catch (error) {
       console.error("Failed to fetch task stats:", error);
     }
+  };
+
+  const fetchUnreadJobPostings = async () => {
+    try {
+      const response = await adminAPI.getAllJobPostings();
+      if (response.data.success) {
+        const postings = response.data.jobPostings || [];
+        
+        // Get last viewed timestamp from localStorage
+        const lastViewedTime = localStorage.getItem('jobPostingsLastViewed');
+        const lastViewed = lastViewedTime ? new Date(lastViewedTime) : new Date(0);
+        
+        // Count postings created after last viewed time
+        const unreadCount = postings.filter(p => {
+          if (!p.createdAt) return false;
+          const postingTime = new Date(p.createdAt);
+          return postingTime > lastViewed;
+        }).length;
+        
+        setUnreadJobPostings(unreadCount);
+      }
+    } catch (error) {
+      console.error("Failed to fetch unread job postings:", error);
+    }
+  };
+
+  // Update lastViewed when a new posting is created
+  const markAdminJobPostingsAsSeen = () => {
+    localStorage.setItem('jobPostingsLastViewed', new Date().toISOString());
+    setUnreadJobPostings(0);
+  };
+
+  // Fetch unread job postings on mount
+  useEffect(() => {
+    if (user) {
+      fetchUnreadJobPostings();
+      const interval = setInterval(fetchUnreadJobPostings, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const handleJobsInternshipsClick = () => {
+    setActiveMenu("jobs-internships");
+    setSidebarOpen(false);
+    setUnreadJobPostings(0);
+    // Mark as viewed
+    localStorage.setItem('jobPostingsLastViewed', new Date().toISOString());
   };
 
   const handleLogout = () => {
@@ -582,7 +637,7 @@ function AdminDashboard() {
         return <Notifications key="notifications" />;
 
       case "jobs-internships":
-        return <JobsInternships key="jobs-internships" />;
+        return <JobsInternships key="jobs-internships" onPostingCreated={markAdminJobPostingsAsSeen} />;
 
       case "access-management":
         return <AccessManagement key="access-management" />;
@@ -674,6 +729,24 @@ function AdminDashboard() {
               />
             </svg>
             Dashboard
+          </li>
+
+          <li
+            className={activeMenu === "activity-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("activity-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Activity Management
           </li>
 
           <li
@@ -842,10 +915,8 @@ function AdminDashboard() {
 
           <li
             className={activeMenu === "jobs-internships" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("jobs-internships");
-              setSidebarOpen(false);
-            }}
+            onClick={handleJobsInternshipsClick}
+            style={{ position: "relative" }}
           >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -856,6 +927,27 @@ function AdminDashboard() {
               />
             </svg>
             Jobs and internship updates
+            {unreadJobPostings > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "8px",
+                  background: "#ef4444",
+                  color: "white",
+                  borderRadius: "50%",
+                  width: "20px",
+                  height: "20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                }}
+              >
+                {unreadJobPostings}
+              </span>
+            )}
           </li>
 
           <li
@@ -892,24 +984,6 @@ function AdminDashboard() {
               />
             </svg>
             reports
-          </li>
-
-          <li
-            className={activeMenu === "activity-management" ? "active" : ""}
-            onClick={() => {
-              setActiveMenu("activity-management");
-              setSidebarOpen(false);
-            }}
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            Activity Management
           </li>
         </ul>
 

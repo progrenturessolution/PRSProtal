@@ -109,6 +109,9 @@ export const adminAPI = {
   createJobPosting: (jobData) => api.post("/admin/job-postings", jobData),
   getAllJobPostings: () => api.get("/admin/job-postings"),
   getJobPostings: () => api.get("/admin/job-postings"),
+  updateJobPosting: (id, data) => api.patch(`/admin/job-postings/${id}`, data),
+  deleteJobPosting: (id) => api.delete(`/admin/job-postings/${id}`),
+  repostJobPosting: (id) => api.post(`/admin/job-postings/${id}/repost`),
 
   // Documents
   uploadStudentDocument: (studentId, formData) =>

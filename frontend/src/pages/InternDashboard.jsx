@@ -7,6 +7,7 @@ import logo from "../assets/logo.png";
 function InternDashboard() {
   const navigate = useNavigate();
   const notificationStorageKey = "intern-notifications-last-seen";
+  const jobPostingsStorageKey = "intern-job-postings-last-seen";
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,6 +34,7 @@ function InternDashboard() {
   const [taskView, setTaskView] = useState('individual');
   const [activityMenuOpen, setActivityMenuOpen] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
+  const [hasUnreadJobPostings, setHasUnreadJobPostings] = useState(false);
   const [error, setError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [showEditModal, setShowEditModal] = useState(false);
@@ -89,6 +91,12 @@ function InternDashboard() {
     setUser(parsedUser);
     setLoading(false); // Show dashboard immediately
     
+    // Initialize job postings last viewed time if not set (1 week ago so existing postings show as unread)
+    if (!localStorage.getItem(jobPostingsStorageKey)) {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      localStorage.setItem(jobPostingsStorageKey, oneWeekAgo.toISOString());
+    }
+    
     // Load tasks in the background without blocking the UI
     fetchTasks();
     
@@ -97,7 +105,16 @@ function InternDashboard() {
 
     // Refresh notification badge in background
     refreshNotificationBadge(parsedUser);
+    
+    // Refresh job postings badge in background
+    refreshJobPostingsBadge();
   }, [navigate]);
+
+  // Periodic refresh for job postings badge
+  useEffect(() => {
+    const interval = setInterval(refreshJobPostingsBadge, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const getLatestNotificationTimestamp = (items = []) => {
     return items.reduce((latest, item) => {
@@ -128,6 +145,34 @@ function InternDashboard() {
     const latestTimestamp = getLatestNotificationTimestamp(items);
     localStorage.setItem(notificationStorageKey, String(latestTimestamp || Date.now()));
     setHasUnreadNotifications(false);
+  };
+
+  const refreshJobPostingsBadge = async () => {
+    try {
+      const response = await internAPI.getMyJobPostings();
+      const postings = response.data?.postings || [];
+      const latestTimestamp = getLatestNotificationTimestamp(postings);
+      const lastSeenTimestamp = Number(localStorage.getItem(jobPostingsStorageKey) || 0);
+      const isUnread = latestTimestamp > lastSeenTimestamp;
+      setHasUnreadJobPostings(isUnread);
+
+      if (activeSection === "jobs") {
+        localStorage.setItem(jobPostingsStorageKey, String(latestTimestamp || Date.now()));
+        setHasUnreadJobPostings(false);
+      }
+    } catch (err) {
+      console.error("Failed to refresh job postings badge:", err);
+    }
+  };
+
+  const markJobPostingsAsSeen = () => {
+    if (jobPostings.length > 0) {
+      const latestTimestamp = getLatestNotificationTimestamp(jobPostings);
+      localStorage.setItem(jobPostingsStorageKey, String(latestTimestamp || Date.now()));
+    } else {
+      localStorage.setItem(jobPostingsStorageKey, String(Date.now()));
+    }
+    setHasUnreadJobPostings(false);
   };
 
   const fetchProfileDetails = async () => {
@@ -460,6 +505,7 @@ function InternDashboard() {
             const jobsResp = await internAPI.getMyJobPostings();
             if (jobsResp.data && jobsResp.data.success) {
               setJobPostings(jobsResp.data.postings || []);
+              markJobPostingsAsSeen();
             }
           } catch (e) {
             console.error('Failed to fetch job postings:', e);
@@ -930,6 +976,7 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Job & Internship Updates
+            {hasUnreadJobPostings && <span className="sidebar-notification-dot" aria-hidden="true" />}
           </li>
           <li
             className={activeSection === "reports" ? "active" : ""}

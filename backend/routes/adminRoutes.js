@@ -168,6 +168,15 @@ router.post('/job-postings', verifyToken, verifyAdmin, adminController.createJob
 // Get all job postings
 router.get('/job-postings', verifyToken, verifyAdmin, adminController.getAllJobPostings);
 
+// Update a job posting
+router.patch('/job-postings/:id', verifyToken, verifyAdmin, adminController.updateJobPosting);
+
+// Delete a job posting
+router.delete('/job-postings/:id', verifyToken, verifyAdmin, adminController.deleteJobPosting);
+
+// Repost / reopen a job posting
+router.post('/job-postings/:id/repost', verifyToken, verifyAdmin, adminController.repostJobPosting);
+
 // ========== CERTIFICATES & DOCUMENTS ==========
 
 // Upload student document (accepts field name 'file')

@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { adminAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-function JobsInternships() {
+function JobsInternships({ onPostingCreated }) {
   const [postings, setPostings] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [editingPosting, setEditingPosting] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const [formData, setFormData] = useState({
     opportunityType: "Job",
@@ -68,35 +70,156 @@ function JobsInternships() {
         deadline: formData.deadline || undefined,
       };
 
-      const response = await adminAPI.createJobPosting(payload);
+      const response = editingPosting
+        ? await adminAPI.updateJobPosting(editingPosting._id, payload)
+        : await adminAPI.createJobPosting(payload);
 
       if (response.data.success) {
-        setSuccess("Job/Internship posting created successfully!");
-        setFormData({
-          opportunityType: "Job",
-          title: "",
-          company: "",
-          location: "",
-          domain: "",
-          eligibility: "",
-          description: "",
-          requirements: "",
-          applicationLink: "",
-          applicationInstructions: "",
-          deadline: "",
-          salary: "",
-        });
+        setSuccess(
+          editingPosting
+            ? "Job/Internship posting updated successfully!"
+            : "Job/Internship posting created successfully!",
+        );
+        resetForm();
         setShowForm(false);
+        fetchPostings();
+        // Notify parent component about new posting for notification badge
+        if (!editingPosting && onPostingCreated) {
+          onPostingCreated();
+        }
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          (editingPosting
+            ? "Failed to update posting. Please try again."
+            : "Failed to create posting. Please try again."),
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      opportunityType: "Job",
+      title: "",
+      company: "",
+      location: "",
+      domain: "",
+      eligibility: "",
+      description: "",
+      requirements: "",
+      applicationLink: "",
+      applicationInstructions: "",
+      deadline: "",
+      salary: "",
+    });
+    setEditingPosting(null);
+    setError("");
+    setSuccess("");
+  };
+
+  const handleEdit = (posting) => {
+    setEditingPosting(posting);
+    setShowForm(true);
+    setSuccess("");
+    setError("");
+    setFormData({
+      opportunityType: posting.opportunityType || "Job",
+      title: posting.title || "",
+      company: posting.company || "",
+      location: posting.location || "",
+      domain: posting.domain || "",
+      eligibility: posting.eligibilityCriteria || posting.eligibility || "",
+      description: posting.description || "",
+      requirements: posting.requirements || "",
+      applicationLink: posting.applicationLink || "",
+      applicationInstructions: posting.applicationInstructions || "",
+      deadline: posting.deadline ? new Date(posting.deadline).toISOString().split("T")[0] : "",
+      salary: posting.salary || "",
+    });
+  };
+
+  const handleDelete = async (postingId) => {
+    if (!window.confirm("Delete this posting? This cannot be undone.")) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await adminAPI.deleteJobPosting(postingId);
+      if (response.data.success) {
+        setSuccess("Job posting deleted successfully.");
         fetchPostings();
       }
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Failed to create posting. Please try again.",
+          "Failed to delete posting. Please try again.",
       );
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRepost = async (postingId) => {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await adminAPI.repostJobPosting(postingId);
+      if (response.data.success) {
+        setSuccess("Job posting reposted successfully.");
+        fetchPostings();
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to repost posting. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCloseApplication = async (posting) => {
+    if (!window.confirm("Close applications for this posting?")) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await adminAPI.updateJobPosting(posting._id, {
+        ...posting,
+        status: "closed",
+      });
+
+      if (response.data.success) {
+        setSuccess("Application closed successfully.");
+        setOpenMenuId(null);
+        fetchPostings();
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to close application. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
+    setShowForm(false);
   };
 
   return (
@@ -109,7 +232,13 @@ function JobsInternships() {
       {/* Action Buttons */}
       <div style={{ marginBottom: "20px" }}>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (showForm) {
+              handleCancelEdit();
+            } else {
+              setShowForm(true);
+            }
+          }}
           style={{
             padding: "12px 24px",
             background: "#324158",
@@ -121,7 +250,7 @@ function JobsInternships() {
             fontWeight: 600,
           }}
         >
-          {showForm ? "✖ Cancel" : " Post New Opportunity"}
+          {showForm ? "✖ Close Form" : "Post New Opportunity"}
         </button>
       </div>
 
@@ -432,11 +561,34 @@ function JobsInternships() {
               }}
             >
               {loading ? (
-                <LoadingSpinner text="Posting..." inline size="sm" />
+                <LoadingSpinner
+                  text={editingPosting ? "Updating..." : "Posting..."}
+                  inline
+                  size="sm"
+                />
               ) : (
-                "Post Opportunity"
+                editingPosting ? "Update Opportunity" : "Post Opportunity"
               )}
             </button>
+            {editingPosting && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                style={{
+                  marginLeft: "12px",
+                  padding: "12px 24px",
+                  background: "#e5e7eb",
+                  color: "#111827",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
+                Cancel Edit
+              </button>
+            )}
           </form>
         </div>
       )}
@@ -468,12 +620,95 @@ function JobsInternships() {
                   border: "1px solid #e5e7eb",
                   borderRadius: "8px",
                   marginBottom: "15px",
+                  background: "white",
+                  position: "relative",
                 }}
               >
-                <h4>{posting.title}</h4>
-                <p style={{ color: "#6b7280", fontSize: "14px" }}>
-                  {posting.company} • {posting.location} • {posting.domain}
-                </p>
+                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+                  <div style={{ minWidth: "220px", flex: 1 }}>
+                    <h4 style={{ margin: 0 }}>{posting.title}</h4>
+                    <p style={{ color: "#6b7280", fontSize: "14px", margin: "8px 0" }}>
+                      {posting.company} • {posting.location} • {posting.domain}
+                    </p>
+                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                      <span style={{ display: "inline-flex", padding: "6px 10px", background: "#f8fafc", color: "#334155", borderRadius: "9999px", fontSize: "12px", fontWeight: 600 }}>
+                        {posting.opportunityType}
+                      </span>
+                      <span style={{ display: "inline-flex", padding: "6px 10px", background: posting.status === "closed" ? "#fee2e2" : "#dcfce7", color: posting.status === "closed" ? "#991b1b" : "#166534", borderRadius: "9999px", fontSize: "12px", fontWeight: 600 }}>
+                        {posting.status || "active"}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ position: "relative", alignSelf: "flex-start" }}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenMenuId(openMenuId === posting._id ? null : posting._id)
+                      }
+                      aria-label="Posting actions"
+                      style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "8px",
+                        border: "1px solid #cbd5e1",
+                        background: "#f8fafc",
+                        color: "#0f172a",
+                        cursor: "pointer",
+                        fontSize: "18px",
+                        lineHeight: 1,
+                        fontWeight: 700,
+                      }}
+                    >
+                      ⋯
+                    </button>
+                    {openMenuId === posting._id && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "36px",
+                          right: 0,
+                          zIndex: 10,
+                          minWidth: "132px",
+                          background: "white",
+                          border: "1px solid #e2e8f0",
+                          borderRadius: "10px",
+                          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.12)",
+                          padding: "6px",
+                        }}
+                      >
+                        {[
+                          { label: "Edit", action: () => handleEdit(posting) },
+                          { label: "Delete", action: () => handleDelete(posting._id) },
+                          { label: "Repost", action: () => handleRepost(posting._id) },
+                        ].map(({ label, action }) => (
+                          <button
+                            key={`${posting._id}-${label}`}
+                            type="button"
+                            onClick={() => {
+                              setOpenMenuId(null);
+                              action();
+                            }}
+                            style={{
+                              width: "100%",
+                              height: "32px",
+                              padding: "0 10px",
+                              borderRadius: "6px",
+                              border: "none",
+                              background: "transparent",
+                              color: "#0f172a",
+                              cursor: "pointer",
+                              fontWeight: 600,
+                              fontSize: "12px",
+                              textAlign: "left",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>

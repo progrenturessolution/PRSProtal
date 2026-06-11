@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { adminAPI, internAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 import "./StudentDetailReport.css";
@@ -7,6 +7,7 @@ import "./StudentDetailReport.css";
 function StudentDetailReport() {
   const { studentId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [student, setStudent] = useState(null);
   const [records, setRecords] = useState({
     interviews: [],
@@ -92,6 +93,23 @@ function StudentDetailReport() {
       default:
         return "-";
     }
+  };
+
+  const getBackPath = () => {
+    if (location.pathname.startsWith("/intern")) {
+      return "/intern-dashboard";
+    }
+
+    if (location.pathname.startsWith("/admin")) {
+      return "/admin-dashboard#reports-assessments";
+    }
+
+    const userRole = localStorage.getItem("userRole");
+    return userRole === "intern" ? "/intern-dashboard" : "/admin-dashboard#reports-assessments";
+  };
+
+  const handleBack = () => {
+    navigate(getBackPath());
   };
 
   useEffect(() => {
@@ -455,7 +473,7 @@ function StudentDetailReport() {
             <p>Complete assessment and training records</p>
           </div>
           <button
-            onClick={() => navigate("/admin-dashboard#reports-assessments")}
+            onClick={handleBack}
             className="btn-back-new"
           >
             ← Back to Activity Records
@@ -465,7 +483,7 @@ function StudentDetailReport() {
           <div className="error-icon">⚠️</div>
           <p className="error-message">{error || "Student not found"}</p>
           <button
-            onClick={() => navigate("/admin-dashboard#reports-assessments")}
+            onClick={handleBack}
             className="btn-retry"
           >
             Go Back
@@ -489,9 +507,9 @@ function StudentDetailReport() {
             disabled={downloading}
             style={{
               padding: "10px 18px",
-              background: "#ef4444",
+              background: "#324158",
               color: "white",
-              border: "none",
+              border: "2px solid #324158",
               borderRadius: "8px",
               cursor: downloading ? "not-allowed" : "pointer",
               fontWeight: 600,
@@ -500,10 +518,16 @@ function StudentDetailReport() {
               opacity: downloading ? 0.7 : 1,
             }}
             onMouseEnter={(e) => {
-              if (!downloading) e.target.style.background = "#dc2626";
+              if (!downloading) {
+                e.target.style.background = "#1e2d3d";
+                e.target.style.borderColor = "#1e2d3d";
+              }
             }}
             onMouseLeave={(e) => {
-              if (!downloading) e.target.style.background = "#ef4444";
+              if (!downloading) {
+                e.target.style.background = "#324158";
+                e.target.style.borderColor = "#324158";
+              }
             }}
           >
             PDF
@@ -513,9 +537,9 @@ function StudentDetailReport() {
             disabled={downloading}
             style={{
               padding: "10px 18px",
-              background: "#10b981",
+              background: "#324158",
               color: "white",
-              border: "none",
+              border: "2px solid #324158",
               borderRadius: "8px",
               cursor: downloading ? "not-allowed" : "pointer",
               fontWeight: 600,
@@ -524,16 +548,22 @@ function StudentDetailReport() {
               opacity: downloading ? 0.7 : 1,
             }}
             onMouseEnter={(e) => {
-              if (!downloading) e.target.style.background = "#059669";
+              if (!downloading) {
+                e.target.style.background = "#1e2d3d";
+                e.target.style.borderColor = "#1e2d3d";
+              }
             }}
             onMouseLeave={(e) => {
-              if (!downloading) e.target.style.background = "#10b981";
+              if (!downloading) {
+                e.target.style.background = "#324158";
+                e.target.style.borderColor = "#324158";
+              }
             }}
           >
             Excel
           </button>
           <button
-            onClick={() => navigate("/admin-dashboard#reports-assessments")}
+            onClick={handleBack}
             className="btn-back-new"
           >
             ← Back

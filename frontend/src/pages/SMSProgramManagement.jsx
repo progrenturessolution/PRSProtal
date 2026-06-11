@@ -589,57 +589,74 @@ function SMSProgramManagement() {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setFilter('all')}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              border: 'none',
-              fontWeight: 700,
-              fontSize: '14px',
-              background: filter === 'all' ? '#324158' : '#f8fafc',
-              color: filter === 'all' ? 'white' : '#0f172a',
-              boxShadow: filter === 'all' ? '0 8px 20px rgba(50,65,88,0.25)' : 'none'
-            }}
-          >
-            All ({students.length})
-          </button>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.5fr) minmax(220px, 280px)',
+            gap: '12px',
+            marginBottom: '20px',
+            alignItems: 'end'
+          }}
+        >
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#0f172a'
+              }}
+            >
+              Search Students
+            </label>
+            <input
+              type="text"
+              placeholder="Search by name, email, ID, designation, payment info..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '10px',
+                fontSize: '14px',
+                background: 'white',
+                outline: 'none'
+              }}
+            />
+          </div>
 
-          <button
-            onClick={() => setFilter('active')}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              border: 'none',
-              fontWeight: 700,
-              fontSize: '14px',
-              background: filter === 'active' ? '#324158' : '#f8fafc',
-              color: filter === 'active' ? 'white' : '#0f172a',
-              boxShadow: filter === 'active' ? '0 8px 20px rgba(50,65,88,0.25)' : 'none'
-            }}
-          >
-            Active ({students.filter(s => s.status?.toLowerCase() === 'active').length})
-          </button>
-
-          <button
-            onClick={() => setFilter('completed')}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              border: 'none',
-              fontWeight: 700,
-              fontSize: '14px',
-              background: filter === 'completed' ? '#324158' : '#f8fafc',
-              color: filter === 'completed' ? 'white' : '#0f172a',
-              boxShadow: filter === 'completed' ? '0 8px 20px rgba(50,65,88,0.25)' : 'none'
-            }}
-          >
-            Completed ({students.filter(s => s.status?.toLowerCase() === 'completed').length})
-          </button>
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#0f172a'
+              }}
+            >
+              Status Filter
+            </label>
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '10px',
+                fontSize: '14px',
+                background: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
         </div>
 
         {/* Students Table */}

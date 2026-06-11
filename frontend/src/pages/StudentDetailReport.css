@@ -30,8 +30,8 @@
 
 .btn-back-new {
   padding: 10px 20px;
-  background: white;
-  color: #324158;
+  background: #324158;
+  color: white;
   border: 2px solid #324158;
   border-radius: 8px;
   cursor: pointer;
@@ -41,10 +41,11 @@
 }
 
 .btn-back-new:hover {
-  background: #324158;
+  background: #1e2d3d;
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(50, 65, 88, 0.2);
+  border-color: #1e2d3d;
 }
 
 /* Error Card */

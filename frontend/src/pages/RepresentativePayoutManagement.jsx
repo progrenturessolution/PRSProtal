@@ -34,6 +34,7 @@ function RepresentativePayoutManagement() {
   const [representatives, setRepresentatives] = useState([]);
   const [payouts, setPayouts] = useState([]);
   const [filters, setFilters] = useState({ month: "", status: "", representativeId: "" });
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -88,12 +89,29 @@ function RepresentativePayoutManagement() {
   const resetFilters = () => {
     const next = { month: "", status: "", representativeId: "" };
     setFilters(next);
+    setSearchQuery("");
     fetchPayouts(next);
   };
 
   const handleInput = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const getFilteredPayouts = () => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) return payouts;
+
+    return payouts.filter((item) => {
+      const representativeName = item.representative?.name || "";
+      const representativeCode = item.representative?.pgirId || "";
+
+      return (
+        representativeName.toLowerCase().includes(query) ||
+        representativeCode.toLowerCase().includes(query)
+      );
+    });
   };
 
   const editEntry = (entry) => {
@@ -245,6 +263,15 @@ function RepresentativePayoutManagement() {
         <>
           <div className="premium-card" style={{ marginBottom: "14px", padding: "14px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "10px" }}>
+              <div className="form-group" style={{ margin: 0, gridColumn: "1 / -1" }}>
+                <label>Search by Name</label>
+                <input
+                  type="text"
+                  placeholder="Search representative name or PGIR ID"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Month</label>
                 <input type="month" name="month" value={filters.month} onChange={handleFilterChange} />
@@ -295,10 +322,10 @@ function RepresentativePayoutManagement() {
                     </tr>
                   </thead>
                   <tbody>
-                    {payouts.length === 0 ? (
+                    {getFilteredPayouts().length === 0 ? (
                       <tr><td colSpan={11} style={{ textAlign: "center" }}>No payout records found</td></tr>
                     ) : (
-                      payouts.map((item) => (
+                      getFilteredPayouts().map((item) => (
                         <tr key={item._id}>
                           <td>{formatMonthLabel(item.monthLabel)}</td>
                           <td>{item.weekLabel}</td>

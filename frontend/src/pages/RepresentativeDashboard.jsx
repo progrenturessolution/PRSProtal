@@ -814,26 +814,22 @@ function RepresentativeDashboard() {
                 </div>
               )}
 
-              <div className="profile-top-card">
-                <div className="profile-top-left">
-                  <div className="profile-top-avatar">{profileInitial}</div>
-                  <div className="profile-top-meta">
-                    <div className="profile-top-name">{profileDisplayName}</div>
-                    <div className="profile-top-sub">
-                      {profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : ''}
-                    </div>
-                    <div className="profile-top-badges">
-                      <span className="profile-top-badge">{profileRole}</span>
-                      <span className="profile-top-badge small">{profileStatus}</span>
+              <div className="profile-summary-card" style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32 }}>
+                    {profileInitial}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 20, fontWeight: 700 }}>{profileDisplayName}</div>
+                      <div style={{ color: "#64748b", marginTop: 4 }}>
+                        {profile?.pgirId || profile?.representativeId || ""} • {profileRole || "Representative"}
+                        <span style={{ marginLeft: 10, fontSize: 12, color: "#475569", fontWeight: 700 }}>
+                          {(profileStatus || "active").toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="profile-top-right">
-                  <label className="switch-label">Inactive</label>
-                  <div className="toggle-wrapper">
-                    <input type="checkbox" checked={String(profileStatus).toLowerCase() !== 'active'} readOnly />
-                  </div>
-                  <button className="btn-edit" onClick={startEdit}>Edit</button>
                 </div>
               </div>
 
@@ -841,56 +837,24 @@ function RepresentativeDashboard() {
                 <div className="section-card">
                   <h3>Personal Details</h3>
                   <div className="section-grid">
-                    <div className="field-col">
-                      <label>Full Name</label>
-                      <div className="field-value">{profile?.name || user?.name || 'Not available'}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>Employee ID</label>
-                      <div className="field-value mono-text">{profile?.pgirId || profile?.representativeId || 'Not available'}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>Role</label>
-                      <div className="field-value">{profileRole}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>Joining Date</label>
-                      <div className="field-value">{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : 'Not available'}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>Account Status</label>
-                      <div className="field-value">{profileStatus}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>Profile Created</label>
-                      <div className="field-value">{profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-IN') : 'Not available'}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>Last Updated</label>
-                      <div className="field-value">{profile?.updatedAt ? new Date(profile.updatedAt).toLocaleDateString('en-IN') : 'Not available'}</div>
-                    </div>
+                    <div className="field-col"><label>Full Name</label><div className="field-value">{profile?.name || user?.name || "-"}</div></div>
+                    <div className="field-col"><label>PGIR ID</label><div className="field-value mono-text">{profile?.pgirId || profile?.representativeId || "-"}</div></div>
+                    <div className="field-col"><label>Designation</label><div className="field-value">{profileRole || "-"}</div></div>
+                    <div className="field-col"><label>Account Status</label><div className="field-value">{profileStatus || "-"}</div></div>
+                    {profile?.joiningDate && <div className="field-col"><label>Joining Date</label><div className="field-value">{new Date(profile.joiningDate).toLocaleDateString()}</div></div>}
+                    {profile?.createdAt && <div className="field-col"><label>Profile Created</label><div className="field-value">{new Date(profile.createdAt).toLocaleDateString()}</div></div>}
+                    {profile?.updatedAt && <div className="field-col"><label>Last Updated</label><div className="field-value">{new Date(profile.updatedAt).toLocaleDateString()}</div></div>}
+                    <div className="field-col"><label>Total Students</label><div className="field-value">{totalStudents}</div></div>
                   </div>
                 </div>
 
                 <div className="section-card">
                   <h3>Contact Details</h3>
                   <div className="section-grid">
-                    <div className="field-col">
-                      <label>Email Address</label>
-                      <div className="field-value mono-text">{profile?.email || user?.email || 'Not available'}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>Mobile Number</label>
-                      <div className="field-value mono-text">{profile?.mobile || user?.mobile || 'Not available'}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>UPI ID</label>
-                      <div className="field-value mono-text">{profile?.upiId || 'Not provided'}</div>
-                    </div>
-                    <div className="field-col">
-                      <label>UPI Mobile Number</label>
-                      <div className="field-value mono-text">{profile?.upiMobileNumber || 'Not provided'}</div>
-                    </div>
+                    <div className="field-col"><label>Email Address</label><div className="field-value mono-text">{profile?.email || user?.email || "-"}</div></div>
+                    <div className="field-col"><label>Mobile Number</label><div className="field-value mono-text">{profile?.mobile || user?.mobile || "-"}</div></div>
+                    <div className="field-col"><label>UPI ID</label><div className="field-value mono-text">{profile?.upiId || "-"}</div></div>
+                    <div className="field-col"><label>UPI Mobile Number</label><div className="field-value mono-text">{profile?.upiMobileNumber || "-"}</div></div>
                   </div>
                 </div>
 
@@ -1705,28 +1669,6 @@ function RepresentativeDashboard() {
                                         onMouseLeave={(e) => (e.target.style.background = 'white')}
                                       >
                                         View Profile
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          handleEditStudent(student);
-                                          setOpenMenuId(null);
-                                        }}
-                                        style={{
-                                          width: '100%',
-                                          padding: '12px 16px',
-                                          background: 'white',
-                                          border: 'none',
-                                          textAlign: 'left',
-                                          cursor: 'pointer',
-                                          fontSize: '14px',
-                                          fontWeight: '500',
-                                          color: '#0f172a',
-                                          borderTop: '1px solid #f3f4f6',
-                                        }}
-                                        onMouseEnter={(e) => (e.target.style.background = '#f9fafb')}
-                                        onMouseLeave={(e) => (e.target.style.background = 'white')}
-                                      >
-                                        Edit Details
                                       </button>
                                       <button
                                         onClick={() => {
