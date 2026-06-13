@@ -11,6 +11,7 @@ function InternshipManagement({ onAddStudentClick }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [filterAddedBy, setFilterAddedBy] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showInactiveModal, setShowInactiveModal] = useState(false);
   const [inactiveModalStudent, setInactiveModalStudent] = useState(null);
@@ -192,6 +193,13 @@ function InternshipManagement({ onAddStudentClick }) {
       );
     }
 
+    // Apply added by filter
+    if (filterAddedBy === "Admin") {
+      filtered = filtered.filter((student) => !student.addedByRepresentative);
+    } else if (filterAddedBy === "Representative") {
+      filtered = filtered.filter((student) => !!student.addedByRepresentative);
+    }
+
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -204,7 +212,9 @@ function InternshipManagement({ onAddStudentClick }) {
           student.domain?.toLowerCase().includes(query) ||
           student.collegeName?.toLowerCase().includes(query) ||
           student.branch?.toLowerCase().includes(query) ||
-          student.yearOfStudy?.toLowerCase().includes(query),
+          student.yearOfStudy?.toLowerCase().includes(query) ||
+          (student.addedByRepresentative?.name && student.addedByRepresentative.name.toLowerCase().includes(query)) ||
+          (!student.addedByRepresentative && "admin".includes(query)),
       );
     }
 
@@ -525,38 +535,12 @@ function InternshipManagement({ onAddStudentClick }) {
           </div>
         )}
 
-        {/* Search Bar */}
-        <div style={{ marginBottom: "20px" }}>
-          <input
-            type="text"
-            placeholder="Search by name, email, ID, mobile, or domain..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "12px 16px",
-              fontSize: "14px",
-              border: "2px solid #e2e8f0",
-              borderRadius: "10px",
-              outline: "none",
-              transition: "all 0.3s ease",
-              background: "#f8fafc",
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "#3b82f6";
-              e.target.style.background = "white";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#e2e8f0";
-              e.target.style.background = "#f8fafc";
-            }}
-          />
-        </div>
+
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(0, 1.5fr) minmax(220px, 280px)",
+            gridTemplateColumns: "minmax(0, 1.5fr) minmax(180px, 1fr) minmax(180px, 1fr)",
             gap: "12px",
             marginBottom: "20px",
             alignItems: "end",
@@ -621,6 +605,37 @@ function InternshipManagement({ onAddStudentClick }) {
               <option value="completed">Completed</option>
             </select>
           </div>
+
+          <div>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "6px",
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#0f172a",
+              }}
+            >
+              Added By
+            </label>
+            <select
+              value={filterAddedBy}
+              onChange={(e) => setFilterAddedBy(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px 14px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "10px",
+                fontSize: "14px",
+                background: "white",
+                cursor: "pointer",
+              }}
+            >
+              <option value="All">All</option>
+              <option value="Admin">Admin</option>
+              <option value="Representative">Representative</option>
+            </select>
+          </div>
         </div>
 
         {/* Students Table */}
@@ -638,6 +653,7 @@ function InternshipManagement({ onAddStudentClick }) {
                   <th>Domain</th>
                   <th>Joining Date</th>
                   <th>Duration</th>
+                  <th>Added By</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -654,6 +670,11 @@ function InternshipManagement({ onAddStudentClick }) {
                         : "N/A"}
                     </td>
                     <td>{student.duration || "N/A"}</td>
+                    <td>
+                      {student.addedByRepresentative
+                        ? `Representative: ${student.addedByRepresentative.name}`
+                        : "Admin"}
+                    </td>
                     <td>
                       <span
                         className={`status-badge ${

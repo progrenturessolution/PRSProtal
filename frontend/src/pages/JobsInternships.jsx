@@ -91,9 +91,9 @@ function JobsInternships({ onPostingCreated }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          (editingPosting
-            ? "Failed to update posting. Please try again."
-            : "Failed to create posting. Please try again."),
+        (editingPosting
+          ? "Failed to update posting. Please try again."
+          : "Failed to create posting. Please try again."),
       );
     } finally {
       setLoading(false);
@@ -159,7 +159,7 @@ function JobsInternships({ onPostingCreated }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Failed to delete posting. Please try again.",
+        "Failed to delete posting. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -180,7 +180,7 @@ function JobsInternships({ onPostingCreated }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Failed to repost posting. Please try again.",
+        "Failed to repost posting. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -210,7 +210,7 @@ function JobsInternships({ onPostingCreated }) {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          "Failed to close application. Please try again.",
+        "Failed to close application. Please try again.",
       );
     } finally {
       setLoading(false);

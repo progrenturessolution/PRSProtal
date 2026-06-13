@@ -235,6 +235,7 @@ function SMSProgramManagement() {
   };
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, active, completed
+  const [filterAddedBy, setFilterAddedBy] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -270,13 +271,20 @@ function SMSProgramManagement() {
       filtered = filtered.filter(student => student.status?.toLowerCase() === 'completed');
     }
 
+    // Apply added by filter
+    if (filterAddedBy === 'Admin') {
+      filtered = filtered.filter(student => !student.addedByRepresentative);
+    } else if (filterAddedBy === 'Representative') {
+      filtered = filtered.filter(student => !!student.addedByRepresentative);
+    }
+
     // Apply search filter
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(student => 
-        student.name.toLowerCase().includes(query) ||
-        student.email.toLowerCase().includes(query) ||
-        student.internId.toLowerCase().includes(query) ||
+        (student.name && student.name.toLowerCase().includes(query)) ||
+        (student.email && student.email.toLowerCase().includes(query)) ||
+        (student.internId && student.internId.toLowerCase().includes(query)) ||
         (student.addedByRepresentative?.name && student.addedByRepresentative.name.toLowerCase().includes(query)) ||
         (!student.addedByRepresentative && 'admin'.includes(query)) ||
         (student.currentDesignation && student.currentDesignation.toLowerCase().includes(query)) ||
@@ -560,39 +568,12 @@ function SMSProgramManagement() {
 
       {/* Filters */}
       <div className="card">
-        {/* Search Bar */}
-        <div style={{ marginBottom: '20px' }}>
-          <input
-            type="text"
-            placeholder="Search by name, email, ID, designation, payment info..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              border: '2px solid #e5e7eb',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: '#1f2937',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#3b82f6';
-              e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#e5e7eb';
-              e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
-            }}
-          />
-        </div>
+
 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.5fr) minmax(220px, 280px)',
+            gridTemplateColumns: 'minmax(0, 1.5fr) minmax(180px, 1fr) minmax(180px, 1fr)',
             gap: '12px',
             marginBottom: '20px',
             alignItems: 'end'
@@ -657,6 +638,37 @@ function SMSProgramManagement() {
               <option value="completed">Completed</option>
             </select>
           </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#0f172a'
+              }}
+            >
+              Added By
+            </label>
+            <select
+              value={filterAddedBy}
+              onChange={(e) => setFilterAddedBy(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '10px',
+                fontSize: '14px',
+                background: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="All">All</option>
+              <option value="Admin">Admin</option>
+              <option value="Representative">Representative</option>
+            </select>
+          </div>
         </div>
 
         {/* Students Table */}
@@ -674,6 +686,7 @@ function SMSProgramManagement() {
                   <th>Domain</th>
                   <th>Duration</th>
                   <th>Batch Start Month and Year</th>
+                  <th>Added By</th>
                   <th>Total Fees</th>
                   <th>Pending Fees</th>
                   <th>Actions</th>
@@ -688,6 +701,11 @@ function SMSProgramManagement() {
                       <td>{student.suggestedDomain || student.domain || student.currentDesignation || 'N/A'}</td>
                       <td>{student.duration || 'N/A'}</td>
                       <td>{getBatchStartMonthYear(student)}</td>
+                      <td>
+                        {student.addedByRepresentative
+                          ? `Representative: ${student.addedByRepresentative.name}`
+                          : 'Admin'}
+                      </td>
                       <td>{getTotalFeesDisplay(student)}</td>
                       <td>{getPendingFeesDisplay(student)}</td>
                       <td style={{ position: 'relative' }}>
