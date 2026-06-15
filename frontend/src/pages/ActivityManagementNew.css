@@ -287,3 +287,13 @@
 	.am-span-2 { grid-column:span 1 }
 	.am-recent-header { align-items:flex-start }
 }
+
+.am-card.active {
+  background: linear-gradient(135deg, #141D30, #202d45) !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 18px rgba(20, 29, 48, 0.15) !important;
+}
+.am-card.active .am-card-title {
+  color: #ffffff !important;
+}
+

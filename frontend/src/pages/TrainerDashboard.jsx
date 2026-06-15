@@ -116,6 +116,10 @@ function TrainerDashboard() {
   const [globalError, setGlobalError] = useState(null);
   const [interviewOnlyMode, setInterviewOnlyMode] = useState(false);
   const [lockedRecordTab, setLockedRecordTab] = useState(null); // when set, only this tab is available in student records
+  const [hasUnreadTrainerIndividuals, setHasUnreadTrainerIndividuals] = useState(false);
+  const [hasUnreadTrainerGroups, setHasUnreadTrainerGroups] = useState(false);
+  const [hasUnreadTrainerGds, setHasUnreadTrainerGds] = useState(false);
+  const [hasUnreadTrainerAssignments, setHasUnreadTrainerAssignments] = useState(false);
 
   const getLatestNotificationTimestamp = (items = []) => {
     return items.reduce((latest, item) => {
@@ -123,6 +127,68 @@ function TrainerDashboard() {
       return value > latest ? value : latest;
     }, 0);
   };
+
+  const getLatestActivityTimestamp = (items = []) => {
+    return items.reduce((latest, item) => {
+      const createdTime = item?.createdAt ? new Date(item.createdAt).getTime() : 0;
+      const updatedTime = item?.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+      const dateTimeVal = item?.dateTime ? new Date(item.dateTime).getTime() : 0;
+      const dateVal = item?.date ? new Date(item.date).getTime() : 0;
+      const maxTime = Math.max(createdTime, updatedTime, dateTimeVal, dateVal);
+      return maxTime > latest ? maxTime : latest;
+    }, 0);
+  };
+
+  useEffect(() => {
+    const individuals = (scheduledInterviews || []).filter((s) => getScheduledInterviewMode(s) === 'Individual');
+    const latestIndiv = getLatestActivityTimestamp(individuals);
+    const lastSeenIndiv = Number(localStorage.getItem("trainer-scheduled-individuals-last-seen") || 0);
+    setHasUnreadTrainerIndividuals(latestIndiv > lastSeenIndiv);
+  }, [scheduledInterviews]);
+
+  useEffect(() => {
+    const groups = (scheduledInterviews || []).filter((s) => getScheduledInterviewMode(s) === 'Group');
+    const latestGroup = getLatestActivityTimestamp(groups);
+    const lastSeenGroup = Number(localStorage.getItem("trainer-scheduled-groups-last-seen") || 0);
+    setHasUnreadTrainerGroups(latestGroup > lastSeenGroup);
+  }, [scheduledInterviews]);
+
+  useEffect(() => {
+    const latestGd = getLatestActivityTimestamp(scheduledGds || []);
+    const lastSeenGd = Number(localStorage.getItem("trainer-scheduled-gds-last-seen") || 0);
+    setHasUnreadTrainerGds(latestGd > lastSeenGd);
+  }, [scheduledGds]);
+
+  useEffect(() => {
+    const latestAssess = getLatestActivityTimestamp(scheduledAssignments || []);
+    const lastSeenAssess = Number(localStorage.getItem("trainer-scheduled-assignments-last-seen") || 0);
+    setHasUnreadTrainerAssignments(latestAssess > lastSeenAssess);
+  }, [scheduledAssignments]);
+
+  useEffect(() => {
+    if (activeTab === "scheduled-individuals") {
+      const individuals = (scheduledInterviews || []).filter((s) => getScheduledInterviewMode(s) === 'Individual');
+      const latestIndiv = getLatestActivityTimestamp(individuals);
+      localStorage.setItem("trainer-scheduled-individuals-last-seen", String(latestIndiv || Date.now()));
+      setHasUnreadTrainerIndividuals(false);
+    }
+    if (activeTab === "scheduled-groups") {
+      const groups = (scheduledInterviews || []).filter((s) => getScheduledInterviewMode(s) === 'Group');
+      const latestGroup = getLatestActivityTimestamp(groups);
+      localStorage.setItem("trainer-scheduled-groups-last-seen", String(latestGroup || Date.now()));
+      setHasUnreadTrainerGroups(false);
+    }
+    if (activeTab === "scheduled-gds") {
+      const latestGd = getLatestActivityTimestamp(scheduledGds || []);
+      localStorage.setItem("trainer-scheduled-gds-last-seen", String(latestGd || Date.now()));
+      setHasUnreadTrainerGds(false);
+    }
+    if (activeTab === "scheduled-assignments") {
+      const latestAssess = getLatestActivityTimestamp(scheduledAssignments || []);
+      localStorage.setItem("trainer-scheduled-assignments-last-seen", String(latestAssess || Date.now()));
+      setHasUnreadTrainerAssignments(false);
+    }
+  }, [activeTab, scheduledInterviews, scheduledGds, scheduledAssignments]);
   
 
 
@@ -391,7 +457,7 @@ function TrainerDashboard() {
   };
 
   useEffect(() => {
-    if ((activeTab === 'scheduled-assignments' || activeTab === 'scheduled-gds' || activeTab === 'notifications') && user) {
+    if ((['scheduled-assignments', 'scheduled-gds', 'notifications', 'scheduled-individuals', 'scheduled-groups'].includes(activeTab)) && user) {
       fetchDashboardData();
     }
   }, [activeTab, user]);
@@ -1033,6 +1099,10 @@ function TrainerDashboard() {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         showNotificationDot={hasUnreadNotifications}
+        hasUnreadTrainerIndividuals={hasUnreadTrainerIndividuals}
+        hasUnreadTrainerGroups={hasUnreadTrainerGroups}
+        hasUnreadTrainerGds={hasUnreadTrainerGds}
+        hasUnreadTrainerAssignments={hasUnreadTrainerAssignments}
         openConductGd={() => {
           const gd = {
             _id: `live-gd-${Date.now()}`,

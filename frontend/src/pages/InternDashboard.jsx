@@ -3,11 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { taskAPI, internAPI, UPLOADS_BASE } from "../services/api";
 import TeamTasks from "./TeamTasks";
 import logo from "../assets/logo.png";
+import "./ActivityManagementNew.css";
 
 function InternDashboard() {
   const navigate = useNavigate();
   const notificationStorageKey = "intern-notifications-last-seen";
   const jobPostingsStorageKey = "intern-job-postings-last-seen";
+  const scheduledInterviewsStorageKey = "intern-scheduled-interviews-last-seen";
+  const scheduledGdsStorageKey = "intern-scheduled-gds-last-seen";
+  const scheduledAssignmentsStorageKey = "intern-scheduled-assignments-last-seen";
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +39,539 @@ function InternDashboard() {
   const [activityMenuOpen, setActivityMenuOpen] = useState(true);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
   const [hasUnreadJobPostings, setHasUnreadJobPostings] = useState(false);
+  const [hasUnreadScheduledInterviews, setHasUnreadScheduledInterviews] = useState(false);
+  const [hasUnreadScheduledGds, setHasUnreadScheduledGds] = useState(false);
+  const [hasUnreadScheduledAssignments, setHasUnreadScheduledAssignments] = useState(false);
   const [error, setError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
+  const [progressFilter, setProgressFilter] = useState("interviews");
+
+  const renderInterviews = () => {
+    return (
+      <>
+        <div className="content-header">
+          <h1>Interviews</h1>
+          <p>Your interview attempt history and HR remarks</p>
+        </div>
+
+        <div className="card student-history-card">
+          <h2>Interview History</h2>
+          {interviews.length === 0 ? (
+            <p className="record-history-empty">No interview records yet</p>
+          ) : (
+            <>
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Interviews</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={interviewSearch}
+                    onChange={(e) => setInterviewSearch(e.target.value)}
+                    placeholder="Search by date, type, attempt, score, remarks..."
+                    aria-label="Search interview history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredInterviews.length} records</span>
+                  {interviewSearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setInterviewSearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="table-container">
+                <table className="data-table view-students-table interview-history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Attendance</th>
+                      <th>Attempt</th>
+                      <th>Score</th>
+                      <th>Communication</th>
+                      <th>Confidence</th>
+                      <th>Clarity</th>
+                      <th>Overall</th>
+                      <th>Level Crossed</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredInterviews.length === 0 ? (
+                      <tr>
+                        <td colSpan="11">No interview records match your search</td>
+                      </tr>
+                    ) : (
+                      filteredInterviews.map((interview) => (
+                        <tr key={interview._id}>
+                          <td>{interview.date ? new Date(interview.date).toLocaleDateString() : "-"}</td>
+                          <td>{interview.interviewType || "-"}</td>
+                          <td>{interview.attendanceStatus || "-"}</td>
+                          <td>{interview.attemptNumber || "-"}</td>
+                          <td>{getInterviewScore(interview)}</td>
+                          <td>{interviewLevelTextMap[interview.communicationLevel] || interview.communicationLevel || "-"}</td>
+                          <td>{interviewLevelTextMap[interview.confidenceLevel] || interview.confidenceLevel || "-"}</td>
+                          <td>{interviewLevelTextMap[interview.clarityLevel] || interview.clarityLevel || "-"}</td>
+                          <td>{interviewLevelTextMap[interview.overallLevel] || interview.overallLevel || "-"}</td>
+                          <td>
+                            <span className={`status-badge ${interview.levelCrossed ? "status-completed" : "status-rejected"}`}>
+                              {interview.levelCrossed ? "Crossed" : "Not Crossed"}
+                            </span>
+                          </td>
+                          <td>{interview.remarks || "-"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderScheduledInterviews = () => {
+    return (
+      <>
+        <div className="content-header">
+          <h1>Scheduled Interviews</h1>
+          <p>Your upcoming interview schedules</p>
+        </div>
+
+        <div className="card student-history-card">
+          <h2>Upcoming Interviews</h2>
+          {scheduledInterviews.length === 0 ? (
+            <p className="record-history-empty">No scheduled interviews yet</p>
+          ) : (
+            <div className="table-container">
+              <table className="data-table view-students-table interview-schedule-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Interview Type</th>
+                    <th>Mode</th>
+                    <th>Interviewer</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduledInterviews.map((interview, idx) => (
+                    <tr key={interview._id || interview.title || idx}>
+                      <td>{(interview.date || interview.dateTime || interview.details?.form?.date) ? new Date(interview.date || interview.dateTime || interview.details?.form?.date).toLocaleDateString() : "-"}</td>
+                      <td>{interview.startTime || interview.details?.form?.startTime || interview.dateTime?.split(' ')[1] || "-"}</td>
+                      <td>{interview.interviewType || interview.type || "-"}</td>
+                      <td>{getScheduledInterviewMode(interview)}</td>
+                      <td>{interview.trainerId?.name || interview.details?.form?.interviewerName || interview.details?.form?.trainerId || "-"}</td>
+                      <td>
+                        <span className="status-badge status-pending">
+                          {interview.status || "Scheduled"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderScheduledGds = () => {
+    return (
+      <>
+        <div className="content-header">
+          <h1>Scheduled GDs</h1>
+          <p>Group Discussions you are assigned to</p>
+        </div>
+
+        <div className="card student-history-card">
+          <h2>Upcoming GDs</h2>
+          {scheduledGds.length === 0 ? (
+            <p className="record-history-empty">No scheduled GDs yet</p>
+          ) : (
+            <div className="table-container">
+              <table className="data-table view-students-table interview-schedule-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Groups</th>
+                    <th>Interviewer</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduledGds.map((gd, idx) => (
+                    <tr key={gd._id || gd.title || idx}>
+                      <td>{gd.title || gd.details?.form?.title || 'Group Discussion'}</td>
+                      <td>{(gd.date || gd.dateTime || gd.details?.form?.date) ? new Date(gd.date || gd.dateTime || gd.details?.form?.date).toLocaleDateString() : '-'}</td>
+                      <td>{gd.startTime || gd.details?.form?.startTime || '-'}</td>
+                      <td>{getGdGroupLabelForUser(gd)}</td>
+                      <td>{getGdInterviewer(gd)}</td>
+                      <td><span className="status-badge status-pending">{gd.status || 'Scheduled'}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderScheduledAssessments = () => {
+    return (
+      <>
+        <div className="content-header">
+          <h1>Schedule Assessment</h1>
+          <p>Assignments assigned to you</p>
+        </div>
+
+        <div className="card student-history-card" style={{ marginBottom: "16px" }}>
+          <h2>Upcoming Assignments — Individual</h2>
+          {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").length === 0 ? (
+            <p className="record-history-empty">No individual scheduled assessments yet</p>
+          ) : (
+            <div className="table-container">
+              <table className="data-table view-students-table interview-schedule-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Assigned On</th>
+                    <th>Due</th>
+                    <th>Assigned By</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => (
+                    <tr key={a._id || a.title || idx}>
+                      <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                      <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
+                      <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                      <td>{a.createdBy || '-'}</td>
+                      <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <div className="card student-history-card">
+          <h2>Upcoming Assignments — Group</h2>
+          {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").length === 0 ? (
+            <p className="record-history-empty">No group scheduled assessments yet</p>
+          ) : (
+            <div className="table-container">
+              <table className="data-table view-students-table interview-schedule-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Assigned On</th>
+                    <th>Due</th>
+                    <th>Assigned By</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => (
+                    <tr key={a._id || a.title || idx}>
+                      <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                      <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
+                      <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                      <td>{a.createdBy || '-'}</td>
+                      <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderAptitude = () => {
+    return (
+      <>
+        <div className="content-header">
+          <h1>Aptitude</h1>
+          <p>Your aptitude scores and remarks</p>
+        </div>
+
+        <div className="card student-history-card">
+          <h2>Aptitude Test History</h2>
+          {aptitude.length === 0 ? (
+            <p className="record-history-empty">No aptitude records yet</p>
+          ) : (
+            <>
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Aptitude</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={aptitudeSearch}
+                    onChange={(e) => setAptitudeSearch(e.target.value)}
+                    placeholder="Search by attendance, round, score, result, remarks, date..."
+                    aria-label="Search aptitude history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredAptitudes.length} records</span>
+                  {aptitudeSearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setAptitudeSearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="table-container">
+                <table className="data-table view-students-table aptitude-history-table">
+                  <thead>
+                    <tr>
+                      <th>Attendance</th>
+                      <th>Round Number</th>
+                      <th>Score</th>
+                      <th>Result</th>
+                      <th>Remarks</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAptitudes.length === 0 ? (
+                      <tr>
+                        <td colSpan="6">No aptitude records match your search</td>
+                      </tr>
+                    ) : (
+                      filteredAptitudes.map((apt) => (
+                        <tr key={apt._id}>
+                          <td>{apt.attendanceStatus || "-"}</td>
+                          <td>{apt.roundNumber}</td>
+                          <td>{apt.score}</td>
+                          <td>
+                            <span className={`status-badge ${apt.result === "Pass" ? "status-completed" : "status-pending"}`}>
+                              {apt.result}
+                            </span>
+                          </td>
+                          <td>{apt.remarks || "-"}</td>
+                          <td>{apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "-"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderAssessments = () => {
+    return (
+      <>
+        <div className="content-header">
+          <h1>Assessments</h1>
+          <p>Your assessment scores and feedback</p>
+        </div>
+
+        <div className="card student-history-card">
+          <h2>Assessment History</h2>
+          {assessments.length === 0 ? (
+            <p className="record-history-empty">No assessment records yet</p>
+          ) : (
+            <>
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Assessments</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={assessmentSearch}
+                    onChange={(e) => setAssessmentSearch(e.target.value)}
+                    placeholder="Search by attendance, type, score, status, feedback, date..."
+                    aria-label="Search assessment history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredAssessments.length} records</span>
+                  {assessmentSearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setAssessmentSearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="table-container">
+                <table className="data-table view-students-table assessment-history-table">
+                  <thead>
+                    <tr>
+                      <th>Attendance</th>
+                      <th>Type</th>
+                      <th>Score</th>
+                      <th>Status</th>
+                      <th>Feedback</th>
+                      <th>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredAssessments.length === 0 ? (
+                      <tr>
+                        <td colSpan="6">No assessment records match your search</td>
+                      </tr>
+                    ) : (
+                      filteredAssessments.map((assessment) => (
+                        <tr key={assessment._id}>
+                          <td>{assessment.attendanceStatus || "-"}</td>
+                          <td>{assessment.assessmentType || "-"}</td>
+                          <td>{assessment.score || "-"}</td>
+                          <td>
+                            <span
+                              className={`status-badge ${
+                                assessment.status === "Pass"
+                                  ? "status-completed"
+                                  : assessment.status === "Fail"
+                                    ? "status-rejected"
+                                    : "status-pending"
+                              }`}
+                            >
+                              {assessment.status || "-"}
+                            </span>
+                          </td>
+                          <td>{assessment.feedback || "-"}</td>
+                          <td>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "-"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderTraining = () => {
+    return (
+      <>
+        <div className="content-header">
+          <h1>Training</h1>
+          <p>Your training attendance and engagement scores</p>
+        </div>
+
+        <div className="card student-history-card">
+          <h2>Training History</h2>
+          {trainings.length === 0 ? (
+            <p className="record-history-empty">No training records yet</p>
+          ) : (
+            <>
+              <div className="student-history-toolbar interview-history-toolbar">
+                <div className="interview-history-search-wrap">
+                  <label className="interview-history-search-label">Search Training</label>
+                  <input
+                    type="text"
+                    className="student-history-search interview-history-search"
+                    value={trainingSearch}
+                    onChange={(e) => setTrainingSearch(e.target.value)}
+                    placeholder="Search by date, attendance, score, engagement, remarks..."
+                    aria-label="Search training history"
+                  />
+                </div>
+                <div className="interview-history-toolbar-meta">
+                  <span>{filteredTrainings.length} records</span>
+                  {trainingSearch.trim() && (
+                    <button
+                      type="button"
+                      className="interview-history-clear-btn"
+                      onClick={() => setTrainingSearch("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="table-container">
+                <table className="data-table view-students-table training-history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Score</th>
+                      <th>Attendance</th>
+                      <th>Engagement Level</th>
+                      <th>Skill Improvement</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredTrainings.length === 0 ? (
+                      <tr>
+                        <td colSpan="6">No training records match your search</td>
+                      </tr>
+                    ) : (
+                      filteredTrainings.map((training) => (
+                        <tr key={training._id}>
+                          <td>{training.date ? new Date(training.date).toLocaleDateString() : "-"}</td>
+                          <td>{getTrainingScore(training)}</td>
+                          <td>
+                            <span
+                              className={`status-badge ${
+                                training.attendance === "Present"
+                                  ? "status-completed"
+                                  : training.attendance === "Late"
+                                    ? "status-pending"
+                                    : "status-rejected"
+                              }`}
+                            >
+                              {training.attendance || "-"}
+                            </span>
+                          </td>
+                          <td>{training.engagementLevel || "-"}</td>
+                          <td>{training.skillImprovementNote || "-"}</td>
+                          <td>{training.trainerRemarks || "-"}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </>
+    );
+  };
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFormData, setEditFormData] = useState({
     studentType: "Internship",
@@ -108,13 +643,19 @@ function InternDashboard() {
     
     // Refresh job postings badge in background
     refreshJobPostingsBadge();
+
+    // Refresh activity badges in background
+    refreshActivityBadges(parsedUser);
   }, [navigate]);
 
-  // Periodic refresh for job postings badge
+  // Periodic refresh for job postings and activity badges
   useEffect(() => {
-    const interval = setInterval(refreshJobPostingsBadge, 30000); // Refresh every 30 seconds
+    const interval = setInterval(() => {
+      refreshJobPostingsBadge();
+      refreshActivityBadges();
+    }, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [activeSection, user]);
 
   const getLatestNotificationTimestamp = (items = []) => {
     return items.reduce((latest, item) => {
@@ -173,6 +714,102 @@ function InternDashboard() {
       localStorage.setItem(jobPostingsStorageKey, String(Date.now()));
     }
     setHasUnreadJobPostings(false);
+  };
+
+  const getLatestActivityTimestamp = (items = []) => {
+    return items.reduce((latest, item) => {
+      const createdTime = item?.createdAt ? new Date(item.createdAt).getTime() : 0;
+      const updatedTime = item?.updatedAt ? new Date(item.updatedAt).getTime() : 0;
+      const dateTimeVal = item?.dateTime ? new Date(item.dateTime).getTime() : 0;
+      const dateVal = item?.date ? new Date(item.date).getTime() : 0;
+      const maxTime = Math.max(createdTime, updatedTime, dateTimeVal, dateVal);
+      return maxTime > latest ? maxTime : latest;
+    }, 0);
+  };
+
+  const refreshActivityBadges = async (currentUser = user) => {
+    if (!currentUser) return;
+    try {
+      // 1. Scheduled Interviews
+      const intResp = await internAPI.getMyScheduledInterviews();
+      if (intResp.data && intResp.data.success) {
+        const interviewsList = intResp.data.interviews || [];
+        const latestTimestamp = getLatestActivityTimestamp(interviewsList);
+        const lastSeenTimestamp = Number(localStorage.getItem(scheduledInterviewsStorageKey) || 0);
+        setHasUnreadScheduledInterviews(latestTimestamp > lastSeenTimestamp);
+        if (activeSection === "scheduled-interviews") {
+          localStorage.setItem(scheduledInterviewsStorageKey, String(latestTimestamp || Date.now()));
+          setHasUnreadScheduledInterviews(false);
+        }
+      }
+
+      // 2. Scheduled GDs
+      const gdResp = await internAPI.getMyScheduledGDs();
+      if (gdResp.data && gdResp.data.success) {
+        const gdList = gdResp.data.activities || [];
+        const latestTimestamp = getLatestActivityTimestamp(gdList);
+        const lastSeenTimestamp = Number(localStorage.getItem(scheduledGdsStorageKey) || 0);
+        setHasUnreadScheduledGds(latestTimestamp > lastSeenTimestamp);
+        if (activeSection === "scheduled-gds") {
+          localStorage.setItem(scheduledGdsStorageKey, String(latestTimestamp || Date.now()));
+          setHasUnreadScheduledGds(false);
+        }
+      }
+
+      // 3. Scheduled Assessments
+      try {
+        const [notifResp] = await Promise.allSettled([internAPI.getMyNotifications()]);
+        const notificationItems = [];
+        if (notifResp.status === 'fulfilled' && notifResp.value?.data?.success) {
+          const notes = notifResp.value.data.notifications || [];
+          notes
+            .filter((note) => note.notificationType === 'Test/Assessment')
+            .forEach((note) => {
+              notificationItems.push({
+                _id: note._id,
+                type: 'Assessment',
+                title: note.title,
+                dateTime: note.createdAt,
+                createdAt: note.createdAt,
+                createdBy: note.createdBy?.email || note.createdBy?.name || 'Admin',
+                status: 'Scheduled',
+                details: { notification: note },
+              });
+            });
+        }
+        let localItems = [];
+        try {
+          const rawActs = JSON.parse(localStorage.getItem('recentActivities') || '[]');
+          const myIdCandidates = [currentUser?._id, currentUser?.id, currentUser?.internId, currentUser?.psmsId].map(String).filter(Boolean);
+          localItems = (rawActs || []).filter((act) =>
+            act.type === 'Assignment' &&
+            Array.isArray(act.details?.assigned) &&
+            act.details.assigned.some((a) => myIdCandidates.includes(String(a)))
+          );
+        } catch (e) {
+          localItems = [];
+        }
+        const seen = new Set();
+        const merged = [...notificationItems, ...localItems].filter((item) => {
+          const key = item._id ? `n:${item._id}` : `${item.title || ''}_${item.dateTime || ''}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        const latestTimestamp = getLatestActivityTimestamp(merged);
+        const lastSeenTimestamp = Number(localStorage.getItem(scheduledAssignmentsStorageKey) || 0);
+        setHasUnreadScheduledAssignments(latestTimestamp > lastSeenTimestamp);
+        if (activeSection === "scheduled-assignments") {
+          localStorage.setItem(scheduledAssignmentsStorageKey, String(latestTimestamp || Date.now()));
+          setHasUnreadScheduledAssignments(false);
+        }
+      } catch (err) {
+        console.error("Failed to check assessment badge:", err);
+      }
+    } catch (err) {
+      console.error("Failed to refresh activity badges:", err);
+    }
   };
 
   const fetchProfileDetails = async () => {
@@ -350,20 +987,15 @@ function InternDashboard() {
       });
 
       setScheduledAssignments(merged);
+      return merged;
     } catch (error) {
       console.error('Failed to load scheduled assessments:', error);
       setScheduledAssignments([]);
+      return [];
     }
   };
 
-  const handleSectionClick = async (section) => {
-    if (["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(section)) {
-      setActivityMenuOpen(true);
-    }
-    setActiveSection(section);
-    setSidebarOpen(false);
-
-    // Fetch data when clicking on sections
+  const fetchSectionData = async (section) => {
     try {
       switch (section) {
         case "documents":
@@ -389,7 +1021,11 @@ function InternDashboard() {
         case "scheduled-interviews":
           const schedResp = await internAPI.getMyScheduledInterviews();
           if (schedResp.data && schedResp.data.success) {
-            setScheduledInterviews(schedResp.data.interviews || []);
+            const list = schedResp.data.interviews || [];
+            setScheduledInterviews(list);
+            const latestTimestamp = getLatestActivityTimestamp(list);
+            localStorage.setItem(scheduledInterviewsStorageKey, String(latestTimestamp || Date.now()));
+            setHasUnreadScheduledInterviews(false);
           }
           await loadScheduledAssessments();
           // Merge any locally-persisted scheduled GDs that include this intern
@@ -413,15 +1049,17 @@ function InternDashboard() {
           } catch (e) { setScheduledGds([]); }
           break;
         case "scheduled-gds":
+          let finalGds = [];
           try {
             const resp = await internAPI.getMyScheduledGDs();
             if (resp.data && resp.data.success) {
-              setScheduledGds(resp.data.activities || []);
+              finalGds = resp.data.activities || [];
+              setScheduledGds(finalGds);
             } else {
               // fallback to localStorage for older entries
               const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
               const myIdCandidates = [user?._id, user?.id, user?.internId, user?.psmsId].map(String).filter(Boolean);
-              const myGds = (raw || []).filter(act => {
+              finalGds = (raw || []).filter(act => {
                 try {
                   const groups = act.details?.groups || [];
                   for (const g of groups) {
@@ -434,14 +1072,14 @@ function InternDashboard() {
                 } catch (e) {}
                 return false;
               });
-              setScheduledGds(myGds || []);
+              setScheduledGds(finalGds || []);
             }
           } catch (e) {
             // fallback to localStorage for older entries
             try {
               const raw = JSON.parse(localStorage.getItem('scheduledGDs') || '[]');
               const myIdCandidates = [user?._id, user?.id, user?.internId, user?.psmsId].map(String).filter(Boolean);
-              const myGds = (raw || []).filter(act => {
+              finalGds = (raw || []).filter(act => {
                 try {
                   const groups = act.details?.groups || [];
                   for (const g of groups) {
@@ -454,18 +1092,24 @@ function InternDashboard() {
                 } catch (e) {}
                 return false;
               });
-              setScheduledGds(myGds || []);
+              setScheduledGds(finalGds || []);
             } catch (e2) { setScheduledGds([]); }
           }
+          const latestGdTimestamp = getLatestActivityTimestamp(finalGds);
+          localStorage.setItem(scheduledGdsStorageKey, String(latestGdTimestamp || Date.now()));
+          setHasUnreadScheduledGds(false);
           await loadScheduledAssessments();
           break;
         case "scheduled-assignments":
-          await loadScheduledAssessments();
+          const assessList = await loadScheduledAssessments();
+          const latestAssessTimestamp = getLatestActivityTimestamp(assessList);
+          localStorage.setItem(scheduledAssignmentsStorageKey, String(latestAssessTimestamp || Date.now()));
+          setHasUnreadScheduledAssignments(false);
           break;
         case "aptitude":
           const aptResp = await internAPI.getMyAptitude();
           if (aptResp.data && aptResp.data.success) {
-            setAptitude(aptResp.data.aptitude || []);
+            setAptitude(aptResp.data.aptitude || aptResp.data.aptitudeRecords || []);
           }
           break;
         case "assessments":
@@ -477,7 +1121,7 @@ function InternDashboard() {
         case "training":
           const trResp = await internAPI.getMyTraining();
           if (trResp.data && trResp.data.success) {
-            setTrainings(trResp.data.training || []);
+            setTrainings(trResp.data.training || trResp.data.trainings || []);
           }
           break;
         case "notifications":
@@ -516,9 +1160,29 @@ function InternDashboard() {
           break;
       }
     } catch (err) {
-      console.error(`Failed to load ${section}:`, err);
+      console.error(`Failed to load data for ${section}:`, err);
     }
   };
+
+  const handleSectionClick = async (section) => {
+    if (["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(section)) {
+      setActivityMenuOpen(true);
+    }
+    setActiveSection(section);
+    setSidebarOpen(false);
+
+    if (section === "progress-report") {
+      await fetchSectionData(progressFilter);
+    } else {
+      await fetchSectionData(section);
+    }
+  };
+
+  const handleProgressCardClick = async (filter) => {
+    setProgressFilter(filter);
+    await fetchSectionData(filter);
+  };
+
 
   const levelScoreMap = {
     B: 25,
@@ -896,9 +1560,14 @@ function InternDashboard() {
           <li
             className={`sidebar-activity-parent ${["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(activeSection) ? "active" : ""}`}
             onClick={() => setActivityMenuOpen((prev) => !prev)}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
           >
-            <span>Activity Management</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>Activity Management</span>
+              {(hasUnreadScheduledInterviews || hasUnreadScheduledGds || hasUnreadScheduledAssignments) && (
+                <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />
+              )}
+            </div>
             <span className={`sidebar-activity-caret ${activityMenuOpen ? "open" : ""}`}>▾</span>
           </li>
           {activityMenuOpen && (
@@ -906,23 +1575,26 @@ function InternDashboard() {
               <li
                 className={activeSection === "scheduled-interviews" ? "active" : ""}
                 onClick={() => handleSectionClick("scheduled-interviews")}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               >
-                Scheduled Interviews
+                <span>Scheduled Interviews</span>
+                {hasUnreadScheduledInterviews && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
               </li>
               <li
                 className={activeSection === "scheduled-gds" ? "active" : ""}
                 onClick={() => handleSectionClick("scheduled-gds")}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               >
-                Schedule GD Round
+                <span>Schedule GD Round</span>
+                {hasUnreadScheduledGds && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
               </li>
               <li
                 className={activeSection === "scheduled-assignments" ? "active" : ""}
                 onClick={() => handleSectionClick("scheduled-assignments")}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               >
-                Schedule Assessment
+                <span>Schedule Assessment</span>
+                {hasUnreadScheduledAssignments && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
               </li>
             </ul>
           )}
@@ -977,6 +1649,13 @@ function InternDashboard() {
           >
             Job & Internship Updates
             {hasUnreadJobPostings && <span className="sidebar-notification-dot" aria-hidden="true" />}
+          </li>
+          <li
+            className={activeSection === "progress-report" ? "active" : ""}
+            onClick={() => handleSectionClick("progress-report")}
+            style={{ cursor: "pointer" }}
+          >
+            Progress Report
           </li>
           <li
             className={activeSection === "reports" ? "active" : ""}
@@ -3200,6 +3879,53 @@ function InternDashboard() {
               )}
             </div>
           </>
+        )}
+
+        {/* Progress Report Section */}
+        {activeSection === "progress-report" && (
+          <div className="am-page" style={{ padding: 0 }}>
+            <div className="am-header" style={{ marginBottom: "24px" }}>
+              <h1 style={{ color: "#0f172a", fontSize: "24px", fontWeight: 700, margin: "0 0 6px 0" }}>Progress Report</h1>
+              <p className="am-sub" style={{ margin: 0 }}>Track your learning journey, task completion, and performance metrics</p>
+            </div>
+
+            <div className="am-actions" style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginBottom: "30px" }}>
+              <button className={`am-card ${progressFilter === "interviews" ? "active" : ""}`} onClick={() => handleProgressCardClick("interviews")}>
+                <div className="am-card-title">Interviews</div>
+              </button>
+              <button className={`am-card ${progressFilter === "scheduled-interviews" ? "active" : ""}`} onClick={() => handleProgressCardClick("scheduled-interviews")}>
+                <div className="am-card-title">Scheduled Interviews</div>
+              </button>
+              <button className={`am-card ${progressFilter === "scheduled-gds" ? "active" : ""}`} onClick={() => handleProgressCardClick("scheduled-gds")}>
+                <div className="am-card-title">Schedule GD Round</div>
+              </button>
+              <button className={`am-card ${progressFilter === "scheduled-assignments" ? "active" : ""}`} onClick={() => handleProgressCardClick("scheduled-assignments")}>
+                <div className="am-card-title">Schedule Assessment</div>
+              </button>
+              <button className={`am-card ${progressFilter === "aptitude" ? "active" : ""}`} onClick={() => handleProgressCardClick("aptitude")}>
+                <div className="am-card-title">Aptitude</div>
+              </button>
+              <button className={`am-card ${progressFilter === "assessments" ? "active" : ""}`} onClick={() => handleProgressCardClick("assessments")}>
+                <div className="am-card-title">Assessments</div>
+              </button>
+              <button className={`am-card ${progressFilter === "training" ? "active" : ""}`} onClick={() => handleProgressCardClick("training")}>
+                <div className="am-card-title">Training</div>
+              </button>
+              <button className="am-card" onClick={() => navigate("/intern/reports")}>
+                <div className="am-card-title">Reports</div>
+              </button>
+            </div>
+
+            <div className="am-content">
+              {progressFilter === "interviews" && renderInterviews()}
+              {progressFilter === "scheduled-interviews" && renderScheduledInterviews()}
+              {progressFilter === "scheduled-gds" && renderScheduledGds()}
+              {progressFilter === "scheduled-assignments" && renderScheduledAssessments()}
+              {progressFilter === "aptitude" && renderAptitude()}
+              {progressFilter === "assessments" && renderAssessments()}
+              {progressFilter === "training" && renderTraining()}
+            </div>
+          </div>
         )}
 
       </main>

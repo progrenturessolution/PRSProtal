@@ -721,6 +721,7 @@ exports.getMyAptitude = async (req, res) => {
     res.status(200).json({
       success: true,
       count: aptitudeRecords.length,
+      aptitude: aptitudeRecords,
       aptitudeRecords
     });
 
@@ -769,6 +770,7 @@ exports.getMyTraining = async (req, res) => {
     res.status(200).json({
       success: true,
       count: trainings.length,
+      training: trainings,
       trainings
     });
 
