@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { taskAPI, internAPI, UPLOADS_BASE } from "../services/api";
 import TeamTasks from "./TeamTasks";
 import logo from "../assets/logo.png";
@@ -7,6 +7,7 @@ import "./ActivityManagementNew.css";
 
 function InternDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const notificationStorageKey = "intern-notifications-last-seen";
   const jobPostingsStorageKey = "intern-job-postings-last-seen";
   const scheduledInterviewsStorageKey = "intern-scheduled-interviews-last-seen";
@@ -15,7 +16,7 @@ function InternDashboard() {
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState("profile");
+  const [activeSection, setActiveSection] = useState(location.state?.activeSection || "profile");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activityOpenIntern, setActivityOpenIntern] = useState(true);
   const [documents, setDocuments] = useState(null);
@@ -45,6 +46,7 @@ function InternDashboard() {
   const [error, setError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [progressFilter, setProgressFilter] = useState("interviews");
+  const [reportDownloading, setReportDownloading] = useState(false);
 
   const renderInterviews = () => {
     return (
@@ -995,6 +997,241 @@ function InternDashboard() {
     }
   };
 
+  const downloadCompleteReportPDF = async () => {
+    setReportDownloading(true);
+    try {
+      const recordsResponse = await internAPI.getMyStudentRecords();
+      if (!recordsResponse.data.success) {
+        alert("Failed to load report data");
+        return;
+      }
+      const reportData = recordsResponse.data.data;
+      const studentInfo = reportData.student;
+      const allInterviews = reportData.interviews || [];
+      const allAptitudes = reportData.aptitudes || [];
+      const allAssessments = reportData.assessments || [];
+      const allTrainings = reportData.trainings || [];
+
+      let htmlContent = `
+        <html>
+          <head>
+            <title>Student Report - ${studentInfo.name}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #324158; padding-bottom: 15px; }
+              .header h1 { margin: 10px 0; color: #324158; }
+              .section { margin: 20px 0; }
+              .section-title { font-size: 16px; font-weight: bold; color: #324158; margin: 15px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+              .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+              .info-item { padding: 10px; background: #f8fafc; border-radius: 4px; }
+              .info-label { font-size: 12px; color: #94a3b8; font-weight: bold; text-transform: uppercase; }
+              .info-value { font-size: 14px; color: #0f172a; font-weight: 600; margin-top: 5px; }
+              table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+              th { background-color: #324158; color: white; padding: 10px; text-align: left; border: 1px solid #ddd; }
+              td { padding: 8px; border: 1px solid #e2e8f0; }
+              tr:nth-child(even) { background-color: #f9fafb; }
+              .stat-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
+              .stat-box { padding: 15px; background: #f8fafc; border-left: 4px solid #324158; text-align: center; }
+              .stat-number { font-size: 24px; font-weight: bold; color: #324158; }
+              .stat-label { font-size: 12px; color: #64748b; margin-top: 5px; }
+              .footer { margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; color: #999; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>Student Assessment Report</h1>
+              <p>Type: <strong>Complete Performance History</strong></p>
+              <p>${new Date().toLocaleDateString('en-IN')}</p>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Student Information</div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Name</div>
+                  <div class="info-value">${studentInfo.name}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">ID</div>
+                  <div class="info-value">${studentInfo.internId || studentInfo.psmsId || "-"}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Email</div>
+                  <div class="info-value">${studentInfo.email}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Type</div>
+                  <div class="info-value">${studentInfo.studentType}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Status</div>
+                  <div class="info-value">${studentInfo.status}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Joining Date</div>
+                  <div class="info-value">${studentInfo.joiningDate ? new Date(studentInfo.joiningDate).toLocaleDateString('en-IN') : 'N/A'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Assessment Summary</div>
+              <div class="stat-section">
+                <div class="stat-box">
+                  <div class="stat-number">${allInterviews.length}</div>
+                  <div class="stat-label">Interviews</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number">${allAptitudes.length}</div>
+                  <div class="stat-label">Aptitude Tests</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number">${allAssessments.length}</div>
+                  <div class="stat-label">Assessments</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number">${allTrainings.length}</div>
+                  <div class="stat-label">Trainings</div>
+                </div>
+              </div>
+            </div>
+      `;
+
+      if (allInterviews.length > 0) {
+        htmlContent += `
+          <div class="section">
+            <div class="section-title">Interview Records</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Overall</th>
+                  <th>Level Crossed</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allInterviews.map(interview => {
+                  const overallLevel = interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel;
+                  return `
+                  <tr>
+                    <td>${interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${interview.interviewType}</td>
+                    <td>${interviewLevelTextMap[overallLevel] || overallLevel || "-"}</td>
+                    <td>${interview.levelCrossed ? 'Yes' : 'No'}</td>
+                  </tr>
+                `; }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      if (allAptitudes.length > 0) {
+        htmlContent += `
+          <div class="section">
+            <div class="section-title">Aptitude Test Records</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Round</th>
+                  <th>Score</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allAptitudes.map(apt => `
+                  <tr>
+                    <td>${apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>Round ${apt.roundNumber}</td>
+                    <td>${apt.score}</td>
+                    <td>${apt.result}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      if (allAssessments.length > 0) {
+        htmlContent += `
+          <div class="section">
+            <div class="section-title">Assessment Records</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allAssessments.map(assess => `
+                  <tr>
+                    <td>${assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${assess.assessmentType}</td>
+                    <td>${assess.score || '-'}</td>
+                    <td>${assess.status}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      if (allTrainings.length > 0) {
+        htmlContent += `
+          <div class="section">
+            <div class="section-title">Training Records</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Attendance</th>
+                  <th>Engagement</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${allTrainings.map(training => `
+                  <tr>
+                    <td>${training.date ? new Date(training.date).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${training.attendance}</td>
+                    <td>${training.engagementLevel}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      htmlContent += `
+        <div class="footer">
+          <p>This report was generated on ${new Date().toLocaleString('en-IN')}</p>
+        </div>
+          </body>
+        </html>
+      `;
+
+      const printWindow = window.open("", "", "height=600,width=800");
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    } catch (err) {
+      console.error("Error generating PDF report:", err);
+      alert("Error generating PDF report");
+    } finally {
+      setReportDownloading(false);
+    }
+  };
+
   const fetchSectionData = async (section) => {
     try {
       switch (section) {
@@ -1164,24 +1401,25 @@ function InternDashboard() {
     }
   };
 
-  const handleSectionClick = async (section) => {
+  const handleSectionClick = (section) => {
     if (["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(section)) {
       setActivityMenuOpen(true);
     }
     setActiveSection(section);
     setSidebarOpen(false);
-
-    if (section === "progress-report") {
-      await fetchSectionData(progressFilter);
-    } else {
-      await fetchSectionData(section);
-    }
   };
 
-  const handleProgressCardClick = async (filter) => {
+  const handleProgressCardClick = (filter) => {
     setProgressFilter(filter);
-    await fetchSectionData(filter);
   };
+
+  useEffect(() => {
+    if (activeSection === "progress-report") {
+      fetchSectionData(progressFilter);
+    } else {
+      fetchSectionData(activeSection);
+    }
+  }, [activeSection, progressFilter]);
 
 
   const levelScoreMap = {
@@ -1550,76 +1788,7 @@ function InternDashboard() {
           >
             Tasks/Projects
           </li>
-          <li
-            className={activeSection === "interviews" ? "active" : ""}
-            onClick={() => handleSectionClick("interviews")}
-            style={{ cursor: "pointer" }}
-          >
-            Interviews
-          </li>
-          <li
-            className={`sidebar-activity-parent ${["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(activeSection) ? "active" : ""}`}
-            onClick={() => setActivityMenuOpen((prev) => !prev)}
-            style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>Activity Management</span>
-              {(hasUnreadScheduledInterviews || hasUnreadScheduledGds || hasUnreadScheduledAssignments) && (
-                <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />
-              )}
-            </div>
-            <span className={`sidebar-activity-caret ${activityMenuOpen ? "open" : ""}`}>▾</span>
-          </li>
-          {activityMenuOpen && (
-            <ul className="sidebar-activity-submenu">
-              <li
-                className={activeSection === "scheduled-interviews" ? "active" : ""}
-                onClick={() => handleSectionClick("scheduled-interviews")}
-                style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <span>Scheduled Interviews</span>
-                {hasUnreadScheduledInterviews && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
-              </li>
-              <li
-                className={activeSection === "scheduled-gds" ? "active" : ""}
-                onClick={() => handleSectionClick("scheduled-gds")}
-                style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <span>Schedule GD Round</span>
-                {hasUnreadScheduledGds && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
-              </li>
-              <li
-                className={activeSection === "scheduled-assignments" ? "active" : ""}
-                onClick={() => handleSectionClick("scheduled-assignments")}
-                style={{ cursor: "pointer", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <span>Schedule Assessment</span>
-                {hasUnreadScheduledAssignments && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
-              </li>
-            </ul>
-          )}
 
-          <li
-            className={activeSection === "aptitude" ? "active" : ""}
-            onClick={() => handleSectionClick("aptitude")}
-            style={{ cursor: "pointer" }}
-          >
-            Aptitude
-          </li>
-          <li
-            className={activeSection === "assessments" ? "active" : ""}
-            onClick={() => handleSectionClick("assessments")}
-            style={{ cursor: "pointer" }}
-          >
-            Assessments
-          </li>
-          <li
-            className={activeSection === "training" ? "active" : ""}
-            onClick={() => handleSectionClick("training")}
-            style={{ cursor: "pointer" }}
-          >
-            Training
-          </li>
           <li
             className={activeSection === "documents" ? "active" : ""}
             onClick={() => handleSectionClick("documents")}
@@ -1657,13 +1826,7 @@ function InternDashboard() {
           >
             Progress Report
           </li>
-          <li
-            className={activeSection === "reports" ? "active" : ""}
-            onClick={() => navigate("/intern/reports")}
-            style={{ cursor: "pointer" }}
-          >
-            Reports
-          </li>
+
         </ul>
 
         <button className="logout-btn" onClick={handleLogout}>
@@ -2211,79 +2374,7 @@ function InternDashboard() {
           </>
         )}
 
-        {/* Scheduled Assignments Section */}
-        {activeSection === "scheduled-assignments" && (
-          <>
-            <div className="content-header">
-              <h1>Schedule Assessment</h1>
-              <p>Assignments assigned to you</p>
-            </div>
 
-            <div className="card student-history-card" style={{ marginBottom: "16px" }}>
-              <h2>Upcoming Assignments — Individual</h2>
-              {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").length === 0 ? (
-                <p className="record-history-empty">No individual scheduled assessments yet</p>
-              ) : (
-                <div className="table-container">
-                  <table className="data-table view-students-table interview-schedule-table">
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>Assigned On</th>
-                        <th>Due</th>
-                        <th>Assigned By</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => (
-                        <tr key={a._id || a.title || idx}>
-                          <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                          <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
-                          <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
-                          <td>{a.createdBy || '-'}</td>
-                          <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className="card student-history-card">
-              <h2>Upcoming Assignments — Group</h2>
-              {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").length === 0 ? (
-                <p className="record-history-empty">No group scheduled assessments yet</p>
-              ) : (
-                <div className="table-container">
-                  <table className="data-table view-students-table interview-schedule-table">
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>Assigned On</th>
-                        <th>Due</th>
-                        <th>Assigned By</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => (
-                        <tr key={a._id || a.title || idx}>
-                          <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                          <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
-                          <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
-                          <td>{a.createdBy || '-'}</td>
-                          <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </>
-        )}
 
         {/* My Program Section */}
         {activeSection === "program" && (
@@ -2972,453 +3063,7 @@ function InternDashboard() {
           </>
         )}
 
-        {/* Interviews Section */}
-        {activeSection === "interviews" && (
-          <>
-            <div className="content-header">
-              <h1>Interviews</h1>
-              <p>Your interview attempt history and HR remarks</p>
-            </div>
 
-            <div className="card student-history-card">
-              <h2>Interview History</h2>
-              {interviews.length === 0 ? (
-                <p className="record-history-empty">No interview records yet</p>
-              ) : (
-                <>
-                  <div className="student-history-toolbar interview-history-toolbar">
-                    <div className="interview-history-search-wrap">
-                      <label className="interview-history-search-label">Search Interviews</label>
-                      <input
-                        type="text"
-                        className="student-history-search interview-history-search"
-                        value={interviewSearch}
-                        onChange={(e) => setInterviewSearch(e.target.value)}
-                        placeholder="Search by date, type, attempt, score, remarks..."
-                        aria-label="Search interview history"
-                      />
-                    </div>
-                    <div className="interview-history-toolbar-meta">
-                      <span>{filteredInterviews.length} records</span>
-                      {interviewSearch.trim() && (
-                        <button
-                          type="button"
-                          className="interview-history-clear-btn"
-                          onClick={() => setInterviewSearch("")}
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="table-container">
-                    <table className="data-table view-students-table interview-history-table">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Type</th>
-                          <th>Attendance</th>
-                          <th>Attempt</th>
-                          <th>Score</th>
-                          <th>Communication</th>
-                          <th>Confidence</th>
-                          <th>Clarity</th>
-                          <th>Overall</th>
-                          <th>Level Crossed</th>
-                          <th>Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredInterviews.length === 0 ? (
-                          <tr>
-                            <td colSpan="11">No interview records match your search</td>
-                          </tr>
-                        ) : (
-                          filteredInterviews.map((interview) => (
-                            <tr key={interview._id}>
-                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : "-"}</td>
-                              <td>{interview.interviewType || "-"}</td>
-                              <td>{interview.attendanceStatus || "-"}</td>
-                              <td>{interview.attemptNumber || "-"}</td>
-                              <td>{getInterviewScore(interview)}</td>
-                              <td>{interviewLevelTextMap[interview.communicationLevel] || interview.communicationLevel || "-"}</td>
-                              <td>{interviewLevelTextMap[interview.confidenceLevel] || interview.confidenceLevel || "-"}</td>
-                              <td>{interviewLevelTextMap[interview.clarityLevel] || interview.clarityLevel || "-"}</td>
-                              <td>{interviewLevelTextMap[interview.overallLevel] || interview.overallLevel || "-"}</td>
-                              <td>
-                                <span className={`status-badge ${interview.levelCrossed ? "status-completed" : "status-rejected"}`}>
-                                  {interview.levelCrossed ? "Crossed" : "Not Crossed"}
-                                </span>
-                              </td>
-                              <td>{interview.remarks || "-"}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Scheduled Interviews Section */}
-        {activeSection === "scheduled-interviews" && (
-          <>
-            <div className="content-header">
-              <h1>Scheduled Interviews</h1>
-              <p>Your upcoming interview schedules</p>
-            </div>
-
-            <div className="card student-history-card">
-              <h2>Upcoming Interviews</h2>
-                      {((scheduledInterviews.length === 0) && (scheduledGds.length === 0)) ? (
-                <p className="record-history-empty">No scheduled interviews or GDs yet</p>
-              ) : (
-                <>
-                  <div className="table-container">
-                    <table className="data-table view-students-table interview-schedule-table">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Time</th>
-                          <th>Interview Type</th>
-                          <th>Mode</th>
-                          <th>Interviewer</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...scheduledInterviews, ...scheduledGds].map((interview, idx) => (
-                          <tr key={interview._id || interview.title || idx}>
-                            <td>{(interview.date || interview.dateTime || interview.details?.form?.date) ? new Date(interview.date || interview.dateTime || interview.details?.form?.date).toLocaleDateString() : "-"}</td>
-                            <td>{interview.startTime || interview.details?.form?.startTime || interview.dateTime?.split(' ')[1] || "-"}</td>
-                            <td>{interview.type === 'GD' || (interview.details?.form && interview.type === 'GD') ? 'Group Discussion' : (interview.interviewType || interview.type || "-")}</td>
-                            <td>{getScheduledInterviewMode(interview)}</td>
-                            <td>{interview.trainerId?.name || interview.details?.form?.interviewerName || interview.details?.form?.trainerId || "-"}</td>
-                            <td>
-                              <span className="status-badge status-pending">
-                                {interview.status || "Scheduled"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Scheduled GDs Section */}
-        {activeSection === "scheduled-gds" && (
-          <>
-            <div className="content-header">
-              <h1>Scheduled GDs</h1>
-              <p>Group Discussions you are assigned to</p>
-            </div>
-
-            <div className="card student-history-card">
-              <h2>Upcoming GDs</h2>
-              {scheduledGds.length === 0 ? (
-                <p className="record-history-empty">No scheduled GDs yet</p>
-              ) : (
-                <div className="table-container">
-                  <table className="data-table view-students-table interview-schedule-table">
-                    <thead>
-                      <tr>
-                        <th>Title</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Groups</th>
-                        <th>Interviewer</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {scheduledGds.map((gd, idx) => (
-                        <tr key={gd._id || gd.title || idx}>
-                          <td>{gd.title || gd.details?.form?.title || 'Group Discussion'}</td>
-                          <td>{(gd.date || gd.dateTime || gd.details?.form?.date) ? new Date(gd.date || gd.dateTime || gd.details?.form?.date).toLocaleDateString() : '-'}</td>
-                          <td>{gd.startTime || gd.details?.form?.startTime || '-'}</td>
-                          <td>{getGdGroupLabelForUser(gd)}</td>
-                          <td>{getGdInterviewer(gd)}</td>
-                          <td><span className="status-badge status-pending">{gd.status || 'Scheduled'}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Aptitude Section */}
-        {activeSection === "aptitude" && (
-          <>
-            <div className="content-header">
-              <h1>Aptitude</h1>
-              <p>Your aptitude scores and remarks</p>
-            </div>
-
-            <div className="card student-history-card">
-              <h2>Aptitude Test History</h2>
-              {aptitude.length === 0 ? (
-                <p className="record-history-empty">No aptitude records yet</p>
-              ) : (
-                <>
-                  <div className="student-history-toolbar interview-history-toolbar">
-                    <div className="interview-history-search-wrap">
-                      <label className="interview-history-search-label">Search Aptitude</label>
-                      <input
-                        type="text"
-                        className="student-history-search interview-history-search"
-                        value={aptitudeSearch}
-                        onChange={(e) => setAptitudeSearch(e.target.value)}
-                        placeholder="Search by attendance, round, score, result, remarks, date..."
-                        aria-label="Search aptitude history"
-                      />
-                    </div>
-                    <div className="interview-history-toolbar-meta">
-                      <span>{filteredAptitudes.length} records</span>
-                      {aptitudeSearch.trim() && (
-                        <button
-                          type="button"
-                          className="interview-history-clear-btn"
-                          onClick={() => setAptitudeSearch("")}
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="table-container">
-                    <table className="data-table view-students-table aptitude-history-table">
-                      <thead>
-                        <tr>
-                          <th>Attendance</th>
-                          <th>Round Number</th>
-                          <th>Score</th>
-                          <th>Result</th>
-                          <th>Remarks</th>
-                          <th>Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredAptitudes.length === 0 ? (
-                          <tr>
-                            <td colSpan="6">No aptitude records match your search</td>
-                          </tr>
-                        ) : (
-                          filteredAptitudes.map((apt) => (
-                            <tr key={apt._id}>
-                              <td>{apt.attendanceStatus || "-"}</td>
-                              <td>{apt.roundNumber}</td>
-                              <td>{apt.score}</td>
-                              <td>
-                                <span className={`status-badge ${apt.result === "Pass" ? "status-completed" : "status-pending"}`}>
-                                  {apt.result}
-                                </span>
-                              </td>
-                              <td>{apt.remarks || "-"}</td>
-                              <td>{apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "-"}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Assessments Section */}
-        {activeSection === "assessments" && (
-          <>
-            <div className="content-header">
-              <h1>Assessments</h1>
-              <p>Your assessment scores and feedback</p>
-            </div>
-
-            <div className="card student-history-card">
-              <h2>Assessment History</h2>
-              {assessments.length === 0 ? (
-                <p className="record-history-empty">No assessment records yet</p>
-              ) : (
-                <>
-                  <div className="student-history-toolbar interview-history-toolbar">
-                    <div className="interview-history-search-wrap">
-                      <label className="interview-history-search-label">Search Assessments</label>
-                      <input
-                        type="text"
-                        className="student-history-search interview-history-search"
-                        value={assessmentSearch}
-                        onChange={(e) => setAssessmentSearch(e.target.value)}
-                        placeholder="Search by attendance, type, score, status, feedback, date..."
-                        aria-label="Search assessment history"
-                      />
-                    </div>
-                    <div className="interview-history-toolbar-meta">
-                      <span>{filteredAssessments.length} records</span>
-                      {assessmentSearch.trim() && (
-                        <button
-                          type="button"
-                          className="interview-history-clear-btn"
-                          onClick={() => setAssessmentSearch("")}
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="table-container">
-                    <table className="data-table view-students-table assessment-history-table">
-                      <thead>
-                        <tr>
-                          <th>Attendance</th>
-                          <th>Type</th>
-                          <th>Score</th>
-                          <th>Status</th>
-                          <th>Feedback</th>
-                          <th>Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredAssessments.length === 0 ? (
-                          <tr>
-                            <td colSpan="6">No assessment records match your search</td>
-                          </tr>
-                        ) : (
-                          filteredAssessments.map((assessment) => (
-                            <tr key={assessment._id}>
-                              <td>{assessment.attendanceStatus || "-"}</td>
-                              <td>{assessment.assessmentType || "-"}</td>
-                              <td>{assessment.score || "-"}</td>
-                              <td>
-                                <span
-                                  className={`status-badge ${
-                                    assessment.status === "Pass"
-                                      ? "status-completed"
-                                      : assessment.status === "Fail"
-                                        ? "status-rejected"
-                                        : "status-pending"
-                                  }`}
-                                >
-                                  {assessment.status || "-"}
-                                </span>
-                              </td>
-                              <td>{assessment.feedback || "-"}</td>
-                              <td>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "-"}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Training Section */}
-        {activeSection === "training" && (
-          <>
-            <div className="content-header">
-              <h1>Training</h1>
-              <p>Your training attendance and engagement scores</p>
-            </div>
-
-            <div className="card student-history-card">
-              <h2>Training History</h2>
-              {trainings.length === 0 ? (
-                <p className="record-history-empty">No training records yet</p>
-              ) : (
-                <>
-                  <div className="student-history-toolbar interview-history-toolbar">
-                    <div className="interview-history-search-wrap">
-                      <label className="interview-history-search-label">Search Training</label>
-                      <input
-                        type="text"
-                        className="student-history-search interview-history-search"
-                        value={trainingSearch}
-                        onChange={(e) => setTrainingSearch(e.target.value)}
-                        placeholder="Search by date, attendance, score, engagement, remarks..."
-                        aria-label="Search training history"
-                      />
-                    </div>
-                    <div className="interview-history-toolbar-meta">
-                      <span>{filteredTrainings.length} records</span>
-                      {trainingSearch.trim() && (
-                        <button
-                          type="button"
-                          className="interview-history-clear-btn"
-                          onClick={() => setTrainingSearch("")}
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="table-container">
-                    <table className="data-table view-students-table training-history-table">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Score</th>
-                          <th>Attendance</th>
-                          <th>Engagement Level</th>
-                          <th>Skill Improvement</th>
-                          <th>Remarks</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredTrainings.length === 0 ? (
-                          <tr>
-                            <td colSpan="6">No training records match your search</td>
-                          </tr>
-                        ) : (
-                          filteredTrainings.map((training) => (
-                            <tr key={training._id}>
-                              <td>{training.date ? new Date(training.date).toLocaleDateString() : "-"}</td>
-                              <td>{getTrainingScore(training)}</td>
-                              <td>
-                                <span
-                                  className={`status-badge ${
-                                    training.attendance === "Present"
-                                      ? "status-completed"
-                                      : training.attendance === "Late"
-                                        ? "status-pending"
-                                        : "status-rejected"
-                                  }`}
-                                >
-                                  {training.attendance || "-"}
-                                </span>
-                              </td>
-                              <td>{training.engagementLevel || "-"}</td>
-                              <td>{training.skillImprovementNote || "-"}</td>
-                              <td>{training.trainerRemarks || "-"}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
 
         {/* Certificates/Documents Section */}
         {activeSection === "documents" && (
@@ -3911,8 +3556,11 @@ function InternDashboard() {
               <button className={`am-card ${progressFilter === "training" ? "active" : ""}`} onClick={() => handleProgressCardClick("training")}>
                 <div className="am-card-title">Training</div>
               </button>
-              <button className="am-card" onClick={() => navigate("/intern/reports")}>
+              <button className="am-card" onClick={() => navigate("/intern/reports", { state: { activeSection: "progress-report" } })}>
                 <div className="am-card-title">Reports</div>
+              </button>
+              <button className="am-card" onClick={downloadCompleteReportPDF} disabled={reportDownloading}>
+                <div className="am-card-title">{reportDownloading ? "Generating..." : "Download Report"}</div>
               </button>
             </div>
 

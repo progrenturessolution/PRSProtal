@@ -109,7 +109,11 @@ function StudentDetailReport() {
   };
 
   const handleBack = () => {
-    navigate(getBackPath());
+    if (location.state && location.state.activeSection) {
+      navigate(getBackPath(), { state: { activeSection: location.state.activeSection } });
+    } else {
+      navigate(getBackPath());
+    }
   };
 
   useEffect(() => {
@@ -153,7 +157,7 @@ function StudentDetailReport() {
       let htmlContent = `
         <html>
           <head>
-            <title>Student Report - ${student.name}</title>
+            <title>Aspirant Report - ${student.name}</title>
             <style>
               body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
               .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #324158; padding-bottom: 15px; }
@@ -450,7 +454,7 @@ function StudentDetailReport() {
 
       const ws = XLSX.utils.aoa_to_sheet(ws_data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Student Report");
+      XLSX.utils.book_append_sheet(wb, ws, "Aspirant Report");
 
       XLSX.writeFile(wb, `Student_Report_${student.internId}_${selectedMonth}.xlsx`);
     } catch (err) {
@@ -469,7 +473,7 @@ function StudentDetailReport() {
       <div className="student-detail-wrapper">
         <div className="student-detail-header">
           <div className="header-left">
-            <h1>Student Report</h1>
+            <h1>Aspirant Report</h1>
             <p>Complete assessment and training records</p>
           </div>
           <button
@@ -498,7 +502,7 @@ function StudentDetailReport() {
       {/* Header */}
       <div className="student-detail-header">
         <div className="header-left">
-          <h1>Student Report</h1>
+          <h1>Aspirant Report</h1>
           <p>Complete assessment and training records</p>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
