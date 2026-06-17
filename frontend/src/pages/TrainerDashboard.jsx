@@ -331,9 +331,8 @@ function TrainerDashboard() {
         try {
           const notes = notificationsResult.value.data.notifications || [];
           setNotifications(notes);
-          const latestTimestamp = getLatestNotificationTimestamp(notes);
-          const lastSeenTimestamp = Number(localStorage.getItem(notificationStorageKey) || 0);
-          setHasUnreadNotifications(latestTimestamp > lastSeenTimestamp);
+          const unreadCount = notificationsResult.value.data.unreadCount || 0;
+          setHasUnreadNotifications(unreadCount > 0);
           const assessments = notes.filter(n => n.notificationType === 'Test/Assessment');
           // map to activity-like objects used by the dashboard recentActivities logic
           const mapped = assessments.map(n => ({ type: 'Assessment', title: n.title, dateTime: new Date(n.createdAt).toLocaleString(), createdBy: n.createdBy?.email || 'Admin', status: 'Scheduled', details: { notification: n } }));
@@ -463,14 +462,18 @@ function TrainerDashboard() {
   }, [activeTab, user]);
 
   useEffect(() => {
-    if (activeTab === 'notifications') {
-      const latestTimestamp = getLatestNotificationTimestamp(notifications);
-      localStorage.setItem(notificationStorageKey, String(latestTimestamp || Date.now()));
-      if (hasUnreadNotifications) {
-        setHasUnreadNotifications(false);
+    const markAsRead = async () => {
+      if (activeTab === 'notifications') {
+        try {
+          await trainerAPI.markNotificationsRead();
+          setHasUnreadNotifications(false);
+        } catch (e) {
+          console.error("Failed to mark trainer notifications read:", e);
+        }
       }
-    }
-  }, [activeTab, notifications, hasUnreadNotifications]);
+    };
+    markAsRead();
+  }, [activeTab]);
 
   // clear any locked tab when leaving the student-records view
   useEffect(() => {
@@ -732,7 +735,9 @@ function TrainerDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userRole");
     navigate("/");
   };
 
@@ -1028,8 +1033,8 @@ function TrainerDashboard() {
       interview.attemptNumber,
       interview.communicationLevel,
       interview.confidenceLevel,
-      interview.clarityLevel,
-      interview.overallLevel,
+      interview.clarityLevel || interview.clarityOfAnswer,
+      interview.overallLevel || (interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel),
       interview.levelCrossed ? "yes" : "no",
     ),
   );
@@ -4461,10 +4466,10 @@ function TrainerDashboard() {
                                   <td>{interview.interviewType}</td>
                                   <td>{interview.attendanceStatus || "-"}</td>
                                   <td>{interview.attemptNumber}</td>
-                                  <td>{interview.communicationLevel}</td>
-                                  <td>{interview.confidenceLevel}</td>
-                                  <td>{interview.clarityLevel}</td>
-                                  <td>{interview.overallLevel}</td>
+                                  <td>{interview.communicationLevel || "-"}</td>
+                                  <td>{interview.confidenceLevel || "-"}</td>
+                                  <td>{interview.clarityLevel || interview.clarityOfAnswer || "-"}</td>
+                                  <td>{interview.overallLevel || (interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel) || "-"}</td>
                                   <td>{interview.levelCrossed ? "Crossed" : "Not Crossed"}</td>
                                 </tr>
                               ))}

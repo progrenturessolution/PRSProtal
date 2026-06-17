@@ -120,14 +120,17 @@ function InternDashboard() {
                           <td>{getInterviewScore(interview)}</td>
                           <td>{interviewLevelTextMap[interview.communicationLevel] || interview.communicationLevel || "-"}</td>
                           <td>{interviewLevelTextMap[interview.confidenceLevel] || interview.confidenceLevel || "-"}</td>
-                          <td>{interviewLevelTextMap[interview.clarityLevel] || interview.clarityLevel || "-"}</td>
-                          <td>{interviewLevelTextMap[interview.overallLevel] || interview.overallLevel || "-"}</td>
+                          <td>{interviewLevelTextMap[interview.clarityLevel || interview.clarityOfAnswer] || interview.clarityLevel || interview.clarityOfAnswer || "-"}</td>
+                          <td>{(() => {
+                            const overall = interview.overallLevel || (interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel);
+                            return interviewLevelTextMap[overall] || overall || "-";
+                          })()}</td>
                           <td>
                             <span className={`status-badge ${interview.levelCrossed ? "status-completed" : "status-rejected"}`}>
                               {interview.levelCrossed ? "Crossed" : "Not Crossed"}
                             </span>
                           </td>
-                          <td>{interview.remarks || "-"}</td>
+                          <td>{interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "-"}</td>
                         </tr>
                       ))
                     )}
@@ -652,6 +655,8 @@ function InternDashboard() {
 
   // Periodic refresh for job postings and activity badges
   useEffect(() => {
+    refreshJobPostingsBadge();
+    refreshActivityBadges();
     const interval = setInterval(() => {
       refreshJobPostingsBadge();
       refreshActivityBadges();
@@ -669,14 +674,11 @@ function InternDashboard() {
   const refreshNotificationBadge = async (currentUser = user) => {
     try {
       const response = await internAPI.getMyNotifications();
-      const notes = response.data?.notifications || [];
-      const latestTimestamp = getLatestNotificationTimestamp(notes);
-      const lastSeenTimestamp = Number(localStorage.getItem(notificationStorageKey) || 0);
-      const isUnread = latestTimestamp > lastSeenTimestamp;
-      setHasUnreadNotifications(isUnread);
+      const unreadCount = response.data?.unreadCount || 0;
+      setHasUnreadNotifications(unreadCount > 0);
 
       if (currentUser && activeSection === "notifications") {
-        localStorage.setItem(notificationStorageKey, String(latestTimestamp || Date.now()));
+        await internAPI.markNotificationsRead();
         setHasUnreadNotifications(false);
       }
     } catch (err) {
@@ -684,10 +686,13 @@ function InternDashboard() {
     }
   };
 
-  const markNotificationsAsSeen = (items = notifications) => {
-    const latestTimestamp = getLatestNotificationTimestamp(items);
-    localStorage.setItem(notificationStorageKey, String(latestTimestamp || Date.now()));
-    setHasUnreadNotifications(false);
+  const markNotificationsAsSeen = async () => {
+    try {
+      await internAPI.markNotificationsRead();
+      setHasUnreadNotifications(false);
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
   };
 
   const refreshJobPostingsBadge = async () => {
@@ -1365,7 +1370,7 @@ function InternDashboard() {
           const notifResp = await internAPI.getMyNotifications();
           if (notifResp.data && notifResp.data.success) {
             setNotifications(notifResp.data.notifications || []);
-            markNotificationsAsSeen(notifResp.data.notifications || []);
+            markNotificationsAsSeen();
           }
           break;
         case "groups":
@@ -1446,11 +1451,13 @@ function InternDashboard() {
   };
 
   const getInterviewScore = (interview) => {
+    const clarity = interview?.clarityLevel || interview?.clarityOfAnswer;
+    const overall = interview?.overallLevel || (interview?.interviewType === "Technical" ? interview?.overallTechnicalLevel : interview?.overallHRLevel);
     const scoreValues = [
       levelScoreMap[interview?.communicationLevel],
       levelScoreMap[interview?.confidenceLevel],
-      levelScoreMap[interview?.clarityLevel],
-      levelScoreMap[interview?.overallLevel],
+      levelScoreMap[clarity],
+      levelScoreMap[overall],
     ].filter((value) => typeof value === "number");
 
     if (scoreValues.length === 0) {
@@ -1556,10 +1563,10 @@ function InternDashboard() {
       getInterviewScore(interview),
       interviewLevelTextMap[interview?.communicationLevel],
       interviewLevelTextMap[interview?.confidenceLevel],
-      interviewLevelTextMap[interview?.clarityLevel],
-      interviewLevelTextMap[interview?.overallLevel],
+      interviewLevelTextMap[interview?.clarityLevel || interview?.clarityOfAnswer],
+      interviewLevelTextMap[interview?.overallLevel || (interview?.interviewType === "Technical" ? interview?.overallTechnicalLevel : interview?.overallHRLevel)],
       interview?.levelCrossed ? "crossed" : "not crossed",
-      interview?.remarks,
+      interview?.remarks || (interview?.interviewType === "Technical" ? interview?.technicalRemarks : interview?.hrRemarks),
     ];
 
     return fields.some((field) => String(field || "").toLowerCase().includes(query));
@@ -1781,6 +1788,52 @@ function InternDashboard() {
           >
             My Profile
           </li>
+          {/* Activity Management collapsible section at 2nd position */}
+          <li
+            className={(["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(activeSection) ? "active" : "")}
+            onClick={() => setActivityOpenIntern(!activityOpenIntern)}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: "pointer" }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>Activity Management</span>
+              {(hasUnreadScheduledInterviews || hasUnreadScheduledGds || hasUnreadScheduledAssignments) && (
+                <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />
+              )}
+            </div>
+            <div style={{ opacity: 0.9 }}>{activityOpenIntern ? '▾' : '▸'}</div>
+          </li>
+
+          {activityOpenIntern && (
+            <>
+              <li
+                className={activeSection === "scheduled-interviews" ? "active" : ""}
+                onClick={() => handleSectionClick("scheduled-interviews")}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: "pointer", paddingLeft: '24px' }}
+              >
+                <span>Scheduled Interviews</span>
+                {hasUnreadScheduledInterviews && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
+              </li>
+
+              <li
+                className={activeSection === "scheduled-gds" ? "active" : ""}
+                onClick={() => handleSectionClick("scheduled-gds")}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: "pointer", paddingLeft: '24px' }}
+              >
+                <span>Scheduled GDs</span>
+                {hasUnreadScheduledGds && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
+              </li>
+
+              <li
+                className={activeSection === "scheduled-assignments" ? "active" : ""}
+                onClick={() => handleSectionClick("scheduled-assignments")}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: "pointer", paddingLeft: '24px' }}
+              >
+                <span>Scheduled Assessments</span>
+                {hasUnreadScheduledAssignments && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
+              </li>
+            </>
+          )}
+
           <li
             className={activeSection === "tasks" ? "active" : ""}
             onClick={() => handleSectionClick("tasks")}
@@ -1788,13 +1841,26 @@ function InternDashboard() {
           >
             Tasks/Projects
           </li>
-
+          <li
+            className={activeSection === "progress-report" ? "active" : ""}
+            onClick={() => handleSectionClick("progress-report")}
+            style={{ cursor: "pointer" }}
+          >
+            Progress Report
+          </li>
           <li
             className={activeSection === "documents" ? "active" : ""}
             onClick={() => handleSectionClick("documents")}
             style={{ cursor: "pointer" }}
           >
             Certificates/Documents
+          </li>
+          <li
+            className={activeSection === "groups" ? "active" : ""}
+            onClick={() => handleSectionClick("groups")}
+            style={{ cursor: "pointer" }}
+          >
+            Groups
           </li>
           <li
             className={activeSection === "notifications" ? "active" : ""}
@@ -1805,13 +1871,6 @@ function InternDashboard() {
             {hasUnreadNotifications && <span className="sidebar-notification-dot" aria-hidden="true" />}
           </li>
           <li
-            className={activeSection === "groups" ? "active" : ""}
-            onClick={() => handleSectionClick("groups")}
-            style={{ cursor: "pointer" }}
-          >
-            Groups
-          </li>
-          <li
             className={activeSection === "jobs" ? "active" : ""}
             onClick={() => handleSectionClick("jobs")}
             style={{ cursor: "pointer" }}
@@ -1819,14 +1878,6 @@ function InternDashboard() {
             Job & Internship Updates
             {hasUnreadJobPostings && <span className="sidebar-notification-dot" aria-hidden="true" />}
           </li>
-          <li
-            className={activeSection === "progress-report" ? "active" : ""}
-            onClick={() => handleSectionClick("progress-report")}
-            style={{ cursor: "pointer" }}
-          >
-            Progress Report
-          </li>
-
         </ul>
 
         <button className="logout-btn" onClick={handleLogout}>
@@ -3529,23 +3580,24 @@ function InternDashboard() {
         {/* Progress Report Section */}
         {activeSection === "progress-report" && (
           <div className="am-page" style={{ padding: 0 }}>
-            <div className="am-header" style={{ marginBottom: "24px" }}>
-              <h1 style={{ color: "#0f172a", fontSize: "24px", fontWeight: 700, margin: "0 0 6px 0" }}>Progress Report</h1>
-              <p className="am-sub" style={{ margin: 0 }}>Track your learning journey, task completion, and performance metrics</p>
+            <div className="premium-page-header" style={{ marginBottom: "24px" }}>
+              <div className="header-left">
+                <h1 style={{ color: "#0f172a", fontSize: "24px", fontWeight: 700, margin: "0 0 6px 0" }}>Progress Report</h1>
+                <p className="header-subtitle" style={{ margin: 0 }}>Track your learning journey, task completion, and performance metrics</p>
+              </div>
+              <div className="header-right" style={{ display: "flex", gap: "10px" }}>
+                <button className="premium-btn-secondary" onClick={() => navigate("/intern/reports", { state: { activeSection: "progress-report" } })}>
+                  Reports
+                </button>
+                <button className="premium-btn-secondary" onClick={downloadCompleteReportPDF} disabled={reportDownloading}>
+                  {reportDownloading ? "Generating..." : "Download Report"}
+                </button>
+              </div>
             </div>
 
             <div className="am-actions" style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginBottom: "30px" }}>
               <button className={`am-card ${progressFilter === "interviews" ? "active" : ""}`} onClick={() => handleProgressCardClick("interviews")}>
                 <div className="am-card-title">Interviews</div>
-              </button>
-              <button className={`am-card ${progressFilter === "scheduled-interviews" ? "active" : ""}`} onClick={() => handleProgressCardClick("scheduled-interviews")}>
-                <div className="am-card-title">Scheduled Interviews</div>
-              </button>
-              <button className={`am-card ${progressFilter === "scheduled-gds" ? "active" : ""}`} onClick={() => handleProgressCardClick("scheduled-gds")}>
-                <div className="am-card-title">Schedule GD Round</div>
-              </button>
-              <button className={`am-card ${progressFilter === "scheduled-assignments" ? "active" : ""}`} onClick={() => handleProgressCardClick("scheduled-assignments")}>
-                <div className="am-card-title">Schedule Assessment</div>
               </button>
               <button className={`am-card ${progressFilter === "aptitude" ? "active" : ""}`} onClick={() => handleProgressCardClick("aptitude")}>
                 <div className="am-card-title">Aptitude</div>
@@ -3556,25 +3608,21 @@ function InternDashboard() {
               <button className={`am-card ${progressFilter === "training" ? "active" : ""}`} onClick={() => handleProgressCardClick("training")}>
                 <div className="am-card-title">Training</div>
               </button>
-              <button className="am-card" onClick={() => navigate("/intern/reports", { state: { activeSection: "progress-report" } })}>
-                <div className="am-card-title">Reports</div>
-              </button>
-              <button className="am-card" onClick={downloadCompleteReportPDF} disabled={reportDownloading}>
-                <div className="am-card-title">{reportDownloading ? "Generating..." : "Download Report"}</div>
-              </button>
             </div>
 
             <div className="am-content">
               {progressFilter === "interviews" && renderInterviews()}
-              {progressFilter === "scheduled-interviews" && renderScheduledInterviews()}
-              {progressFilter === "scheduled-gds" && renderScheduledGds()}
-              {progressFilter === "scheduled-assignments" && renderScheduledAssessments()}
               {progressFilter === "aptitude" && renderAptitude()}
               {progressFilter === "assessments" && renderAssessments()}
               {progressFilter === "training" && renderTraining()}
             </div>
           </div>
         )}
+
+        {/* Activity Management Section Direct Rendering */}
+        {activeSection === "scheduled-interviews" && renderScheduledInterviews()}
+        {activeSection === "scheduled-gds" && renderScheduledGds()}
+        {activeSection === "scheduled-assignments" && renderScheduledAssessments()}
 
       </main>
 

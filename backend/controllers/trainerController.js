@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Trainer = require('../models/Trainer');
@@ -1033,14 +1034,97 @@ exports.getMyNotifications = async (req, res) => {
       });
     }
 
+    const mappedNotifications = notifications.map(n => {
+      const nObj = n.toObject();
+      nObj.isRead = n.readBy && n.readBy.some(r => String(r.userId) === String(userId));
+      return nObj;
+    });
+
+    const unreadCount = mappedNotifications.filter(n => !n.isRead).length;
+
     res.status(200).json({
       success: true,
-      count: notifications.length,
-      notifications
+      count: mappedNotifications.length,
+      unreadCount,
+      notifications: mappedNotifications
     });
 
   } catch (error) {
     console.error('Get notifications error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Mark notifications as read for Intern / Trainer
+exports.markMyNotificationsRead = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const explicitRole = req.user.role; // 'intern' or 'trainer'
+    let userRole = explicitRole;
+
+    if (!userRole) {
+      const [trainerExists, internExists] = await Promise.all([
+        Trainer.exists({ _id: userId }),
+        Intern.exists({ _id: userId })
+      ]);
+
+      if (trainerExists) {
+        userRole = 'trainer';
+      } else if (internExists) {
+        userRole = 'intern';
+      }
+    }
+
+    const trainerLikeRoles = new Set(['trainer', 'hr', 'other']);
+    const objUserId = new mongoose.Types.ObjectId(userId);
+
+    let filter = {};
+    if (userRole === 'intern') {
+      filter = {
+        $or: [
+          { sendTo: 'All' },
+          { sendTo: 'Group', recipientModel: 'Intern', recipientIds: objUserId },
+          { sendTo: 'Individual', recipientModel: 'Intern', recipientIds: objUserId }
+        ]
+      };
+    } else if (trainerLikeRoles.has(String(userRole || '').toLowerCase()) || await Trainer.exists({ _id: userId })) {
+      filter = {
+        $or: [
+          { sendTo: 'All' },
+          { sendTo: 'Group', recipientModel: 'Trainer', recipientIds: objUserId },
+          { sendTo: 'Individual', recipientModel: 'Trainer', recipientIds: objUserId }
+        ]
+      };
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user role'
+      });
+    }
+
+    const result = await Notification.updateMany(
+      {
+        ...filter,
+        'readBy.userId': { $ne: objUserId }
+      },
+      {
+        $push: {
+          readBy: { userId: objUserId, readAt: new Date() }
+        }
+      }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Notifications marked as read',
+      updatedCount: result.modifiedCount ?? result.nModified ?? 0
+    });
+
+  } catch (error) {
+    console.error('Mark notifications read error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

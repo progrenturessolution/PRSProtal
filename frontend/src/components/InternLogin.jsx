@@ -33,7 +33,9 @@ function InternLogin() {
 
       if (response.data.success) {
         // Clear any existing data first
-        localStorage.clear();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
 
         // Store token and user info
         localStorage.setItem("token", response.data.token);

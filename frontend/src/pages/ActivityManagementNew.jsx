@@ -54,6 +54,21 @@ export default function ActivityManagementNew() {
 
   useEffect(() => { fetchActivities(); fetchStudents(); fetchTrainers(); fetchGroups(); }, []);
 
+  useEffect(() => {
+    const handleClose = () => {
+      setOpenActionMenu(null);
+      setActionMenuPos(null);
+    };
+    if (openActionMenu) {
+      window.addEventListener('click', handleClose);
+      window.addEventListener('scroll', handleClose, true);
+    }
+    return () => {
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('scroll', handleClose, true);
+    };
+  }, [openActionMenu]);
+
   async function fetchActivities() {
     setLoading(true);
     try {
@@ -1122,16 +1137,48 @@ export default function ActivityManagementNew() {
                       <td>
                         <div className="am-actions-cell">
                           <button className="am-action-btn" onClick={(e) => {
+                            e.stopPropagation();
                             const id = activity._id;
                             if (openActionMenu === id) { setOpenActionMenu(null); setActionMenuPos(null); return; }
                             const rect = e.currentTarget.getBoundingClientRect();
+                            const spaceBelow = window.innerHeight - rect.bottom;
+                            const showUpward = spaceBelow < 185;
                             setOpenActionMenu(id);
-                            setActionMenuPos({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX });
+                            setActionMenuPos({
+                              top: showUpward ? rect.top : rect.bottom,
+                              left: rect.right - 130,
+                              showUpward
+                            });
                           }}>⋮</button>
                           {openActionMenu === activity._id && actionMenuPos && (
-                            <div className="am-action-menu" style={{ position: 'fixed', top: actionMenuPos.top, left: actionMenuPos.left }}>
+                            <div
+                              className="am-action-menu"
+                              style={{
+                                position: 'fixed',
+                                top: actionMenuPos.top,
+                                left: actionMenuPos.left,
+                                transform: actionMenuPos.showUpward ? 'translateY(-100%)' : 'none'
+                              }}
+                            >
                               <button onClick={() => { setViewActivity(activity); setOpenActionMenu(null); setActionMenuPos(null); }} className="am-action-item">View Details</button>
-                              <button onClick={() => { handleEditActivity(activity); setOpenActionMenu(null); setActionMenuPos(null); }} className="am-action-item">Edit</button>
+                              
+                              {activity.status !== 'Completed' && (
+                                <button onClick={async () => {
+                                  try {
+                                    const payload = { title: activity.title, dateTime: activity.dateTime, status: 'Completed', type: activity.type };
+                                    const res = await adminAPI.updateActivity(activity._id, payload);
+                                    if (res.data?.success) {
+                                      setActivities((prev) => prev.map(a => (String(a._id) === String(activity._id) ? res.data.activity : a)));
+                                      setOpenActionMenu(null);
+                                      setActionMenuPos(null);
+                                      alert('Activity marked as Completed');
+                                    } else alert('Update failed');
+                                  } catch (e) { console.error(e); alert('Update failed'); }
+                                }} className="am-action-item">Mark Completed</button>
+                              )}
+
+                              <button onClick={() => { handleEditActivity(activity); setOpenActionMenu(null); setActionMenuPos(null); }} className="am-action-item">Reschedule</button>
+                              
                               <button onClick={async () => {
                                 if (!confirm('Delete this activity?')) return;
                                 try {
@@ -1342,34 +1389,36 @@ export default function ActivityManagementNew() {
 
               {generatedSlots.length > 0 && (
                 <div className="am-table-shell">
-                  <table className="records-table am-records-table am-slot-table records-slot-table">
-                    <thead>
-                      <tr>
-                        <th>Slot</th>
-                        <th>Time</th>
-                        <th>Student</th>
-                        <th>Interviewer</th>
-                        <th>Mode</th>
-                        <th>Type</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {generatedSlots.map(s => (
-                        <tr key={s.slotNo}>
-                          <td>{s.slotNo}</td>
-                          <td className="date-cell">{s.time}</td>
-                          <td>{s.studentName} • {s.psmsId}</td>
-                          <td>{s.interviewerName}</td>
-                          <td>
-                            <span className={`am-slot-badge ${String(s.interviewMode || '').toLowerCase()}`}>
-                              {s.interviewMode}
-                            </span>
-                          </td>
-                          <td>{s.interviewType}</td>
+                  <div className="am-table-wrapper-scroll">
+                    <table className="records-table am-records-table am-slot-table records-slot-table">
+                      <thead>
+                        <tr>
+                          <th>Slot</th>
+                          <th>Time</th>
+                          <th>Student</th>
+                          <th>Interviewer</th>
+                          <th>Mode</th>
+                          <th>Type</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {generatedSlots.map(s => (
+                          <tr key={s.slotNo}>
+                            <td>{s.slotNo}</td>
+                            <td className="date-cell">{s.time}</td>
+                            <td>{s.studentName} • {s.psmsId}</td>
+                            <td>{s.interviewerName}</td>
+                            <td>
+                              <span className={`am-slot-badge ${String(s.interviewMode || '').toLowerCase()}`}>
+                                {s.interviewMode}
+                              </span>
+                            </td>
+                            <td>{s.interviewType}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                   <div className="am-actions-row am-actions-right">
                     <button className="nm-btn primary am-confirm-btn" onClick={saveInterviewSchedule}>Confirm & Save</button>
                   </div>
@@ -1525,37 +1574,39 @@ export default function ActivityManagementNew() {
 
               {gdGroups.length > 0 && (
                 <div className="am-table-shell">
-                  <table className="records-table am-records-table am-slot-table records-slot-table">
-                    <thead>
-                      <tr>
-                        <th>Group</th>
-                        <th>Group Name</th>
-                        <th>Interviewer</th>
-                        <th>Date & Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {gdGroups.map((g, idx) => {
-                        const members = Array.isArray(g) ? g : (g.students || []);
-                        let label = '';
-                        if (g && (g.groupName || g.groupNumber)) label = g.groupName || g.groupNumber;
-                        else if (activeGdGroupId) {
-                          const found = groups.find(gr => String(gr._id || gr.id || gr.groupNumber || gr.groupName) === String(activeGdGroupId));
-                          label = found ? (found.groupName || found.groupNumber || (found._id||found.id)) : `Group ${idx + 1}`;
-                        } else {
-                          label = `Group ${idx + 1}`;
-                        }
-                        return (
-                          <tr key={idx}>
-                            <td>Group {idx + 1}</td>
-                            <td>{label}</td>
-                            <td>{getTrainerLabel(gdForm.interviewer)}</td>
-                            <td>{gdForm.date ? `${gdForm.date} ${gdForm.startTime || ''}` : '-'}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <div className="am-table-wrapper-scroll">
+                    <table className="records-table am-records-table am-slot-table records-slot-table">
+                      <thead>
+                        <tr>
+                          <th>Group</th>
+                          <th>Group Name</th>
+                          <th>Interviewer</th>
+                          <th>Date & Time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {gdGroups.map((g, idx) => {
+                          const members = Array.isArray(g) ? g : (g.students || []);
+                          let label = '';
+                          if (g && (g.groupName || g.groupNumber)) label = g.groupName || g.groupNumber;
+                          else if (activeGdGroupId) {
+                            const found = groups.find(gr => String(gr._id || gr.id || gr.groupNumber || gr.groupName) === String(activeGdGroupId));
+                            label = found ? (found.groupName || found.groupNumber || (found._id||found.id)) : `Group ${idx + 1}`;
+                          } else {
+                            label = `Group ${idx + 1}`;
+                          }
+                          return (
+                            <tr key={idx}>
+                              <td>Group {idx + 1}</td>
+                              <td>{label}</td>
+                              <td>{getTrainerLabel(gdForm.interviewer)}</td>
+                              <td>{gdForm.date ? `${gdForm.date} ${gdForm.startTime || ''}` : '-'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                   <div className="am-actions-row am-actions-right">
                     <button className="nm-btn primary am-confirm-btn" onClick={saveGd}>Confirm & Save</button>
                   </div>
@@ -1648,11 +1699,6 @@ export default function ActivityManagementNew() {
                     <input type="number" value={assessForm.duration} onChange={e => setAssessForm(f => ({ ...f, duration: Number(e.target.value) }))} />
                   </div>
 
-                  {renderInterviewerSelect(
-                    assessForm.interviewer,
-                    e => setAssessForm(f => ({ ...f, interviewer: e.target.value }))
-                  )}
-
                   <div className="am-field am-span-2">
                     <label>Link</label>
                     <input value={assessForm.link} onChange={e => setAssessForm(f => ({ ...f, link: e.target.value }))} />
@@ -1730,38 +1776,40 @@ export default function ActivityManagementNew() {
 
               {(generatedSlots.length > 0 || assessSelected.length > 0) ? (
                 <div className="am-table-shell">
-                  <table className="records-table am-records-table am-slot-table records-slot-table">
-                    <thead>
-                      <tr>
-                        <th>Slot</th>
-                        <th>Student</th>
-                        <th>PSMS ID</th>
-                        <th>Interviewer</th>
-                        <th>Date & Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(generatedSlots.length > 0 ? generatedSlots : assessSelected.map((id, idx) => {
-                        const s = students.find(st => String(st._id) === String(id) || String(st.id) === String(id) || st.internId === id || st.email === id || st.name === id);
-                        return {
-                          slotNo: idx + 1,
-                          time: assessForm.time || '',
-                          studentName: s ? s.name : id,
-                          psmsId: s ? (s.internId || s.email) : id,
-                          interviewerName: getTrainerLabel(assessForm.interviewer),
-                          dateCell: assessForm.date ? `${assessForm.date} ${assessForm.time || ''}` : '-',
-                        };
-                      })).map((row) => (
-                        <tr key={row.studentId || row.slotNo}>
-                          <td>{row.slotNo}</td>
-                          <td>{row.studentName}</td>
-                          <td>{row.psmsId}</td>
-                          <td>{row.interviewerName}</td>
-                          <td className="date-cell">{row.time ? `${assessForm.date || ''} ${row.time}`.trim() : (row.dateCell || '-')}</td>
+                  <div className="am-table-wrapper-scroll">
+                    <table className="records-table am-records-table am-slot-table records-slot-table">
+                      <thead>
+                        <tr>
+                          <th>Slot</th>
+                          <th>Student</th>
+                          <th>PSMS ID</th>
+                          <th>Interviewer</th>
+                          <th>Date & Time</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {(generatedSlots.length > 0 ? generatedSlots : assessSelected.map((id, idx) => {
+                          const s = students.find(st => String(st._id) === String(id) || String(st.id) === String(id) || st.internId === id || st.email === id || st.name === id);
+                          return {
+                            slotNo: idx + 1,
+                            time: assessForm.time || '',
+                            studentName: s ? s.name : id,
+                            psmsId: s ? (s.internId || s.email) : id,
+                            interviewerName: getTrainerLabel(assessForm.interviewer),
+                            dateCell: assessForm.date ? `${assessForm.date} ${assessForm.time || ''}` : '-',
+                          };
+                        })).map((row) => (
+                          <tr key={row.studentId || row.slotNo}>
+                            <td>{row.slotNo}</td>
+                            <td>{row.studentName}</td>
+                            <td>{row.psmsId}</td>
+                            <td>{row.interviewerName}</td>
+                            <td className="date-cell">{row.time ? `${assessForm.date || ''} ${row.time}`.trim() : (row.dateCell || '-')}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                   <div className="am-actions-row am-actions-right">
                     <button className="nm-btn primary am-confirm-btn" onClick={saveAssessment}>Confirm & Save</button>
                   </div>

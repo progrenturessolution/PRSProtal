@@ -278,7 +278,9 @@ function RepresentativeDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userRole");
     navigate('/');
   };
 

@@ -26,8 +26,8 @@ router.get('/scheduled-gds', trainerController.getScheduledGDs);
 
 // Get trainer work assignments
 router.get('/work-assignments', trainerController.getMyWorkAssignmentsForTrainer);
-// Get trainer notifications (includes Test/Assessment)
 router.get('/notifications', trainerController.getMyNotifications);
+router.patch('/notifications/read', trainerController.markMyNotificationsRead);
 
 // Add evaluation records
 router.post('/interviews', trainerController.addInterview);

@@ -281,7 +281,7 @@ function SMSProgramManagement() {
     // Apply search filter
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(student => 
+      filtered = filtered.filter(student =>
         (student.name && student.name.toLowerCase().includes(query)) ||
         (student.email && student.email.toLowerCase().includes(query)) ||
         (student.internId && student.internId.toLowerCase().includes(query)) ||
@@ -366,7 +366,7 @@ function SMSProgramManagement() {
     try {
       const response = await adminAPI.updateIntern(selectedStudent._id, editForm);
       if (response.data.success) {
-        setStudents(prev => prev.map(s => 
+        setStudents(prev => prev.map(s =>
           s._id === selectedStudent._id ? { ...s, ...editForm } : s
         ));
         setSelectedStudent({ ...selectedStudent, ...editForm });
@@ -537,28 +537,28 @@ function SMSProgramManagement() {
       {/* Statistics Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-         
+
           <div className="stat-info">
             <h3>Total SMS Students</h3>
             <p>{students.length}</p>
           </div>
         </div>
         <div className="stat-card">
-        
+
           <div className="stat-info">
             <h3>Active</h3>
             <p>{students.filter(s => s.status?.toLowerCase() === 'active').length}</p>
           </div>
         </div>
         <div className="stat-card">
-         
+
           <div className="stat-info">
             <h3>Completed</h3>
             <p>{students.filter(s => s.status?.toLowerCase() === 'completed').length}</p>
           </div>
         </div>
         <div className="stat-card">
-          
+
           <div className="stat-info">
             <h3>Payment Done</h3>
             <p>{students.filter(s => s.transactionId).length}</p>
@@ -902,10 +902,10 @@ function SMSProgramManagement() {
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 11000
         }} onClick={() => setShowDocumentModal(false)}>
-          <div style={{ 
-            background: 'white', 
-            borderRadius: '16px', 
-            minWidth: '500px', 
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            minWidth: '500px',
             maxWidth: '700px',
             width: '90%',
             maxHeight: '85vh',
@@ -913,25 +913,25 @@ function SMSProgramManagement() {
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
           }} onClick={(e) => e.stopPropagation()}>
             {/* Header with Gradient */}
-            <div style={{ 
+            <div style={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               padding: '24px',
               color: 'white',
               position: 'relative'
             }}>
-              <button 
-                onClick={() => setShowDocumentModal(false)} 
-                style={{ 
+              <button
+                onClick={() => setShowDocumentModal(false)}
+                style={{
                   position: 'absolute',
                   top: '16px',
                   right: '16px',
-                  border: 'none', 
-                  background: 'rgba(255,255,255,0.2)', 
+                  border: 'none',
+                  background: 'rgba(255,255,255,0.2)',
                   color: 'white',
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  cursor: 'pointer', 
+                  cursor: 'pointer',
                   fontSize: '18px',
                   display: 'flex',
                   alignItems: 'center',
@@ -951,8 +951,8 @@ function SMSProgramManagement() {
             <div style={{ padding: '24px', maxHeight: 'calc(85vh - 100px)', overflowY: 'auto' }}>
               <div style={{ display: 'grid', gap: 16 }}>
                 {/* Offer Letter */}
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '16px',
@@ -963,9 +963,9 @@ function SMSProgramManagement() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
                     <strong style={{ color: '#374151', fontSize: '15px' }}>Offer Letter</strong>
                     {documentModalStudent.documents?.offerLetter ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.offerLetter.filename} 
-                        target="_blank" 
+                      <a
+                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.offerLetter.filename}
+                        target="_blank"
                         rel="noreferrer"
                         style={{
                           padding: '8px 14px',
@@ -981,9 +981,9 @@ function SMSProgramManagement() {
                     ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
                   </div>
                   <input id={`modal-upload-offerLetter`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, documentModalStudent._id, 'offerLetter')} />
-                  <button 
-                    onClick={() => document.getElementById(`modal-upload-offerLetter`).click()} 
-                    style={{ 
+                  <button
+                    onClick={() => document.getElementById(`modal-upload-offerLetter`).click()}
+                    style={{
                       padding: '10px 18px',
                       background: documentModalStudent.documents?.offerLetter ? '#f59e0b' : '#3b82f6',
                       color: 'white',
@@ -1000,8 +1000,8 @@ function SMSProgramManagement() {
                 </div>
 
                 {/* Welcome Letter */}
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '16px',
@@ -1012,9 +1012,9 @@ function SMSProgramManagement() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
                     <strong style={{ color: '#374151', fontSize: '15px' }}>Welcome Letter</strong>
                     {documentModalStudent.documents?.welcomeLetter ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.welcomeLetter.filename} 
-                        target="_blank" 
+                      <a
+                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.welcomeLetter.filename}
+                        target="_blank"
                         rel="noreferrer"
                         style={{
                           padding: '8px 14px',
@@ -1030,9 +1030,9 @@ function SMSProgramManagement() {
                     ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
                   </div>
                   <input id={`modal-upload-welcomeLetter`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, documentModalStudent._id, 'welcomeLetter')} />
-                  <button 
-                    onClick={() => document.getElementById(`modal-upload-welcomeLetter`).click()} 
-                    style={{ 
+                  <button
+                    onClick={() => document.getElementById(`modal-upload-welcomeLetter`).click()}
+                    style={{
                       padding: '10px 18px',
                       background: documentModalStudent.documents?.welcomeLetter ? '#f59e0b' : '#3b82f6',
                       color: 'white',
@@ -1049,8 +1049,8 @@ function SMSProgramManagement() {
                 </div>
 
                 {/* Payment Receipt */}
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '16px',
@@ -1061,9 +1061,9 @@ function SMSProgramManagement() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
                     <strong style={{ color: '#374151', fontSize: '15px' }}>Payment Receipt</strong>
                     {documentModalStudent.documents?.paymentReceipt ? (
-                      <a 
-                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.paymentReceipt.filename} 
-                        target="_blank" 
+                      <a
+                        href={UPLOADS_BASE + '/uploads/students/' + documentModalStudent.documents.paymentReceipt.filename}
+                        target="_blank"
                         rel="noreferrer"
                         style={{
                           padding: '8px 14px',
@@ -1079,9 +1079,9 @@ function SMSProgramManagement() {
                     ) : <span style={{ color: '#9ca3af', fontSize: '13px' }}>Not uploaded</span>}
                   </div>
                   <input id={`modal-upload-paymentReceipt`} type="file" accept="application/pdf" style={{ display: 'none' }} onChange={(e) => handleSingleDocUpload(e, documentModalStudent._id, 'paymentReceipt')} />
-                  <button 
-                    onClick={() => document.getElementById(`modal-upload-paymentReceipt`).click()} 
-                    style={{ 
+                  <button
+                    onClick={() => document.getElementById(`modal-upload-paymentReceipt`).click()}
+                    style={{
                       padding: '10px 18px',
                       background: documentModalStudent.documents?.paymentReceipt ? '#f59e0b' : '#3b82f6',
                       color: 'white',
@@ -1098,7 +1098,7 @@ function SMSProgramManagement() {
                 </div>
 
                 {/* Other Certificates */}
-                <div style={{ 
+                <div style={{
                   padding: '16px',
                   background: '#f9fafb',
                   borderRadius: '10px',
@@ -1126,7 +1126,7 @@ function SMSProgramManagement() {
                                     ...s,
                                     documents: {
                                       ...(s.documents || {}),
-                                      otherCertificates: [ ...(s.documents?.otherCertificates || []), resp.data.document ]
+                                      otherCertificates: [...(s.documents?.otherCertificates || []), resp.data.document]
                                     }
                                   };
                                 }
@@ -1136,7 +1136,7 @@ function SMSProgramManagement() {
                                 ...prev,
                                 documents: {
                                   ...(prev.documents || {}),
-                                  otherCertificates: [ ...(prev.documents?.otherCertificates || []), resp.data.document ]
+                                  otherCertificates: [...(prev.documents?.otherCertificates || []), resp.data.document]
                                 }
                               }));
                             }
@@ -1146,9 +1146,9 @@ function SMSProgramManagement() {
                         }
                         e.target.value = '';
                       }} />
-                      <button 
-                        onClick={() => document.getElementById(`modal-upload-otherCertificates`).click()} 
-                        style={{ 
+                      <button
+                        onClick={() => document.getElementById(`modal-upload-otherCertificates`).click()}
+                        style={{
                           padding: '10px 18px',
                           background: '#8b5cf6',
                           color: 'white',
@@ -1167,10 +1167,10 @@ function SMSProgramManagement() {
                   {documentModalStudent.documents?.otherCertificates && documentModalStudent.documents.otherCertificates.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
                       {documentModalStudent.documents.otherCertificates.map((c, idx) => (
-                        <a 
+                        <a
                           key={idx}
-                          href={UPLOADS_BASE + '/uploads/students/' + c.filename} 
-                          target="_blank" 
+                          href={UPLOADS_BASE + '/uploads/students/' + c.filename}
+                          target="_blank"
                           rel="noreferrer"
                           style={{
                             padding: '10px 14px',

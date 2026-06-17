@@ -525,10 +525,10 @@ function InterviewForm() {
                         <td>{new Date(interview.date).toLocaleDateString()}</td>
                         <td>{interview.interviewType}</td>
                         <td>{interview.attemptNumber}</td>
-                        <td>{interview.communicationLevel}</td>
-                        <td>{interview.confidenceLevel}</td>
-                        <td>{interview.clarityLevel}</td>
-                        <td>{interview.overallLevel}</td>
+                        <td>{interview.communicationLevel || "-"}</td>
+                        <td>{interview.confidenceLevel || "-"}</td>
+                        <td>{interview.clarityLevel || interview.clarityOfAnswer || "-"}</td>
+                        <td>{interview.overallLevel || (interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel) || "-"}</td>
                         <td>{interview.levelCrossed ? "Crossed" : "Not Crossed"}</td>
                       </tr>
                     ))

@@ -394,6 +394,16 @@ function GroupManagement() {
                           >
                             View Details
                           </button>
+                          <button
+                            type="button"
+                            className="gm-action-menu-item"
+                            onClick={() => {
+                              setActiveGroupMenuId(null);
+                              editGroup(group);
+                            }}
+                          >
+                            Edit Group
+                          </button>
                         </div>
                       )}
                     </div>
@@ -411,6 +421,15 @@ function GroupManagement() {
             <div className="gm-modal-head">
               <h2>{detailsGroup.groupName}</h2>
               <div className="gm-row-actions">
+                <button
+                  className="gm-btn gm-btn-primary"
+                  onClick={() => {
+                    setDetailsGroup(null);
+                    editGroup(detailsGroup);
+                  }}
+                >
+                  Edit Group
+                </button>
                 <button
                   className="gm-btn gm-btn-primary"
                   onClick={() => removeGroup(detailsGroup._id)}

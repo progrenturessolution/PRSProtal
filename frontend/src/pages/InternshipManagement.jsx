@@ -677,17 +677,16 @@ function InternshipManagement({ onAddStudentClick }) {
                     </td>
                     <td>
                       <span
-                        className={`status-badge ${
-                          student.status?.toLowerCase() === "active"
+                        className={`status-badge ${student.status?.toLowerCase() === "active"
                             ? "status-active"
                             : student.status?.toLowerCase() === "completed"
                               ? "status-completed"
                               : "status-inactive"
-                        }`}
+                          }`}
                       >
                         {student.status
                           ? student.status.charAt(0).toUpperCase() +
-                            student.status.slice(1)
+                          student.status.slice(1)
                           : "N/A"}
                       </span>
                     </td>
@@ -762,123 +761,123 @@ function InternshipManagement({ onAddStudentClick }) {
                           >
                             View Profile
                           </button>
-                            <button
-                              onClick={() => {
-                                setSelectedStudent(student);
-                                handleEditClick();
-                                setOpenMenuId(null);
-                              }}
-                              style={{
-                                width: '100%',
-                                padding: '10px 14px',
-                                background: 'white',
-                                border: 'none',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#132a5d',
-                                transition: 'background 0.2s',
-                                borderTop: '1px solid #f3f4f6'
-                              }}
-                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                              onMouseLeave={(e) => e.target.style.background = 'white'}
-                            >
-                              Edit Details
-                            </button>
-                            <button
-                              onClick={() => handleManageCertificates(student)}
-                              style={{
-                                width: '100%',
-                                padding: '10px 14px',
-                                background: 'white',
-                                border: 'none',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#132a5d',
-                                transition: 'background 0.2s',
-                                borderTop: '1px solid #f3f4f6'
-                              }}
-                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                              onMouseLeave={(e) => e.target.style.background = 'white'}
-                            >
-                              Certificates
-                            </button>
-                            <div
-                              style={{
-                                padding: '8px 14px 6px',
-                                borderTop: '1px solid #f3f4f6',
-                                fontSize: '11px',
-                                fontWeight: '700',
-                                letterSpacing: '0.08em',
-                                color: '#94a3b8',
-                                textTransform: 'uppercase',
-                              }}
-                            >
-                              More
-                            </div>
-                            <button
-                              onClick={() => handleStatusToggle(student)}
-                              style={{
-                                width: '100%',
-                                padding: '10px 14px',
-                                background: 'white',
-                                border: 'none',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: student.status?.toLowerCase() === 'active' ? '#b91c1c' : '#166534',
-                                transition: 'background 0.2s',
-                                borderTop: '1px solid #f3f4f6'
-                              }}
-                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                              onMouseLeave={(e) => e.target.style.background = 'white'}
-                            >
-                              {student.status?.toLowerCase() === 'active' ? 'Mark Inactive' : 'Mark Active'}
-                            </button>
-                            <button
-                              onClick={() => handleMarkCompleted(student)}
-                              style={{
-                                width: '100%',
-                                padding: '10px 14px',
-                                background: 'white',
-                                border: 'none',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#075985',
-                                transition: 'background 0.2s',
-                                borderTop: '1px solid #f3f4f6'
-                              }}
-                              onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
-                              onMouseLeave={(e) => e.target.style.background = 'white'}
-                            >
-                              Mark Completed
-                            </button>
-                            <button
-                              onClick={() => handleDeleteStudent(student)}
-                              style={{
-                                width: '100%',
-                                padding: '10px 14px',
-                                background: 'white',
-                                border: 'none',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                color: '#dc2626',
-                                transition: 'background 0.2s',
-                                borderTop: '1px solid #f3f4f6'
-                              }}
-                              onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
-                              onMouseLeave={(e) => e.target.style.background = 'white'}
-                            >
-                              Delete
-                            </button>
+                          <button
+                            onClick={() => {
+                              setSelectedStudent(student);
+                              handleEditClick();
+                              setOpenMenuId(null);
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'white',
+                              border: 'none',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              color: '#132a5d',
+                              transition: 'background 0.2s',
+                              borderTop: '1px solid #f3f4f6'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                            onMouseLeave={(e) => e.target.style.background = 'white'}
+                          >
+                            Edit Details
+                          </button>
+                          <button
+                            onClick={() => handleManageCertificates(student)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'white',
+                              border: 'none',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              color: '#132a5d',
+                              transition: 'background 0.2s',
+                              borderTop: '1px solid #f3f4f6'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                            onMouseLeave={(e) => e.target.style.background = 'white'}
+                          >
+                            Certificates
+                          </button>
+                          <div
+                            style={{
+                              padding: '8px 14px 6px',
+                              borderTop: '1px solid #f3f4f6',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              letterSpacing: '0.08em',
+                              color: '#94a3b8',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            More
+                          </div>
+                          <button
+                            onClick={() => handleStatusToggle(student)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'white',
+                              border: 'none',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              color: student.status?.toLowerCase() === 'active' ? '#b91c1c' : '#166534',
+                              transition: 'background 0.2s',
+                              borderTop: '1px solid #f3f4f6'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                            onMouseLeave={(e) => e.target.style.background = 'white'}
+                          >
+                            {student.status?.toLowerCase() === 'active' ? 'Mark Inactive' : 'Mark Active'}
+                          </button>
+                          <button
+                            onClick={() => handleMarkCompleted(student)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'white',
+                              border: 'none',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              color: '#075985',
+                              transition: 'background 0.2s',
+                              borderTop: '1px solid #f3f4f6'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                            onMouseLeave={(e) => e.target.style.background = 'white'}
+                          >
+                            Mark Completed
+                          </button>
+                          <button
+                            onClick={() => handleDeleteStudent(student)}
+                            style={{
+                              width: '100%',
+                              padding: '10px 14px',
+                              background: 'white',
+                              border: 'none',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              fontWeight: '500',
+                              color: '#dc2626',
+                              transition: 'background 0.2s',
+                              borderTop: '1px solid #f3f4f6'
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#fef2f2'}
+                            onMouseLeave={(e) => e.target.style.background = 'white'}
+                          >
+                            Delete
+                          </button>
                         </div>
                       )}
                     </td>

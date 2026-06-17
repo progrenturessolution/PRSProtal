@@ -743,7 +743,9 @@ function StudentDetailReport() {
                       <span className="level-badge">{interview.confidenceLevel}</span>
                     </td>
                     <td>
-                      <span className="level-badge">{interview.clarityLevel}</span>
+                      <span className="level-badge">
+                        {getInterviewOverallLabel(interview.clarityLevel || interview.clarityOfAnswer)}
+                      </span>
                     </td>
                     <td>
                       {(() => {
@@ -764,9 +766,14 @@ function StudentDetailReport() {
                         {interview.levelCrossed ? "✓ Yes" : "✗ No"}
                       </span>
                     </td>
-                    <td className="remarks-cell" title={interview.remarks}>
-                      {interview.remarks ? interview.remarks.substring(0, 30) + "..." : "-"}
-                    </td>
+                    {(() => {
+                      const remarksVal = interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "";
+                      return (
+                        <td className="remarks-cell" title={remarksVal}>
+                          {remarksVal ? (remarksVal.length > 30 ? remarksVal.substring(0, 30) + "..." : remarksVal) : "-"}
+                        </td>
+                      );
+                    })()}
                   </tr>
                 ))}
               </tbody>

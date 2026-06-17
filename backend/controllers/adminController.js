@@ -1,4 +1,4 @@
-﻿const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 const Intern = require('../models/Intern');
 const Trainer = require('../models/Trainer');
 const Representative = require('../models/Representative');
@@ -2229,6 +2229,36 @@ exports.updateStudentGroup = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Group not found' });
     }
 
+    // Propagation:
+    const groupId = req.params.id;
+
+    // 1. If groupName changed, update cached groupName in Interview and Notification models
+    if (groupName) {
+      await Promise.all([
+        Interview.updateMany({ groupId }, { $set: { groupName } }),
+        Notification.updateMany({ 'assessmentMeta.groupId': groupId }, { $set: { 'assessmentMeta.groupName': groupName } })
+      ]);
+    }
+
+    // 2. If assignedEmployees list changed, sync Trainer assignedGroups bidirectionally
+    if (updatePayload.assignedEmployees !== undefined) {
+      const parsedEmployees = updatePayload.assignedEmployees;
+
+      // Pull this group from all Trainers who are NOT in the assignedEmployees list anymore
+      await Trainer.updateMany(
+        { assignedGroups: groupId, name: { $nin: parsedEmployees } },
+        { $pull: { assignedGroups: groupId } }
+      );
+
+      // Add this group to Trainers who are in the assignedEmployees list
+      if (parsedEmployees.length > 0) {
+        await Trainer.updateMany(
+          { name: { $in: parsedEmployees } },
+          { $addToSet: { assignedGroups: groupId } }
+        );
+      }
+    }
+
     return res.status(200).json({ success: true, group });
   } catch (error) {
     console.error('Update student group error:', error);
@@ -2239,10 +2269,23 @@ exports.updateStudentGroup = async (req, res) => {
 // Delete group
 exports.deleteStudentGroup = async (req, res) => {
   try {
-    const deleted = await StudentGroup.findByIdAndDelete(req.params.id);
+    const groupId = req.params.id;
+    const deleted = await StudentGroup.findByIdAndDelete(groupId);
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Group not found' });
     }
+
+    // Pull from all Trainer assignedGroups and workAssignments.assignedGroups fields
+    await Trainer.updateMany(
+      {},
+      { 
+        $pull: { 
+          assignedGroups: groupId,
+          'workAssignments.$[].assignedGroups': groupId
+        } 
+      }
+    );
+
     return res.status(200).json({ success: true, message: 'Group deleted successfully' });
   } catch (error) {
     console.error('Delete student group error:', error);

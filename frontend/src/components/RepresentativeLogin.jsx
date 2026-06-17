@@ -24,7 +24,9 @@ function RepresentativeLogin() {
     try {
       const response = await representativeAPI.login(formData);
       if (response.data.success) {
-        localStorage.clear();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         localStorage.setItem('userRole', 'representative');

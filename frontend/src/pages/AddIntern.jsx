@@ -340,467 +340,467 @@ function AddIntern({ onInternAdded, onBack }) {
           {success && <div className="success-message">{success}</div>}
 
           <div className="admin-add-student-grid">
-          <div className="form-group">
-            <label>Student Type *</label>
-            <select
-              name="studentType"
-              value={studentType}
-              onChange={(e) => setStudentType(e.target.value)}
-            >
-              <option value="Internship">Internship</option>
-              <option value="SMS Program">SMS Program</option>
-            </select>
-          </div>
-
-          {studentType === "SMS Program" && (
             <div className="form-group">
-              <label>PSMS ID *</label>
-              <input
-                type="text"
-                name="internId"
-                value={formData.internId}
-                onChange={handleChange}
-                placeholder="Enter PSMS ID"
-                required
-              />
-              <small>This ID will be used for SMS Student login.</small>
+              <label>Student Type *</label>
+              <select
+                name="studentType"
+                value={studentType}
+                onChange={(e) => setStudentType(e.target.value)}
+              >
+                <option value="Internship">Internship</option>
+                <option value="SMS Program">SMS Program</option>
+              </select>
             </div>
-          )}
 
-          {studentType === "Internship" && (
-            <div className="form-group">
-              <label>PIID (required) *</label>
-              <input
-                type="text"
-                name="internId"
-                value={formData.internId}
-                onChange={handleChange}
-                placeholder="Enter PIID"
-                required
-              />
-              <small>This ID will be used for Internship student login.</small>
-            </div>
-          )}
-
-          <div className="form-group">
-            <label>Full Name *</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Enter student's full name"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Mobile Number (WhatsApp preferred) *</label>
-            <input
-              type="tel"
-              name="mobile"
-              value={formData.mobile}
-              onChange={handleChange}
-              placeholder="Enter mobile number"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Email Address *</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter email address"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Password *</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Assign a password"
-              required
-              minLength="6"
-            />
-          </div>
-
-          {studentType === "Internship" && (
-            <>
+            {studentType === "SMS Program" && (
               <div className="form-group">
-                <label>Internship Domain *</label>
-                <select
-                  name="domain"
-                  value={formData.domain}
+                <label>PSMS ID *</label>
+                <input
+                  type="text"
+                  name="internId"
+                  value={formData.internId}
                   onChange={handleChange}
+                  placeholder="Enter PSMS ID"
                   required
-                >
-                  <option value="">Select Domain</option>
-                  <option value="Web Development">Web Development</option>
-                  <option value="App Development">App Development</option>
-                  <option value="Data Science">Data Science</option>
-                  <option value="Machine Learning">Machine Learning</option>
-                  <option value="Artificial Intelligence">
-                    Artificial Intelligence
-                  </option>
-                  <option value="UI/UX Design">UI/UX Design</option>
-                  <option value="Graphic Design">Graphic Design</option>
-                  <option value="Digital Marketing">Digital Marketing</option>
-                  <option value="Content Writing">Content Writing</option>
-                  <option value="Business Development">
-                    Business Development
-                  </option>
-                  <option value="Human Resources">Human Resources</option>
-                  <option value="Sales & Marketing">Sales & Marketing</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Cybersecurity">Cybersecurity</option>
-                  <option value="Cloud Computing">Cloud Computing</option>
-                  <option value="DevOps">DevOps</option>
-                  <option value="Full Stack Development">
-                    Full Stack Development
-                  </option>
-                  <option value="Frontend Development">
-                    Frontend Development
-                  </option>
-                  <option value="Backend Development">
-                    Backend Development
-                  </option>
-                  <option value="Mobile App Development">
-                    Mobile App Development
-                  </option>
-                  <option value="Game Development">Game Development</option>
-                  <option value="Quality Assurance">Quality Assurance</option>
-                  <option value="Project Management">Project Management</option>
-                  <option value="Business Analytics">Business Analytics</option>
-                  <option value="Other">Other (Type Manually)</option>
-                </select>
+                />
+                <small>This ID will be used for SMS Student login.</small>
               </div>
+            )}
 
-              {formData.domain === "Other" && (
-                <div
-                  className="form-group"
-                  style={{ animation: "slideInForm 0.3s ease-out" }}
-                >
-                  <label>Enter Custom Domain *</label>
+            {studentType === "Internship" && (
+              <div className="form-group">
+                <label>PIID (required) *</label>
+                <input
+                  type="text"
+                  name="internId"
+                  value={formData.internId}
+                  onChange={handleChange}
+                  placeholder="Enter PIID"
+                  required
+                />
+                <small>This ID will be used for Internship student login.</small>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>Full Name *</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter student's full name"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Mobile Number (WhatsApp preferred) *</label>
+              <input
+                type="tel"
+                name="mobile"
+                value={formData.mobile}
+                onChange={handleChange}
+                placeholder="Enter mobile number"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Email Address *</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Enter email address"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Password *</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Assign a password"
+                required
+                minLength="6"
+              />
+            </div>
+
+            {studentType === "Internship" && (
+              <>
+                <div className="form-group">
+                  <label>Internship Domain *</label>
+                  <select
+                    name="domain"
+                    value={formData.domain}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Domain</option>
+                    <option value="Web Development">Web Development</option>
+                    <option value="App Development">App Development</option>
+                    <option value="Data Science">Data Science</option>
+                    <option value="Machine Learning">Machine Learning</option>
+                    <option value="Artificial Intelligence">
+                      Artificial Intelligence
+                    </option>
+                    <option value="UI/UX Design">UI/UX Design</option>
+                    <option value="Graphic Design">Graphic Design</option>
+                    <option value="Digital Marketing">Digital Marketing</option>
+                    <option value="Content Writing">Content Writing</option>
+                    <option value="Business Development">
+                      Business Development
+                    </option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Sales & Marketing">Sales & Marketing</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Cybersecurity">Cybersecurity</option>
+                    <option value="Cloud Computing">Cloud Computing</option>
+                    <option value="DevOps">DevOps</option>
+                    <option value="Full Stack Development">
+                      Full Stack Development
+                    </option>
+                    <option value="Frontend Development">
+                      Frontend Development
+                    </option>
+                    <option value="Backend Development">
+                      Backend Development
+                    </option>
+                    <option value="Mobile App Development">
+                      Mobile App Development
+                    </option>
+                    <option value="Game Development">Game Development</option>
+                    <option value="Quality Assurance">Quality Assurance</option>
+                    <option value="Project Management">Project Management</option>
+                    <option value="Business Analytics">Business Analytics</option>
+                    <option value="Other">Other (Type Manually)</option>
+                  </select>
+                </div>
+
+                {formData.domain === "Other" && (
+                  <div
+                    className="form-group"
+                    style={{ animation: "slideInForm 0.3s ease-out" }}
+                  >
+                    <label>Enter Custom Domain *</label>
+                    <input
+                      type="text"
+                      name="customDomain"
+                      value={formData.customDomain || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, customDomain: e.target.value })
+                      }
+                      placeholder="Enter your custom domain"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Enrolment Date *</label>
                   <input
-                    type="text"
-                    name="customDomain"
-                    value={formData.customDomain || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, customDomain: e.target.value })
-                    }
-                    placeholder="Enter your custom domain"
+                    type="date"
+                    name="joiningDate"
+                    value={formData.joiningDate}
+                    onChange={handleChange}
                     required
                   />
                 </div>
-              )}
 
-              <div className="form-group">
-                <label>Enrolment Date *</label>
-                <input
-                  type="date"
-                  name="joiningDate"
-                  value={formData.joiningDate}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Internship Duration *</label>
-                <input
-                  type="text"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleChange}
-                  placeholder="e.g., 3 months, 6 months"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>College Name *</label>
-                <input
-                  type="text"
-                  name="collegeName"
-                  value={formData.collegeName}
-                  onChange={handleChange}
-                  placeholder="Enter college name"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Branch *</label>
-                <input
-                  type="text"
-                  name="branch"
-                  value={formData.branch}
-                  onChange={handleChange}
-                  placeholder="Enter branch"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Year of Study *</label>
-                <input
-                  type="text"
-                  name="yearOfStudy"
-                  value={formData.yearOfStudy}
-                  onChange={handleChange}
-                  placeholder="e.g., 2nd Year, Final Year"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Stipend Type</label>
-                <select name="stipendType" value={formData.stipendType} onChange={handleChange}>
-                  <option value="Unstipend">Unstipend</option>
-                  <option value="Stipend">Stipend</option>
-                </select>
-              </div>
-              {formData.stipendType === 'Stipend' && (
                 <div className="form-group">
-                  <label>Stipend Amount (Rs.)</label>
+                  <label>Internship Duration *</label>
                   <input
-                    type="number"
-                    name="stipendAmount"
-                    value={formData.stipendAmount}
+                    type="text"
+                    name="duration"
+                    value={formData.duration}
                     onChange={handleChange}
-                    placeholder="Enter stipend amount"
+                    placeholder="e.g., 3 months, 6 months"
+                    required
                   />
                 </div>
-              )}
 
-              <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-                <label>Internship Offer Letter (PDF)</label>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleOfferFile}
-                />
-              </div>
-            </>
-          )}
+                <div className="form-group">
+                  <label>College Name *</label>
+                  <input
+                    type="text"
+                    name="collegeName"
+                    value={formData.collegeName}
+                    onChange={handleChange}
+                    placeholder="Enter college name"
+                    required
+                  />
+                </div>
 
-          {studentType === "SMS Program" && (
-            <>
-              <div className="form-group">
-                <label>Suggested Domain *</label>
-                <input
-                  type="text"
-                  name="suggestedDomain"
-                  value={formData.suggestedDomain}
-                  onChange={handleChange}
-                  placeholder="Enter suggested domain"
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label>Branch *</label>
+                  <input
+                    type="text"
+                    name="branch"
+                    value={formData.branch}
+                    onChange={handleChange}
+                    placeholder="Enter branch"
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Current Qualification</label>
-                <input
-                  type="text"
-                  name="currentQualification"
-                  value={formData.currentQualification}
-                  onChange={handleChange}
-                  placeholder="Enter current qualification"
-                />
-              </div>
+                <div className="form-group">
+                  <label>Year of Study *</label>
+                  <input
+                    type="text"
+                    name="yearOfStudy"
+                    value={formData.yearOfStudy}
+                    onChange={handleChange}
+                    placeholder="e.g., 2nd Year, Final Year"
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Full Name of College/Institute/School *</label>
-                <input
-                  type="text"
-                  name="instituteName"
-                  value={formData.instituteName}
-                  onChange={handleChange}
-                  placeholder="Enter full institute name"
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label>Stipend Type</label>
+                  <select name="stipendType" value={formData.stipendType} onChange={handleChange}>
+                    <option value="Unstipend">Unstipend</option>
+                    <option value="Stipend">Stipend</option>
+                  </select>
+                </div>
+                {formData.stipendType === 'Stipend' && (
+                  <div className="form-group">
+                    <label>Stipend Amount (Rs.)</label>
+                    <input
+                      type="number"
+                      name="stipendAmount"
+                      value={formData.stipendAmount}
+                      onChange={handleChange}
+                      placeholder="Enter stipend amount"
+                    />
+                  </div>
+                )}
 
-              <div className="form-group">
-                <label>Year of Study *</label>
-                <input
-                  type="text"
-                  name="yearOfStudy"
-                  value={formData.yearOfStudy}
-                  onChange={handleChange}
-                  placeholder="e.g., 1st Year, 2nd Year"
-                  required
-                />
-              </div>
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label>Internship Offer Letter (PDF)</label>
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleOfferFile}
+                  />
+                </div>
+              </>
+            )}
 
-              <div className="form-group">
-                <label>City/Location of your College/Institute</label>
-                <input
-                  type="text"
-                  name="instituteLocation"
-                  value={formData.instituteLocation}
-                  onChange={handleChange}
-                  placeholder="Enter city/location"
-                />
-              </div>
+            {studentType === "SMS Program" && (
+              <>
+                <div className="form-group">
+                  <label>Suggested Domain *</label>
+                  <input
+                    type="text"
+                    name="suggestedDomain"
+                    value={formData.suggestedDomain}
+                    onChange={handleChange}
+                    placeholder="Enter suggested domain"
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Enrolment date *</label>
-                <input
-                  type="date"
-                  name="enrolmentDate"
-                  value={formData.enrolmentDate}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label>Current Qualification</label>
+                  <input
+                    type="text"
+                    name="currentQualification"
+                    value={formData.currentQualification}
+                    onChange={handleChange}
+                    placeholder="Enter current qualification"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Enrol Batch Month *</label>
-                <input
-                  type="month"
-                  name="enrolBatchMonth"
-                  value={formData.enrolBatchMonth}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label>Full Name of College/Institute/School *</label>
+                  <input
+                    type="text"
+                    name="instituteName"
+                    value={formData.instituteName}
+                    onChange={handleChange}
+                    placeholder="Enter full institute name"
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Total Fees *</label>
-                <input
-                  type="number"
-                  name="totalFees"
-                  value={formData.totalFees}
-                  onChange={handleChange}
-                  placeholder="Enter total fees"
-                  required
-                />
-              </div>
+                <div className="form-group">
+                  <label>Year of Study *</label>
+                  <input
+                    type="text"
+                    name="yearOfStudy"
+                    value={formData.yearOfStudy}
+                    onChange={handleChange}
+                    placeholder="e.g., 1st Year, 2nd Year"
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>First Payment Amount</label>
-                <input
-                  type="number"
-                  name="firstPaymentAmount"
-                  value={formData.firstPaymentAmount}
-                  onChange={handleChange}
-                  placeholder="Enter first payment amount"
-                />
-              </div>
+                <div className="form-group">
+                  <label>City/Location of your College/Institute</label>
+                  <input
+                    type="text"
+                    name="instituteLocation"
+                    value={formData.instituteLocation}
+                    onChange={handleChange}
+                    placeholder="Enter city/location"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>First Payment Date</label>
-                <input
-                  type="date"
-                  name="firstPaymentDate"
-                  value={formData.firstPaymentDate}
-                  onChange={handleChange}
-                />
-              </div>
+                <div className="form-group">
+                  <label>Enrolment date *</label>
+                  <input
+                    type="date"
+                    name="enrolmentDate"
+                    value={formData.enrolmentDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Second Payment Amount</label>
-                <input
-                  type="number"
-                  name="secondPaymentAmount"
-                  value={formData.secondPaymentAmount}
-                  onChange={handleChange}
-                  placeholder="Enter second payment amount"
-                />
-              </div>
+                <div className="form-group">
+                  <label>Enrol Batch Month *</label>
+                  <input
+                    type="month"
+                    name="enrolBatchMonth"
+                    value={formData.enrolBatchMonth}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Second Payment Date</label>
-                <input
-                  type="date"
-                  name="secondPaymentDate"
-                  value={formData.secondPaymentDate}
-                  onChange={handleChange}
-                />
-              </div>
+                <div className="form-group">
+                  <label>Total Fees *</label>
+                  <input
+                    type="number"
+                    name="totalFees"
+                    value={formData.totalFees}
+                    onChange={handleChange}
+                    placeholder="Enter total fees"
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Final Payment Amount</label>
-                <input
-                  type="number"
-                  name="finalPaymentAmount"
-                  value={formData.finalPaymentAmount}
-                  onChange={handleChange}
-                  placeholder="Enter final payment amount"
-                />
-              </div>
+                <div className="form-group">
+                  <label>First Payment Amount</label>
+                  <input
+                    type="number"
+                    name="firstPaymentAmount"
+                    value={formData.firstPaymentAmount}
+                    onChange={handleChange}
+                    placeholder="Enter first payment amount"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Final Payment Date</label>
-                <input
-                  type="date"
-                  name="finalPaymentDate"
-                  value={formData.finalPaymentDate}
-                  onChange={handleChange}
-                />
-              </div>
+                <div className="form-group">
+                  <label>First Payment Date</label>
+                  <input
+                    type="date"
+                    name="firstPaymentDate"
+                    value={formData.firstPaymentDate}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Pending fees</label>
-                <input
-                  type="number"
-                  name="pendingFees"
-                  value={formData.pendingFees}
-                  readOnly
-                  placeholder="Auto-calculated"
-                />
-              </div>
+                <div className="form-group">
+                  <label>Second Payment Amount</label>
+                  <input
+                    type="number"
+                    name="secondPaymentAmount"
+                    value={formData.secondPaymentAmount}
+                    onChange={handleChange}
+                    placeholder="Enter second payment amount"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Current Designation</label>
-                <input
-                  type="text"
-                  name="currentDesignation"
-                  value={formData.currentDesignation}
-                  onChange={handleChange}
-                  placeholder="e.g., Student, Graduate"
-                />
-              </div>
+                <div className="form-group">
+                  <label>Second Payment Date</label>
+                  <input
+                    type="date"
+                    name="secondPaymentDate"
+                    value={formData.secondPaymentDate}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>SMS Program Enrollment Letter</label>
-                <input
-                  type="file"
-                  accept="application/pdf,image/*"
-                  onChange={handleWelcomeFile}
-                />
+                <div className="form-group">
+                  <label>Final Payment Amount</label>
+                  <input
+                    type="number"
+                    name="finalPaymentAmount"
+                    value={formData.finalPaymentAmount}
+                    onChange={handleChange}
+                    placeholder="Enter final payment amount"
+                  />
+                </div>
 
-              </div>
+                <div className="form-group">
+                  <label>Final Payment Date</label>
+                  <input
+                    type="date"
+                    name="finalPaymentDate"
+                    value={formData.finalPaymentDate}
+                    onChange={handleChange}
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Internship Offer Letter</label>
-                <input
-                  type="file"
-                  accept="application/pdf,image/*"
-                  onChange={handleOfferFile}
-                />
+                <div className="form-group">
+                  <label>Pending fees</label>
+                  <input
+                    type="number"
+                    name="pendingFees"
+                    value={formData.pendingFees}
+                    readOnly
+                    placeholder="Auto-calculated"
+                  />
+                </div>
 
-              </div>
+                <div className="form-group">
+                  <label>Current Designation</label>
+                  <input
+                    type="text"
+                    name="currentDesignation"
+                    value={formData.currentDesignation}
+                    onChange={handleChange}
+                    placeholder="e.g., Student, Graduate"
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Payment Recipt</label>
-                <input
-                  type="file"
-                  accept="application/pdf,image/*"
-                  onChange={handlePaymentFile}
-                />
+                <div className="form-group">
+                  <label>SMS Program Enrollment Letter</label>
+                  <input
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={handleWelcomeFile}
+                  />
 
-              </div>
-            </>
-          )}
+                </div>
+
+                <div className="form-group">
+                  <label>Internship Offer Letter</label>
+                  <input
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={handleOfferFile}
+                  />
+
+                </div>
+
+                <div className="form-group">
+                  <label>Payment Recipt</label>
+                  <input
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={handlePaymentFile}
+                  />
+
+                </div>
+              </>
+            )}
 
           </div>
 

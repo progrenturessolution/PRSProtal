@@ -157,6 +157,7 @@ export const trainerAPI = {
   getScheduledInterviews: () => api.get("/trainer/scheduled-interviews"),
   getScheduledGDs: () => api.get("/trainer/scheduled-gds"),
   getNotifications: () => api.get('/trainer/notifications'),
+  markNotificationsRead: () => api.patch("/trainer/notifications/read"),
   getWorkAssignments: () => api.get("/trainer/work-assignments"),
 };
 
@@ -197,6 +198,7 @@ export const internAPI = {
   getMyTraining: () => api.get("/task/intern/my-training"),
   getMyScheduledGDs: () => api.get("/task/intern/my-scheduled-gds"),
   getMyNotifications: () => api.get("/task/intern/my-notifications"),
+  markNotificationsRead: () => api.patch("/task/intern/my-notifications/read"),
   getMyJobPostings: () => api.get("/task/intern/my-job-postings"),
   getMyStudentRecords: () => api.get("/task/intern/my-records"),
   getMyAssignedCertificates: () => api.get("/task/intern/my-certificates"),
