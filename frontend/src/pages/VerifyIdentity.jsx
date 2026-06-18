@@ -107,7 +107,20 @@ export default function VerifyIdentity() {
           borderBottom: '1.5px solid #f1f5f9',
           paddingBottom: '20px'
         }}>
-          <img src={logo} alt="Progrentures Logo" style={{ width: '52px', height: '52px', objectFit: 'contain' }} />
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '12px',
+            background: '#17233A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '8px',
+            boxShadow: '0 4px 12px rgba(23, 35, 58, 0.15)',
+            flexShrink: 0
+          }}>
+            <img src={logo} alt="Progrentures Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+          </div>
           <div>
             <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Progrentures Solution Pvt. Ltd.</h2>
             <p style={{ fontSize: '11px', color: '#64748b', margin: '3px 0 0 0', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '700' }}>Public Credentials Registry</p>
