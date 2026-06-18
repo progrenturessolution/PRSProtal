@@ -2380,8 +2380,14 @@ table tr:hover {
 }
 
 .view-students-table thead th {
-  background-color: #324158;
-  color: #ffffff;
+  background-color: #324158 !important;
+  color: #ffffff !important;
+  padding: 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
 }
 
 .internship-students-table thead,
@@ -2399,6 +2405,12 @@ table tr:hover {
 .groups-info-table thead th {
   background-color: #324158 !important;
   color: #ffffff !important;
+  padding: 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
 }
 
 .access-employees-table thead {
@@ -2408,6 +2420,12 @@ table tr:hover {
 .access-employees-table thead th {
   background-color: #324158 !important;
   color: #ffffff !important;
+  padding: 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
 }
 
 /* Mobile Table to Card Layout */
@@ -3365,27 +3383,41 @@ table tr:hover {
   border-radius: 20px;
   font-size: 13px;
   font-weight: 600;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .status-active {
-  background-color: #d1fae5;
-  color: #059669;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .status-active:hover {
-  background-color: #a7f3d0;
+  background-color: #d1fae5;
+}
+
+.status-inactive {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.status-inactive:hover {
+  background-color: #fee2e2;
 }
 
 .status-completed {
-  background-color: #dbeafe;
+  background-color: #eff6ff;
   color: #1d4ed8;
+  border: 1px solid #bfdbfe;
 }
 
 .status-completed:hover {
-  background-color: #bfdbfe;
+  background-color: #dbeafe;
 }
 
 .delete-btn-small {

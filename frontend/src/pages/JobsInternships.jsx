@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { adminAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -10,6 +11,7 @@ function JobsInternships({ onPostingCreated }) {
   const [success, setSuccess] = useState("");
   const [editingPosting, setEditingPosting] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
 
   const [formData, setFormData] = useState({
     opportunityType: "Job",
@@ -44,6 +46,25 @@ function JobsInternships({ onPostingCreated }) {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [openMenuId]);
+
+  const toggleMenu = (id, event) => {
+    if (openMenuId === id) {
+      setOpenMenuId(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const menuHeight = 160;
+      const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+      setMenuPosition({
+        top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+        left: rect.right - 160 + window.scrollX,
+        openUpward,
+      });
+      setOpenMenuId(id);
+    }
+  };
 
   const fetchPostings = async () => {
     try {
@@ -658,13 +679,15 @@ function JobsInternships({ onPostingCreated }) {
                     <button
                       type="button"
                       data-menu-toggle
-                      onClick={() =>
-                        setOpenMenuId(openMenuId === posting._id ? null : posting._id)
-                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMenu(posting._id, e);
+                      }}
                       aria-label="Posting actions"
                       style={{
-                        background: "#f8fafc",
-                        border: "none",
+                        background: "transparent",
+                        color: "#0f172a",
+                        border: "1px solid #d1d5db",
                         borderRadius: "8px",
                         width: "36px",
                         height: "36px",
@@ -673,85 +696,81 @@ function JobsInternships({ onPostingCreated }) {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        transition: "all 0.2s",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = "#e2e8f0")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "#f8fafc")
-                      }
                     >
                       ⋮
                     </button>
-                    {openMenuId === posting._id && (
-                      <div
-                        data-menu
-                        style={{
-                          position: "absolute",
-                          top: "40px",
-                          right: 0,
-                          zIndex: 10,
-                          minWidth: "160px",
-                          background: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "8px",
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                          overflow: "hidden",
-                        }}
-                      >
-                        {[
-                          { 
-                            label: "Edit", 
-                            action: () => handleEdit(posting),
-                            color: "#132a5d",
-                            hoverBg: "#f9fafb"
-                          },
-                          { 
-                            label: "Repost", 
-                            action: () => handleRepost(posting._id),
-                            color: "#132a5d",
-                            hoverBg: "#f9fafb"
-                          },
-                          { 
-                            label: "Delete", 
-                            action: () => handleDelete(posting._id),
-                            color: "#dc2626",
-                            hoverBg: "#fef2f2"
-                          },
-                        ].map(({ label, action, color, hoverBg }, idx) => (
-                          <button
-                            key={`${posting._id}-${label}`}
-                            type="button"
-                            onClick={() => {
-                              setOpenMenuId(null);
-                              action();
-                            }}
-                            style={{
-                              width: "100%",
-                              padding: "10px 14px",
-                              border: "none",
-                              background: "white",
-                              color: color,
-                              cursor: "pointer",
-                              fontWeight: "500",
-                              fontSize: "14px",
-                              textAlign: "left",
-                              transition: "background 0.2s",
-                              borderTop: idx > 0 ? "1px solid #f3f4f6" : "none",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.background = hoverBg;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.background = "white";
-                            }}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    {openMenuId === posting._id &&
+                      createPortal(
+                        <div
+                          data-menu
+                          style={{
+                            position: "absolute",
+                            left: `${menuPosition.left}px`,
+                            top: `${menuPosition.top}px`,
+                            transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
+                            background: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "12px",
+                            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                            zIndex: 11000,
+                            width: "160px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {[
+                            { 
+                              label: "Edit", 
+                              action: () => handleEdit(posting),
+                              color: "#0f172a",
+                              hoverBg: "#f9fafb"
+                            },
+                            { 
+                              label: "Repost", 
+                              action: () => handleRepost(posting._id),
+                              color: "#0f172a",
+                              hoverBg: "#f9fafb"
+                            },
+                            { 
+                              label: "Delete", 
+                              action: () => handleDelete(posting._id),
+                              color: "#dc2626",
+                              hoverBg: "#fef2f2"
+                            },
+                          ].map(({ label, action, color, hoverBg }, idx) => (
+                            <button
+                              key={`${posting._id}-${label}`}
+                              type="button"
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                action();
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                border: "none",
+                                background: "white",
+                                color: color,
+                                cursor: "pointer",
+                                fontWeight: "500",
+                                fontSize: "14px",
+                                textAlign: "left",
+                                borderTop: idx > 0 ? "1px solid #f3f4f6" : "none",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = hoverBg;
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = "white";
+                              }}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>,
+                        document.body
+                      )
+                    }
                   </div>
                 </div>
               </div>

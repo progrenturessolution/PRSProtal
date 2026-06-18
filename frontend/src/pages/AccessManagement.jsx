@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { adminAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -14,6 +15,7 @@ function AccessManagement() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
 
   const [trainerFormData, setTrainerFormData] = useState({
     name: "",
@@ -49,6 +51,39 @@ function AccessManagement() {
   useEffect(() => {
     applyFilters();
   }, [students, searchQuery, filterType, filterStatus]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!openMenuId) return;
+      if (
+        e.target.closest("[data-menu]") ||
+        e.target.closest("[data-menu-toggle]")
+      )
+        return;
+      setOpenMenuId(null);
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [openMenuId]);
+
+  const toggleMenu = (id, event) => {
+    if (openMenuId === id) {
+      setOpenMenuId(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const menuHeight = 200;
+      const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+      setMenuPosition({
+        top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+        left: rect.right - 160 + window.scrollX,
+        openUpward,
+      });
+      setOpenMenuId(id);
+    }
+  };
 
   const applyFilters = () => {
     let filtered = [...students];
@@ -1309,14 +1344,15 @@ function AccessManagement() {
                       </td>
                       <td style={{ position: "relative" }}>
                         <button
-                          onClick={() =>
-                            setOpenMenuId(
-                              openMenuId === trainer._id ? null : trainer._id,
-                            )
-                          }
+                          data-menu-toggle
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleMenu(trainer._id, e);
+                          }}
                           style={{
-                            background: "#f8fafc",
-                            border: "none",
+                            background: "transparent",
+                            color: "#0f172a",
+                            border: "1px solid #d1d5db",
                             borderRadius: "8px",
                             width: "36px",
                             height: "36px",
@@ -1325,96 +1361,89 @@ function AccessManagement() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            transition: "all 0.2s",
                           }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.background = "#e2e8f0")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.background = "#f8fafc")
-                          }
                         >
-                          ...
+                          ⋮
                         </button>
 
-                        {openMenuId === trainer._id && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              right: "40px",
-                              top: "0",
-                              background: "white",
-                              border: "1px solid #e5e7eb",
-                              borderRadius: "8px",
-                              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                              zIndex: 1000,
-                              minWidth: "160px",
-                              overflow: "hidden",
-                            }}
-                          >
-                            <button
-                              onClick={() => {
-                                setSelectedTrainerDetails(trainer);
-                                setOpenMenuId(null);
-                              }}
-                              style={{
-                                width: "100%",
-                                padding: "10px 14px",
-                                background: "white",
-                                border: "none",
-                                textAlign: "left",
-                                cursor: "pointer",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                                color: "#0f172a",
-                                transition: "background 0.2s",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "8px",
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background = "#f9fafb")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background = "white")
-                              }
-                            >
-                              View Details
-                            </button>
+                        {openMenuId === trainer._id &&
+                          createPortal(
                             <div
+                              data-menu
                               style={{
-                                height: "1px",
-                                background: "#e5e7eb",
-                                margin: "0",
-                              }}
-                            ></div>
-                            <button
-                              onClick={() => {
-                                handleDeleteTrainer(trainer._id, trainer.name);
-                              }}
-                              style={{
-                                width: "100%",
-                                padding: "10px 14px",
+                                position: "absolute",
+                                left: `${menuPosition.left}px`,
+                                top: `${menuPosition.top}px`,
+                                transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
                                 background: "white",
-                                border: "none",
-                                textAlign: "left",
-                                cursor: "pointer",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                                color: "#dc2626",
-                                transition: "background 0.2s",
+                                border: "1px solid #e5e7eb",
+                                borderRadius: "12px",
+                                boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                zIndex: 11000,
+                                width: "160px",
+                                overflow: "hidden",
                               }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background = "#fee2e2")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background = "white")
-                              }
                             >
-                              Delete Trainer
-                            </button>
-                          </div>
-                        )}
+                              <button
+                                onClick={() => {
+                                  setSelectedTrainerDetails(trainer);
+                                  setOpenMenuId(null);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  padding: "12px 16px",
+                                  background: "white",
+                                  border: "none",
+                                  textAlign: "left",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                  fontWeight: "500",
+                                  color: "#0f172a",
+                                  transition: "background 0.2s",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "#f9fafb")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background = "white")
+                                }
+                              >
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDeleteTrainer(trainer._id, trainer.name);
+                                  setOpenMenuId(null);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  padding: "12px 16px",
+                                  background: "white",
+                                  border: "none",
+                                  textAlign: "left",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                  fontWeight: "500",
+                                  color: "#dc2626",
+                                  transition: "background 0.2s",
+                                  borderTop: "1px solid #f3f4f6",
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "#fee2e2")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background = "white")
+                                }
+                              >
+                                Delete Trainer
+                              </button>
+                            </div>,
+                            document.body
+                          )
+                        }
                       </td>
                     </tr>
                   ))}

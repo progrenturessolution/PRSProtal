@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { adminRepAPI } from "../services/api";
 
 const formatMonthLabel = (value) => {
@@ -31,6 +32,7 @@ const emptyForm = {
 function RepresentativePayoutManagement() {
   const [activeTab, setActiveTab] = useState("list");
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
   const [representatives, setRepresentatives] = useState([]);
   const [payouts, setPayouts] = useState([]);
   const [filters, setFilters] = useState({ month: "", status: "", representativeId: "" });
@@ -78,6 +80,25 @@ function RepresentativePayoutManagement() {
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [openMenuId]);
+
+  const toggleMenu = (id, event) => {
+    if (openMenuId === id) {
+      setOpenMenuId(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const menuHeight = 150;
+      const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+      setMenuPosition({
+        top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+        left: rect.right - 160 + window.scrollX,
+        openUpward,
+      });
+      setOpenMenuId(id);
+    }
+  };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -337,13 +358,12 @@ function RepresentativePayoutManagement() {
                           <td>₹{item.payoutAmount || 0}</td>
                           <td>{item.payoutStatus}</td>
                           <td>{item.payoutReleaseDate ? new Date(item.payoutReleaseDate).toLocaleDateString("en-IN") : "-"}</td>
-                          <td style={{ position: "relative" }}>
-                            <button
+                          <td style={{ position: "relative" }}>                            <button
                               data-menu-toggle
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setOpenMenuId(openMenuId === item._id ? null : item._id);
+                                toggleMenu(item._id, e);
                               }}
                               style={{
                                 background: "transparent",
@@ -362,46 +382,50 @@ function RepresentativePayoutManagement() {
                               ⋮
                             </button>
 
-                            {openMenuId === item._id && (
-                              <div
-                                data-menu
-                                style={{
-                                  position: "absolute",
-                                  right: 0,
-                                  top: "42px",
-                                  background: "white",
-                                  border: "1px solid #e5e7eb",
-                                  borderRadius: "12px",
-                                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-                                  zIndex: 1000,
-                                  minWidth: "160px",
-                                  overflow: "hidden",
-                                }}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    editEntry(item);
-                                    setOpenMenuId(null);
-                                  }}
+                            {openMenuId === item._id &&
+                              createPortal(
+                                <div
+                                  data-menu
                                   style={{
-                                    width: "100%",
-                                    padding: "12px 16px",
+                                    position: "absolute",
+                                    left: `${menuPosition.left}px`,
+                                    top: `${menuPosition.top}px`,
+                                    transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
                                     background: "white",
-                                    border: "none",
-                                    textAlign: "left",
-                                    cursor: "pointer",
-                                    fontSize: "14px",
-                                    fontWeight: "500",
-                                    color: "#0f172a",
+                                    border: "1px solid #e5e7eb",
+                                    borderRadius: "12px",
+                                    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                    zIndex: 11000,
+                                    width: "160px",
+                                    overflow: "hidden",
                                   }}
-                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
-                                  onMouseLeave={(e) => (e.target.style.background = "white")}
                                 >
-                                  Edit
-                                </button>
-                              </div>
-                            )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      editEntry(item);
+                                      setOpenMenuId(null);
+                                    }}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px 16px",
+                                      background: "white",
+                                      border: "none",
+                                      textAlign: "left",
+                                      cursor: "pointer",
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                      color: "#0f172a",
+                                    }}
+                                    onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                    onMouseLeave={(e) => (e.target.style.background = "white")}
+                                  >
+                                    Edit
+                                  </button>
+                                </div>,
+                                document.body
+                              )
+                            }
                           </td>
                         </tr>
                       ))

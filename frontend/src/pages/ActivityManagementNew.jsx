@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { adminAPI } from '../services/api';
 import './ActivityManagementNew.css';
 
@@ -55,17 +56,21 @@ export default function ActivityManagementNew() {
   useEffect(() => { fetchActivities(); fetchStudents(); fetchTrainers(); fetchGroups(); }, []);
 
   useEffect(() => {
-    const handleClose = () => {
+    const handleClickOutside = (e) => {
+      if (!openActionMenu) return;
+      if (
+        e.target.closest("[data-menu]") ||
+        e.target.closest("[data-menu-toggle]")
+      )
+        return;
       setOpenActionMenu(null);
       setActionMenuPos(null);
     };
-    if (openActionMenu) {
-      window.addEventListener('click', handleClose);
-      window.addEventListener('scroll', handleClose, true);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    window.addEventListener('scroll', handleClickOutside, true);
     return () => {
-      window.removeEventListener('click', handleClose);
-      window.removeEventListener('scroll', handleClose, true);
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener('scroll', handleClickOutside, true);
     };
   }, [openActionMenu]);
 
@@ -1136,62 +1141,170 @@ export default function ActivityManagementNew() {
                       </td>
                       <td>
                         <div className="am-actions-cell">
-                          <button className="am-action-btn" onClick={(e) => {
-                            e.stopPropagation();
-                            const id = activity._id;
-                            if (openActionMenu === id) { setOpenActionMenu(null); setActionMenuPos(null); return; }
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const spaceBelow = window.innerHeight - rect.bottom;
-                            const showUpward = spaceBelow < 185;
-                            setOpenActionMenu(id);
-                            setActionMenuPos({
-                              top: showUpward ? rect.top : rect.bottom,
-                              left: rect.right - 130,
-                              showUpward
-                            });
-                          }}>⋮</button>
-                          {openActionMenu === activity._id && actionMenuPos && (
-                            <div
-                              className="am-action-menu"
-                              style={{
-                                position: 'fixed',
-                                top: actionMenuPos.top,
-                                left: actionMenuPos.left,
-                                transform: actionMenuPos.showUpward ? 'translateY(-100%)' : 'none'
-                              }}
-                            >
-                              <button onClick={() => { setViewActivity(activity); setOpenActionMenu(null); setActionMenuPos(null); }} className="am-action-item">View Details</button>
-                              
-                              {activity.status !== 'Completed' && (
-                                <button onClick={async () => {
-                                  try {
-                                    const payload = { title: activity.title, dateTime: activity.dateTime, status: 'Completed', type: activity.type };
-                                    const res = await adminAPI.updateActivity(activity._id, payload);
-                                    if (res.data?.success) {
-                                      setActivities((prev) => prev.map(a => (String(a._id) === String(activity._id) ? res.data.activity : a)));
-                                      setOpenActionMenu(null);
-                                      setActionMenuPos(null);
-                                      alert('Activity marked as Completed');
-                                    } else alert('Update failed');
-                                  } catch (e) { console.error(e); alert('Update failed'); }
-                                }} className="am-action-item">Mark Completed</button>
-                              )}
-
-                              <button onClick={() => { handleEditActivity(activity); setOpenActionMenu(null); setActionMenuPos(null); }} className="am-action-item">Reschedule</button>
-                              
-                              <button onClick={async () => {
-                                if (!confirm('Delete this activity?')) return;
-                                try {
-                                  const res = await adminAPI.deleteActivity(activity._id);
-                                  if (res.data?.success) {
-                                    setActivities((prev) => prev.filter(a => String(a._id) !== String(activity._id))); 
+                          <button
+                            data-menu-toggle
+                            className="am-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const id = activity._id;
+                              if (openActionMenu === id) { setOpenActionMenu(null); setActionMenuPos(null); return; }
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              const spaceBelow = window.innerHeight - rect.bottom;
+                              const showUpward = spaceBelow < 220;
+                              setOpenActionMenu(id);
+                              setActionMenuPos({
+                                top: showUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+                                left: rect.right - 160 + window.scrollX,
+                                showUpward
+                              });
+                            }}
+                            style={{
+                              background: "transparent",
+                              color: "#0f172a",
+                              border: "1px solid #d1d5db",
+                              borderRadius: "8px",
+                              width: "36px",
+                              height: "36px",
+                              cursor: "pointer",
+                              fontSize: "20px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            ⋮
+                          </button>
+                          {openActionMenu === activity._id && actionMenuPos &&
+                            createPortal(
+                              <div
+                                data-menu
+                                style={{
+                                  position: "absolute",
+                                  left: `${actionMenuPos.left}px`,
+                                  top: `${actionMenuPos.top}px`,
+                                  transform: actionMenuPos.showUpward ? "translateY(-100%)" : "none",
+                                  background: "white",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "12px",
+                                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                  zIndex: 11000,
+                                  width: "160px",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <button
+                                  onClick={() => {
+                                    setViewActivity(activity);
                                     setOpenActionMenu(null);
                                     setActionMenuPos(null);
-                                  } else alert('Delete failed');
-                                } catch (e) { console.error(e); alert('Delete failed'); }
-                              }} className="am-action-item danger">Delete</button>
-                            </div>
-                          )}
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#0f172a",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  View Details
+                                </button>
+                                
+                                {activity.status !== 'Completed' && (
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        const payload = { title: activity.title, dateTime: activity.dateTime, status: 'Completed', type: activity.type };
+                                        const res = await adminAPI.updateActivity(activity._id, payload);
+                                        if (res.data?.success) {
+                                          setActivities((prev) => prev.map(a => (String(a._id) === String(activity._id) ? res.data.activity : a)));
+                                          setOpenActionMenu(null);
+                                          setActionMenuPos(null);
+                                          alert('Activity marked as Completed');
+                                        } else alert('Update failed');
+                                      } catch (e) { console.error(e); alert('Update failed'); }
+                                    }}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px 16px",
+                                      background: "white",
+                                      border: "none",
+                                      textAlign: "left",
+                                      cursor: "pointer",
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                      color: "#0f172a",
+                                      borderTop: "1px solid #f3f4f6",
+                                    }}
+                                    onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                    onMouseLeave={(e) => (e.target.style.background = "white")}
+                                  >
+                                    Mark Completed
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() => {
+                                    handleEditActivity(activity);
+                                    setOpenActionMenu(null);
+                                    setActionMenuPos(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#0f172a",
+                                    borderTop: "1px solid #f3f4f6",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Reschedule
+                                </button>
+                                
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm('Delete this activity?')) return;
+                                    try {
+                                      const res = await adminAPI.deleteActivity(activity._id);
+                                      if (res.data?.success) {
+                                        setActivities((prev) => prev.filter(a => String(a._id) !== String(activity._id))); 
+                                        setOpenActionMenu(null);
+                                        setActionMenuPos(null);
+                                      } else alert('Delete failed');
+                                    } catch (e) { console.error(e); alert('Delete failed'); }
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#b91c1c", // red color to match standard danger
+                                    borderTop: "1px solid #f3f4f6",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Delete
+                                </button>
+                              </div>,
+                              document.body
+                            )
+                          }
                         </div>
                       </td>
                     </tr>

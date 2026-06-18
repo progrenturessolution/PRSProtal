@@ -12,6 +12,7 @@ function ViewInterns({
   const [error, setError] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -103,7 +104,7 @@ function ViewInterns({
       console.error("Error response:", err.response?.data);
       setError(
         err.response?.data?.message ||
-          "Failed to fetch interns. Please check if you are logged in.",
+        "Failed to fetch interns. Please check if you are logged in.",
       );
       setInterns([]);
     } finally {
@@ -462,8 +463,23 @@ function ViewInterns({
     });
   };
 
-  const toggleMenu = (id) => {
-    setOpenMenuId(openMenuId === id ? null : id);
+  const toggleMenu = (id, event) => {
+    if (openMenuId === id) {
+      setOpenMenuId(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const menuHeight = 300;
+      const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+      setMenuPosition({
+        top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+        left: rect.right - 160 + window.scrollX,
+        openUpward,
+      });
+      setOpenMenuId(id);
+    }
   };
 
   // Close menu when clicking outside
@@ -834,7 +850,7 @@ function ViewInterns({
                         data-menu-toggle
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleMenu(student._id);
+                          toggleMenu(student._id, e);
                         }}
                         style={{
                           background: "transparent",
@@ -853,161 +869,161 @@ function ViewInterns({
                         ⋮
                       </button>
 
-                      {openMenuId === student._id && (
-                        <div
-                          data-menu
-                          style={{
-                            position: "absolute",
-                            right: 0,
-                            top: "42px",
-                            background: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "12px",
-                            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-                            zIndex: 1000,
-                            minWidth: "180px",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <button
-                            onClick={() => {
-                              handleViewProfile(student);
-                              setOpenMenuId(null);
-                            }}
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              background: "white",
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              fontWeight: "500",
-                              color: "#0f172a",
-                            }}
-                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
-                            onMouseLeave={(e) => (e.target.style.background = "white")}
-                          >
-                            View Profile
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleEdit(student);
-                              setOpenMenuId(null);
-                            }}
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              background: "white",
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              fontWeight: "500",
-                              color: "#0f172a",
-                              borderTop: "1px solid #f3f4f6",
-                            }}
-                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
-                            onMouseLeave={(e) => (e.target.style.background = "white")}
-                          >
-                            Edit Details
-                          </button>
+                      {openMenuId === student._id &&
+                        createPortal(
                           <div
+                            data-menu
                             style={{
-                              padding: "10px 16px",
-                              fontSize: "12px",
-                              fontWeight: "700",
-                              letterSpacing: "0.06em",
-                              textTransform: "uppercase",
-                              color: "#64748b",
-                              borderTop: "1px solid #f3f4f6",
-                              background: "#f8fafc",
-                            }}
-                          >
-                            More
-                          </div>
-                          <button
-                            onClick={() => handleViewCertificates(student)}
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
+                              position: "absolute",
+                              left: `${menuPosition.left}px`,
+                              top: `${menuPosition.top}px`,
+                              transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
                               background: "white",
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              fontWeight: "500",
-                              color: "#0f172a",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "12px",
+                              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                              zIndex: 11000,
+                              width: "160px",
+                              overflow: "hidden",
                             }}
-                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
-                            onMouseLeave={(e) => (e.target.style.background = "white")}
                           >
-                            Certificates
-                          </button>
-                          <button
-                            onClick={() => handleStatusToggle(student)}
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              background: "white",
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              fontWeight: "500",
-                              color:
-                                (student.status || "").toLowerCase() === "active"
-                                  ? "#dc2626"
-                                  : "#059669",
-                              borderTop: "1px solid #f3f4f6",
-                            }}
-                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
-                            onMouseLeave={(e) => (e.target.style.background = "white")}
-                          >
-                            {(student.status || "").toLowerCase() === "active"
-                              ? "Mark Inactive"
-                              : "Mark Active"}
-                          </button>
-                          <button
-                            onClick={() => handleMarkCompleted(student)}
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              background: "white",
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              fontWeight: "500",
-                              color: "#075985",
-                              borderTop: "1px solid #f3f4f6",
-                            }}
-                            onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
-                            onMouseLeave={(e) => (e.target.style.background = "white")}
-                          >
-                            Mark Completed
-                          </button>
-                          <button
-                            onClick={() => handleDelete(student._id, student.name)}
-                            style={{
-                              width: "100%",
-                              padding: "12px 16px",
-                              background: "white",
-                              border: "none",
-                              textAlign: "left",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              fontWeight: "500",
-                              color: "#dc2626",
-                              borderTop: "1px solid #f3f4f6",
-                            }}
-                            onMouseEnter={(e) => (e.target.style.background = "#fef2f2")}
-                            onMouseLeave={(e) => (e.target.style.background = "white")}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                            <button
+                              onClick={() => {
+                                handleViewProfile(student);
+                                setOpenMenuId(null);
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#0f172a",
+                              }}
+                              onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                              onMouseLeave={(e) => (e.target.style.background = "white")}
+                            >
+                              View Profile
+                            </button>
+                            <button
+                              onClick={() => {
+                                handleEdit(student);
+                                setOpenMenuId(null);
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#0f172a",
+                                borderTop: "1px solid #f3f4f6",
+                              }}
+                              onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                              onMouseLeave={(e) => (e.target.style.background = "white")}
+                            >
+                              Edit Details
+                            </button>
+                            <div
+                              style={{
+                                padding: "10px 16px",
+                                fontSize: "12px",
+                                fontWeight: "700",
+                                letterSpacing: "0.06em",
+                                textTransform: "uppercase",
+                                color: "#64748b",
+                                borderTop: "1px solid #f3f4f6",
+                                background: "#f8fafc",
+                              }}
+                            >
+                              More
+                            </div>
+                            <button
+                              onClick={() => handleViewCertificates(student)}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#0f172a",
+                              }}
+                              onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                              onMouseLeave={(e) => (e.target.style.background = "white")}
+                            >
+                              Certificates
+                            </button>
+                            <button
+                              onClick={() => handleStatusToggle(student)}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#0f172a",
+                                borderTop: "1px solid #f3f4f6",
+                              }}
+                              onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                              onMouseLeave={(e) => (e.target.style.background = "white")}
+                            >
+                              {(student.status || "").toLowerCase() === "active"
+                                ? "Mark Inactive"
+                                : "Mark Active"}
+                            </button>
+                            <button
+                              onClick={() => handleMarkCompleted(student)}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#0f172a",
+                                borderTop: "1px solid #f3f4f6",
+                              }}
+                              onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                              onMouseLeave={(e) => (e.target.style.background = "white")}
+                            >
+                              Mark Completed
+                            </button>
+                            <button
+                              onClick={() => handleDelete(student._id, student.name)}
+                              style={{
+                                width: "100%",
+                                padding: "12px 16px",
+                                background: "white",
+                                border: "none",
+                                textAlign: "left",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                color: "#0f172a",
+                                borderTop: "1px solid #f3f4f6",
+                              }}
+                              onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                              onMouseLeave={(e) => (e.target.style.background = "white")}
+                            >
+                              Delete
+                            </button>
+                          </div>,
+                          document.body
+                        )}
                     </td>
                   </tr>
                 ))}
@@ -1186,7 +1202,7 @@ function ViewInterns({
                               Uploaded:{" "}
                               {new Date(
                                 selectedStudent.documents[key].uploadedAt ||
-                                  Date.now(),
+                                Date.now(),
                               ).toLocaleDateString()}
                             </div>
                           )}
@@ -1958,7 +1974,7 @@ function ViewInterns({
                         Uploaded:{" "}
                         {new Date(
                           selectedStudent.documents.offerLetter.uploadedAt ||
-                            Date.now(),
+                          Date.now(),
                         ).toLocaleDateString()}
                       </div>
                     )}
@@ -2084,7 +2100,7 @@ function ViewInterns({
                         Uploaded:{" "}
                         {new Date(
                           selectedStudent.documents.paymentReceipt.uploadedAt ||
-                            Date.now(),
+                          Date.now(),
                         ).toLocaleDateString()}
                       </div>
                     )}
@@ -2138,21 +2154,21 @@ function ViewInterns({
                     </div>
                     {(selectedStudent.documents?.completionCertificate ||
                       selectedStudent.documents?.completionLetter) && (
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: "#64748b",
-                          marginTop: "4px",
-                        }}
-                      >
-                        Uploaded:{" "}
-                        {new Date(
-                          (selectedStudent.documents.completionCertificate ||
-                            selectedStudent.documents.completionLetter)
-                            ?.uploadedAt || Date.now(),
-                        ).toLocaleDateString()}
-                      </div>
-                    )}
+                        <div
+                          style={{
+                            fontSize: "12px",
+                            color: "#64748b",
+                            marginTop: "4px",
+                          }}
+                        >
+                          Uploaded:{" "}
+                          {new Date(
+                            (selectedStudent.documents.completionCertificate ||
+                              selectedStudent.documents.completionLetter)
+                              ?.uploadedAt || Date.now(),
+                          ).toLocaleDateString()}
+                        </div>
+                      )}
                   </div>
                   <div>
                     {(selectedStudent.documents?.completionCertificate ||
