@@ -176,23 +176,23 @@ exports.internLogin = async (req, res) => {
 exports.verifyIdentity = async (req, res) => {
   try {
     const internId = normalizeCredentialValue(req.body?.internId);
-    const mobile = normalizeCredentialValue(req.body?.mobile);
+    const email = normalizeCredentialValue(req.body?.email);
 
     // Validation
-    if (!internId || !mobile) {
+    if (!internId || !email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Please provide both Aspirant ID and Mobile Number' 
+        message: 'Please provide both Aspirant ID and Email Address' 
       });
     }
 
     const normalizedInternId = String(internId).trim();
-    const normalizedMobile = String(mobile).trim();
+    const normalizedEmail = String(email).toLowerCase().trim();
 
     // Query database for the student. Should not be soft deleted.
     const intern = await Intern.findOne({
       internId: normalizedInternId,
-      mobile: normalizedMobile,
+      email: normalizedEmail,
       isDeleted: { $ne: true }
     }).lean();
 

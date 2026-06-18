@@ -11,98 +11,101 @@ import AssessmentForm from './pages/AssessmentForm';
 import TrainingForm from './pages/TrainingForm';
 import StudentDetailReport from './pages/StudentDetailReport';
 import VerifyIdentity from './pages/VerifyIdentity';
+import DesktopOnlyWrapper from './components/DesktopOnlyWrapper';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/admin-login" element={<Login />} />
-        <Route path="/intern-login" element={<Login />} />
-        <Route path="/verify-identity" element={<VerifyIdentity />} />
-        <Route path="/representative-login" element={<Login />} />
-        <Route
-          path="/admin-dashboard"
-          element={
-            <ProtectedRoute allowedRole="admin">
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/intern-dashboard"
-          element={
-            <ProtectedRoute allowedRole="intern">
-              <InternDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trainer-dashboard"
-          element={
-            <ProtectedRoute allowedRole="trainer">
-              <TrainerDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/intern/reports"
-          element={
-            <ProtectedRoute allowedRole="intern">
-              <StudentDetailReport />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/representative-dashboard"
-          element={
-            <ProtectedRoute allowedRole="representative">
-              <RepresentativeDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trainer/student/:studentId/interviews"
-          element={
-            <ProtectedRoute allowedRole="trainer">
-              <InterviewForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trainer/student/:studentId/aptitude"
-          element={
-            <ProtectedRoute allowedRole="trainer">
-              <AptitudeForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trainer/student/:studentId/assessments"
-          element={
-            <ProtectedRoute allowedRole="trainer">
-              <AssessmentForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trainer/student/:studentId/training"
-          element={
-            <ProtectedRoute allowedRole="trainer">
-              <TrainingForm />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/student/:studentId/report"
-          element={
-            <ProtectedRoute allowedRole="admin">
-              <StudentDetailReport />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Router>
+    <DesktopOnlyWrapper>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/admin-login" element={<Login />} />
+          <Route path="/intern-login" element={<Login />} />
+          <Route path="/verify-identity" element={<VerifyIdentity />} />
+          <Route path="/representative-login" element={<Login />} />
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/intern-dashboard"
+            element={
+              <ProtectedRoute allowedRole="intern">
+                <InternDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trainer-dashboard"
+            element={
+              <ProtectedRoute allowedRole="trainer">
+                <TrainerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/intern/reports"
+            element={
+              <ProtectedRoute allowedRole="intern">
+                <StudentDetailReport />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/representative-dashboard"
+            element={
+              <ProtectedRoute allowedRole="representative">
+                <RepresentativeDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trainer/student/:studentId/interviews"
+            element={
+              <ProtectedRoute allowedRole="trainer">
+                <InterviewForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trainer/student/:studentId/aptitude"
+            element={
+              <ProtectedRoute allowedRole="trainer">
+                <AptitudeForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trainer/student/:studentId/assessments"
+            element={
+              <ProtectedRoute allowedRole="trainer">
+                <AssessmentForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trainer/student/:studentId/training"
+            element={
+              <ProtectedRoute allowedRole="trainer">
+                <TrainingForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/student/:studentId/report"
+            element={
+              <ProtectedRoute allowedRole="admin">
+                <StudentDetailReport />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </DesktopOnlyWrapper>
   );
 }
 

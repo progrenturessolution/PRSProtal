@@ -7,7 +7,7 @@ export default function VerifyIdentity() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     internId: '',
-    mobile: ''
+    email: ''
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null); // 'success' or 'fail'
@@ -35,7 +35,7 @@ export default function VerifyIdentity() {
     try {
       const response = await authAPI.verifyIdentity({
         internId: formData.internId.trim(),
-        mobile: formData.mobile.trim()
+        email: formData.email.trim()
       });
 
       if (response?.data?.success) {
@@ -164,11 +164,11 @@ export default function VerifyIdentity() {
             </div>
           </div>
 
-          {/* Mobile Field */}
+          {/* Email Field */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Mobile Number</label>
+            <label style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Email Address</label>
             <div 
-              className={focusedField === 'mobile' ? 'input-wrapper-focus' : ''}
+              className={focusedField === 'email' ? 'input-wrapper-focus' : ''}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -179,18 +179,19 @@ export default function VerifyIdentity() {
                 transition: 'all 0.2s ease-in-out'
               }}
             >
-              {/* Phone SVG Icon */}
+              {/* Email SVG Icon */}
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" style={{ marginRight: '12px' }}>
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
               </svg>
               <input
-                type="tel"
-                name="mobile"
-                value={formData.mobile}
+                type="email"
+                name="email"
+                value={formData.email}
                 onChange={handleChange}
-                onFocus={() => setFocusedField('mobile')}
+                onFocus={() => setFocusedField('email')}
                 onBlur={() => setFocusedField(null)}
-                placeholder="Registered mobile number"
+                placeholder="Registered email address"
                 style={{
                   border: 'none',
                   outline: 'none',
