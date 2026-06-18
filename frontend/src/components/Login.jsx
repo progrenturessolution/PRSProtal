@@ -326,6 +326,29 @@ function Login() {
               )}
             </button>
           </form>
+
+          {/* Public Verification Link */}
+          <div style={{ marginTop: '20px', textAlign: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+            <span style={{ color: '#475569', fontSize: '13px' }}>Verifying a Aspirants </span>
+            <button
+              type="button"
+              onClick={() => navigate('/verify-identity')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#0ea5b7',
+                fontWeight: '700',
+                fontSize: '13px',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                padding: 0
+              }}
+              onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+            >
+              Verify Identity
+            </button>
+          </div>
         </div>
       </div>
     </div>

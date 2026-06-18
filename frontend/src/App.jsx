@@ -10,6 +10,7 @@ import AptitudeForm from './pages/AptitudeForm';
 import AssessmentForm from './pages/AssessmentForm';
 import TrainingForm from './pages/TrainingForm';
 import StudentDetailReport from './pages/StudentDetailReport';
+import VerifyIdentity from './pages/VerifyIdentity';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/admin-login" element={<Login />} />
         <Route path="/intern-login" element={<Login />} />
+        <Route path="/verify-identity" element={<VerifyIdentity />} />
         <Route path="/representative-login" element={<Login />} />
         <Route
           path="/admin-dashboard"

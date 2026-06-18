@@ -16,4 +16,7 @@ router.post('/trainer-login', trainerController.trainerLogin);
 const repController = require('../controllers/representativeController');
 router.post('/representative-login', repController.representativeLogin);
 
+// Verify Identity
+router.post('/verify-identity', authController.verifyIdentity);
+
 module.exports = router;

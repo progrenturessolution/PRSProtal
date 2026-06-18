@@ -69,6 +69,7 @@ export const authAPI = {
   adminLogin: (credentials) => api.post("/auth/admin-login", credentials, { timeout: 60000 }),
   internLogin: (credentials) => api.post("/auth/intern-login", credentials, { timeout: 60000 }),
   trainerLogin: (credentials) => api.post("/auth/trainer-login", credentials, { timeout: 60000 }),
+  verifyIdentity: (data) => api.post("/auth/verify-identity", data, { timeout: 60000 }),
 };
 
 // Admin APIs

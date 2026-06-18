@@ -171,3 +171,75 @@ exports.internLogin = async (req, res) => {
     });
   }
 };
+
+// Verify Identity (Public Endpoint)
+exports.verifyIdentity = async (req, res) => {
+  try {
+    const internId = normalizeCredentialValue(req.body?.internId);
+    const mobile = normalizeCredentialValue(req.body?.mobile);
+
+    // Validation
+    if (!internId || !mobile) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Please provide both Aspirant ID and Mobile Number' 
+      });
+    }
+
+    const normalizedInternId = String(internId).trim();
+    const normalizedMobile = String(mobile).trim();
+
+    // Query database for the student. Should not be soft deleted.
+    const intern = await Intern.findOne({
+      internId: normalizedInternId,
+      mobile: normalizedMobile,
+      isDeleted: { $ne: true }
+    }).lean();
+
+    if (!intern) {
+      return res.status(404).json({
+        success: false,
+        message: 'This aspirant is not a part of Progrentures Solution Pvt. Ltd.'
+      });
+    }
+
+    // Format dates nicely for displaying
+    const formatBatchDate = (dateVal) => {
+      if (!dateVal) return '-';
+      try {
+        return new Date(dateVal).toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+      } catch (e) {
+        return '-';
+      }
+    };
+
+    // Return profile-like details of the student
+    res.status(200).json({
+      success: true,
+      message: 'Identity Verified Successfully',
+      student: {
+        name: intern.name,
+        email: intern.email,
+        mobile: intern.mobile,
+        internId: intern.internId,
+        studentType: intern.studentType,
+        domain: intern.studentType === 'SMS Program' ? (intern.suggestedDomain || '-') : (intern.domain || '-'),
+        joiningDate: intern.studentType === 'SMS Program' ? formatBatchDate(intern.enrolmentDate) : formatBatchDate(intern.joiningDate),
+        duration: intern.duration || 'N/A',
+        collegeName: intern.studentType === 'SMS Program' ? intern.instituteName : intern.collegeName,
+        status: intern.status,
+        companyName: 'Progrentures Solution Pvt. Ltd.'
+      }
+    });
+
+  } catch (error) {
+    console.error('Verify identity error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during verification'
+    });
+  }
+};
