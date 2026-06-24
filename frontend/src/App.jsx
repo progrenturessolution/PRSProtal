@@ -11,12 +11,10 @@ import AssessmentForm from './pages/AssessmentForm';
 import TrainingForm from './pages/TrainingForm';
 import StudentDetailReport from './pages/StudentDetailReport';
 import VerifyIdentity from './pages/VerifyIdentity';
-import DesktopOnlyWrapper from './components/DesktopOnlyWrapper';
 
 function App() {
   return (
-    <DesktopOnlyWrapper>
-      <Router>
+    <Router>
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/admin-login" element={<Login />} />
@@ -105,7 +103,6 @@ function App() {
           />
         </Routes>
       </Router>
-    </DesktopOnlyWrapper>
   );
 }
 
