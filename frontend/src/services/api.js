@@ -136,6 +136,12 @@ export const adminAPI = {
   getActivities: (params) => api.get('/admin/activities', { params }),
   updateActivity: (id, data) => api.patch(`/admin/activities/${id}`, data),
   deleteActivity: (id) => api.delete(`/admin/activities/${id}`),
+
+  // Payment Management (New)
+  getAdminPayments: (params) => api.get("/admin/payments", { params }),
+  createAdminPayment: (data) => api.post("/admin/payments", data),
+  updateAdminPayment: (id, data) => api.patch(`/admin/payments/${id}`, data),
+  deleteAdminPayment: (id) => api.delete(`/admin/payments/${id}`),
 };
 
 // Trainer APIs

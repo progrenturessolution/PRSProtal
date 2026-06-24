@@ -84,6 +84,9 @@ export default function VerifyIdentity() {
         .verify-btn-active:active {
           transform: scale(0.98);
         }
+        input, button, select, textarea {
+          font-family: inherit !important;
+        }
       `}</style>
 
       <div style={{
@@ -336,7 +339,7 @@ export default function VerifyIdentity() {
             </div>
 
             <div style={{ marginTop: '16px', fontSize: '12px', color: '#047857', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Verified Institution: <strong>{studentData.companyName}</strong></span>
+              <span>Verified Company: <strong>{studentData.companyName}</strong></span>
             </div>
           </div>
         )}

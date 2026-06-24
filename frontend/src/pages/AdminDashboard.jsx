@@ -19,6 +19,7 @@ import ManageRepresentatives from "./ManageRepresentatives";
 import RepresentativePayoutManagement from "./RepresentativePayoutManagement";
 import GroupManagement from "./GroupManagement";
 import ActivityManagementNew from "./ActivityManagementNew";
+import PaymentManagement from "./PaymentManagement";
 import { adminAPI, taskAPI } from "../services/api";
 import logo from "../assets/logo.png";
 
@@ -608,6 +609,8 @@ function AdminDashboard() {
 
       case "activity-management":
         return <ActivityManagementNew />;
+      case "payment-management":
+        return <PaymentManagement key="payment-management" />;
       default:
         return (
           <div className="content-header">
@@ -914,6 +917,24 @@ function AdminDashboard() {
               />
             </svg>
             reports
+          </li>
+
+          <li
+            className={activeMenu === "payment-management" ? "active" : ""}
+            onClick={() => {
+              setActiveMenu("payment-management");
+              setSidebarOpen(false);
+            }}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            Payment Management
           </li>
         </ul>
 

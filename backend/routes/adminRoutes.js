@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const certificateController = require('../controllers/certificateController');
+const adminPaymentController = require('../controllers/adminPaymentController');
 const { verifyToken, verifyAdmin } = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require('path');
@@ -253,6 +254,12 @@ router.post('/activities', verifyToken, verifyAdmin, adminController.createActiv
 router.get('/activities', verifyToken, verifyAdmin, adminController.getRecentActivities);
 router.patch('/activities/:id', verifyToken, verifyAdmin, adminController.updateActivity);
 router.delete('/activities/:id', verifyToken, verifyAdmin, adminController.deleteActivity);
+
+// ========== PAYMENT MANAGEMENT ==========
+router.get('/payments', verifyToken, verifyAdmin, adminPaymentController.getPayments);
+router.post('/payments', verifyToken, verifyAdmin, adminPaymentController.createPayment);
+router.patch('/payments/:id', verifyToken, verifyAdmin, adminPaymentController.updatePayment);
+router.delete('/payments/:id', verifyToken, verifyAdmin, adminPaymentController.deletePayment);
 
 module.exports = router;
 

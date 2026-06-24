@@ -150,7 +150,14 @@ function StudentDetailReport() {
   };
 
   const downloadReportPDF = () => {
-    if (!hasSelectedMonth || !hasFilteredRecords) return;
+    if (!hasSelectedMonth) {
+      alert("Please select a month first from the dropdown to generate the PDF report.");
+      return;
+    }
+    if (!hasFilteredRecords) {
+      alert("There are no records available for the selected month to generate a report.");
+      return;
+    }
 
     setDownloading(true);
     try {
@@ -159,31 +166,33 @@ function StudentDetailReport() {
           <head>
             <title>Aspirant Report - ${student.name}</title>
             <style>
-              body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #324158; padding-bottom: 15px; }
-              .header h1 { margin: 10px 0; color: #324158; }
-              .section { margin: 20px 0; }
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; color: #1e293b; background-color: #ffffff; }
+              .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #324158; padding-bottom: 20px; }
+              .header .company { font-size: 14px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+              .header h1 { font-size: 26px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0; letter-spacing: -0.02em; }
+              .header p { font-size: 14px; color: #475569; margin: 0; }
+              .section { margin: 25px 0; }
               .section-title { font-size: 16px; font-weight: bold; color: #324158; margin: 15px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
               .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
-              .info-item { padding: 10px; background: #f8fafc; border-radius: 4px; }
-              .info-label { font-size: 12px; color: #94a3b8; font-weight: bold; text-transform: uppercase; }
+              .info-item { padding: 10px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; }
+              .info-label { font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; }
               .info-value { font-size: 14px; color: #0f172a; font-weight: 600; margin-top: 5px; }
-              table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-              th { background-color: #324158; color: white; padding: 10px; text-align: left; border: 1px solid #ddd; }
-              td { padding: 8px; border: 1px solid #e2e8f0; }
-              tr:nth-child(even) { background-color: #f9fafb; }
+              table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+              th { background-color: #324158; color: white; padding: 12px 10px; text-align: left; border: 1px solid #324158; font-weight: 600; }
+              td { padding: 10px; border: 1px solid #e2e8f0; color: #334155; }
+              tr:nth-child(even) { background-color: #f8fafc; }
               .stat-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
-              .stat-box { padding: 15px; background: #f8fafc; border-left: 4px solid #324158; text-align: center; }
+              .stat-box { padding: 15px; background: #f8fafc; border-left: 4px solid #324158; text-align: center; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 0 4px 4px 0; }
               .stat-number { font-size: 24px; font-weight: bold; color: #324158; }
               .stat-label { font-size: 12px; color: #64748b; margin-top: 5px; }
-              .footer { margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; color: #999; font-size: 12px; }
+              .footer { margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; color: #94a3b8; font-size: 12px; }
             </style>
           </head>
           <body>
             <div class="header">
-              <h1>Student Assessment Report</h1>
-              <p>Month: <strong>${formatMonthLabel(selectedMonth)}</strong></p>
-              <p>${new Date().toLocaleDateString('en-IN')}</p>
+              <div class="company">Progrentures Solution Pvt. Ltd.</div>
+              <h1>PRS Portal Aspirant Report</h1>
+              <p>Month: <strong>${formatMonthLabel(selectedMonth)}</strong> &nbsp;|&nbsp; Generated on: <strong>${new Date().toLocaleDateString('en-IN')}</strong></p>
             </div>
 
             <div class="section">
@@ -353,7 +362,7 @@ function StudentDetailReport() {
 
       htmlContent += `
         <div class="footer">
-          <p>This report was generated on ${new Date().toLocaleString('en-IN')}</p>
+          <p>Thank you. This report was generated on ${new Date().toLocaleString('en-IN')} by PRS Portal</p>
         </div>
           </body>
         </html>
@@ -374,14 +383,20 @@ function StudentDetailReport() {
   };
 
   const downloadReportExcel = async () => {
-    if (!hasSelectedMonth || !hasFilteredRecords) return;
+    if (!hasSelectedMonth) {
+      alert("Please select a month first from the dropdown to export Excel.");
+      return;
+    }
+    if (!hasFilteredRecords) {
+      alert("There are no records available for the selected month to export Excel.");
+      return;
+    }
 
     setDownloading(true);
     try {
-      const XLSX = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
-
       const ws_data = [
-        ["Student Assessment Report"],
+        ["PRS Portal Aspirant Report"],
+        ["Company", "Progrentures Solution Pvt. Ltd."],
         ["Generated on", new Date().toLocaleDateString('en-IN')],
         ["Month", formatMonthLabel(selectedMonth)],
         [],
@@ -452,13 +467,31 @@ function StudentDetailReport() {
         });
       }
 
-      const ws = XLSX.utils.aoa_to_sheet(ws_data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Aspirant Report");
+      const csvContent = ws_data
+        .map((row) =>
+          row
+            .map((val) => {
+              const text = String(val === null || val === undefined ? "" : val);
+              if (text.includes(",") || text.includes("\n") || text.includes('"')) {
+                return `"${text.replace(/"/g, '""')}"`;
+              }
+              return text;
+            })
+            .join(",")
+        )
+        .join("\n");
 
-      XLSX.writeFile(wb, `Student_Report_${student.internId}_${selectedMonth}.xlsx`);
+      const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Student_Report_${student.internId}_${selectedMonth}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
       console.error("Error generating Excel:", err);
+      alert("Failed to export Excel report. Please try again.");
     } finally {
       setDownloading(false);
     }
