@@ -12,9 +12,9 @@ const AdminPaymentSchema = new mongoose.Schema({
     trim: true
   },
   paymentGoal: {
-    type: Number,
+    type: String,
     required: true,
-    default: 0
+    default: 'Pending'
   },
   payment: {
     type: Number,

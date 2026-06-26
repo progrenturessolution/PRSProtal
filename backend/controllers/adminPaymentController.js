@@ -32,7 +32,7 @@ const getPayments = async (req, res) => {
 // Create a payment record
 const createPayment = async (req, res) => {
   try {
-    const { name, role, paymentGoal, payment, receiveDate, sendDate } = req.body;
+    const { name, role, paymentGoal, payment, pendingPayment, receiveDate, sendDate } = req.body;
 
     if (!name || !role) {
       return res.status(400).json({
@@ -41,14 +41,13 @@ const createPayment = async (req, res) => {
       });
     }
 
-    const goalNum = Number(paymentGoal) || 0;
     const payNum = Number(payment) || 0;
-    const pendingNum = goalNum - payNum;
+    const pendingNum = Number(pendingPayment) || 0;
 
     const newPayment = new AdminPayment({
       name,
       role,
-      paymentGoal: goalNum,
+      paymentGoal: paymentGoal || 'Pending',
       payment: payNum,
       pendingPayment: pendingNum,
       receiveDate: receiveDate || null,
@@ -74,7 +73,7 @@ const createPayment = async (req, res) => {
 // Update a payment record
 const updatePayment = async (req, res) => {
   try {
-    const { name, role, paymentGoal, payment, receiveDate, sendDate } = req.body;
+    const { name, role, paymentGoal, payment, pendingPayment, receiveDate, sendDate } = req.body;
     const { id } = req.params;
 
     const paymentRecord = await AdminPayment.findById(id);
@@ -88,11 +87,12 @@ const updatePayment = async (req, res) => {
     if (name) paymentRecord.name = name;
     if (role) paymentRecord.role = role;
     
-    if (paymentGoal !== undefined) paymentRecord.paymentGoal = Number(paymentGoal) || 0;
+    if (paymentGoal !== undefined) paymentRecord.paymentGoal = paymentGoal;
     if (payment !== undefined) paymentRecord.payment = Number(payment) || 0;
     
-    // Recalculate pending
-    paymentRecord.pendingPayment = paymentRecord.paymentGoal - paymentRecord.payment;
+    if (pendingPayment !== undefined) {
+      paymentRecord.pendingPayment = Number(pendingPayment) || 0;
+    }
     
     if (receiveDate !== undefined) paymentRecord.receiveDate = receiveDate || null;
     if (sendDate !== undefined) paymentRecord.sendDate = sendDate || null;
