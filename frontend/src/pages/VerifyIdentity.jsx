@@ -23,6 +23,16 @@ export default function VerifyIdentity() {
     setErrorMessage('');
   };
 
+  const handleReset = () => {
+    setFormData({
+      internId: '',
+      email: ''
+    });
+    setResult(null);
+    setStudentData(null);
+    setErrorMessage('');
+  };
+
   const handleVerify = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -53,17 +63,478 @@ export default function VerifyIdentity() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'radial-gradient(circle at 10% 20%, #1e293b 0%, #0f172a 90%)',
-      padding: '24px',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      {/* Dynamic Keyframes & Reset Classes */}
+    <div className="verify-container">
+      {/* CSS Styling */}
       <style>{`
+        /* Reset and Base Customizations */
+        .verify-container {
+          display: flex;
+          height: 100vh;
+          width: 100vw;
+          overflow: hidden;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          background: #f8fafc;
+          box-sizing: border-box;
+        }
+
+        .verify-container * {
+          box-sizing: border-box;
+        }
+
+        /* Left Branding Panel */
+        .verify-left {
+          flex: 4;
+          background: linear-gradient(135deg, #0e1b33 0%, #17233b 100%);
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 48px;
+          color: white;
+        }
+
+        /* Ambient glowing circles and pattern overlay */
+        .verify-left::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: 
+            radial-gradient(circle at 80% 20%, rgba(14, 165, 183, 0.15) 0%, transparent 50%),
+            linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+            linear-gradient(225deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+            linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
+            linear-gradient(315deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%);
+          background-position: 0 0, 30px 0, 30px 0, 0 0, 0 0;
+          background-size: 100% 100%, 60px 60px, 60px 60px, 60px 60px, 60px 60px;
+          opacity: 0.85;
+          pointer-events: none;
+        }
+
+        .verify-left-content {
+          width: 100%;
+          max-width: 460px;
+          position: relative;
+          z-index: 2;
+          display: flex;
+          flex-direction: column;
+          gap: 40px;
+        }
+
+        .verify-brand-row {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .verify-brand-logo-container {
+          width: 72px;
+          height: 72px;
+          border-radius: 16px;
+          background: white;
+          padding: 6px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .verify-brand-logo {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .verify-brand-copy h2 {
+          font-size: 18px;
+          font-weight: 800;
+          color: #f8fafc;
+          margin: 0;
+          letter-spacing: -0.01em;
+          line-height: 1.2;
+        }
+
+        .verify-brand-copy p {
+          font-size: 11px;
+          color: #0ea5b7;
+          margin: 4px 0 0 0;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          font-weight: 700;
+        }
+
+        .verify-hero h1 {
+          font-size: 32px;
+          font-weight: 800;
+          line-height: 1.2;
+          color: #ffffff;
+          margin: 0 0 16px 0;
+          letter-spacing: -0.03em;
+        }
+
+        .verify-hero p {
+          font-size: 15px;
+          line-height: 1.6;
+          color: #cbd5e1;
+          margin: 0;
+        }
+
+        .verify-features-list {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .verify-feature-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 14px;
+        }
+
+        .verify-feature-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          background: rgba(14, 165, 183, 0.15);
+          color: #0ea5b7;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .verify-feature-text h3 {
+          font-size: 14.5px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0 0 4px 0;
+        }
+
+        .verify-feature-text p {
+          font-size: 13px;
+          color: #94a3b8;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        .verify-left-footer {
+          font-size: 11px;
+          color: #64748b;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          padding-top: 24px;
+          line-height: 1.5;
+        }
+
+        .verify-left-footer strong {
+          color: #94a3b8;
+        }
+
+        /* Right Content Panel */
+        .verify-right {
+          flex: 6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 48px;
+          overflow-y: auto;
+          position: relative;
+        }
+
+        .verify-right-container {
+          width: 100%;
+          max-width: 580px;
+        }
+
+        /* Form styling inherited from login page classes */
+
+        /* Success Affiliation Certificate Card */
+        .verify-results-panel {
+          background: white;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+          padding: 36px;
+          display: flex;
+          flex-direction: column;
+          animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .verify-results-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          border-bottom: 1.5px solid #f1f5f9;
+          padding-bottom: 20px;
+          margin-bottom: 24px;
+        }
+
+        .verify-badge-success-icon {
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          background: #10b981;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          font-weight: 800;
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+          flex-shrink: 0;
+        }
+
+        .verify-badge-title h4 {
+          font-size: 18px;
+          font-weight: 800;
+          color: #065f46;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+
+        .verify-badge-title p {
+          margin: 3px 0 0 0;
+          font-size: 12px;
+          color: #047857;
+          font-weight: 600;
+        }
+
+        .verify-results-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 18px 24px;
+          margin-bottom: 24px;
+        }
+
+        .grid-span-full {
+          grid-column: span 2;
+        }
+
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+
+        .detail-label {
+          font-size: 11px;
+          font-weight: 800;
+          color: #047857;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .detail-value {
+          font-size: 14.5px;
+          font-weight: 700;
+          color: #0f172a;
+        }
+
+        .detail-status-pill {
+          display: inline-flex;
+          align-items: center;
+          width: fit-content;
+          padding: 4px 10px;
+          border-radius: 99px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          margin-top: 2px;
+        }
+
+        .status-active {
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #a7f3d0;
+        }
+
+        .status-completed {
+          background: #eff6ff;
+          color: #1d4ed8;
+          border: 1px solid #bfdbfe;
+        }
+
+        .status-other {
+          background: #f1f5f9;
+          color: #475569;
+          border: 1px solid #cbd5e1;
+        }
+
+        .verify-results-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-top: 1.5px solid #f1f5f9;
+          padding-top: 18px;
+          margin-top: 6px;
+        }
+
+        .verify-company-tag {
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .verify-company-tag strong {
+          color: #334155;
+        }
+
+        /* Failure state styling */
+        .verify-failed-panel {
+          background: white;
+          border-radius: 20px;
+          border: 1px solid #fca5a5;
+          box-shadow: 0 20px 40px rgba(220, 38, 38, 0.05);
+          padding: 36px;
+          display: flex;
+          flex-direction: column;
+          animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .verify-failed-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 18px;
+        }
+
+        .verify-badge-failed-icon {
+          width: 46px;
+          height: 46px;
+          border-radius: 50%;
+          background: #dc2626;
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          font-weight: 800;
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+          flex-shrink: 0;
+        }
+
+        .verify-badge-failed-title h4 {
+          font-size: 18px;
+          font-weight: 800;
+          color: #991b1b;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+
+        .verify-badge-failed-title p {
+          margin: 3px 0 0 0;
+          font-size: 12px;
+          color: #b91c1c;
+          font-weight: 600;
+        }
+
+        .verify-failed-msg {
+          font-size: 14px;
+          color: #7f1d1d;
+          line-height: 1.6;
+          margin: 0 0 24px 0;
+        }
+
+        .verify-failed-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border-top: 1.5px solid #fecaca;
+          padding-top: 18px;
+        }
+
+        .authority-text {
+          font-size: 11px;
+          color: #b91c1c;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          font-weight: 700;
+        }
+
+        /* Action Buttons Area */
+        .verify-actions-row {
+          display: flex;
+          gap: 14px;
+          margin-top: 24px;
+          justify-content: center;
+        }
+
+        .action-btn-primary {
+          flex: 1;
+          padding: 13px;
+          border-radius: 10px;
+          border: none;
+          background: #17233a;
+          color: white;
+          font-size: 14.5px;
+          font-weight: 700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+
+        .action-btn-primary:hover {
+          background: #1e304f;
+        }
+
+        .action-btn-secondary {
+          flex: 1;
+          padding: 13px;
+          border-radius: 10px;
+          border: 1.5px solid #cbd5e1;
+          background: transparent;
+          color: #475569;
+          font-size: 14.5px;
+          font-weight: 700;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+
+        .action-btn-secondary:hover {
+          border-color: #94a3b8;
+          color: #0f172a;
+          background: #f1f5f9;
+        }
+
+        .back-to-signin-container {
+          margin-top: 28px;
+          text-align: center;
+        }
+
+        .back-to-signin-btn {
+          background: none;
+          border: none;
+          color: #64748b;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          transition: color 0.2s;
+          padding: 0;
+        }
+
+        .back-to-signin-btn:hover {
+          color: #0f172a;
+        }
+
+        .spin {
+          animation: spin-kf 1s linear infinite;
+        }
+
+        @keyframes spin-kf {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
         @keyframes slideInUp {
           from {
             opacity: 0;
@@ -74,335 +545,301 @@ export default function VerifyIdentity() {
             transform: translateY(0);
           }
         }
-        .verified-card-animate {
-          animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        .input-wrapper-focus {
-          border-color: #17233A !important;
-          box-shadow: 0 0 0 4px rgba(23, 35, 58, 0.08) !important;
-        }
-        .verify-btn-active:active {
-          transform: scale(0.98);
-        }
-        input, button, select, textarea {
-          font-family: inherit !important;
+
+        /* Responsive Breakpoints */
+        @media (max-width: 968px) {
+          .verify-container {
+            flex-direction: column;
+            overflow-y: auto;
+            height: auto;
+            min-height: 100vh;
+          }
+
+          .verify-left {
+            padding: 40px 24px;
+            min-height: auto;
+          }
+
+          .verify-left-content {
+            max-width: 100%;
+            gap: 28px;
+          }
+
+          .verify-right {
+            padding: 40px 24px;
+            height: auto;
+            overflow-y: visible;
+          }
+
+          .verify-right-container {
+            max-width: 100%;
+          }
+
+          .verify-results-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+
+          .grid-span-full {
+            grid-column: span 1;
+          }
         }
       `}</style>
 
-      <div style={{
-        maxWidth: '620px',
-        width: '100%',
-        padding: '40px',
-        borderRadius: '20px',
-        background: 'rgba(255, 255, 255, 0.98)',
-        backdropFilter: 'blur(10px)',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
-        border: '1px solid rgba(255, 255, 255, 0.8)',
-        boxSizing: 'border-box'
-      }}>
-        
-        {/* Brand Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          marginBottom: '32px',
-          borderBottom: '1.5px solid #f1f5f9',
-          paddingBottom: '20px'
-        }}>
-          <img src={logo} alt="Progrentures Logo" style={{ width: '68px', height: '68px', objectFit: 'contain', flexShrink: 0 }} />
-          <div>
-            <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Progrentures Solution Pvt. Ltd.</h2>
-            <p style={{ fontSize: '11px', color: '#64748b', margin: '3px 0 0 0', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '700' }}>Public Credentials Registry</p>
-          </div>
-        </div>
-
-        <h3 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', letterSpacing: '-0.02em' }}>Verify Student Affiliation</h3>
-        <p style={{ fontSize: '14px', color: '#475569', marginBottom: '28px', lineHeight: '1.6' }}>
-          Securely verify the enrollment and program completion records of candidates by inputting their registered credentials.
-        </p>
-
-        {/* Verification Form */}
-        <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
-          
-          {/* Aspirant ID Field */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Aspirant ID (Intern ID / SMS ID)</label>
-            <div 
-              className={focusedField === 'internId' ? 'input-wrapper-focus' : ''}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: '#ffffff',
-                border: '1.5px solid #cbd5e1',
-                borderRadius: '12px',
-                padding: '0 16px',
-                transition: 'all 0.2s ease-in-out'
-              }}
-            >
-              {/* User SVG Icon */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" style={{ marginRight: '12px' }}>
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              <input
-                type="text"
-                name="internId"
-                value={formData.internId}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('internId')}
-                onBlur={() => setFocusedField(null)}
-                placeholder="e.g., PSMS/MAR26001/ANI"
-                style={{
-                  border: 'none',
-                  outline: 'none',
-                  width: '100%',
-                  padding: '14px 0',
-                  fontSize: '15px',
-                  color: '#0f172a',
-                  background: 'transparent'
-                }}
-                required
-              />
+      {/* Left Panel */}
+      <div className="verify-left">
+        <div className="verify-left-content">
+          <div className="verify-brand-row">
+            <div className="verify-brand-logo-container">
+              <img src={logo} alt="Progrentures Logo" className="verify-brand-logo" />
+            </div>
+            <div className="verify-brand-copy">
+              <h2>Progrentures Solution Pvt. Ltd.</h2>
+              <p>Credentials Registry</p>
             </div>
           </div>
 
-          {/* Email Field */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '13px', fontWeight: '700', color: '#334155' }}>Email Address</label>
-            <div 
-              className={focusedField === 'email' ? 'input-wrapper-focus' : ''}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: '#ffffff',
-                border: '1.5px solid #cbd5e1',
-                borderRadius: '12px',
-                padding: '0 16px',
-                transition: 'all 0.2s ease-in-out'
-              }}
-            >
-              {/* Email SVG Icon */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" style={{ marginRight: '12px' }}>
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                <polyline points="22,6 12,13 2,6" />
-              </svg>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-                placeholder="Registered email address"
-                style={{
-                  border: 'none',
-                  outline: 'none',
-                  width: '100%',
-                  padding: '14px 0',
-                  fontSize: '15px',
-                  color: '#0f172a',
-                  background: 'transparent'
-                }}
-                required
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="verify-btn-active"
-            style={{
-              marginTop: '8px',
-              padding: '15px',
-              borderRadius: '12px',
-              border: 'none',
-              background: '#17233A',
-              color: '#ffffff',
-              fontSize: '15px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              boxShadow: '0 4px 12px rgba(23, 35, 58, 0.2)',
-              transition: 'all 0.2s ease-in-out'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#1e304f';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#17233A';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            {loading ? (
-              <>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ animation: 'spin 1s linear infinite', marginRight: '6px' }}>
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                </svg>
-                <span>Checking Registry...</span>
-              </>
-            ) : (
-              <span>Verify Candidate Registry</span>
-            )}
-          </button>
-        </form>
-
-        {/* Verification Result Area */}
-        {result === 'success' && studentData && (
-          <div className="verified-card-animate" style={{ padding: '24px', borderRadius: '16px', background: '#ecfdf5', border: '1px solid #a7f3d0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: '#10b981',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px',
-                fontWeight: '800'
-              }}>✓</div>
-              <div>
-                <h4 style={{ fontSize: '17px', fontWeight: '800', color: '#065f46', margin: 0, letterSpacing: '-0.01em' }}>Registry Check Passed</h4>
-                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#047857', fontWeight: '500' }}>Credential matching succeeded.</p>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '16px',
-              padding: '16px 0',
-              borderTop: '1px solid rgba(16, 185, 129, 0.2)',
-              borderBottom: '1px solid rgba(16, 185, 129, 0.2)'
-            }}>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Aspirant Name</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.name}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email Address</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700', wordBreak: 'break-all' }}>{studentData.email}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Aspirant ID</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.internId}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Mobile Number</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.mobile}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Program Type</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.studentType}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Assigned Domain</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.domain}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Batch Start</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.joiningDate}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Duration</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.duration}</strong>
-              </div>
-              <div style={{ gridColumn: 'span 2' }}>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>College / Institution</span>
-                <strong style={{ fontSize: '14px', color: '#065f46', fontWeight: '700' }}>{studentData.collegeName}</strong>
-              </div>
-              <div>
-                <span style={{ display: 'block', fontSize: '11px', color: '#047857', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status Badge</span>
-                <span style={{ 
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '4px 10px', 
-                  borderRadius: '999px', 
-                  fontSize: '11px', 
-                  fontWeight: '700',
-                  textTransform: 'uppercase',
-                  background: studentData.status?.toLowerCase() === 'active' ? '#ecfdf5' : studentData.status?.toLowerCase() === 'completed' ? '#eff6ff' : '#f1f5f9', 
-                  color: studentData.status?.toLowerCase() === 'active' ? '#047857' : studentData.status?.toLowerCase() === 'completed' ? '#1d4ed8' : '#475569',
-                  border: studentData.status?.toLowerCase() === 'active' ? '1px solid #a7f3d0' : studentData.status?.toLowerCase() === 'completed' ? '#bfdbfe' : '#cbd5e1',
-                  marginTop: '6px'
-                }}>
-                  {studentData.status}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '16px', fontSize: '12px', color: '#047857', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Verified Company: <strong>{studentData.companyName}</strong></span>
-            </div>
-          </div>
-        )}
-
-        {result === 'fail' && (
-          <div className="verified-card-animate" style={{ padding: '24px', borderRadius: '16px', background: '#fef2f2', border: '1px solid #fca5a5' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: '#dc2626',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px',
-                fontWeight: '800'
-              }}>!</div>
-              <div>
-                <h4 style={{ fontSize: '17px', fontWeight: '800', color: '#991b1b', margin: 0, letterSpacing: '-0.01em' }}>Identity Verification Failed</h4>
-                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#b91c1c', fontWeight: '500' }}>No matching registry records found.</p>
-              </div>
-            </div>
-            <p style={{ fontSize: '13.5px', color: '#7f1d1d', margin: '0 0 16px 0', lineHeight: '1.6' }}>
-              {errorMessage}
+          <div className="verify-hero">
+            <h1>Validate Affiliation</h1>
+            <p>
+              Confirm the active enrollment, training status, or program completion details of any candidate securely using registered credentials.
             </p>
-            <div style={{ fontSize: '11px', color: '#991b1b', borderTop: '1px solid rgba(220, 38, 38, 0.15)', paddingTop: '12px', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: '700' }}>
-              Authority: <strong>Progrentures Solution Pvt. Ltd.</strong>
+          </div>
+
+          <div className="verify-features-list">
+            <div className="verify-feature-item">
+              <div className="verify-feature-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <div className="verify-feature-text">
+                <h3>Direct Database Match</h3>
+                <p>Authenticates values in real time against our official records.</p>
+              </div>
+            </div>
+
+            <div className="verify-feature-item">
+              <div className="verify-feature-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <div className="verify-feature-text">
+                <h3>Affiliation Information</h3>
+                <p>Confirm student domains, duration, college details, and current status.</p>
+              </div>
+            </div>
+
+            <div className="verify-feature-item">
+              <div className="verify-feature-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <div className="verify-feature-text">
+                <h3>Secured Credentials</h3>
+                <p>Ensures records remain tamper-proof and cryptographically logged.</p>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Back Link */}
-        <div style={{ marginTop: '28px', textAlign: 'center', borderTop: '1.5px solid #f1f5f9', paddingTop: '22px' }}>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#64748b',
-              fontSize: '14px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'color 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#0f172a'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ transition: 'transform 0.2s' }}>
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-            Back to Sign In
-          </button>
+          <div className="verify-left-footer">
+            Authority: <strong>Progrentures Solution Pvt. Ltd. Registry Department</strong><br />
+            Public Verification Portal v2.0
+          </div>
         </div>
+      </div>
 
+      {/* Right Panel */}
+      <div className="verify-right">
+        <div className="verify-right-container">
+          
+          {/* 1. Form State */}
+          {result === null && (
+            <div className="login-card">
+              <div className="login-header">
+                <h2>Verify Candidate</h2>
+                <p>Please enter the candidate's registered Aspirant ID and Email address below to verify enrollment records.</p>
+              </div>
+
+              <form onSubmit={handleVerify} className="login-form">
+                <div className="form-group">
+                  <label htmlFor="internId">Aspirant ID (Intern ID / SMS ID)</label>
+                  <input
+                    id="internId"
+                    type="text"
+                    name="internId"
+                    value={formData.internId}
+                    onChange={handleChange}
+                    placeholder="Enter candidate's Aspirant ID"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="email">Email Address</label>
+                  <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Enter candidate's email"
+                    required
+                  />
+                </div>
+
+                <button type="submit" disabled={loading} className="login-submit-btn">
+                  {loading ? (
+                    <>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="spin" style={{ marginRight: '4px' }}>
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      <span>Checking Registry...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Verify Affiliation Records</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="back-to-signin-container">
+                <button type="button" onClick={() => navigate('/')} className="back-to-signin-btn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                  </svg>
+                  Back to Sign In
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Success Result Panel */}
+          {result === 'success' && studentData && (
+            <div>
+              <div className="verify-results-panel">
+                <div className="verify-results-header">
+                  <div className="verify-badge-success-icon">✓</div>
+                  <div className="verify-badge-title">
+                    <h4>Registry Check Passed</h4>
+                    <p>Candidate records match verified database profile.</p>
+                  </div>
+                </div>
+
+                <div className="verify-results-grid">
+                  <div className="detail-item">
+                    <span className="detail-label">Aspirant Name</span>
+                    <span className="detail-value">{studentData.name}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Aspirant ID</span>
+                    <span className="detail-value">{studentData.internId}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Email Address</span>
+                    <span className="detail-value" style={{ wordBreak: 'break-all' }}>{studentData.email}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Mobile Number</span>
+                    <span className="detail-value">{studentData.mobile}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Program Type</span>
+                    <span className="detail-value">{studentData.studentType}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Assigned Domain</span>
+                    <span className="detail-value-highlight">{studentData.domain}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Batch Start</span>
+                    <span className="detail-value">{studentData.joiningDate}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Duration</span>
+                    <span className="detail-value">{studentData.duration}</span>
+                  </div>
+
+                  <div className="detail-item grid-span-full">
+                    <span className="detail-label">College / Institution</span>
+                    <span className="detail-value">{studentData.collegeName}</span>
+                  </div>
+
+                  <div className="detail-item">
+                    <span className="detail-label">Status Badge</span>
+                    <span className={`detail-status-pill ${
+                      studentData.status?.toLowerCase() === 'active' ? 'status-active' :
+                      studentData.status?.toLowerCase() === 'completed' ? 'status-completed' : 'status-other'
+                    }`}>
+                      {studentData.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="verify-results-footer">
+                  <div className="verify-company-tag">
+                    Verified Company: <strong>{studentData.companyName || 'Progrentures Solution'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="verify-actions-row">
+                <button type="button" onClick={handleReset} className="action-btn-primary">
+                  Verify Another
+                </button>
+                <button type="button" onClick={() => navigate('/')} className="action-btn-secondary">
+                  Back to Sign In
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 3. Fail Result Panel */}
+          {result === 'fail' && (
+            <div>
+              <div className="verify-failed-panel">
+                <div className="verify-failed-header">
+                  <div className="verify-badge-failed-icon">!</div>
+                  <div className="verify-badge-failed-title">
+                    <h4>Registry Check Failed</h4>
+                    <p>No matching candidate records found.</p>
+                  </div>
+                </div>
+
+                <p className="verify-failed-msg">{errorMessage}</p>
+
+                <div className="verify-failed-footer">
+                  <span className="authority-text">Progrentures Credentials Registry</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="verify-actions-row">
+                <button type="button" onClick={handleReset} className="action-btn-primary">
+                  Try Again
+                </button>
+                <button type="button" onClick={() => navigate('/')} className="action-btn-secondary">
+                  Back to Sign In
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
       </div>
     </div>
   );
 }
+
