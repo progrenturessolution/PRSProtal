@@ -1787,6 +1787,11 @@ export default function ActivityManagementNew() {
                     </select>
                   </div>
 
+                  {renderInterviewerSelect(
+                    assessForm.interviewer,
+                    e => setAssessForm(f => ({ ...f, interviewer: e.target.value }))
+                  )}
+
                   <div className="am-field am-span-2">
                     <label>Title</label>
                     <input value={assessForm.title} onChange={e => setAssessForm(f => ({ ...f, title: e.target.value }))} />
