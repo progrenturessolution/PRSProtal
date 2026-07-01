@@ -29,6 +29,10 @@ const internSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  plainPassword: {
+    type: String,
+    default: ''
+  },
   // ID based on type
   internId: {
     type: String,

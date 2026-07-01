@@ -157,7 +157,8 @@ exports.addIntern = async (req, res) => {
       secondPaymentAmount,
       secondPaymentDate,
       finalPaymentAmount,
-      finalPaymentDate
+      finalPaymentDate,
+      groupId
     } = req.body;
 
     // Validation
@@ -224,6 +225,7 @@ exports.addIntern = async (req, res) => {
       mobile,
       internId: resolvedInternId,
       password: hashedPassword,
+      plainPassword: password,
       role: 'intern'
     };
 
@@ -306,6 +308,13 @@ exports.addIntern = async (req, res) => {
 
     const intern = new Intern(internData);
     await intern.save();
+
+    // If groupId is provided, assign the intern to that group
+    if (groupId) {
+      await StudentGroup.findByIdAndUpdate(groupId, {
+        $addToSet: { students: intern._id }
+      });
+    }
 
     // Return saved intern (without password) so frontend gets all persisted fields
     const saved = await Intern.findById(intern._id).select('-password').populate('addedByRepresentative', 'name');
@@ -618,12 +627,18 @@ exports.updateIntern = async (req, res) => {
       'pendingFees',
       'lastPaymentDate',
       'currentDesignation'
-      ,'stipendType','stipendAmount'
+      ,'stipendType','stipendAmount',
+      'password'
     ];
 
     const updates = {};
     for (const key of allowed) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
+      if (req.body[key] !== undefined && key !== 'password') updates[key] = req.body[key];
+    }
+
+    if (req.body.password !== undefined && String(req.body.password).trim() !== '') {
+      updates.password = await bcrypt.hash(req.body.password, 10);
+      updates.plainPassword = req.body.password;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -2524,36 +2539,40 @@ exports.scheduleAssessment = async (req, res) => {
       ? [groupName || `Group ${groupId || ''}`.trim()].filter(Boolean)
       : studentIds.map(String);
 
-    // Validate trainer
-    if (!trainerId) return res.status(400).json({ success: false, message: 'Trainer ID required' });
-    const trainer = await Trainer.findById(trainerId).select('name email');
-    if (!trainer) return res.status(404).json({ success: false, message: 'Trainer not found' });
+    // Validate trainer (optional)
+    let trainer = null;
+    if (trainerId && String(trainerId).trim() !== '') {
+      trainer = await Trainer.findById(trainerId).select('name email');
+      if (!trainer) return res.status(404).json({ success: false, message: 'Trainer not found' });
+    }
 
     // Build message text
     const when = date ? `${date}${time ? ' ' + time : ''}` : (time || '');
     const baseMessage = `${description || ''}${when ? '\nWhen: ' + when : ''}${link ? '\nLink: ' + link : ''}`;
 
-    // Create notification for trainer
-    try {
-      const trainerNotification = new Notification({
-        title: `Scheduled Assessment: ${title || (type || 'Assessment')}`,
-        message: baseMessage,
-        notificationType: 'Test/Assessment',
-        sendTo: 'Individual',
-        recipientIds: [trainerId],
-        recipientModel: 'Trainer',
-        assessmentMeta: {
-          assessmentMode,
-          groupId: groupId || undefined,
-          groupName,
-          assignedLabels,
-          assignedIds: studentIds
-        },
-        createdBy: adminId
-      });
-      await trainerNotification.save();
-    } catch (err) {
-      console.error('Failed to create trainer notification', err);
+    // Create notification for trainer (if trainer is specified)
+    if (trainerId && String(trainerId).trim() !== '') {
+      try {
+        const trainerNotification = new Notification({
+          title: `Scheduled Assessment: ${title || (type || 'Assessment')}`,
+          message: baseMessage,
+          notificationType: 'Test/Assessment',
+          sendTo: 'Individual',
+          recipientIds: [trainerId],
+          recipientModel: 'Trainer',
+          assessmentMeta: {
+            assessmentMode,
+            groupId: groupId || undefined,
+            groupName,
+            assignedLabels,
+            assignedIds: studentIds
+          },
+          createdBy: adminId
+        });
+        await trainerNotification.save();
+      } catch (err) {
+        console.error('Failed to create trainer notification', err);
+      }
     }
 
     // Create notification(s) for students (if any)

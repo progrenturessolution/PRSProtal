@@ -770,7 +770,11 @@ export default function ActivityManagementNew() {
     if (!value) return '-';
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return '-';
-    return parsed.toLocaleDateString('en-GB');
+    const pad = (num) => String(num).padStart(2, '0');
+    const day = pad(parsed.getUTCDate());
+    const month = pad(parsed.getUTCMonth() + 1);
+    const year = parsed.getUTCFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   function formatReportTime(value) {
@@ -778,19 +782,44 @@ export default function ActivityManagementNew() {
     const text = String(value).trim();
     const parsed = new Date(text);
     if (!Number.isNaN(parsed.getTime()) && /[-T]/.test(text)) {
-      return parsed.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const pad = (num) => String(num).padStart(2, '0');
+      let hours = parsed.getUTCHours();
+      const minutes = pad(parsed.getUTCMinutes());
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${pad(hours)}:${minutes} ${ampm}`;
     }
 
     const match = text.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
     if (match) {
       const hours = Number(match[1]);
       const minutes = Number(match[2]);
-      const date = new Date();
-      date.setHours(hours, minutes, 0, 0);
-      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = hours % 12 || 12;
+      return `${String(formattedHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${ampm}`;
     }
 
     return text;
+  }
+
+  function formatActivityDateTime(value) {
+    if (!value) return '-';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return String(value);
+    
+    const pad = (num) => String(num).padStart(2, '0');
+    const day = pad(parsed.getUTCDate());
+    const month = pad(parsed.getUTCMonth() + 1);
+    const year = parsed.getUTCFullYear();
+    let hours = parsed.getUTCHours();
+    const minutes = pad(parsed.getUTCMinutes());
+    
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    
+    return `${day}/${month}/${year}, ${pad(hours)}:${minutes} ${ampm}`;
   }
 
   function getStudentRecord(studentId) {
@@ -917,7 +946,7 @@ export default function ActivityManagementNew() {
       meta: [
         { label: 'Assessment Type', value: details.form?.type || activity?.type || 'Assessment' },
         { label: 'Date', value: formatReportDate(activityDate) },
-        { label: 'Interviewer', value: interviewerName },
+        ...(interviewerName && interviewerName !== '-' ? [{ label: 'Interviewer', value: interviewerName }] : []),
         { label: 'Duration', value: `${details.form?.duration || details.duration || '-'} mins` }
       ],
       columns: ['Slot No.', 'Student Name', 'PSMS ID', 'Date & Time'],
@@ -1131,7 +1160,7 @@ export default function ActivityManagementNew() {
                         </span>
                       </td>
                       <td>{activity.title || activity.type || '-'}</td>
-                      <td className="date-cell">{activity.dateTime ? new Date(activity.dateTime).toLocaleString() : '-'}</td>
+                      <td className="date-cell">{formatActivityDateTime(activity.dateTime)}</td>
                       <td>{getActivityModeLabel(activity)}</td>
                       <td>{activity.createdByModel || '-'}</td>
                       <td>
@@ -1495,12 +1524,7 @@ export default function ActivityManagementNew() {
                 <p>Generate the slots and verify the schedule before saving.</p>
               </div>
 
-              <div className="am-actions-row">
-                <button className="nm-btn primary" onClick={generateInterviewSlots}>Generate Schedule</button>
-                <button className="nm-btn primary" onClick={() => { setShowInterviewModal(false); setEditingInterviewActivityId(null); }}>Close</button>
-              </div>
-
-              {generatedSlots.length > 0 && (
+              {generatedSlots.length > 0 ? (
                 <div className="am-table-shell">
                   <div className="am-table-wrapper-scroll">
                     <table className="records-table am-records-table am-slot-table records-slot-table">
@@ -1533,8 +1557,15 @@ export default function ActivityManagementNew() {
                     </table>
                   </div>
                   <div className="am-actions-row am-actions-right">
+                    <button className="nm-btn" onClick={() => { setShowInterviewModal(false); setEditingInterviewActivityId(null); }}>Close</button>
+                    <button className="nm-btn primary" onClick={generateInterviewSlots}>Generate Schedule</button>
                     <button className="nm-btn primary am-confirm-btn" onClick={saveInterviewSchedule}>Confirm & Save</button>
                   </div>
+                </div>
+              ) : (
+                <div className="am-actions-row am-actions-right">
+                  <button className="nm-btn" onClick={() => { setShowInterviewModal(false); setEditingInterviewActivityId(null); }}>Close</button>
+                  <button className="nm-btn primary" onClick={generateInterviewSlots}>Generate Schedule</button>
                 </div>
               )}
             </div>
@@ -1680,12 +1711,7 @@ export default function ActivityManagementNew() {
                 <p>Generate groups and review them before saving.</p>
               </div>
 
-              <div className="am-actions-row">
-                <button className="nm-btn primary" onClick={createGdGroups}>Create Groups</button>
-                <button className="nm-btn primary" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}>Close</button>
-              </div>
-
-              {gdGroups.length > 0 && (
+              {gdGroups.length > 0 ? (
                 <div className="am-table-shell">
                   <div className="am-table-wrapper-scroll">
                     <table className="records-table am-records-table am-slot-table records-slot-table">
@@ -1721,8 +1747,15 @@ export default function ActivityManagementNew() {
                     </table>
                   </div>
                   <div className="am-actions-row am-actions-right">
+                    <button className="nm-btn" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}>Close</button>
+                    <button className="nm-btn primary" onClick={createGdGroups}>Create Groups</button>
                     <button className="nm-btn primary am-confirm-btn" onClick={saveGd}>Confirm & Save</button>
                   </div>
+                </div>
+              ) : (
+                <div className="am-actions-row am-actions-right">
+                  <button className="nm-btn" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}>Close</button>
+                  <button className="nm-btn primary" onClick={createGdGroups}>Create Groups</button>
                 </div>
               )}
             </div>
@@ -1787,10 +1820,7 @@ export default function ActivityManagementNew() {
                     </select>
                   </div>
 
-                  {renderInterviewerSelect(
-                    assessForm.interviewer,
-                    e => setAssessForm(f => ({ ...f, interviewer: e.target.value }))
-                  )}
+
 
                   <div className="am-field am-span-2">
                     <label>Title</label>
@@ -1887,11 +1917,6 @@ export default function ActivityManagementNew() {
                 <p>Review assigned students before confirming.</p>
               </div>
 
-              <div className="am-actions-row">
-                <button className="nm-btn primary" onClick={generateAssessmentSlots}>Generate Schedule</button>
-                <button className="nm-btn primary" onClick={() => { setShowAssessmentModal(false); setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); }}>Close</button>
-              </div>
-
               {(generatedSlots.length > 0 || assessSelected.length > 0) ? (
                 <div className="am-table-shell">
                   <div className="am-table-wrapper-scroll">
@@ -1901,7 +1926,6 @@ export default function ActivityManagementNew() {
                           <th>Slot</th>
                           <th>Student</th>
                           <th>PSMS ID</th>
-                          <th>Interviewer</th>
                           <th>Date & Time</th>
                         </tr>
                       </thead>
@@ -1913,7 +1937,6 @@ export default function ActivityManagementNew() {
                             time: assessForm.time || '',
                             studentName: s ? s.name : id,
                             psmsId: s ? (s.internId || s.email) : id,
-                            interviewerName: getTrainerLabel(assessForm.interviewer),
                             dateCell: assessForm.date ? `${assessForm.date} ${assessForm.time || ''}` : '-',
                           };
                         })).map((row) => (
@@ -1921,7 +1944,6 @@ export default function ActivityManagementNew() {
                             <td>{row.slotNo}</td>
                             <td>{row.studentName}</td>
                             <td>{row.psmsId}</td>
-                            <td>{row.interviewerName}</td>
                             <td className="date-cell">{row.time ? `${assessForm.date || ''} ${row.time}`.trim() : (row.dateCell || '-')}</td>
                           </tr>
                         ))}
@@ -1929,11 +1951,19 @@ export default function ActivityManagementNew() {
                     </table>
                   </div>
                   <div className="am-actions-row am-actions-right">
+                    <button className="nm-btn" onClick={() => { setShowAssessmentModal(false); setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); }}>Close</button>
+                    <button className="nm-btn primary" onClick={generateAssessmentSlots}>Generate Schedule</button>
                     <button className="nm-btn primary am-confirm-btn" onClick={saveAssessment}>Confirm & Save</button>
                   </div>
                 </div>
               ) : (
-                <div className="am-empty">No students selected for this assessment</div>
+                <>
+                  <div className="am-empty">No students selected for this assessment</div>
+                  <div className="am-actions-row am-actions-right">
+                    <button className="nm-btn" onClick={() => { setShowAssessmentModal(false); setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); }}>Close</button>
+                    <button className="nm-btn primary" onClick={generateAssessmentSlots}>Generate Schedule</button>
+                  </div>
+                </>
               )}
             </div>
           </div>

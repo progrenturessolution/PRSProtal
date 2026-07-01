@@ -55,7 +55,7 @@ function RepSidebar({ activeTab, onSelectTab, sidebarOpen, setSidebarOpen, user,
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
     )},
-    { key: 'my-students', label: 'Assigned Students', icon: (
+    { key: 'my-students', label: 'My Added Students', icon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
     )},
@@ -786,7 +786,7 @@ function RepresentativeDashboard() {
                     </svg>
                   </div>
                   <div className="action-card-content">
-                    <h3>Assigned Students</h3>
+                    <h3>My Added Students</h3>
                     <p>View and track all your students</p>
                   </div>
                   <button className="action-card-btn" onClick={() => setActiveTab('my-students')}>View</button>
@@ -1446,12 +1446,12 @@ function RepresentativeDashboard() {
             </>
           )}
 
-          {/* ─── ASSIGNED STUDENTS ─── */}
+          {/* ─── MY ADDED STUDENTS ─── */}
           {activeTab === 'my-students' && (
             <>
               <div className="premium-page-header">
                 <div className="header-left">
-                  <h1>Assigned Students</h1>
+                  <h1>My Added Students</h1>
                   <p className="header-subtitle">All students added by you</p>
                 </div>
                 <div className="header-right">
@@ -1904,15 +1904,6 @@ function RepresentativeDashboard() {
                     </div>
 
                     <div className="profile-actions">
-                      <button
-                        className="profile-btn profile-btn-primary"
-                        onClick={() => {
-                          setShowStudentProfileModal(false);
-                          handleEditStudent(selectedStudent);
-                        }}
-                      >
-                        Edit Profile
-                      </button>
                       <button className="profile-btn profile-btn-ghost" onClick={closeStudentProfileModal}>
                         Close
                       </button>

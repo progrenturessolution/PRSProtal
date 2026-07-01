@@ -28,6 +28,8 @@ function AdminDashboard() {
   const location = useLocation();
   const [activeMenu, setActiveMenu] = useState("dashboard");
   const [reportsInitialTab, setReportsInitialTab] = useState("tasks");
+  const [addInternDefaultType, setAddInternDefaultType] = useState("Internship");
+  const [addInternBackMenu, setAddInternBackMenu] = useState("view-interns");
   const [user, setUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [stats, setStats] = useState({
@@ -531,8 +533,9 @@ function AdminDashboard() {
         return (
           <AddIntern
             key="add-intern"
+            defaultStudentType={addInternDefaultType}
             onInternAdded={fetchStats}
-            onBack={() => setActiveMenu("view-interns")}
+            onBack={() => setActiveMenu(addInternBackMenu)}
           />
         );
 
@@ -541,7 +544,11 @@ function AdminDashboard() {
           <ViewInterns
             key="view-interns"
             onInternDeleted={fetchStats}
-            onAddStudentClick={() => setActiveMenu("add-intern")}
+            onAddStudentClick={() => {
+              setAddInternDefaultType("Internship");
+              setAddInternBackMenu("view-interns");
+              setActiveMenu("add-intern");
+            }}
           />
         );
 
@@ -575,12 +582,25 @@ function AdminDashboard() {
         return (
           <InternshipManagement
             key="internship-management"
-            onAddStudentClick={() => setActiveMenu("add-intern")}
+            onAddStudentClick={() => {
+              setAddInternDefaultType("Internship");
+              setAddInternBackMenu("internship-management");
+              setActiveMenu("add-intern");
+            }}
           />
         );
 
       case "sms-management":
-        return <SMSProgramManagement key="sms-management" />;
+        return (
+          <SMSProgramManagement
+            key="sms-management"
+            onAddStudentClick={() => {
+              setAddInternDefaultType("SMS Program");
+              setAddInternBackMenu("sms-management");
+              setActiveMenu("add-intern");
+            }}
+          />
+        );
 
       case "certificates":
         return <Certificates key="certificates" />;

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { adminAPI } from "../services/api";
 import LoadingSpinner from "../components/LoadingSpinner";
 
-function AddIntern({ onInternAdded, onBack }) {
-  const [studentType, setStudentType] = useState("Internship");
+function AddIntern({ onInternAdded, onBack, defaultStudentType }) {
+  const [studentType, setStudentType] = useState(defaultStudentType || "Internship");
   const [formData, setFormData] = useState({
     internId: "",
     name: "",
@@ -47,6 +47,23 @@ function AddIntern({ onInternAdded, onBack }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+
+  useEffect(() => {
+    async function loadGroups() {
+      try {
+        const res = await adminAPI.getGroups();
+        if (res.data && res.data.success) {
+          setGroups(res.data.groups || []);
+        }
+      } catch (err) {
+        console.error("Error loading groups in AddIntern:", err);
+      }
+    }
+    loadGroups();
+  }, []);
 
   const calculatePendingFees = (data) => {
     const total = Number(data.totalFees || 0);
@@ -117,6 +134,10 @@ function AddIntern({ onInternAdded, onBack }) {
         mobile: formData.mobile,
         password: formData.password,
       };
+
+      if (selectedGroupId) {
+        submitData.groupId = selectedGroupId;
+      }
 
       if (studentType === "Internship") {
         const selectedDomain =
@@ -268,10 +289,11 @@ function AddIntern({ onInternAdded, onBack }) {
         if (onInternAdded) {
           onInternAdded();
         }
-        // clear files
+        // clear files and group
         setWelcomeFile(null);
         setOfferFile(null);
         setPaymentFile(null);
+        setSelectedGroupId("");
       }
     } catch (err) {
       console.error("Add student error:", err);
@@ -429,6 +451,24 @@ function AddIntern({ onInternAdded, onBack }) {
                 required
                 minLength="6"
               />
+            </div>
+
+            <div className="form-group">
+              <label>Assign Group</label>
+              <select
+                value={selectedGroupId}
+                onChange={(e) => setSelectedGroupId(e.target.value)}
+              >
+                <option value="">None / Select Group</option>
+                {groups
+                  .filter(g => !g.studentType || g.studentType === 'All' || g.studentType === studentType)
+                  .map(g => (
+                    <option key={g._id || g.id} value={g._id || g.id}>
+                      {g.groupName} ({g.groupNumber}) - {g.studentType || 'All'}
+                    </option>
+                  ))
+                }
+              </select>
             </div>
 
             {studentType === "Internship" && (

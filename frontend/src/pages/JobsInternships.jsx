@@ -277,7 +277,7 @@ function JobsInternships({ onPostingCreated }) {
           }}
           style={{
             padding: "12px 24px",
-            background: "#121B2D",
+            background: "#273445",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -587,7 +587,7 @@ function JobsInternships({ onPostingCreated }) {
               disabled={loading}
               style={{
                 padding: "12px 24px",
-                background: loading ? "#ccc" : "#0f172a",
+                background: loading ? "#ccc" : "#273445",
                 color: "white",
                 border: "none",
                 borderRadius: "6px",

@@ -264,6 +264,7 @@ exports.addStudent = async (req, res) => {
       mobile,
       internId: resolvedInternId,
       password: hashedPassword,
+      plainPassword: password,
       role: 'intern',
       addedByRepresentative: req.user.id
     };

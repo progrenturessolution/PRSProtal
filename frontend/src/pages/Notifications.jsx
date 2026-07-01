@@ -646,21 +646,15 @@ function Notifications() {
             disabled={loading}
             style={{
               padding: '12px 24px',
-              background: loading ? '#94a3b8' : '#324158',
+              background: loading ? '#94a3b8' : '#273445',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: '14px',
               fontWeight: 600,
-              boxShadow: loading ? 'none' : '0 4px 12px rgba(50, 65, 88, 0.22)',
+              boxShadow: loading ? 'none' : '0 4px 12px rgba(39, 52, 69, 0.22)',
               transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.background = '#1f2937';
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) e.currentTarget.style.background = '#324158';
             }}
           >
             {loading ? (

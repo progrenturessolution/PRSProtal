@@ -42,6 +42,40 @@ function RepresentativePayoutManagement() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [repSearchText, setRepSearchText] = useState("");
+  const [showRepDropdown, setShowRepDropdown] = useState(false);
+
+  useEffect(() => {
+    if (formData.representativeId && representatives.length > 0) {
+      const selectedRep = representatives.find(rep => rep._id === formData.representativeId);
+      if (selectedRep) {
+        setRepSearchText(`${selectedRep.name} (${selectedRep.pgirId || "-"})`);
+      } else {
+        setRepSearchText("");
+      }
+    } else {
+      setRepSearchText("");
+    }
+  }, [formData.representativeId, representatives]);
+
+  useEffect(() => {
+    if (!showRepDropdown) return;
+    const handleOutsideClick = (event) => {
+      if (!event.target.closest('[data-rep-search="true"]')) {
+        setShowRepDropdown(false);
+        if (formData.representativeId && representatives.length > 0) {
+          const selectedRep = representatives.find(rep => rep._id === formData.representativeId);
+          if (selectedRep) {
+            setRepSearchText(`${selectedRep.name} (${selectedRep.pgirId || "-"})`);
+          }
+        } else {
+          setRepSearchText("");
+        }
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [showRepDropdown, formData.representativeId, representatives]);
 
   const fetchRepresentatives = async () => {
     const res = await adminRepAPI.getAllRepresentatives();
@@ -243,14 +277,100 @@ function RepresentativePayoutManagement() {
           </div>
           <form onSubmit={handleSubmit} style={{ padding: "20px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}>
-              <div className="form-group">
+              <div className="form-group" data-rep-search="true" style={{ position: "relative" }}>
                 <label>PGIR Name *</label>
-                <select name="representativeId" value={formData.representativeId} onChange={handleInput} required>
-                  <option value="">Select representative</option>
-                  {representatives.map((rep) => (
-                    <option key={rep._id} value={rep._id}>{rep.name} ({rep.pgirId || "-"})</option>
-                  ))}
-                </select>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    placeholder="Type to search representative..."
+                    value={repSearchText}
+                    onChange={(e) => {
+                      setRepSearchText(e.target.value);
+                      setShowRepDropdown(true);
+                      if (!e.target.value) {
+                        setFormData(prev => ({ ...prev, representativeId: "" }));
+                      }
+                    }}
+                    onFocus={() => setShowRepDropdown(true)}
+                    required
+                    style={{ paddingRight: "30px" }}
+                  />
+                  <div
+                    onClick={() => setShowRepDropdown(!showRepDropdown)}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      color: "#64748b"
+                    }}
+                  >
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: "16px", height: "16px" }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                {showRepDropdown && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      right: 0,
+                      background: "#fff",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+                      zIndex: 1000,
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                      marginTop: "4px"
+                    }}
+                  >
+                    {representatives
+                      .filter(rep => {
+                        const name = rep.name || "";
+                        const pgir = rep.pgirId || "";
+                        const query = repSearchText.toLowerCase();
+                        return name.toLowerCase().includes(query) || pgir.toLowerCase().includes(query);
+                      })
+                      .map(rep => (
+                        <div
+                          key={rep._id}
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, representativeId: rep._id }));
+                            setRepSearchText(`${rep.name} (${rep.pgirId || "-"})`);
+                            setShowRepDropdown(false);
+                          }}
+                          style={{
+                            padding: "8px 12px",
+                            cursor: "pointer",
+                            borderBottom: "1px solid #f1f5f9",
+                            background: formData.representativeId === rep._id ? "#f1f5f9" : "transparent",
+                            color: "#000"
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "#f8fafc"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = formData.representativeId === rep._id ? "#f1f5f9" : "transparent"; }}
+                        >
+                          <span>{rep.name}</span> <span style={{ color: "#64748b", fontSize: "12px" }}>({rep.pgirId || "-"})</span>
+                        </div>
+                      ))
+                    }
+                    {representatives.filter(rep => {
+                      const name = rep.name || "";
+                      const pgir = rep.pgirId || "";
+                      const query = repSearchText.toLowerCase();
+                      return name.toLowerCase().includes(query) || pgir.toLowerCase().includes(query);
+                    }).length === 0 && (
+                      <div style={{ padding: "8px 12px", color: "#64748b", textAlign: "center", fontSize: "13px" }}>
+                        No representatives found
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="form-group"><label>Month *</label><input type="month" name="monthLabel" value={formData.monthLabel} onChange={handleInput} required /></div>
               <div className="form-group"><label>Week *</label><input name="weekLabel" value={formData.weekLabel} onChange={handleInput} placeholder="Sunday-Saturday" required /></div>

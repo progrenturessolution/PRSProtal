@@ -2,7 +2,7 @@ import { useState, useEffect, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { adminAPI, UPLOADS_BASE } from '../services/api';
 
-function SMSProgramManagement() {
+function SMSProgramManagement({ onAddStudentClick }) {
   const [students, setStudents] = useState([]);
   const [uploadState, setUploadState] = useState({}); // { [studentId]: { uploading, success, filenames: [] } }
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -544,9 +544,39 @@ function SMSProgramManagement() {
 
   return (
     <>
-      <div className="content-header">
-        <h1>SMS Program Management</h1>
-        <p>Manage SMS program students and activities</p>
+      <div
+        className="content-header"
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "16px",
+          flexWrap: "wrap",
+        }}
+      >
+        <div>
+          <h1>SMS Program Management</h1>
+          <p>Manage SMS program students and activities</p>
+        </div>
+        {onAddStudentClick && (
+          <button
+            type="button"
+            onClick={onAddStudentClick}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "10px",
+              border: "none",
+              background: "#324158",
+              color: "#fff",
+              fontWeight: "600",
+              fontSize: "14px",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Add Student
+          </button>
+        )}
       </div>
 
       {/* Statistics Cards */}

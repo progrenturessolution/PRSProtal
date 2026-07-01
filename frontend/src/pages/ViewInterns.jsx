@@ -293,6 +293,7 @@ function ViewInterns({
         : "",
       stipendType: student.stipendType || 'Unstipend',
       stipendAmount: student.stipendAmount || '',
+      password: student.plainPassword || '',
     });
     setShowEditModal(true);
     setOpenMenuId(null);
@@ -1093,6 +1094,7 @@ function ViewInterns({
                   <div className="profile-info-grid">
                     <div className="profile-field"><label>Name</label><div className="field-value">{selectedStudent.name || "-"}</div></div>
                     <div className="profile-field"><label>Email</label><div className="field-value">{selectedStudent.email || "-"}</div></div>
+                    <div className="profile-field"><label>Password</label><div className="field-value" style={{ fontWeight: "600", color: "#0f172a" }}>{selectedStudent.plainPassword || "intern"}</div></div>
                     <div className="profile-field"><label>PIID</label><div className="field-value">{selectedStudent.internId || "-"}</div></div>
                     <div className="profile-field"><label>Mobile</label><div className="field-value">{selectedStudent.mobile || "-"}</div></div>
                     <div className="profile-field"><label>Current Designation</label><div className="field-value">{selectedStudent.currentDesignation || "Not set"}</div></div>
@@ -1378,6 +1380,15 @@ function ViewInterns({
                     <div className="profile-field">
                       <label>Student ID</label>
                       <input value={editForm.internId} readOnly />
+                    </div>
+                    <div className="profile-field">
+                      <label>Password</label>
+                      <input
+                        type="text"
+                        value={editForm.password}
+                        onChange={(e) => handleEditChange("password", e.target.value)}
+                        placeholder="Enter password"
+                      />
                     </div>
                     <div className="profile-field">
                       <label>Full Name</label>

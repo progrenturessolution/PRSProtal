@@ -1090,29 +1090,6 @@ function Reports({ initialReportType = "tasks" }) {
             />
           </div>
 
-          <div>
-            <label style={{ fontSize: "12px", fontWeight: 600, color: "#64748b" }}>Student</label>
-            <select
-              value={assessmentSelectedStudent}
-              onChange={(e) => setAssessmentSelectedStudent(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                marginTop: "4px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "6px",
-                fontSize: "14px",
-                boxSizing: "border-box",
-              }}
-            >
-              <option value="">All Students</option>
-              {students.map((student) => (
-                <option key={student._id} value={student._id}>
-                  {student.name} ({student.internId})
-                </option>
-              ))}
-            </select>
-          </div>
 
           <div>
             <label style={{ fontSize: "12px", fontWeight: 600, color: "#64748b" }}>Month</label>

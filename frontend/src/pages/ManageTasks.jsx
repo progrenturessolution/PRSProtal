@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { taskAPI } from "../services/api";
 
 function ManageTasks({ onTaskApproved, onBack }) {
@@ -17,6 +18,26 @@ function ManageTasks({ onTaskApproved, onBack }) {
     deadline: "",
   });
   const [openActionMenu, setOpenActionMenu] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
+
+  const toggleActionMenu = (id, event) => {
+    if (openActionMenu === id) {
+      setOpenActionMenu(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const menuHeight = 180;
+      const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+      setMenuPosition({
+        top: openUpward ? rect.top - 4 : rect.bottom + 4,
+        left: rect.right - 160,
+        openUpward,
+      });
+      setOpenActionMenu(id);
+    }
+  };
 
   const adminUser = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -162,8 +183,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
 
     if (isTeamTask) {
       menuOptions.push({
-        label: "View Team",
-        icon: "👥",
+        label: "Chat with Team",
         action: () => {
           setExpandedTask(task);
           setAdminMessage("");
@@ -175,7 +195,6 @@ function ManageTasks({ onTaskApproved, onBack }) {
     if (task.status === "Pending Approval") {
       menuOptions.push({
         label: "Approve",
-        icon: "✓",
         action: () => {
           handleApproveTask(task._id);
           setOpenActionMenu(null);
@@ -184,26 +203,24 @@ function ManageTasks({ onTaskApproved, onBack }) {
       });
     }
 
-    if (task.status !== "Completed") {
-      menuOptions.push({
-        label: "Edit",
-        icon: "✎",
-        action: () => {
-          handleEditTask(task);
-          setOpenActionMenu(null);
-        },
-        className: "edit",
-      });
-      menuOptions.push({
-        label: "Delete",
-        icon: "🗑",
-        action: () => {
-          handleDeleteTask(task._id);
-          setOpenActionMenu(null);
-        },
-        className: "delete",
-      });
-    }
+    menuOptions.push({
+      label: "Edit",
+      action: () => {
+        handleEditTask(task);
+        setOpenActionMenu(null);
+      },
+      className: "edit",
+    });
+
+    // Allow deleting any task
+    menuOptions.push({
+      label: "Delete",
+      action: () => {
+        handleDeleteTask(task._id);
+        setOpenActionMenu(null);
+      },
+      className: "delete",
+    });
 
     return (
       <div
@@ -215,89 +232,77 @@ function ManageTasks({ onTaskApproved, onBack }) {
       >
         <button
           data-action-menu
-          onClick={() => setOpenActionMenu(isOpen ? null : task._id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleActionMenu(task._id, e);
+          }}
           style={{
-            padding: "6px 8px",
             background: isOpen ? "#f1f5f9" : "transparent",
-            border: "1px solid #e2e8f0",
-            borderRadius: "6px",
+            color: "#0f172a",
+            border: "1px solid #d1d5db",
+            borderRadius: "8px",
+            width: "36px",
+            height: "36px",
             cursor: "pointer",
-            fontSize: "16px",
+            fontSize: "20px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#64748b",
             transition: "all 0.2s",
-            fontWeight: "700",
           }}
           title="Actions"
         >
-          ⋯
+          ⋮
         </button>
 
-        {isOpen && (
-          <div
-            data-action-menu
-            style={{
-              position: "absolute",
-              right: 0,
-              top: "100%",
-              marginTop: "6px",
-              background: "white",
-              border: "1px solid #e2e8f0",
-              borderRadius: "10px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.12)",
-              minWidth: "180px",
-              zIndex: 1000,
-              overflow: "hidden",
-            }}
-          >
-            {menuOptions.map((option, idx) => (
-              <button
-                key={idx}
-                onClick={option.action}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  width: "100%",
-                  padding: "12px 16px",
-                  background:
-                    option.className === "delete"
-                      ? "transparent"
-                      : "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  color:
-                    option.className === "delete"
-                      ? "#dc2626"
-                      : option.className === "approve"
-                        ? "#10b981"
-                        : option.className === "edit"
-                          ? "#3b82f6"
-                          : "#475569",
-                  textAlign: "left",
-                  transition: "all 0.2s",
-                  borderBottom:
-                    idx < menuOptions.length - 1
-                      ? "1px solid #f1f5f9"
-                      : "none",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#f8fafc";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <span style={{ fontSize: "14px" }}>{option.icon}</span>
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
+        {isOpen &&
+          createPortal(
+            <div
+              data-action-menu
+              style={{
+                position: "fixed",
+                left: `${menuPosition.left}px`,
+                top: `${menuPosition.top}px`,
+                transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
+                background: "white",
+                border: "1px solid #e5e7eb",
+                borderRadius: "12px",
+                boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                zIndex: 11000,
+                width: "160px",
+                overflow: "hidden",
+              }}
+            >
+              {menuOptions.map((option, idx) => (
+                <button
+                  key={idx}
+                  onClick={option.action}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: "white",
+                    border: "none",
+                    textAlign: "left",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#0f172a",
+                    borderTop: idx > 0 ? "1px solid #f3f4f6" : "none",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#f9fafb";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "white";
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>,
+            document.body
+          )}
       </div>
     );
   };
@@ -1340,13 +1345,24 @@ function ManageTasks({ onTaskApproved, onBack }) {
                   style={{
                     flex: 1,
                     padding: "14px",
-                    background: "#f1f5f9",
-                    color: "#64748b",
-                    border: "none",
+                    background: "#f8fafc",
+                    color: "#334155",
+                    border: "1px solid #cbd5e1",
                     borderRadius: "10px",
                     fontWeight: 600,
                     fontSize: "15px",
                     cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#eff6ff";
+                    e.currentTarget.style.borderColor = "#3b82f6";
+                    e.currentTarget.style.color = "#2563eb";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f8fafc";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
+                    e.currentTarget.style.color = "#334155";
                   }}
                 >
                   Cancel
@@ -1356,13 +1372,20 @@ function ManageTasks({ onTaskApproved, onBack }) {
                   style={{
                     flex: 1,
                     padding: "14px",
-                    background: "linear-gradient(135deg,#3b82f6,#2563eb)",
+                    background: "#324158",
                     color: "white",
                     border: "none",
                     borderRadius: "10px",
                     fontWeight: 600,
                     fontSize: "15px",
                     cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = "0.9";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = "1";
                   }}
                 >
                   Update Task
@@ -1823,9 +1846,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                   </div>
                 )}
 
-                {/* Non-pending actions */}
-                {expandedTask.status !== "Pending Approval" &&
-                  expandedTask.status !== "Completed" && (
+                {expandedTask.status !== "Pending Approval" && (
                     <div style={{ display: "flex", gap: "8px" }}>
                       <button
                         onClick={() => {
@@ -1835,13 +1856,20 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         style={{
                           flex: 1,
                           padding: "10px",
-                          background: "linear-gradient(135deg,#3b82f6,#2563eb)",
+                          background: "#324158",
                           color: "white",
                           border: "none",
                           borderRadius: "10px",
                           cursor: "pointer",
                           fontWeight: "700",
                           fontSize: "13px",
+                          transition: "opacity 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = "0.9";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = "1";
                         }}
                       >
                         Edit Task
@@ -1854,13 +1882,20 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         style={{
                           flex: 1,
                           padding: "10px",
-                          background: "linear-gradient(135deg,#ef4444,#dc2626)",
+                          background: "#324158",
                           color: "white",
                           border: "none",
                           borderRadius: "10px",
                           cursor: "pointer",
                           fontWeight: "700",
                           fontSize: "13px",
+                          transition: "opacity 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = "0.9";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = "1";
                         }}
                       >
                         Delete
