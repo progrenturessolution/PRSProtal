@@ -947,7 +947,7 @@ function Reports({ initialReportType = "tasks" }) {
                   style={{
                     width: `${taskStats.totalTasks > 0 ? (taskStats.completedTasks / taskStats.totalTasks) * 100 : 0}%`,
                     height: "100%",
-                    background: "#324158",
+                    background: "#344158",
                     borderRadius: "4px",
                   }}
                 />
@@ -982,7 +982,7 @@ function Reports({ initialReportType = "tasks" }) {
                   style={{
                     width: `${taskStats.totalTasks > 0 ? (taskStats.inProgressTasks / taskStats.totalTasks) * 100 : 0}%`,
                     height: "100%",
-                    background: "#324158",
+                    background: "#344158",
                     borderRadius: "4px",
                   }}
                 />
@@ -1017,7 +1017,7 @@ function Reports({ initialReportType = "tasks" }) {
                   style={{
                     width: `${taskStats.totalTasks > 0 ? (taskStats.assignedTasks / taskStats.totalTasks) * 100 : 0}%`,
                     height: "100%",
-                    background: "#324158",
+                    background: "#344158",
                     borderRadius: "4px",
                   }}
                 />
@@ -1218,7 +1218,7 @@ function Reports({ initialReportType = "tasks" }) {
                               textAlign: "left",
                               cursor: "pointer",
                               fontSize: "14px",
-                              color: "#324158",
+                              color: "#344158",
                               fontWeight: 500,
                               borderRadius: "6px",
                             }}
@@ -1324,7 +1324,7 @@ function Reports({ initialReportType = "tasks" }) {
           style={{
             marginTop: "15px",
             padding: "12px 24px",
-            background: "#324158",
+            background: "#344158",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -1422,7 +1422,7 @@ function Reports({ initialReportType = "tasks" }) {
           onClick={() => handleExport("PDF")}
           style={{
             padding: "10px 20px",
-            background: "#324158",
+            background: "#344158",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -1437,7 +1437,7 @@ function Reports({ initialReportType = "tasks" }) {
           onClick={() => handleExport("Excel")}
           style={{
             padding: "10px 20px",
-            background: "#324158",
+            background: "#344158",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -1476,7 +1476,7 @@ function Reports({ initialReportType = "tasks" }) {
               fontSize: "14px",
               fontWeight: 600,
               transition: "all 0.2s",
-              background: reportType === "tasks" ? "#324158" : "transparent",
+              background: reportType === "tasks" ? "#344158" : "transparent",
               color: reportType === "tasks" ? "white" : "#64748b",
             }}
           >
@@ -1492,7 +1492,7 @@ function Reports({ initialReportType = "tasks" }) {
               fontSize: "14px",
               fontWeight: 600,
               transition: "all 0.2s",
-              background: reportType === "assessments" ? "#324158" : "transparent",
+              background: reportType === "assessments" ? "#344158" : "transparent",
               color: reportType === "assessments" ? "white" : "#64748b",
             }}
           >
@@ -1508,7 +1508,7 @@ function Reports({ initialReportType = "tasks" }) {
               fontSize: "14px",
               fontWeight: 600,
               transition: "all 0.2s",
-              background: reportType === "custom" ? "#324158" : "transparent",
+              background: reportType === "custom" ? "#344158" : "transparent",
               color: reportType === "custom" ? "white" : "#64748b",
             }}
           >

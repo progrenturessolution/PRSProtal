@@ -538,7 +538,7 @@ function ViewInterns({
               padding: "10px 20px",
               borderRadius: "10px",
               border: "none",
-              background: "#324158",
+              background: "#344158",
               color: "#fff",
               fontWeight: "600",
               fontSize: "14px",
@@ -569,7 +569,7 @@ function ViewInterns({
             }}
           >
             <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
-              <div className="profile-header" style={{ background: '#324158' }}>
+              <div className="profile-header" style={{ background: '#344158' }}>
                 <button
                   className="profile-close-btn"
                   onClick={() => {
@@ -1046,7 +1046,7 @@ function ViewInterns({
             }}
           >
             <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
-              <div className="profile-header" style={{ background: "#324158" }}>
+              <div className="profile-header" style={{ background: "#344158" }}>
                 <button
                   className="profile-close-btn"
                   onClick={() => {
@@ -1334,7 +1334,7 @@ function ViewInterns({
       {showEditModal && selectedStudent && editForm && (
         <div className="profile-modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-header" style={{ background: "#324158" }}>
+            <div className="profile-header" style={{ background: "#344158" }}>
               <button className="profile-close-btn" onClick={() => setShowEditModal(false)}>
                 ×
               </button>

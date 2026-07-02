@@ -43,13 +43,13 @@ const initialStudentForm = {
 /* ─────────────── Sidebar ─────────────── */
 function RepSidebar({ activeTab, onSelectTab, sidebarOpen, setSidebarOpen, user, onLogout, showNotificationDot = false }) {
   const items = [
-    { key: 'overview', label: 'Dashboard Overview', icon: (
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-        d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
-    )},
     { key: 'profile', label: 'My Profile', icon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    )},
+    { key: 'overview', label: 'Dashboard Overview', icon: (
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M4 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1h-4a1 1 0 01-1-1v-3z" />
     )},
     { key: 'add-student', label: 'Add Student', icon: (
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -129,9 +129,12 @@ function RepresentativeDashboard() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [students, setStudents] = useState([]);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('profile');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showRepPassword, setShowRepPassword] = useState(false);
+  const [showRepConfirmPassword, setShowRepConfirmPassword] = useState(false);
+  const [showRepAddStudentPassword, setShowRepAddStudentPassword] = useState(false);
 
   // Profile edit state
   const [showEditModal, setShowEditModal] = useState(false);
@@ -937,28 +940,66 @@ function RepresentativeDashboard() {
 
                       <div className="form-group">
                         <label htmlFor="rep-edit-password">New Password *</label>
-                        <input
-                          id="rep-edit-password"
-                          type="password"
-                          name="password"
-                          value={editData.password || ''}
-                          onChange={handleEditChange}
-                          placeholder="Enter your new password"
-                          required
-                        />
+                        <div className="password-input-wrapper">
+                          <input
+                            id="rep-edit-password"
+                            type={showRepPassword ? "text" : "password"}
+                            name="password"
+                            value={editData.password || ''}
+                            onChange={handleEditChange}
+                            placeholder="Enter your new password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle-btn"
+                            onClick={() => setShowRepPassword(!showRepPassword)}
+                            title={showRepPassword ? "Hide password" : "Show password"}
+                          >
+                            {showRepPassword ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="form-group">
                         <label htmlFor="rep-edit-confirm-password">Confirm Password *</label>
-                        <input
-                          id="rep-edit-confirm-password"
-                          type="password"
-                          name="confirmPassword"
-                          value={editData.confirmPassword || ''}
-                          onChange={handleEditChange}
-                          placeholder="Confirm your new password"
-                          required
-                        />
+                        <div className="password-input-wrapper">
+                          <input
+                            id="rep-edit-confirm-password"
+                            type={showRepConfirmPassword ? "text" : "password"}
+                            name="confirmPassword"
+                            value={editData.confirmPassword || ''}
+                            onChange={handleEditChange}
+                            placeholder="Confirm your new password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle-btn"
+                            onClick={() => setShowRepConfirmPassword(!showRepConfirmPassword)}
+                            title={showRepConfirmPassword ? "Hide password" : "Show password"}
+                          >
+                            {showRepConfirmPassword ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="modal-actions">
@@ -996,7 +1037,7 @@ function RepresentativeDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
                       width: '42px', height: '42px', borderRadius: '10px',
-                      background: '#324158',  
+                      background: '#344158',  
                       display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
                       <svg fill="none" stroke="#fff" viewBox="0 0 24 24" style={{ width: '22px', height: '22px' }}>
@@ -1048,7 +1089,34 @@ function RepresentativeDashboard() {
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                       <label>Password *</label>
-                      <input type="password" name="password" value={studentForm.password} onChange={handleStudentChange} placeholder="Set login password" min="6" required />
+                      <div className="password-input-wrapper">
+                        <input
+                          type={showRepAddStudentPassword ? "text" : "password"}
+                          name="password"
+                          value={studentForm.password}
+                          onChange={handleStudentChange}
+                          placeholder="Set login password"
+                          min="6"
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="password-toggle-btn"
+                          onClick={() => setShowRepAddStudentPassword(!showRepAddStudentPassword)}
+                          title={showRepAddStudentPassword ? "Hide password" : "Show password"}
+                        >
+                          {showRepAddStudentPassword ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     {studentForm.studentType === 'Internship' ? (
@@ -1231,7 +1299,7 @@ function RepresentativeDashboard() {
                       style={{
                         padding: '10px 24px', borderRadius: '8px',
                         border: '1px solid #d1d5db', background: '#fff',
-                        color: '#324158', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
+                        color: '#344158', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
                       }}
                     >
                       Cancel
@@ -1255,7 +1323,7 @@ function RepresentativeDashboard() {
                     onClick={() => setActiveTab('add-student')}
                     style={{
                       padding: '9px 20px', borderRadius: '8px', border: 'none',
-                      background: "#324158",
+                      background: "#344158",
                       color: '#fff', fontWeight: '600', fontSize: '14px', cursor: 'pointer'
                     }}
                   >
@@ -1310,7 +1378,7 @@ function RepresentativeDashboard() {
                       onClick={applyFilters}
                       style={{
                         flex: 1, padding: '10px 0', borderRadius: '8px', border: 'none',
-                        background: "#324158",
+                        background: "#344158",
                         color: '#fff', fontWeight: '600', fontSize: '13px', cursor: 'pointer'
                       }}
                     >
@@ -1347,7 +1415,7 @@ function RepresentativeDashboard() {
                       onClick={() => setActiveTab('add-student')}
                       style={{
                         marginTop: '12px', padding: '9px 22px', border: 'none', borderRadius: '8px',
-                        background: '#324158', color: '#fff',
+                        background: '#344158', color: '#fff',
                         cursor: 'pointer', fontWeight: '600', fontSize: '14px'
                       }}
                     >
@@ -2062,19 +2130,19 @@ function RepresentativeDashboard() {
                     </div>
                     <div style={{ overflowX: 'auto' }}>
                       <table className="premium-table view-students-table" style={{ minWidth: '860px' }}>
-                        <thead style={{ background: '#324158' }}>
-                          <tr style={{ background: '#324158' }}>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Month</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Week</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Enrollments</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>3000 Paid</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Eligible</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Reward %</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Payout (₹)</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Status</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Release Date</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>UPI/QR</th>
-                            <th style={{ background: '#324158', color: '#ffffff', fontWeight: 600 }}>Promo Docs</th>
+                        <thead style={{ background: '#344158' }}>
+                          <tr style={{ background: '#344158' }}>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Month</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Week</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Enrollments</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>3000 Paid</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Eligible</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Reward %</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Payout (₹)</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Status</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Release Date</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>UPI/QR</th>
+                            <th style={{ background: '#344158', color: '#ffffff', fontWeight: 600 }}>Promo Docs</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2103,8 +2171,8 @@ function RepresentativeDashboard() {
                                 </span>
                               </td>
                               <td>{row.payoutReleaseDate ? new Date(row.payoutReleaseDate).toLocaleDateString('en-IN') : '-'}</td>
-                              <td>{row.upiQrDriveLink ? <a href={row.upiQrDriveLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : '-'}</td>
-                              <td>{row.promotionalDocumentsLink ? <a href={row.promotionalDocumentsLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : '-'}</td>
+                              <td>{row.upiQrDriveLink ? <a href={row.upiQrDriveLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : '-'}</td>
+                              <td>{row.promotionalDocumentsLink ? <a href={row.promotionalDocumentsLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : '-'}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -2194,7 +2262,7 @@ function RepresentativeDashboard() {
                                     style={{
                                       padding: '6px 12px',
                                       borderRadius: '8px',
-                                      background: '#324158',
+                                      background: '#344158',
                                       color: '#fff',
                                       textDecoration: 'none',
                                       fontSize: '12px',
@@ -2233,11 +2301,11 @@ function RepresentativeDashboard() {
                     <div style={{ display: 'grid', gap: '10px' }}>
                       <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
                         <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Application Form</div>
-                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
                       <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
                         <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Sheet</div>
-                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#324158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
 
                       <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>

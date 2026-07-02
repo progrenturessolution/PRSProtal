@@ -61,10 +61,10 @@ function TrainerSidebar({
     }
   };
 
-  const selectedCardBg = "linear-gradient(135deg, #324158, #1f2937)";
-  const selectedTabBg = "linear-gradient(135deg, #3241582e, #1f29372e)";
-  const selectedTabHoverBg = "linear-gradient(135deg, #32415822, #1f293722)";
-  const selectedTabBorder = "#324158";
+  const selectedCardBg = "linear-gradient(135deg, #344158, #1f2937)";
+  const selectedTabBg = "linear-gradient(135deg, #3441582e, #1f29372e)";
+  const selectedTabHoverBg = "linear-gradient(135deg, #34415822, #1f293722)";
+  const selectedTabBorder = "#344158";
   const selectedTabActiveText = "#ffffff";
   const selectedTabInactiveText = "#cbd5e1";
 
@@ -85,6 +85,21 @@ function TrainerSidebar({
       </div>
 
       <ul className="sidebar-menu">
+        <li
+          className={activeTab === "profile" ? "active" : ""}
+          onClick={() => handleMenuClick("profile")}
+        >
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
+          My Profile
+        </li>
+
         <li
           className={activeTab === "overview" ? "active" : ""}
           onClick={() => handleMenuClick("overview")}
@@ -408,8 +423,8 @@ function TrainerSidebar({
                 padding: '10px 16px',
                 borderRadius: '6px',
                 background: '#ffffff',
-                color: '#324158',
-                border: '1px solid #324158',
+                color: '#344158',
+                border: '1px solid #344158',
                 fontSize: '13px',
                 fontWeight: '600',
                 cursor: 'pointer',
@@ -420,21 +435,6 @@ function TrainerSidebar({
             </li>
           </>
         )}
-
-        <li
-          className={activeTab === "profile" ? "active" : ""}
-          onClick={() => handleMenuClick("profile")}
-        >
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-          Profile
-        </li>
 
       </ul>
 

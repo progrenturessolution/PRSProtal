@@ -29,6 +29,8 @@ function AccessManagement() {
 
   const [editEmployeeData, setEditEmployeeData] = useState(null);
   const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
+  const [showAddEmployeePassword, setShowAddEmployeePassword] = useState(false);
+  const [showEditEmployeePassword, setShowEditEmployeePassword] = useState(false);
   const [workFormData, setWorkFormData] = useState({
     trainerId: "",
     title: "",
@@ -574,7 +576,7 @@ function AccessManagement() {
               fontSize: "14px",
               fontWeight: 600,
               transition: "all 0.2s",
-              background: activeTab === tab.key ? "#324158" : "transparent",
+              background: activeTab === tab.key ? "#344158" : "transparent",
               color: activeTab === tab.key ? "#ffffff" : "#64748b",
               boxShadow:
                 activeTab === tab.key ? "0 2px 8px rgba(50, 65, 88, 0.28)" : "none",
@@ -600,7 +602,7 @@ function AccessManagement() {
             }}
           >
             <div>
-              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
+              <h3 style={{ margin: 0, color: "#344158", fontSize: "18px" }}>
                 Add New Employee
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
@@ -652,15 +654,34 @@ function AccessManagement() {
               </div>
               <div className="form-group">
                 <label>Password *</label>
-                <input
-                  type="password"
-                  name="password"
-                  value={trainerFormData.password}
-                  onChange={handleTrainerFormChange}
-                  placeholder="Set a password"
-                  required
-                  minLength="6"
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    type={showAddEmployeePassword ? "text" : "password"}
+                    name="password"
+                    value={trainerFormData.password}
+                    onChange={handleTrainerFormChange}
+                    placeholder="Set a password"
+                    required
+                    minLength="6"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle-btn"
+                    onClick={() => setShowAddEmployeePassword(!showAddEmployeePassword)}
+                    title={showAddEmployeePassword ? "Hide password" : "Show password"}
+                  >
+                    {showAddEmployeePassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
               <div className="form-group">
                 <label>Joining Date</label>
@@ -705,7 +726,7 @@ function AccessManagement() {
                 disabled={loading}
                 style={{
                   padding: "12px 28px",
-                  background: loading ? "#94a3b8" : "#324158",
+                  background: loading ? "#94a3b8" : "#344158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -756,7 +777,7 @@ function AccessManagement() {
             }}
           >
             <div>
-              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
+              <h3 style={{ margin: 0, color: "#344158", fontSize: "18px" }}>
                 Assign Students to Employee
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
@@ -1001,7 +1022,7 @@ function AccessManagement() {
                 disabled={loading}
                 style={{
                   padding: "12px 28px",
-                  background: loading ? "#94a3b8" : "#324158",
+                  background: loading ? "#94a3b8" : "#344158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1050,7 +1071,7 @@ function AccessManagement() {
             }}
           >
             <div>
-              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
+              <h3 style={{ margin: 0, color: "#344158", fontSize: "18px" }}>
                 Assign Groups to Employee
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
@@ -1114,7 +1135,7 @@ function AccessManagement() {
                 disabled={loading}
                 style={{
                   padding: "12px 28px",
-                  background: loading ? "#94a3b8" : "#324158",
+                  background: loading ? "#94a3b8" : "#344158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1147,7 +1168,7 @@ function AccessManagement() {
             }}
           >
             <div>
-              <h3 style={{ margin: 0, color: "#324158", fontSize: "18px" }}>
+              <h3 style={{ margin: 0, color: "#344158", fontSize: "18px" }}>
                 Assign Work to Employee
               </h3>
               <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
@@ -1196,7 +1217,7 @@ function AccessManagement() {
             </div>
 
             <div style={{ marginTop: "24px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <button type="submit" disabled={loading} style={{ padding: "12px 28px", background: loading ? "#94a3b8" : "#324158", color: "white", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600 }}>
+              <button type="submit" disabled={loading} style={{ padding: "12px 28px", background: loading ? "#94a3b8" : "#344158", color: "white", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600 }}>
                 {loading ? "Assigning..." : "Assign Work"}
               </button>
               <button type="button" onClick={() => setActiveTab("list")} style={{ padding: "12px 24px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
@@ -1233,7 +1254,7 @@ function AccessManagement() {
                 onClick={() => setActiveTab("add")}
                 style={{
                   padding: "9px 18px",
-                  background: "#324158",
+                  background: "#344158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1248,7 +1269,7 @@ function AccessManagement() {
                 onClick={() => setActiveTab("assign")}
                 style={{
                   padding: "9px 18px",
-                  background: "#324158",
+                  background: "#344158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1287,7 +1308,7 @@ function AccessManagement() {
                 onClick={() => setActiveTab("add")}
                 style={{
                   padding: "10px 24px",
-                  background: "#324158",
+                  background: "#344158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -1843,13 +1864,32 @@ function AccessManagement() {
                 </div>
                 <div className="form-group">
                   <label>Password (leave blank to keep current)</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={editEmployeeData.password || ""}
-                    onChange={handleEditEmployeeChange}
-                    placeholder="Enter new password"
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showEditEmployeePassword ? "text" : "password"}
+                      name="password"
+                      value={editEmployeeData.password || ""}
+                      onChange={handleEditEmployeeChange}
+                      placeholder="Enter new password"
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle-btn"
+                      onClick={() => setShowEditEmployeePassword(!showEditEmployeePassword)}
+                      title={showEditEmployeePassword ? "Hide password" : "Show password"}
+                    >
+                      {showEditEmployeePassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Role *</label>

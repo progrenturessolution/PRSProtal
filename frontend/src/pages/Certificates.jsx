@@ -505,7 +505,7 @@ function Certificates() {
             disabled={submitting}
             style={{
               padding: '12px 32px',
-              background: submitting ? '#94a3b8' : '#324158',
+              background: submitting ? '#94a3b8' : '#344158',
               color: 'white', border: 'none', borderRadius: '9px',
               cursor: submitting ? 'not-allowed' : 'pointer',
               fontSize: '15px', fontWeight: '700',
@@ -556,14 +556,14 @@ function Certificates() {
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table certificates-table">
               <thead>
-                <tr style={{ background: '#324158' }}>
-                  <th style={{ background: '#324158', color: '#ffffff' }}>#</th>
-                  <th style={{ background: '#324158', color: '#ffffff' }}>Student</th>
-                  <th style={{ background: '#324158', color: '#ffffff' }}>Certificate Name</th>
-                  <th style={{ background: '#324158', color: '#ffffff' }}>Assigned On</th>
-                  <th style={{ background: '#324158', color: '#ffffff' }}>Expires On</th>
-                  <th style={{ background: '#324158', color: '#ffffff' }}>Time Remaining</th>
-                  <th style={{ background: '#324158', color: '#ffffff' }}>Actions</th>
+                <tr style={{ background: '#344158' }}>
+                  <th style={{ background: '#344158', color: '#ffffff' }}>#</th>
+                  <th style={{ background: '#344158', color: '#ffffff' }}>Student</th>
+                  <th style={{ background: '#344158', color: '#ffffff' }}>Certificate Name</th>
+                  <th style={{ background: '#344158', color: '#ffffff' }}>Assigned On</th>
+                  <th style={{ background: '#344158', color: '#ffffff' }}>Expires On</th>
+                  <th style={{ background: '#344158', color: '#ffffff' }}>Time Remaining</th>
+                  <th style={{ background: '#344158', color: '#ffffff' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>

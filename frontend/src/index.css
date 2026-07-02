@@ -361,15 +361,15 @@ button, a, input, select, textarea {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #ffffff;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
   font-weight: 700;
-  color: #0b0b0b;
+  color: #ffffff;
   margin-bottom: 12px;
-  border: 1px solid #d4d4d8;
+  border: 2px solid #ffffff;
 }
 
 .profile-name {
@@ -622,7 +622,7 @@ button, a, input, select, textarea {
 }
 
 .btn-update-password {
-  background: #324158 !important;
+  background: #344158 !important;
   color: white !important;
   border: none !important;
   box-shadow: none !important;
@@ -631,7 +631,7 @@ button, a, input, select, textarea {
 }
 
 .btn-update-password:hover {
-  background: #324158 !important;
+  background: #344158 !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -1011,7 +1011,7 @@ button, a, input, select, textarea {
 .login-submit-btn {
   width: 100%;
   padding: 14px 24px;
-  background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+  background: linear-gradient(135deg, #4f5e7a 0%, #344158 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -1020,7 +1020,7 @@ button, a, input, select, textarea {
   cursor: pointer;
   margin-top: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 8px 20px rgba(52, 65, 88, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1045,8 +1045,8 @@ button, a, input, select, textarea {
 }
 
 .login-submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.26);
+  background: linear-gradient(135deg, #5c6d8d 0%, #43536f 100%);
+  box-shadow: 0 10px 24px rgba(52, 65, 88, 0.26);
   transform: translateY(-2px);
 }
 
@@ -1833,9 +1833,9 @@ button, a, input, select, textarea {
   margin: 20px;
   padding: 12px;
   background: #ffffff;
-  border: 1px solid #324158;
+  border: 1px solid #344158;
   border-radius: 8px;
-  color: #324158;
+  color: #344158;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -1915,8 +1915,8 @@ button, a, input, select, textarea {
 }
 
 .back-button.back-button-primary {
-  background-color: #324158;
-  border-color: #324158;
+  background-color: #344158;
+  border-color: #344158;
   color: #ffffff;
   font-weight: 600;
   box-shadow: 0 8px 20px rgba(50, 65, 88, 0.25);
@@ -2413,11 +2413,11 @@ table tr:hover {
 }
 
 .view-students-table thead {
-  background: #324158;
+  background: #344158;
 }
 
 .view-students-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
   padding: 12px !important;
   font-size: 12px !important;
@@ -2432,7 +2432,7 @@ table tr:hover {
 .group-students-table thead,
 .representatives-table thead,
 .groups-info-table thead {
-  background: #324158 !important;
+  background: #344158 !important;
 }
 
 .internship-students-table thead th,
@@ -2440,7 +2440,7 @@ table tr:hover {
 .group-students-table thead th,
 .representatives-table thead th,
 .groups-info-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
   padding: 12px !important;
   font-size: 12px !important;
@@ -2451,11 +2451,11 @@ table tr:hover {
 }
 
 .access-employees-table thead {
-  background: #324158 !important;
+  background: #344158 !important;
 }
 
 .access-employees-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
   padding: 12px !important;
   font-size: 12px !important;
@@ -2603,7 +2603,7 @@ table tr:hover {
   border-radius: 50%;
   box-shadow: none;
   background: transparent;
-  accent-color: #324158;
+  accent-color: #344158;
 }
 
 .form-group input[type="radio"]:focus {
@@ -2686,7 +2686,7 @@ table tr:hover {
 .submit-btn {
   width: 100%;
   padding: 12px;
-  background: #324158;
+  background: #344158;
   color: white;
   border: none;
   border-radius: 8px;
@@ -2851,7 +2851,7 @@ table tr:hover {
 .interview-history-clear-btn {
   border: 1px solid #d8e1ec;
   background: #ffffff;
-  color: #324158;
+  color: #344158;
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 12px;
@@ -2866,29 +2866,29 @@ table tr:hover {
 }
 
 .interview-history-table thead {
-  background: #324158;
+  background: #344158;
 }
 
 .interview-history-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
 }
 
 .aptitude-history-table thead,
 .assessment-history-table thead,
 .training-history-table thead {
-  background: #324158;
+  background: #344158;
 }
 
 .aptitude-history-table thead th,
 .assessment-history-table thead th,
 .training-history-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
 }
 
 .student-records-nav-title {
-  color: #324158;
+  color: #344158;
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 0;
@@ -2926,7 +2926,7 @@ table tr:hover {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #324158 0%, #1f2a3d 100%);
+  background: linear-gradient(135deg, #344158 0%, #1f2a3d 100%);
   color: #ffffff;
   font-size: 15px;
   font-weight: 700;
@@ -2960,7 +2960,7 @@ table tr:hover {
   text-transform: uppercase;
   border: 1px solid #dbe3ee;
   background: #f8fafc;
-  color: #324158;
+  color: #344158;
 }
 
 .student-records-status-chip.active {
@@ -3070,8 +3070,8 @@ table tr:hover {
 }
 
 .student-records-nav-btn.active {
-  background: linear-gradient(135deg, #324158 0%, #2b3850 100%);
-  border-color: #324158;
+  background: linear-gradient(135deg, #344158 0%, #2b3850 100%);
+  border-color: #344158;
   color: #ffffff;
   box-shadow: 0 6px 14px rgba(50, 65, 88, 0.16);
   font-weight: 500;
@@ -3114,7 +3114,7 @@ table tr:hover {
   border-radius: 999px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  color: #324158;
+  color: #344158;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.2px;
@@ -3215,11 +3215,11 @@ table tr:hover {
 }
 
 .assessment-records-table thead {
-  background: #324158 !important;
+  background: #344158 !important;
 }
 
 .assessment-records-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
 }
 
@@ -4032,14 +4032,14 @@ form {
 }
 
 .btn-primary {
-  background-color: #0f172a;
+  background-color: #344158;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #1e293b;
+  background-color: #43536f;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 4px 12px rgba(52, 65, 88, 0.2);
 }
 
 .btn-primary:disabled {
@@ -5512,9 +5512,9 @@ form {
   margin: 20px;
   padding: 12px;
   background: #ffffff;
-  border: 1px solid #324158;
+  border: 1px solid #344158;
   border-radius: 8px;
-  color: #324158;
+  color: #344158;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -5932,7 +5932,7 @@ form {
 
 /* Premium Buttons */
 .premium-btn-primary {
-  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #4f5e7a 0%, #344158 100%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -5944,19 +5944,19 @@ form {
   align-items: center;
   gap: 8px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+  box-shadow: 0 2px 8px rgba(52, 65, 88, 0.15);
 }
 
 .premium-btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
-  background: linear-gradient(135deg, #3f4f66 0%, #2a3646 100%);
+  box-shadow: 0 4px 12px rgba(52, 65, 88, 0.25);
+  background: linear-gradient(135deg, #5c6d8d 0%, #43536f 100%);
 }
 
 .premium-btn-secondary {
-  background: #324158;
+  background: #344158;
   color: white;
-  border: 1px solid #324158;
+  border: 1px solid #344158;
   padding: 10px 20px;
   border-radius: 8px;
   font-size: 14px;
@@ -5966,8 +5966,8 @@ form {
 }
 
 .premium-btn-secondary:hover {
-  background: #3d5170;
-  border-color: #3d5170;
+  background: #43536f;
+  border-color: #43536f;
 }
 
 /* Premium Stats Grid */
@@ -6367,11 +6367,11 @@ form {
 }
 
 .rep-payout-table thead {
-  background: #324158 !important;
+  background: #344158 !important;
 }
 
 .rep-payout-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
   padding: 12px !important;
   font-size: 12px !important;
@@ -6397,26 +6397,26 @@ form {
 
 .rep-form-submit-btn,
 .rep-form-cancel-btn {
-  background: #324158 !important;
+  background: #344158 !important;
   color: #ffffff !important;
-  border-color: #324158 !important;
+  border-color: #344158 !important;
 }
 
 .rep-form-submit-btn:hover,
 .rep-form-cancel-btn:hover {
-  background: #1e293b !important;
-  border-color: #1e293b !important;
+  background: #43536f !important;
+  border-color: #43536f !important;
 }
 
 .rep-payout-filter-btn {
-  background: #324158 !important;
+  background: #344158 !important;
   color: #ffffff !important;
-  border-color: #324158 !important;
+  border-color: #344158 !important;
 }
 
 .rep-payout-filter-btn:hover {
-  background: #1e293b !important;
-  border-color: #1e293b !important;
+  background: #43536f !important;
+  border-color: #43536f !important;
   color: #ffffff !important;
 }
 
@@ -6696,11 +6696,11 @@ form {
 }
 
 .record-table-wrap .student-records-history-table thead {
-  background: #324158;
+  background: #344158;
 }
 
 .record-table-wrap .student-records-history-table thead th {
-  background-color: #324158 !important;
+  background-color: #344158 !important;
   color: #ffffff !important;
   padding: 8px 12px !important;
   font-size: 12px !important;
@@ -9323,7 +9323,7 @@ border-radius: 8px;
   grid-template-columns: 1.7fr 0.9fr 1fr 0.8fr 1.4fr 0.6fr;
   gap: 12px;
   padding: 12px 16px;
-  background: #324158;
+  background: #344158;
   border-bottom: none;
 }
 
@@ -10079,4 +10079,40 @@ border-radius: 8px;
   width: 100%;
   border-top: 1px solid #f1f5f9;
   padding-top: 16px;
+}
+
+/* Password Toggle Visibility Utility Styles */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  padding-right: 42px !important;
+  width: 100%;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+  z-index: 10;
+  box-shadow: none !important;
+}
+
+.password-toggle-btn:hover {
+  color: #0f172a;
 }

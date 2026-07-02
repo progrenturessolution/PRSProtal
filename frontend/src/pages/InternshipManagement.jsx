@@ -469,7 +469,7 @@ function InternshipManagement({ onAddStudentClick }) {
               padding: "10px 20px",
               borderRadius: "10px",
               border: "none",
-              background: "#324158",
+              background: "#344158",
               color: "#fff",
               fontWeight: "600",
               fontSize: "14px",
@@ -921,7 +921,7 @@ function InternshipManagement({ onAddStudentClick }) {
           }}
         >
           <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-header" style={{ background: "#324158" }}>
+            <div className="profile-header" style={{ background: "#344158" }}>
               <button
                 className="profile-close-btn"
                 onClick={() => {
@@ -1273,7 +1273,7 @@ function InternshipManagement({ onAddStudentClick }) {
                     <button
                       onClick={handleEditClick}
                       className="profile-btn profile-btn-primary"
-                      style={{ background: "#324158", borderColor: "#324158" }}
+                      style={{ background: "#344158", borderColor: "#344158" }}
                     >
                       Edit Profile
                     </button>
@@ -1303,7 +1303,7 @@ function InternshipManagement({ onAddStudentClick }) {
           }}
         >
           <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="profile-header" style={{ background: "#324158" }}>
+            <div className="profile-header" style={{ background: "#344158" }}>
               <button
                 className="profile-close-btn"
                 onClick={() => {

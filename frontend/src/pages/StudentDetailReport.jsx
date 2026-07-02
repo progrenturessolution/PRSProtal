@@ -167,23 +167,23 @@ function StudentDetailReport() {
             <title>Aspirant Report - ${student.name}</title>
             <style>
               body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 30px; color: #1e293b; background-color: #ffffff; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #324158; padding-bottom: 20px; }
+              .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #344158; padding-bottom: 20px; }
               .header .company { font-size: 14px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
               .header h1 { font-size: 26px; font-weight: 800; color: #1e293b; margin: 0 0 8px 0; letter-spacing: -0.02em; }
               .header p { font-size: 14px; color: #475569; margin: 0; }
               .section { margin: 25px 0; }
-              .section-title { font-size: 16px; font-weight: bold; color: #324158; margin: 15px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+              .section-title { font-size: 16px; font-weight: bold; color: #344158; margin: 15px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
               .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
               .info-item { padding: 10px; background: #f8fafc; border-radius: 4px; border: 1px solid #e2e8f0; }
               .info-label { font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; }
               .info-value { font-size: 14px; color: #0f172a; font-weight: 600; margin-top: 5px; }
               table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
-              th { background-color: #324158; color: white; padding: 12px 10px; text-align: left; border: 1px solid #324158; font-weight: 600; }
+              th { background-color: #344158; color: white; padding: 12px 10px; text-align: left; border: 1px solid #344158; font-weight: 600; }
               td { padding: 10px; border: 1px solid #e2e8f0; color: #334155; }
               tr:nth-child(even) { background-color: #f8fafc; }
               .stat-section { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 15px 0; }
-              .stat-box { padding: 15px; background: #f8fafc; border-left: 4px solid #324158; text-align: center; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 0 4px 4px 0; }
-              .stat-number { font-size: 24px; font-weight: bold; color: #324158; }
+              .stat-box { padding: 15px; background: #f8fafc; border-left: 4px solid #344158; text-align: center; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 0 4px 4px 0; }
+              .stat-number { font-size: 24px; font-weight: bold; color: #344158; }
               .stat-label { font-size: 12px; color: #64748b; margin-top: 5px; }
               .footer { margin-top: 40px; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 15px; color: #94a3b8; font-size: 12px; }
             </style>
@@ -544,9 +544,9 @@ function StudentDetailReport() {
             disabled={downloading}
             style={{
               padding: "10px 18px",
-              background: "#324158",
+              background: "#344158",
               color: "white",
-              border: "2px solid #324158",
+              border: "2px solid #344158",
               borderRadius: "8px",
               cursor: downloading ? "not-allowed" : "pointer",
               fontWeight: 600,
@@ -562,8 +562,8 @@ function StudentDetailReport() {
             }}
             onMouseLeave={(e) => {
               if (!downloading) {
-                e.target.style.background = "#324158";
-                e.target.style.borderColor = "#324158";
+                e.target.style.background = "#344158";
+                e.target.style.borderColor = "#344158";
               }
             }}
           >
@@ -574,9 +574,9 @@ function StudentDetailReport() {
             disabled={downloading}
             style={{
               padding: "10px 18px",
-              background: "#324158",
+              background: "#344158",
               color: "white",
-              border: "2px solid #324158",
+              border: "2px solid #344158",
               borderRadius: "8px",
               cursor: downloading ? "not-allowed" : "pointer",
               fontWeight: 600,
@@ -592,8 +592,8 @@ function StudentDetailReport() {
             }}
             onMouseLeave={(e) => {
               if (!downloading) {
-                e.target.style.background = "#324158";
-                e.target.style.borderColor = "#324158";
+                e.target.style.background = "#344158";
+                e.target.style.borderColor = "#344158";
               }
             }}
           >

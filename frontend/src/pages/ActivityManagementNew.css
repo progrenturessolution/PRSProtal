@@ -71,7 +71,7 @@
 .am-report-chip { display:inline-flex; align-items:center; padding:6px 9px; border-radius:999px; background:#fff; border:1px solid #d6e0ea; color:#334155; font-size:11px; font-weight:600; box-shadow:0 2px 6px rgba(15,23,42,0.04) }
 .am-report-table-wrap { border:1px solid #cfd9e4; overflow:hidden; background:#fff }
 .am-report-table { width:100%; border-collapse:collapse; table-layout:fixed }
-.am-report-table thead th { background:#324158; color:#fff; padding:10px 10px; font-size:12px; font-weight:700; text-transform:none; letter-spacing:0.02em; border-right:1px solid rgba(255,255,255,0.2) }
+.am-report-table thead th { background:#344158; color:#fff; padding:10px 10px; font-size:12px; font-weight:700; text-transform:none; letter-spacing:0.02em; border-right:1px solid rgba(255,255,255,0.2) }
 .am-report-table thead th:last-child { border-right:none }
 .am-report-table td { padding:10px 10px; border-top:1px solid #d9e2ec; border-right:1px solid #d9e2ec; font-size:12px; color:#334155; vertical-align:middle; word-break:break-word }
 .am-report-table td:last-child { border-right:none }
@@ -153,7 +153,7 @@
 .am-slot-table th,
 .am-slot-table td { padding:12px 15px }
 .am-slot-table thead {
-	background: #324158; /* dark navy header to match sample */
+	background: #344158; /* dark navy header to match sample */
 	border-bottom: 0;
 }
 .am-slot-table thead th {
@@ -169,7 +169,7 @@
 
 /* Higher-specificity rule to override generic .records-table header styles */
 .records-table.am-slot-table thead {
-	background: #324158 !important;
+	background: #344158 !important;
 	border-bottom: 0 !important;
 }
 .records-table.am-slot-table thead th {
@@ -179,10 +179,10 @@
 
 /* Strong target specifically for the slots table to ensure full-width navy header */
 .records-slot-table thead {
-	background: #324158 !important;
+	background: #344158 !important;
 }
 .records-slot-table thead th {
-	background: #324158 !important;
+	background: #344158 !important;
 	color: #ffffff !important;
 	display: table-cell !important;
 }
@@ -206,7 +206,7 @@
 /* Stronger specificity to ensure header matches other tables (override any lighter rules) */
 .am-recent .am-table-wrap .records-table.am-records-table thead,
 .am-recent .am-table-wrap .records-table.am-records-table thead th {
-	background: #324158 !important;
+	background: #344158 !important;
 	color: #ffffff !important;
 }
 
@@ -219,7 +219,7 @@
 
 /* Filter chips accent color for Recent Activities header */
 .am-recent-header .am-filter-chip { border-color: #cbd5e1; }
-.am-recent-header .am-filter-chip.active { background: linear-gradient(135deg, #141D30, #0f172a); border-color: transparent; color: #fff; box-shadow: 0 8px 18px rgba(20,29,48,0.18); }
+.am-recent-header .am-filter-chip.active { background: #344158; border-color: transparent; color: #fff; box-shadow: 0 8px 18px rgba(52, 65, 88, 0.18); }
 
 /* Unified filter chip base color for Recent Activities (non-active) */
 .am-filter-chip.filter-all,
@@ -274,10 +274,10 @@
 .am-assigned-list { display:flex; flex-direction:column; gap:6px }
 .am-assigned-item { padding:8px 10px; background:#fff; border:1px solid #eef6ff; border-radius:8px }
 .nm-btn { padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; cursor:pointer }
-.nm-btn.primary { background:#324158; color:#ffffff; border-color:transparent }
+.nm-btn.primary { background:#344158; color:#ffffff; border-color:transparent }
 /* Ensure am-confirm-btn overrides the more specific .nm-btn.primary rule */
 .nm-btn.primary.am-confirm-btn,
-.am-confirm-btn { background:#324158; color:#ffffff; border-color:transparent; box-shadow:0 10px 20px rgba(20,29,48,0.18); padding:10px 16px }
+.am-confirm-btn { background:#344158; color:#ffffff; border-color:transparent; box-shadow:0 10px 20px rgba(20,29,48,0.18); padding:10px 16px }
 .nm-btn.primary.am-confirm-btn:hover,
 .am-confirm-btn:hover { filter:brightness(0.98) }
 .nm-btn.ghost { background:transparent; border-color:transparent; color:#64748b }

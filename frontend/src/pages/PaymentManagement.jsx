@@ -487,7 +487,7 @@ function PaymentManagement() {
             .report-meta h2 {
               font-size: 14px;
               font-weight: 800;
-              color: #324158;
+              color: #344158;
               margin: 0 0 6px 0;
               letter-spacing: 0.05em;
             }
@@ -609,7 +609,7 @@ function PaymentManagement() {
               margin-bottom: 24px;
             }
             .print-btn {
-              background-color: #324158;
+              background-color: #344158;
               color: white;
               border: none;
               padding: 10px 20px;
@@ -796,7 +796,7 @@ function PaymentManagement() {
                 padding: "8px 14px",
                 border: "none",
                 borderRadius: "6px",
-                background: "#324158",
+                background: "#344158",
                 color: "#fff",
                 fontWeight: "600",
                 fontSize: "13px",
@@ -1105,7 +1105,7 @@ function PaymentManagement() {
                 padding: "10px 18px",
                 border: "none",
                 borderRadius: "10px",
-                background: "#324158",
+                background: "#344158",
                 color: "#fff",
                 fontWeight: "600",
                 fontSize: "14px",
@@ -1124,7 +1124,7 @@ function PaymentManagement() {
                 padding: "10px 18px",
                 border: "none",
                 borderRadius: "10px",
-                background: "#324158",
+                background: "#344158",
                 color: "#fff",
                 fontWeight: "600",
                 fontSize: "14px",
@@ -1145,7 +1145,7 @@ function PaymentManagement() {
                   padding: "10px 18px",
                   border: "none",
                   borderRadius: "10px",
-                  background: "#324158",
+                  background: "#344158",
                   color: "#fff",
                   fontWeight: "600",
                   fontSize: "14px",
@@ -1164,7 +1164,7 @@ function PaymentManagement() {
                   padding: "10px 18px",
                   border: "none",
                   borderRadius: "10px",
-                  background: "#324158",
+                  background: "#344158",
                   color: "#fff",
                   fontWeight: "600",
                   fontSize: "14px",

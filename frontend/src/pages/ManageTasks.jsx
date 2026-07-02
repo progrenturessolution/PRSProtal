@@ -547,10 +547,10 @@ function ManageTasks({ onTaskApproved, onBack }) {
             <table className="data-table">
               <thead>
                 <tr style={{
-                  background: '#324158'
+                  background: '#344158'
                 }}>
                   <th style={{
-                    background: '#324158',
+                    background: '#344158',
                     color: '#ffffff',
                     padding: "16px 12px",
                     fontSize: "12px",
@@ -560,7 +560,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     letterSpacing: "0.5px"
                   }}>#</th>
                   <th style={{
-                    background: '#324158',
+                    background: '#344158',
                     color: '#ffffff',
                     padding: "16px 12px",
                     fontSize: "12px",
@@ -570,7 +570,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     letterSpacing: "0.5px"
                   }}>Task Title</th>
                   <th style={{
-                    background: '#324158',
+                    background: '#344158',
                     color: '#ffffff',
                     padding: "16px 12px",
                     fontSize: "12px",
@@ -580,7 +580,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     letterSpacing: "0.5px"
                   }}>Assigned On</th>
                   <th style={{
-                    background: '#324158',
+                    background: '#344158',
                     color: '#ffffff',
                     padding: "16px 12px",
                     fontSize: "12px",
@@ -590,7 +590,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     letterSpacing: "0.5px"
                   }}>Deadline</th>
                   <th style={{
-                    background: '#324158',
+                    background: '#344158',
                     color: '#ffffff',
                     padding: "16px 12px",
                     fontSize: "12px",
@@ -600,7 +600,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     letterSpacing: "0.5px"
                   }}>Team Size</th>
                   <th style={{
-                    background: '#324158',
+                    background: '#344158',
                     color: '#ffffff',
                     padding: "16px 12px",
                     fontSize: "12px",
@@ -610,7 +610,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     letterSpacing: "0.5px"
                   }}>Status</th>
                   <th style={{
-                    background: '#324158',
+                    background: '#344158',
                     color: '#ffffff',
                     padding: "16px 12px",
                     fontSize: "12px",
@@ -733,11 +733,11 @@ function ManageTasks({ onTaskApproved, onBack }) {
                 <table className="data-table">
                   <thead>
                     <tr style={{
-                      background: '#324158'
+                      background: '#344158'
                     }}>
                       <th style={{
                         width: "22%",
-                        background: '#324158',
+                        background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
                         fontSize: "12px",
@@ -748,7 +748,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                       }}>Task Details</th>
                       <th style={{
                         width: "15%",
-                        background: '#324158',
+                        background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
                         fontSize: "12px",
@@ -759,7 +759,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                       }}>Assigned To</th>
                       <th style={{
                         width: "14%",
-                        background: '#324158',
+                        background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
                         fontSize: "12px",
@@ -770,7 +770,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                       }}>Deadline</th>
                       <th style={{
                         width: "12%",
-                        background: '#324158',
+                        background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
                         fontSize: "12px",
@@ -781,7 +781,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                       }}>Status</th>
                       <th style={{
                         width: "21%",
-                        background: '#324158',
+                        background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
                         fontSize: "12px",
@@ -1372,7 +1372,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                   style={{
                     flex: 1,
                     padding: "14px",
-                    background: "#324158",
+                    background: "#344158",
                     color: "white",
                     border: "none",
                     borderRadius: "10px",
@@ -1856,7 +1856,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         style={{
                           flex: 1,
                           padding: "10px",
-                          background: "#324158",
+                          background: "#344158",
                           color: "white",
                           border: "none",
                           borderRadius: "10px",
@@ -1882,7 +1882,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         style={{
                           flex: 1,
                           padding: "10px",
-                          background: "#324158",
+                          background: "#344158",
                           color: "white",
                           border: "none",
                           borderRadius: "10px",
