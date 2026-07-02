@@ -744,7 +744,7 @@ exports.addTrainer = async (req, res) => {
 exports.updateTrainer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, mobile, status, role, customRole, joiningDate } = req.body;
+    const { name, email, mobile, status, role, customRole, joiningDate, password } = req.body;
 
     const trainer = await Trainer.findById(id);
     if (!trainer) {
@@ -768,6 +768,12 @@ exports.updateTrainer = async (req, res) => {
       const normalized = normalizeEmployeeRole(role ?? trainer.role, customRole ?? trainer.customRole);
       trainer.role = normalized.role;
       trainer.customRole = normalized.customRole;
+    }
+
+    if (password !== undefined && String(password || '').trim() !== '') {
+      const salt = await bcrypt.genSalt(10);
+      trainer.password = await bcrypt.hash(String(password).trim(), salt);
+      trainer.plainPassword = String(password).trim();
     }
 
     await trainer.save();
@@ -1931,6 +1937,7 @@ exports.updateRepresentative = async (req, res) => {
 
     if (password !== undefined && String(password || '').trim() !== '') {
       representative.password = await bcrypt.hash(String(password).trim(), 10);
+      representative.plainPassword = String(password).trim();
     }
 
     if (!representative.docs) representative.docs = {};

@@ -229,6 +229,10 @@ function AccessManagement() {
         status: editEmployeeData.status,
       };
 
+      if (editEmployeeData.password && editEmployeeData.password.trim()) {
+        payload.password = editEmployeeData.password.trim();
+      }
+
       const response = await adminAPI.updateTrainer(editEmployeeData._id, payload);
       if (response.data.success) {
         setSuccess("Employee updated successfully");
@@ -1838,6 +1842,16 @@ function AccessManagement() {
                   </select>
                 </div>
                 <div className="form-group">
+                  <label>Password (leave blank to keep current)</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={editEmployeeData.password || ""}
+                    onChange={handleEditEmployeeChange}
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <div className="form-group">
                   <label>Role *</label>
                   <select name="role" value={editEmployeeData.role || "trainer"} onChange={handleEditEmployeeChange}>
                     <option value="trainer">Trainer</option>
@@ -1922,6 +1936,7 @@ function AccessManagement() {
                       setEditEmployeeData({
                         ...selectedTrainerDetails,
                         joiningDate: selectedTrainerDetails?.joiningDate ? new Date(selectedTrainerDetails.joiningDate).toISOString().split("T")[0] : "",
+                        password: "",
                       });
                       setShowEditEmployeeModal(true);
                     }}
