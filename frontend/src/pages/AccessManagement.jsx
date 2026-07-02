@@ -1303,7 +1303,7 @@ function AccessManagement() {
               <table className="data-table access-employees-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>Email</th>
                     <th>Name</th>
                     <th>Assign Group Name</th>
                     <th>Actions</th>
@@ -1314,14 +1314,14 @@ function AccessManagement() {
                     <tr key={trainer._id}>
                       <td>
                         <span
-                          className="mono-text"
                           style={{
-                            fontSize: "13px",
-                            fontWeight: 600,
+                            fontSize: "14px",
+                            fontWeight: 500,
                             color: "#64748b",
+                            wordBreak: "break-all",
                           }}
                         >
-                          {trainer._id}
+                          {trainer.email}
                         </span>
                       </td>
                       <td>
@@ -2045,6 +2045,22 @@ function AccessManagement() {
                           marginBottom: "4px",
                         }}
                       >
+                        Password
+                      </label>
+                      <div style={{ fontSize: "15px", color: "#0c4a6e", fontWeight: "600" }}>
+                        {selectedTrainerDetails.plainPassword || "trainer"}
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          color: "#075985",
+                          marginBottom: "4px",
+                        }}
+                      >
                         Mobile Number
                       </label>
                       <div style={{ fontSize: "15px", color: "#0c4a6e" }}>
@@ -2228,7 +2244,8 @@ function AccessManagement() {
                         }}
                       >
                         Employee can login using their email address:{" "}
-                        <strong>{selectedTrainerDetails.email}</strong>
+                        <strong>{selectedTrainerDetails.email}</strong> and password:{" "}
+                        <strong>{selectedTrainerDetails.plainPassword || "trainer"}</strong>
                       </p>
                     </div>
                   </div>

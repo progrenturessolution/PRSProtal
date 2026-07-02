@@ -638,6 +638,28 @@ function ViewTrainers() {
                         marginBottom: "6px",
                       }}
                     >
+                      Password
+                    </label>
+                    <div
+                      style={{
+                        fontSize: "15px",
+                        color: "#0c4a6e",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {selectedTrainer.plainPassword || "trainer"}
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#075985",
+                        marginBottom: "6px",
+                      }}
+                    >
                       Mobile Number
                     </label>
                     <div
