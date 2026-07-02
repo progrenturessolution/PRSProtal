@@ -2151,7 +2151,7 @@ function InternDashboard() {
                       >
                         Cancel
                       </button>
-                      <button type="submit" className="btn-primary" disabled={editLoading}>
+                      <button type="submit" className="btn-primary btn-update-password" disabled={editLoading}>
                         {editLoading ? "Updating..." : "Update Password"}
                       </button>
                     </div>

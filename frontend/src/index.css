@@ -621,6 +621,21 @@ button, a, input, select, textarea {
   border: none !important;
 }
 
+.btn-update-password {
+  background: #324158 !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.btn-update-password:hover {
+  background: #324158 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 /* ========================================
    INTERN PROFILE REDESIGN
    ======================================== */
