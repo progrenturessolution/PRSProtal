@@ -90,7 +90,7 @@ export default function VerifyIdentity() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 48px;
+          padding: 40px 38px;
           color: white;
         }
 
@@ -113,12 +113,12 @@ export default function VerifyIdentity() {
 
         .verify-left-content {
           width: 100%;
-          max-width: 460px;
+          max-width: 420px;
           position: relative;
           z-index: 2;
           display: flex;
           flex-direction: column;
-          gap: 28px;
+          gap: 20px;
         }
 
         .verify-brand-row {
@@ -165,26 +165,26 @@ export default function VerifyIdentity() {
         }
 
         .verify-hero h1 {
-          font-size: 32px;
+          font-size: 26px;
           font-weight: 800;
           line-height: 1.2;
           color: #ffffff;
-          margin: 0 0 16px 0;
+          margin: 0 0 12px 0;
           letter-spacing: -0.03em;
         }
 
         .verify-hero p {
-          font-size: 15px;
+          font-size: 14px;
           line-height: 1.6;
           color: #cbd5e1;
           margin: 0;
         }
 
         .verify-why-section h3 {
-          font-size: 15px;
+          font-size: 13.5px;
           font-weight: 700;
           color: #ffffff;
-          margin: 0 0 16px 0;
+          margin: 0 0 12px 0;
           border-bottom: 1px solid rgba(255, 255, 255, 0.1);
           padding-bottom: 8px;
           text-transform: uppercase;
@@ -194,7 +194,7 @@ export default function VerifyIdentity() {
         .verify-features-list {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 8px;
         }
 
         .verify-feature-item {
@@ -212,7 +212,7 @@ export default function VerifyIdentity() {
         }
 
         .verify-feature-text-new {
-          font-size: 14px;
+          font-size: 13px;
           color: #cbd5e1;
           line-height: 1.4;
           font-weight: 500;
@@ -222,21 +222,21 @@ export default function VerifyIdentity() {
           background: rgba(14, 165, 183, 0.05);
           border: 1px solid rgba(14, 165, 183, 0.15);
           border-radius: 12px;
-          padding: 16px;
+          padding: 12px;
         }
 
         .verify-secure-section h3 {
-          font-size: 14.5px;
+          font-size: 13px;
           font-weight: 700;
           color: #0ea5b7;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
           display: flex;
           align-items: center;
           gap: 8px;
         }
 
         .verify-secure-section p {
-          font-size: 13px;
+          font-size: 12px;
           color: #cbd5e1;
           margin: 0;
           line-height: 1.5;
@@ -246,7 +246,7 @@ export default function VerifyIdentity() {
           font-size: 11px;
           color: #64748b;
           border-top: 1px solid rgba(255, 255, 255, 0.1);
-          padding-top: 24px;
+          padding-top: 16px;
           line-height: 1.5;
         }
 
@@ -261,7 +261,7 @@ export default function VerifyIdentity() {
           align-items: center;
           justify-content: center;
           padding: 48px;
-          overflow-y: auto;
+          overflow-y: hidden;
           position: relative;
         }
 
@@ -278,7 +278,7 @@ export default function VerifyIdentity() {
           border-radius: 20px;
           border: 1px solid #e2e8f0;
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
-          padding: 36px;
+          padding: 24px;
           display: flex;
           flex-direction: column;
           animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -289,8 +289,8 @@ export default function VerifyIdentity() {
           align-items: center;
           gap: 16px;
           border-bottom: 1.5px solid #f1f5f9;
-          padding-bottom: 20px;
-          margin-bottom: 24px;
+          padding-bottom: 12px;
+          margin-bottom: 16px;
         }
 
         .verify-badge-success-icon {
@@ -326,8 +326,8 @@ export default function VerifyIdentity() {
         .verify-results-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 18px 24px;
-          margin-bottom: 24px;
+          gap: 12px 20px;
+          margin-bottom: 16px;
         }
 
         .grid-span-full {
@@ -337,7 +337,7 @@ export default function VerifyIdentity() {
         .detail-item {
           display: flex;
           flex-direction: column;
-          gap: 5px;
+          gap: 3px;
         }
 
         .detail-label {
@@ -408,7 +408,7 @@ export default function VerifyIdentity() {
           border-radius: 20px;
           border: 1px solid #fca5a5;
           box-shadow: 0 20px 40px rgba(220, 38, 38, 0.05);
-          padding: 36px;
+          padding: 24px;
           display: flex;
           flex-direction: column;
           animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;

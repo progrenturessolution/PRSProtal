@@ -914,6 +914,14 @@ function InternDashboard() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    if (!editFormData.password || !editFormData.confirmPassword) {
+      setEditError("Please enter and confirm your new password");
+      return;
+    }
+    if (editFormData.password !== editFormData.confirmPassword) {
+      setEditError("Passwords do not match");
+      return;
+    }
     try {
       setEditLoading(true);
       setEditError("");
@@ -2109,301 +2117,30 @@ function InternDashboard() {
                     )}
 
                     <div className="form-group">
-                      <label htmlFor="intern-edit-studentType">Student Type</label>
-                      <select
-                        id="intern-edit-studentType"
-                        name="studentType"
-                        value={editFormData.studentType}
-                        onChange={handleEditInputChange}
-                      >
-                        <option value="Internship">Internship</option>
-                        <option value="SMS Program">SMS Program</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-internId">{editFormData.studentType === "SMS Program" ? "PSMS ID" : "PIID"}</label>
-                      <input
-                        id="intern-edit-internId"
-                        type="text"
-                        name="internId"
-                        value={editFormData.internId}
-                        onChange={handleEditInputChange}
-                        placeholder="Enter student ID"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-name">Full Name *</label>
-                      <input
-                        id="intern-edit-name"
-                        type="text"
-                        name="name"
-                        value={editFormData.name}
-                        onChange={handleEditInputChange}
-                        placeholder="Enter your full name"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-email">Email Address *</label>
-                      <input
-                        id="intern-edit-email"
-                        type="email"
-                        name="email"
-                        value={editFormData.email}
-                        onChange={handleEditInputChange}
-                        placeholder="Enter your email address"
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-mobile">Mobile Number</label>
-                      <input
-                        id="intern-edit-mobile"
-                        type="tel"
-                        name="mobile"
-                        value={editFormData.mobile}
-                        onChange={handleEditInputChange}
-                        placeholder="Enter your mobile number"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-designation">Current Designation</label>
-                      <input
-                        id="intern-edit-designation"
-                        type="text"
-                        name="currentDesignation"
-                        value={editFormData.currentDesignation}
-                        onChange={handleEditInputChange}
-                        placeholder="Current designation"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-joiningDate">Joining Date</label>
-                      <input
-                        id="intern-edit-joiningDate"
-                        type="date"
-                        name="joiningDate"
-                        value={editFormData.joiningDate}
-                        onChange={handleEditInputChange}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-endingDate">Ending Date</label>
-                      <input
-                        id="intern-edit-endingDate"
-                        type="date"
-                        name="endingDate"
-                        value={editFormData.endingDate}
-                        onChange={handleEditInputChange}
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-duration">Duration</label>
-                      <input
-                        id="intern-edit-duration"
-                        type="text"
-                        name="duration"
-                        value={editFormData.duration}
-                        onChange={handleEditInputChange}
-                        placeholder="e.g. 3 months"
-                      />
-                    </div>
-
-                    {editFormData.studentType === "Internship" ? (
-                      <>
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-domain">Domain</label>
-                          <input
-                            id="intern-edit-domain"
-                            type="text"
-                            name="domain"
-                            value={editFormData.domain}
-                            onChange={handleEditInputChange}
-                            placeholder="Enter domain"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-collegeName">College Name</label>
-                          <input
-                            id="intern-edit-collegeName"
-                            type="text"
-                            name="collegeName"
-                            value={editFormData.collegeName}
-                            onChange={handleEditInputChange}
-                            placeholder="Enter college name"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-branch">Branch</label>
-                          <input
-                            id="intern-edit-branch"
-                            type="text"
-                            name="branch"
-                            value={editFormData.branch}
-                            onChange={handleEditInputChange}
-                            placeholder="Enter branch"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-yearOfStudy">Year of Study</label>
-                          <input
-                            id="intern-edit-yearOfStudy"
-                            type="text"
-                            name="yearOfStudy"
-                            value={editFormData.yearOfStudy}
-                            onChange={handleEditInputChange}
-                            placeholder="e.g. 2nd Year"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-suggestedDomain">Suggested Domain</label>
-                          <input
-                            id="intern-edit-suggestedDomain"
-                            type="text"
-                            name="suggestedDomain"
-                            value={editFormData.suggestedDomain}
-                            onChange={handleEditInputChange}
-                            placeholder="Suggested domain"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-currentQualification">Current Qualification</label>
-                          <input
-                            id="intern-edit-currentQualification"
-                            type="text"
-                            name="currentQualification"
-                            value={editFormData.currentQualification}
-                            onChange={handleEditInputChange}
-                            placeholder="Current qualification"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-instituteName">Institute Name</label>
-                          <input
-                            id="intern-edit-instituteName"
-                            type="text"
-                            name="instituteName"
-                            value={editFormData.instituteName}
-                            onChange={handleEditInputChange}
-                            placeholder="Institute name"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlF
-                          or="intern-edit-instituteLocation">Institute Location</label>
-                          <input
-                            id="intern-edit-instituteLocation"
-                            type="text"
-                            name="instituteLocation"
-                            value={editFormData.instituteLocation}
-                            onChange={handleEditInputChange}
-                            placeholder="Institute location"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-enrolmentDate">Enrolment Date</label>
-                          <input
-                            id="intern-edit-enrolmentDate"
-                            type="date"
-                            name="enrolmentDate"
-                            value={editFormData.enrolmentDate}
-                            onChange={handleEditInputChange}
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-enrolBatchMonth">Batch Month</label>
-                          <input
-                            id="intern-edit-enrolBatchMonth"
-                            type="month"
-                            name="enrolBatchMonth"
-                            value={editFormData.enrolBatchMonth}
-                            onChange={handleEditInputChange}
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-totalFees">Total Fees</label>
-                          <input
-                            id="intern-edit-totalFees"
-                            type="number"
-                            name="totalFees"
-                            value={editFormData.totalFees}
-                            onChange={handleEditInputChange}
-                            placeholder="Total fees"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-completedFees">Completed Fees</label>
-                          <input
-                            id="intern-edit-completedFees"
-                            type="number"
-                            name="completedFees"
-                            value={editFormData.completedFees}
-                            onChange={handleEditInputChange}
-                            placeholder="Completed fees"
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label htmlFor="intern-edit-pendingFees">Pending Fees</label>
-                          <input
-                            id="intern-edit-pendingFees"
-                            type="number"
-                            name="pendingFees"
-                            value={editFormData.pendingFees}
-                            onChange={handleEditInputChange}
-                            placeholder="Pending fees"
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div className="form-group">
-                      <label htmlFor="intern-edit-password">New Password (Optional)</label>
+                      <label htmlFor="intern-edit-password">New Password *</label>
                       <input
                         id="intern-edit-password"
                         type="password"
                         name="password"
                         value={editFormData.password}
                         onChange={handleEditInputChange}
-                        placeholder="Leave blank to keep current password"
+                        placeholder="Enter your new password"
+                        required
                       />
                     </div>
 
-                    {editFormData.password && (
-                      <div className="form-group">
-                        <label htmlFor="intern-edit-confirm-password">Confirm Password *</label>
-                        <input
-                          id="intern-edit-confirm-password"
-                          type="password"
-                          name="confirmPassword"
-                          value={editFormData.confirmPassword}
-                          onChange={handleEditInputChange}
-                          placeholder="Confirm your new password"
-                          required={!!editFormData.password}
-                        />
-                      </div>
-                    )}
+                    <div className="form-group">
+                      <label htmlFor="intern-edit-confirm-password">Confirm Password *</label>
+                      <input
+                        id="intern-edit-confirm-password"
+                        type="password"
+                        name="confirmPassword"
+                        value={editFormData.confirmPassword}
+                        onChange={handleEditInputChange}
+                        placeholder="Confirm your new password"
+                        required
+                      />
+                    </div>
 
                     <div className="modal-actions">
                       <button
@@ -2415,7 +2152,7 @@ function InternDashboard() {
                         Cancel
                       </button>
                       <button type="submit" className="btn-primary" disabled={editLoading}>
-                        {editLoading ? "Updating..." : "Update Profile"}
+                        {editLoading ? "Updating..." : "Update Password"}
                       </button>
                     </div>
                   </form>
