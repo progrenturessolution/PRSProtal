@@ -1297,7 +1297,7 @@ function ViewInterns({
                 {/* Quick Actions */}
                 <div className="profile-actions">
                   <button
-                    className="profile-btn profile-btn-primary"
+                    className="profile-btn profile-btn-edit"
                     onClick={() => {
                       setShowProfileModal(false);
                       handleEdit(selectedStudent);
@@ -1306,7 +1306,7 @@ function ViewInterns({
                     Edit Profile
                   </button>
                   <button
-                    className="profile-btn profile-btn-secondary"
+                    className="profile-btn profile-btn-certificates"
                     onClick={() => {
                       setShowProfileModal(false);
                       handleViewCertificates(selectedStudent);
@@ -1315,7 +1315,7 @@ function ViewInterns({
                     Manage Certificates
                   </button>
                   <button
-                    className="profile-btn profile-btn-ghost"
+                    className="profile-btn profile-btn-close"
                     onClick={() => {
                       setShowProfileModal(false);
                       setSelectedStudent(null);

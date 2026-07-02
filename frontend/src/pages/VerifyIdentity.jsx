@@ -118,7 +118,7 @@ export default function VerifyIdentity() {
           z-index: 2;
           display: flex;
           flex-direction: column;
-          gap: 40px;
+          gap: 28px;
         }
 
         .verify-brand-row {
@@ -180,43 +180,66 @@ export default function VerifyIdentity() {
           margin: 0;
         }
 
+        .verify-why-section h3 {
+          font-size: 15px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0 0 16px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 8px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
         .verify-features-list {
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 12px;
         }
 
         .verify-feature-item {
           display: flex;
-          align-items: flex-start;
-          gap: 14px;
+          align-items: center;
+          gap: 12px;
         }
 
-        .verify-feature-icon {
-          width: 28px;
-          height: 28px;
-          border-radius: 8px;
-          background: rgba(14, 165, 183, 0.15);
-          color: #0ea5b7;
-          display: flex;
+        .verify-feature-icon-new {
+          font-size: 16px;
+          display: inline-flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
-          margin-top: 2px;
         }
 
-        .verify-feature-text h3 {
+        .verify-feature-text-new {
+          font-size: 14px;
+          color: #cbd5e1;
+          line-height: 1.4;
+          font-weight: 500;
+        }
+
+        .verify-secure-section {
+          background: rgba(14, 165, 183, 0.05);
+          border: 1px solid rgba(14, 165, 183, 0.15);
+          border-radius: 12px;
+          padding: 16px;
+        }
+
+        .verify-secure-section h3 {
           font-size: 14.5px;
           font-weight: 700;
-          color: #ffffff;
-          margin: 0 0 4px 0;
+          color: #0ea5b7;
+          margin: 0 0 8px 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
-        .verify-feature-text p {
+        .verify-secure-section p {
           font-size: 13px;
-          color: #94a3b8;
+          color: #cbd5e1;
           margin: 0;
-          line-height: 1.4;
+          line-height: 1.5;
         }
 
         .verify-left-footer {
@@ -600,53 +623,53 @@ export default function VerifyIdentity() {
           </div>
 
           <div className="verify-hero">
-            <h1>Validate Affiliation</h1>
+            <h1>Validate Your Affiliation</h1>
+            <p style={{ marginBottom: '16px' }}>
+              Verify your enrollment and confirm that your registration details are officially recorded with Progrentures Solution Pvt. Ltd.
+            </p>
             <p>
-              Confirm the active enrollment, training status, or program completion details of any candidate securely using registered credentials.
+              Enter your registered credentials to instantly check your candidate profile, enrollment status, and program information.
             </p>
           </div>
 
-          <div className="verify-features-list">
-            <div className="verify-feature-item">
-              <div className="verify-feature-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
+          <div className="verify-why-section">
+            <h3>Why Verify Your Profile?</h3>
+            <div className="verify-features-list">
+              <div className="verify-feature-item">
+                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-text-new">Confirm your official enrollment status</span>
               </div>
-              <div className="verify-feature-text">
-                <h3>Direct Database Match</h3>
-                <p>Authenticates values in real time against our official records.</p>
+              <div className="verify-feature-item">
+                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-text-new">Ensure your registered information is accurate</span>
               </div>
-            </div>
-
-            <div className="verify-feature-item">
-              <div className="verify-feature-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
+              <div className="verify-feature-item">
+                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-text-new">Access your verified candidate profile</span>
               </div>
-              <div className="verify-feature-text">
-                <h3>Affiliation Information</h3>
-                <p>Confirm student domains, duration, college details, and current status.</p>
-              </div>
-            </div>
-
-            <div className="verify-feature-item">
-              <div className="verify-feature-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-              </div>
-              <div className="verify-feature-text">
-                <h3>Secured Credentials</h3>
-                <p>Ensures records remain tamper-proof and cryptographically logged.</p>
+              <div className="verify-feature-item">
+                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-text-new">Validate your program affiliation anytime</span>
               </div>
             </div>
           </div>
 
+          <div className="verify-secure-section">
+            <h3>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Secure & Instant Verification
+            </h3>
+            <p>
+              Your information is protected using secure verification protocols. Only registered candidates can access their verification details.
+            </p>
+          </div>
+
           <div className="verify-left-footer">
-            Authority: <strong>Progrentures Solution Pvt. Ltd. Registry Department</strong><br />
-            Public Verification Portal v2.0
+            <strong>Official Candidate Verification Portal</strong><br />
+            Progrentures Solution Pvt. Ltd.
           </div>
         </div>
       </div>

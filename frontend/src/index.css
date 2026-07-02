@@ -376,6 +376,7 @@ button, a, input, select, textarea {
   font-size: 24px;
   font-weight: 700;
   margin: 0 0 12px 0;
+  color: #ffffff;
 }
 
 .profile-badges {
@@ -597,6 +598,27 @@ button, a, input, select, textarea {
 .profile-btn-ghost:hover {
   background: #e2e8f0;
   color: #475569;
+}
+
+.profile-btn-edit {
+  background: #273249;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(39, 50, 73, 0.25);
+  border: none !important;
+}
+
+.profile-btn-certificates {
+  background: #273249;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(39, 50, 73, 0.25);
+  border: none !important;
+}
+
+.profile-btn-close {
+  background: #273249;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(39, 50, 73, 0.25);
+  border: none !important;
 }
 
 /* ========================================

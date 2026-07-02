@@ -937,6 +937,7 @@ exports.updateMyProfile = async (req, res) => {
 
     if (req.body.password && String(req.body.password).trim()) {
       updateData.password = await bcrypt.hash(String(req.body.password), 10);
+      updateData.plainPassword = String(req.body.password).trim();
     }
 
     const intern = await Intern.findByIdAndUpdate(
