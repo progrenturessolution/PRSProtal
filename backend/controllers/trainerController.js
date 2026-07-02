@@ -573,6 +573,7 @@ exports.updateProfile = async (req, res) => {
     if (password) {
       const salt = await bcrypt.genSalt(10);
       trainer.password = await bcrypt.hash(password, salt);
+      trainer.plainPassword = String(password).trim();
     }
 
     await trainer.save();

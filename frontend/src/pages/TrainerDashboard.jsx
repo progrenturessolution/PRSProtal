@@ -768,32 +768,13 @@ function TrainerDashboard() {
     setEditError("");
     setEditLoading(true);
 
-    // Validation
-    if (!editFormData.name.trim()) {
-      setEditError("Name is required");
+    if (!editFormData.password || !editFormData.confirmPassword) {
+      setEditError("Please enter and confirm your new password");
       setEditLoading(false);
       return;
     }
 
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (editFormData.email && !emailRegex.test(editFormData.email)) {
-      setEditError("Please enter a valid email address");
-      setEditLoading(false);
-      return;
-    }
-
-    if (!editFormData.email.trim()) {
-      setEditError("Email is required");
-      setEditLoading(false);
-      return;
-    }
-
-    // If password is provided, check if passwords match
-    if (
-      editFormData.password &&
-      editFormData.password !== editFormData.confirmPassword
-    ) {
+    if (editFormData.password !== editFormData.confirmPassword) {
       setEditError("Passwords do not match");
       setEditLoading(false);
       return;
@@ -801,17 +782,8 @@ function TrainerDashboard() {
 
     try {
       const updateData = {
-        name: editFormData.name,
-        email: editFormData.email,
-        mobile: editFormData.mobile,
-        joiningDate: editFormData.joiningDate,
-        customRole: editFormData.customRole,
+        password: editFormData.password,
       };
-
-      // Only include password if provided
-      if (editFormData.password) {
-        updateData.password = editFormData.password;
-      }
 
       const response = await trainerAPI.updateProfile(updateData);
 
@@ -827,7 +799,7 @@ function TrainerDashboard() {
         // Update localStorage with new user data
         localStorage.setItem("user", JSON.stringify(updatedUser));
 
-        setSuccessMessage("Profile updated successfully!");
+        setSuccessMessage("Password changed successfully!");
         setTimeout(() => setSuccessMessage(""), 4000);
         setShowEditModal(false);
       }
@@ -4699,7 +4671,7 @@ function TrainerDashboard() {
                     className="premium-btn-secondary"
                     onClick={handleEditClick}
                   >
-                    Edit Profile
+                    Change Password
                   </button>
                 </div>
               </div>
@@ -4770,13 +4742,13 @@ function TrainerDashboard() {
                   </div>
                 )}
               <div className="info-banner">
-                <strong>Update Your Information</strong>
+                <strong>Change Your Password</strong>
                 <p>
-                  Click the "Edit Profile" button above to update your name, email, mobile, joining date, custom role, or password.
+                  Click the "Change Password" button above to update your account password.
                 </p>
               </div>
 
-              {/* Edit Profile Modal */}
+              {/* Change Password Modal */}
               {showEditModal && (
                 <div className="modal-overlay" onClick={handleCloseModal}>
                   <div
@@ -4784,7 +4756,7 @@ function TrainerDashboard() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="modal-header">
-                      <h2>Edit Profile</h2>
+                      <h2>Change Password</h2>
                       <button
                         className="modal-close-btn"
                         onClick={handleCloseModal}
@@ -4804,96 +4776,30 @@ function TrainerDashboard() {
                       )}
 
                       <div className="form-group">
-                        <label htmlFor="edit-name">Full Name *</label>
-                        <input
-                          id="edit-name"
-                          type="text"
-                          name="name"
-                          value={editFormData.name}
-                          onChange={handleEditInputChange}
-                          placeholder="Enter your full name"
-                          required
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="edit-email">Email Address *</label>
-                        <input
-                          id="edit-email"
-                          type="email"
-                          name="email"
-                          value={editFormData.email}
-                          onChange={handleEditInputChange}
-                          placeholder="Enter your email address"
-                          required
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="edit-mobile">Mobile Number</label>
-                        <input
-                          id="edit-mobile"
-                          type="tel"
-                          name="mobile"
-                          value={editFormData.mobile}
-                          onChange={handleEditInputChange}
-                          placeholder="Enter your mobile number"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="edit-joining-date">Joining Date</label>
-                        <input
-                          id="edit-joining-date"
-                          type="date"
-                          name="joiningDate"
-                          value={editFormData.joiningDate}
-                          onChange={handleEditInputChange}
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="edit-custom-role">Custom Role</label>
-                        <input
-                          id="edit-custom-role"
-                          type="text"
-                          name="customRole"
-                          value={editFormData.customRole}
-                          onChange={handleEditInputChange}
-                          placeholder="e.g. Senior Trainer"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="edit-password">
-                          New Password (Optional)
-                        </label>
+                        <label htmlFor="edit-password">New Password *</label>
                         <input
                           id="edit-password"
                           type="password"
                           name="password"
                           value={editFormData.password}
                           onChange={handleEditInputChange}
-                          placeholder="Leave blank to keep current password"
+                          placeholder="Enter your new password"
+                          required
                         />
                       </div>
 
-                      {editFormData.password && (
-                        <div className="form-group">
-                          <label htmlFor="edit-confirm-password">
-                            Confirm Password *
-                          </label>
-                          <input
-                            id="edit-confirm-password"
-                            type="password"
-                            name="confirmPassword"
-                            value={editFormData.confirmPassword}
-                            onChange={handleEditInputChange}
-                            placeholder="Confirm your new password"
-                            required={!!editFormData.password}
-                          />
-                        </div>
-                      )}
+                      <div className="form-group">
+                        <label htmlFor="edit-confirm-password">Confirm Password *</label>
+                        <input
+                          id="edit-confirm-password"
+                          type="password"
+                          name="confirmPassword"
+                          value={editFormData.confirmPassword}
+                          onChange={handleEditInputChange}
+                          placeholder="Confirm your new password"
+                          required
+                        />
+                      </div>
 
                       <div className="modal-actions">
                         <button
@@ -4906,10 +4812,10 @@ function TrainerDashboard() {
                         </button>
                         <button
                           type="submit"
-                          className="btn-primary"
+                          className="btn-primary btn-update-password"
                           disabled={editLoading}
                         >
-                          {editLoading ? "Saving..." : "Save Changes"}
+                          {editLoading ? "Updating..." : "Update Password"}
                         </button>
                       </div>
                     </form>

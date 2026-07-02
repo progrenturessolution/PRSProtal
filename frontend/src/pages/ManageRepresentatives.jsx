@@ -675,6 +675,7 @@ function ManageRepresentatives() {
                   <div><strong>WhatsApp:</strong> {selectedRepDetails.representative.mobile || "-"}</div>
                   <div><strong>Designation:</strong> {selectedRepDetails.representative.designation || "-"}</div>
                   <div><strong>Joining Date:</strong> {formatDate(selectedRepDetails.representative.joiningDate)}</div>
+                  <div><strong>Password:</strong> {selectedRepDetails.representative.plainPassword || "-"}</div>
                   <div><strong>College:</strong> {selectedRepDetails.representative.college || "-"}</div>
                   <div><strong>Course/Stream:</strong> {selectedRepDetails.representative.course || "-"}</div>
                   <div><strong>Department:</strong> {selectedRepDetails.representative.department || "-"}</div>

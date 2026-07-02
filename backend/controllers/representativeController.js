@@ -163,6 +163,7 @@ exports.updateProfile = async (req, res) => {
 
     if (password && password.trim()) {
       updateData.password = await bcrypt.hash(password, 10);
+      updateData.plainPassword = String(password).trim();
     }
 
     const rep = await Representative.findByIdAndUpdate(

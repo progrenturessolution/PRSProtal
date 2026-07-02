@@ -46,6 +46,10 @@ const trainerSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  plainPassword: {
+    type: String,
+    default: ''
+  },
   mobile: {
     type: String,
     trim: true

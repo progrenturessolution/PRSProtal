@@ -836,6 +836,33 @@ function ViewTrainers() {
                       {selectedTrainer.email}
                     </div>
                   </div>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#92400e",
+                        marginBottom: "6px",
+                      }}
+                    >
+                      Login Password
+                    </label>
+                    <div
+                      style={{
+                        background: "white",
+                        padding: "10px 14px",
+                        borderRadius: "8px",
+                        fontSize: "15px",
+                        color: "#0f172a",
+                        fontWeight: "600",
+                        fontFamily: "monospace",
+                        border: "1px solid #fbbf24",
+                      }}
+                    >
+                      {selectedTrainer.plainPassword || "-"}
+                    </div>
+                  </div>
                   <p
                     style={{
                       margin: 0,

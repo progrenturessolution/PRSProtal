@@ -287,25 +287,8 @@ function RepresentativeDashboard() {
   /* ── Profile Edit ── */
   const startEdit = () => {
     setEditData({
-      name: profile?.name || '',
-      designation: profile?.designation || '',
-      college: profile?.college || '',
-      course: profile?.course || '',
-      department: profile?.department || '',
-      year: profile?.year || '',
-      mobile: profile?.mobile || '',
-      email: profile?.email || '',
-      upiId: profile?.upiId || '',
-      upiMobileNumber: profile?.upiMobileNumber || '',
-      instagramProfile: profile?.instagramProfile || '',
-      linkedinProfile: profile?.linkedinProfile || '',
-      joiningDate: profile?.joiningDate ? new Date(profile.joiningDate).toISOString().split('T')[0] : '',
-      sheetLinks: profile?.sheetLinks || '',
-      internshipApplicationFormLink: profile?.internshipApplicationFormLink || '',
-      internshipSheetLink: profile?.internshipSheetLink || '',
-      internshipPromotionalMessage: profile?.internshipPromotionalMessage || '',
-      smsPromotionalMessage: profile?.smsPromotionalMessage || '',
-      password: ''
+      password: '',
+      confirmPassword: ''
     });
     setEditError('');
     setShowEditModal(true);
@@ -314,7 +297,10 @@ function RepresentativeDashboard() {
   const handleCloseModal = () => {
     setShowEditModal(false);
     setEditError('');
-    setEditData({});
+    setEditData({
+      password: '',
+      confirmPassword: ''
+    });
   };
 
   const handleEditChange = (e) => {
@@ -326,18 +312,28 @@ function RepresentativeDashboard() {
     e.preventDefault();
     setEditError('');
     setEditLoading(true);
+
+    if (!editData.password || !editData.confirmPassword) {
+      setEditError("Please enter and confirm your new password");
+      setEditLoading(false);
+      return;
+    }
+
+    if (editData.password !== editData.confirmPassword) {
+      setEditError("Passwords do not match");
+      setEditLoading(false);
+      return;
+    }
+
     try {
-      const res = await representativeAPI.updateProfile(editData);
+      const updateData = {
+        password: editData.password,
+      };
+
+      const res = await representativeAPI.updateProfile(updateData);
       if (res.data.success) {
         setProfile(res.data.representative);
-        const updatedUser = {
-          ...user,
-          name: res.data.representative.name,
-          email: res.data.representative.email,
-        };
-        setUser(updatedUser);
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        setEditSuccess('Profile updated successfully!');
+        setEditSuccess('Password changed successfully!');
         setTimeout(() => {
           setShowEditModal(false);
           setEditSuccess('');
@@ -805,7 +801,7 @@ function RepresentativeDashboard() {
                 </div>
                 <div className="header-right">
                   <button className="premium-btn-secondary" onClick={startEdit}>
-                    Edit Profile
+                    Change Password
                   </button>
                 </div>
               </div>
@@ -918,9 +914,9 @@ function RepresentativeDashboard() {
               </div>
 
               <div className="info-banner">
-                <strong>Update Your Information</strong>
+                <strong>Change Your Password</strong>
                 <p>
-                  Click the "Edit Profile" button above to update your details, links, and promotional content from one place.
+                  Click the "Change Password" button above to update your account password.
                 </p>
               </div>
 
@@ -928,7 +924,7 @@ function RepresentativeDashboard() {
                 <div className="modal-overlay" onClick={handleCloseModal}>
                   <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                     <div className="modal-header">
-                      <h2>Edit Profile</h2>
+                      <h2>Change Password</h2>
                       <button className="modal-close-btn" onClick={handleCloseModal}>✕</button>
                     </div>
 
@@ -940,228 +936,28 @@ function RepresentativeDashboard() {
                       )}
 
                       <div className="form-group">
-                        <label htmlFor="rep-edit-name">Full Name</label>
-                        <input
-                          id="rep-edit-name"
-                          type="text"
-                          name="name"
-                          value={editData.name || ''}
-                          onChange={handleEditChange}
-                          placeholder="Full name"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-designation">Designation</label>
-                        <input
-                          id="rep-edit-designation"
-                          type="text"
-                          name="designation"
-                          value={editData.designation || ''}
-                          onChange={handleEditChange}
-                          placeholder="Designation"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-college">College</label>
-                        <input
-                          id="rep-edit-college"
-                          type="text"
-                          name="college"
-                          value={editData.college || ''}
-                          onChange={handleEditChange}
-                          placeholder="Enter college name"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-course">Course</label>
-                        <input
-                          id="rep-edit-course"
-                          type="text"
-                          name="course"
-                          value={editData.course || ''}
-                          onChange={handleEditChange}
-                          placeholder="e.g. B.Tech"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-department">Department</label>
-                        <input
-                          id="rep-edit-department"
-                          type="text"
-                          name="department"
-                          value={editData.department || ''}
-                          onChange={handleEditChange}
-                          placeholder="e.g. CSE"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-year">Year</label>
-                        <select id="rep-edit-year" name="year" value={editData.year || ''} onChange={handleEditChange}>
-                          <option value="">Select Year</option>
-                          <option>1st Year</option>
-                          <option>2nd Year</option>
-                          <option>3rd Year</option>
-                          <option>4th Year</option>
-                        </select>
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-mobile">Mobile Number</label>
-                        <input
-                          id="rep-edit-mobile"
-                          type="tel"
-                          name="mobile"
-                          value={editData.mobile || ''}
-                          onChange={handleEditChange}
-                          placeholder="Mobile number"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-email">Email Address</label>
-                        <input
-                          id="rep-edit-email"
-                          type="email"
-                          name="email"
-                          value={editData.email || ''}
-                          onChange={handleEditChange}
-                          placeholder="Email address"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-upi">UPI ID</label>
-                        <input
-                          id="rep-edit-upi"
-                          type="text"
-                          name="upiId"
-                          value={editData.upiId || ''}
-                          onChange={handleEditChange}
-                          placeholder="name@upi"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-upiMobileNumber">UPI Mobile Number</label>
-                        <input
-                          id="rep-edit-upiMobileNumber"
-                          type="text"
-                          name="upiMobileNumber"
-                          value={editData.upiMobileNumber || ''}
-                          onChange={handleEditChange}
-                          placeholder="UPI linked mobile number"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-joiningDate">Joining Date</label>
-                        <input
-                          id="rep-edit-joiningDate"
-                          type="date"
-                          name="joiningDate"
-                          value={editData.joiningDate || ''}
-                          onChange={handleEditChange}
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-instagramProfile">Instagram Profile</label>
-                        <input
-                          id="rep-edit-instagramProfile"
-                          type="text"
-                          name="instagramProfile"
-                          value={editData.instagramProfile || ''}
-                          onChange={handleEditChange}
-                          placeholder="Instagram URL or handle"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-linkedinProfile">LinkedIn Profile</label>
-                        <input
-                          id="rep-edit-linkedinProfile"
-                          type="text"
-                          name="linkedinProfile"
-                          value={editData.linkedinProfile || ''}
-                          onChange={handleEditChange}
-                          placeholder="LinkedIn profile URL"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-sheetLinks">Sheet Links</label>
-                        <input
-                          id="rep-edit-sheetLinks"
-                          type="text"
-                          name="sheetLinks"
-                          value={editData.sheetLinks || ''}
-                          onChange={handleEditChange}
-                          placeholder="Google sheet link"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-internshipApplicationFormLink">Application Form Link</label>
-                        <input
-                          id="rep-edit-internshipApplicationFormLink"
-                          type="text"
-                          name="internshipApplicationFormLink"
-                          value={editData.internshipApplicationFormLink || ''}
-                          onChange={handleEditChange}
-                          placeholder="Internship application form link"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-internshipSheetLink">Internship Sheet Link</label>
-                        <input
-                          id="rep-edit-internshipSheetLink"
-                          type="text"
-                          name="internshipSheetLink"
-                          value={editData.internshipSheetLink || ''}
-                          onChange={handleEditChange}
-                          placeholder="Internship sheet link"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-internshipPromotionalMessage">Internship Promo Message</label>
-                        <textarea
-                          id="rep-edit-internshipPromotionalMessage"
-                          name="internshipPromotionalMessage"
-                          value={editData.internshipPromotionalMessage || ''}
-                          onChange={handleEditChange}
-                          rows={3}
-                          placeholder="Internship promotional message"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-smsPromotionalMessage">SMS Promo Message</label>
-                        <textarea
-                          id="rep-edit-smsPromotionalMessage"
-                          name="smsPromotionalMessage"
-                          value={editData.smsPromotionalMessage || ''}
-                          onChange={handleEditChange}
-                          rows={3}
-                          placeholder="SMS program promotional message"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rep-edit-password">New Password (Optional)</label>
+                        <label htmlFor="rep-edit-password">New Password *</label>
                         <input
                           id="rep-edit-password"
                           type="password"
                           name="password"
                           value={editData.password || ''}
                           onChange={handleEditChange}
-                          placeholder="Leave blank to keep current password"
+                          placeholder="Enter your new password"
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="rep-edit-confirm-password">Confirm Password *</label>
+                        <input
+                          id="rep-edit-confirm-password"
+                          type="password"
+                          name="confirmPassword"
+                          value={editData.confirmPassword || ''}
+                          onChange={handleEditChange}
+                          placeholder="Confirm your new password"
+                          required
                         />
                       </div>
 
@@ -1174,8 +970,8 @@ function RepresentativeDashboard() {
                         >
                           Cancel
                         </button>
-                        <button type="submit" className="btn-primary" disabled={editLoading}>
-                          {editLoading ? 'Updating...' : 'Update Profile'}
+                        <button type="submit" className="btn-primary btn-update-password" disabled={editLoading}>
+                          {editLoading ? 'Updating...' : 'Update Password'}
                         </button>
                       </div>
                     </form>
