@@ -633,7 +633,7 @@ export default function VerifyIdentity() {
           </div>
 
           <div className="verify-why-section">
-            <h3>Why Verify Your Profile?</h3>
+            <h3>Official Verification Portal</h3>
             <div className="verify-features-list">
               <div className="verify-feature-item">
                 <span className="verify-feature-icon-new">✓</span>
