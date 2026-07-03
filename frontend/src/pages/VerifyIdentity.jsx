@@ -83,7 +83,7 @@ export default function VerifyIdentity() {
 
         /* Left Branding Panel */
         .verify-left {
-          flex: 4;
+          flex: 1;
           background: linear-gradient(135deg, #0e1b33 0%, #17233b 100%);
           position: relative;
           overflow: hidden;
@@ -113,7 +113,7 @@ export default function VerifyIdentity() {
 
         .verify-left-content {
           width: 100%;
-          max-width: 420px;
+          max-width: 560px;
           position: relative;
           z-index: 2;
           display: flex;
@@ -256,7 +256,7 @@ export default function VerifyIdentity() {
 
         /* Right Content Panel */
         .verify-right {
-          flex: 6;
+          flex: 1;
           display: flex;
           align-items: center;
           justify-content: center;
