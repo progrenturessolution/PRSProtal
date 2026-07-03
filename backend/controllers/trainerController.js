@@ -992,8 +992,13 @@ exports.getMyNotifications = async (req, res) => {
     const trainerLikeRoles = new Set(['trainer', 'hr', 'other']);
 
     if (userRole === 'intern') {
-      // For interns
+      // Fetch intern details to filter notifications by creation date
+      const student = await Intern.findById(userId);
+      const studentCreatedAt = student ? student.createdAt : new Date(0);
+
+      // For interns (show only notifications created after their registration date)
       notifications = await Notification.find({
+        createdAt: { $gte: studentCreatedAt },
         $or: [
           { sendTo: 'All' },
           { 

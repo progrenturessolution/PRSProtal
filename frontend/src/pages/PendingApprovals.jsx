@@ -173,15 +173,26 @@ function PendingApprovals({ onTaskApproved, onBack }) {
               <div key={task._id} className="task-card" style={{ border: '2px solid #f59e0b' }}>
                 <div className="task-header">
                   <h3>{task.title}</h3>
-                  <span 
-                    className="task-status-badge"
-                    style={{
-                      backgroundColor: '#fef3c7',
-                      color: '#f59e0b'
-                    }}
-                  >
-                    Pending Approval
-                  </span>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <span 
+                      className="task-status-badge"
+                      style={{
+                        backgroundColor: '#fef3c7',
+                        color: '#f59e0b'
+                      }}
+                    >
+                      Pending Approval
+                    </span>
+                    <span 
+                      className="task-status-badge"
+                      style={{
+                        backgroundColor: task.isTeamTask ? '#e0f2fe' : '#f3f4f6',
+                        color: task.isTeamTask ? '#0369a1' : '#374151'
+                      }}
+                    >
+                      {task.isTeamTask ? 'Squad Task' : 'Solo Task'}
+                    </span>
+                  </div>
                 </div>
 
                 <p className="task-description">{task.description}</p>
@@ -196,7 +207,9 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                   borderRadius: '8px'
                 }}>
                   <div>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Intern</div>
+                    <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
+                      {task.isTeamTask ? 'Squad Lead' : 'Intern'}
+                    </div>
                     <div style={{ fontWeight: 600, color: '#0f172a' }}>{task.assignedTo?.name || 'N/A'}</div>
                   </div>
                   <div>
@@ -204,6 +217,26 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                     <div style={{ fontWeight: 600, color: '#0f172a' }}>{task.assignedTo?.internId || 'N/A'}</div>
                   </div>
                 </div>
+
+                {task.isTeamTask && task.teamMembers && task.teamMembers.length > 0 && (
+                  <div style={{ 
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: '#f0fdf4',
+                    borderRadius: '8px',
+                    border: '1px solid #dcfce7'
+                  }}>
+                    <div style={{ fontSize: '12px', color: '#166534', marginBottom: '6px', fontWeight: 600 }}>Squad Members</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {task.teamMembers.map((member) => (
+                        <div key={member._id} style={{ fontSize: '13px', color: '#14532d', display: 'flex', justifyContent: 'space-between' }}>
+                          <span>• {member.name}</span>
+                          <span style={{ fontSize: '11px', color: '#166534' }}>({member.internId})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ 
                   display: 'grid', 

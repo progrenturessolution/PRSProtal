@@ -263,15 +263,16 @@ function StudentDetailReport() {
               </thead>
               <tbody>
                 ${filteredRecords.interviews.map(interview => {
-                  const overallLevel = getInterviewOverallLevel(interview);
-                  return `
+          const overallLevel = getInterviewOverallLevel(interview);
+          return `
                   <tr>
                     <td>${interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${interview.interviewType}</td>
                     <td>${getInterviewOverallLabel(overallLevel)}</td>
                     <td>${interview.levelCrossed ? 'Yes' : 'No'}</td>
                   </tr>
-                `; }).join('')}
+                `;
+        }).join('')}
               </tbody>
             </table>
           </div>
@@ -731,252 +732,252 @@ function StudentDetailReport() {
       ) : (
         <>
 
-      {/* Interview Records */}
-      {filteredRecords.interviews.length > 0 && (
-        <div className="record-section">
-          <div className="section-header">
-            <div className="header-title">
-              <div>
-                <h3>Interview Records</h3>
-                <p className="record-count">{filteredRecords.interviews.length} interviews conducted</p>
+          {/* Interview Records */}
+          {filteredRecords.interviews.length > 0 && (
+            <div className="record-section">
+              <div className="section-header">
+                <div className="header-title">
+                  <div>
+                    <h3>Interview Records</h3>
+                    <p className="record-count">{filteredRecords.interviews.length} interviews conducted</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="table-container">
-            <table className="records-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Attempt</th>
-                  <th>Communication</th>
-                  <th>Confidence</th>
-                  <th>Clarity</th>
-                  <th>Overall</th>
-                  <th>Level Crossed</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRecords.interviews.map((interview, idx) => (
-                  <tr key={idx} className="table-row">
-                    <td className="date-cell">
-                      {interview.date
-                        ? new Date(interview.date).toLocaleDateString("en-IN")
-                        : "N/A"}
-                    </td>
-                    <td>
-                      <span className="type-badge">{interview.interviewType}</span>
-                    </td>
-                    <td>{interview.attemptNumber}</td>
-                    <td>
-                      <span className="level-badge">{interview.communicationLevel}</span>
-                    </td>
-                    <td>
-                      <span className="level-badge">{interview.confidenceLevel}</span>
-                    </td>
-                    <td>
-                      <span className="level-badge">
-                        {getInterviewOverallLabel(interview.clarityLevel || interview.clarityOfAnswer)}
-                      </span>
-                    </td>
-                    <td>
-                      {(() => {
-                        const overallLevel = getInterviewOverallLevel(interview);
-                        return overallLevel ? (
-                          <span className={`result-badge result-${overallLevel.toLowerCase()}`}>
-                            {getInterviewOverallLabel(overallLevel)}
-                          </span>
-                        ) : (
-                          "-"
-                        );
-                      })()}
-                    </td>
-                    <td>
-                      <span
-                        className={`crossed-badge ${interview.levelCrossed ? "crossed-yes" : "crossed-no"}`}
-                      >
-                        {interview.levelCrossed ? "✓ Yes" : "✗ No"}
-                      </span>
-                    </td>
-                    {(() => {
-                      const remarksVal = interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "";
-                      return (
-                        <td className="remarks-cell" title={remarksVal}>
-                          {remarksVal ? (remarksVal.length > 30 ? remarksVal.substring(0, 30) + "..." : remarksVal) : "-"}
+              <div className="table-container">
+                <table className="records-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Attempt</th>
+                      <th>Communication</th>
+                      <th>Confidence</th>
+                      <th>Clarity</th>
+                      <th>Overall</th>
+                      <th>Level Crossed</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.interviews.map((interview, idx) => (
+                      <tr key={idx} className="table-row">
+                        <td className="date-cell">
+                          {interview.date
+                            ? new Date(interview.date).toLocaleDateString("en-IN")
+                            : "N/A"}
                         </td>
-                      );
-                    })()}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Aptitude Tests */}
-      {filteredRecords.aptitudes.length > 0 && (
-        <div className="record-section">
-          <div className="section-header">
-            <div className="header-title">
-              <div>
-                <h3>Aptitude Test Records</h3>
-                <p className="record-count">{filteredRecords.aptitudes.length} tests completed</p>
+                        <td>
+                          <span className="type-badge">{interview.interviewType}</span>
+                        </td>
+                        <td>{interview.attemptNumber}</td>
+                        <td>
+                          <span className="level-badge">{interview.communicationLevel}</span>
+                        </td>
+                        <td>
+                          <span className="level-badge">{interview.confidenceLevel}</span>
+                        </td>
+                        <td>
+                          <span className="level-badge">
+                            {getInterviewOverallLabel(interview.clarityLevel || interview.clarityOfAnswer)}
+                          </span>
+                        </td>
+                        <td>
+                          {(() => {
+                            const overallLevel = getInterviewOverallLevel(interview);
+                            return overallLevel ? (
+                              <span className={`result-badge result-${overallLevel.toLowerCase()}`}>
+                                {getInterviewOverallLabel(overallLevel)}
+                              </span>
+                            ) : (
+                              "-"
+                            );
+                          })()}
+                        </td>
+                        <td>
+                          <span
+                            className={`crossed-badge ${interview.levelCrossed ? "crossed-yes" : "crossed-no"}`}
+                          >
+                            {interview.levelCrossed ? "✓ Yes" : "✗ No"}
+                          </span>
+                        </td>
+                        {(() => {
+                          const remarksVal = interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "";
+                          return (
+                            <td className="remarks-cell" title={remarksVal}>
+                              {remarksVal ? (remarksVal.length > 30 ? remarksVal.substring(0, 30) + "..." : remarksVal) : "-"}
+                            </td>
+                          );
+                        })()}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-          <div className="table-container">
-            <table className="records-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Round</th>
-                  <th>Score</th>
-                  <th>Result</th>
-                  <th>Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRecords.aptitudes.map((aptitude, idx) => (
-                  <tr key={idx} className="table-row">
-                    <td className="date-cell">
-                      {aptitude.createdAt
-                        ? new Date(aptitude.createdAt).toLocaleDateString("en-IN")
-                        : "N/A"}
-                    </td>
-                    <td className="round-cell">Round {aptitude.roundNumber}</td>
-                    <td className="score-cell">{aptitude.score}</td>
-                    <td>
-                      <span className={`result-badge result-${aptitude.result.toLowerCase()}`}>
-                        {aptitude.result}
-                      </span>
-                    </td>
-                    <td className="remarks-cell" title={aptitude.remarks}>
-                      {aptitude.remarks ? aptitude.remarks.substring(0, 30) + "..." : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Assessments */}
-      {filteredRecords.assessments.length > 0 && (
-        <div className="record-section">
-          <div className="section-header">
-            <div className="header-title">
-              <div>
-                <h3>Assessment Records</h3>
-                <p className="record-count">{filteredRecords.assessments.length} assessments</p>
+          {/* Aptitude Tests */}
+          {filteredRecords.aptitudes.length > 0 && (
+            <div className="record-section">
+              <div className="section-header">
+                <div className="header-title">
+                  <div>
+                    <h3>Aptitude Test Records</h3>
+                    <p className="record-count">{filteredRecords.aptitudes.length} tests completed</p>
+                  </div>
+                </div>
+              </div>
+              <div className="table-container">
+                <table className="records-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Round</th>
+                      <th>Score</th>
+                      <th>Result</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.aptitudes.map((aptitude, idx) => (
+                      <tr key={idx} className="table-row">
+                        <td className="date-cell">
+                          {aptitude.createdAt
+                            ? new Date(aptitude.createdAt).toLocaleDateString("en-IN")
+                            : "N/A"}
+                        </td>
+                        <td className="round-cell">Round {aptitude.roundNumber}</td>
+                        <td className="score-cell">{aptitude.score}</td>
+                        <td>
+                          <span className={`result-badge result-${aptitude.result.toLowerCase()}`}>
+                            {aptitude.result}
+                          </span>
+                        </td>
+                        <td className="remarks-cell" title={aptitude.remarks}>
+                          {aptitude.remarks ? aptitude.remarks.substring(0, 30) + "..." : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-          <div className="table-container">
-            <table className="records-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Type</th>
-                  <th>Score</th>
-                  <th>Status</th>
-                  <th>Feedback</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRecords.assessments.map((assessment, idx) => (
-                  <tr key={idx} className="table-row">
-                    <td className="date-cell">
-                      {assessment.createdAt
-                        ? new Date(assessment.createdAt).toLocaleDateString("en-IN")
-                        : "N/A"}
-                    </td>
-                    <td>
-                      <span className="type-badge">{assessment.assessmentType}</span>
-                    </td>
-                    <td className="score-cell">
-                      {assessment.score ? assessment.score : "-"}
-                    </td>
-                    <td>
-                      <span
-                        className={`result-badge result-${assessment.status.toLowerCase().replace(" ", "-")}`}
-                      >
-                        {assessment.status}
-                      </span>
-                    </td>
-                    <td className="remarks-cell" title={assessment.feedback}>
-                      {assessment.feedback ? assessment.feedback.substring(0, 30) + "..." : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Trainings */}
-      {filteredRecords.trainings.length > 0 && (
-        <div className="record-section">
-          <div className="section-header">
-            <div className="header-title">
-              <div>
-                <h3>Training Records</h3>
-                <p className="record-count">{filteredRecords.trainings.length} trainings attended</p>
+          {/* Assessments */}
+          {filteredRecords.assessments.length > 0 && (
+            <div className="record-section">
+              <div className="section-header">
+                <div className="header-title">
+                  <div>
+                    <h3>Assessment Records</h3>
+                    <p className="record-count">{filteredRecords.assessments.length} assessments</p>
+                  </div>
+                </div>
+              </div>
+              <div className="table-container">
+                <table className="records-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Score</th>
+                      <th>Status</th>
+                      <th>Feedback</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.assessments.map((assessment, idx) => (
+                      <tr key={idx} className="table-row">
+                        <td className="date-cell">
+                          {assessment.createdAt
+                            ? new Date(assessment.createdAt).toLocaleDateString("en-IN")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          <span className="type-badge">{assessment.assessmentType}</span>
+                        </td>
+                        <td className="score-cell">
+                          {assessment.score ? assessment.score : "-"}
+                        </td>
+                        <td>
+                          <span
+                            className={`result-badge result-${assessment.status.toLowerCase().replace(" ", "-")}`}
+                          >
+                            {assessment.status}
+                          </span>
+                        </td>
+                        <td className="remarks-cell" title={assessment.feedback}>
+                          {assessment.feedback ? assessment.feedback.substring(0, 30) + "..." : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </div>
-          <div className="table-container">
-            <table className="records-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Attendance</th>
-                  <th>Engagement</th>
-                  <th>Skill Note</th>
-                  <th>Trainer Remarks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRecords.trainings.map((training, idx) => (
-                  <tr key={idx} className="table-row">
-                    <td className="date-cell">
-                      {training.date
-                        ? new Date(training.date).toLocaleDateString("en-IN")
-                        : "N/A"}
-                    </td>
-                    <td>
-                      <span
-                        className={`attendance-badge attendance-${training.attendance.toLowerCase()}`}
-                      >
-                        {training.attendance}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="engagement-badge">{training.engagementLevel}</span>
-                    </td>
-                    <td className="remarks-cell" title={training.skillImprovementNote}>
-                      {training.skillImprovementNote
-                        ? training.skillImprovementNote.substring(0, 25) + "..."
-                        : "-"}
-                    </td>
-                    <td className="remarks-cell" title={training.trainerRemarks}>
-                      {training.trainerRemarks
-                        ? training.trainerRemarks.substring(0, 25) + "..."
-                        : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Empty State */}
-      </>
+          {/* Trainings */}
+          {filteredRecords.trainings.length > 0 && (
+            <div className="record-section">
+              <div className="section-header">
+                <div className="header-title">
+                  <div>
+                    <h3>Training Records</h3>
+                    <p className="record-count">{filteredRecords.trainings.length} trainings attended</p>
+                  </div>
+                </div>
+              </div>
+              <div className="table-container">
+                <table className="records-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Attendance</th>
+                      <th>Engagement</th>
+                      <th>Skill Note</th>
+                      <th>Trainer Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredRecords.trainings.map((training, idx) => (
+                      <tr key={idx} className="table-row">
+                        <td className="date-cell">
+                          {training.date
+                            ? new Date(training.date).toLocaleDateString("en-IN")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          <span
+                            className={`attendance-badge attendance-${training.attendance.toLowerCase()}`}
+                          >
+                            {training.attendance}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="engagement-badge">{training.engagementLevel}</span>
+                        </td>
+                        <td className="remarks-cell" title={training.skillImprovementNote}>
+                          {training.skillImprovementNote
+                            ? training.skillImprovementNote.substring(0, 25) + "..."
+                            : "-"}
+                        </td>
+                        <td className="remarks-cell" title={training.trainerRemarks}>
+                          {training.trainerRemarks
+                            ? training.trainerRemarks.substring(0, 25) + "..."
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Empty State */}
+        </>
       )}
     </div>
   );

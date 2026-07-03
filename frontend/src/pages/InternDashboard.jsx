@@ -45,6 +45,10 @@ function InternDashboard() {
   const [hasUnreadScheduledInterviews, setHasUnreadScheduledInterviews] = useState(false);
   const [hasUnreadScheduledGds, setHasUnreadScheduledGds] = useState(false);
   const [hasUnreadScheduledAssignments, setHasUnreadScheduledAssignments] = useState(false);
+  const [hasUnreadCertificates, setHasUnreadCertificates] = useState(false);
+  const [hasUnreadTasks, setHasUnreadTasks] = useState(false);
+  const [hasUnreadIndividualTasks, setHasUnreadIndividualTasks] = useState(false);
+  const [hasUnreadSquadTasks, setHasUnreadSquadTasks] = useState(false);
   const [error, setError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [progressFilter, setProgressFilter] = useState("interviews");
@@ -463,13 +467,12 @@ function InternDashboard() {
                           <td>{assessment.score || "-"}</td>
                           <td>
                             <span
-                              className={`status-badge ${
-                                assessment.status === "Pass"
+                              className={`status-badge ${assessment.status === "Pass"
                                   ? "status-completed"
                                   : assessment.status === "Fail"
                                     ? "status-rejected"
                                     : "status-pending"
-                              }`}
+                                }`}
                             >
                               {assessment.status || "-"}
                             </span>
@@ -553,13 +556,12 @@ function InternDashboard() {
                           <td>{getTrainingScore(training)}</td>
                           <td>
                             <span
-                              className={`status-badge ${
-                                training.attendance === "Present"
+                              className={`status-badge ${training.attendance === "Present"
                                   ? "status-completed"
                                   : training.attendance === "Late"
                                     ? "status-pending"
                                     : "status-rejected"
-                              }`}
+                                }`}
                             >
                               {training.attendance || "-"}
                             </span>
@@ -632,22 +634,22 @@ function InternDashboard() {
     }
     setUser(parsedUser);
     setLoading(false); // Show dashboard immediately
-    
+
     // Initialize job postings last viewed time if not set (1 week ago so existing postings show as unread)
     if (!localStorage.getItem(jobPostingsStorageKey)) {
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       localStorage.setItem(jobPostingsStorageKey, oneWeekAgo.toISOString());
     }
-    
+
     // Load tasks in the background without blocking the UI
     fetchTasks();
-    
+
     // Refresh profile in background (don't block UI)
     fetchProfileDetails();
 
     // Refresh notification badge in background
     refreshNotificationBadge(parsedUser);
-    
+
     // Refresh job postings badge in background
     refreshJobPostingsBadge();
 
@@ -655,16 +657,25 @@ function InternDashboard() {
     refreshActivityBadges(parsedUser);
   }, [navigate]);
 
-  // Periodic refresh for job postings and activity badges
+  // Periodic refresh for job postings, activity badges, and tasks
   useEffect(() => {
     refreshJobPostingsBadge();
     refreshActivityBadges();
+    fetchTasks();
     const interval = setInterval(() => {
       refreshJobPostingsBadge();
       refreshActivityBadges();
+      fetchTasks();
     }, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [activeSection, user]);
+
+  // Mark tasks as seen when visiting the tasks section or changing task tabs
+  useEffect(() => {
+    if (activeSection === "tasks" && tasks.length > 0) {
+      checkUnreadTasks(tasks);
+    }
+  }, [activeSection, taskView, tasks]);
 
   const getLatestNotificationTimestamp = (items = []) => {
     return items.reduce((latest, item) => {
@@ -816,6 +827,48 @@ function InternDashboard() {
       } catch (err) {
         console.error("Failed to check assessment badge:", err);
       }
+
+      // 4. Certificates and Documents
+      try {
+        const [docResp, certResp] = await Promise.all([
+          internAPI.getMyDocuments(),
+          internAPI.getMyAssignedCertificates()
+        ]);
+
+        let allFilenames = [];
+
+        if (docResp.data && docResp.data.success && docResp.data.documents) {
+          const docs = docResp.data.documents;
+          Object.entries(docs).forEach(([key, val]) => {
+            if (key !== "otherCertificates" && val?.filename) {
+              allFilenames.push(val.filename);
+            }
+          });
+          if (Array.isArray(docs.otherCertificates)) {
+            docs.otherCertificates.forEach(cert => {
+              if (cert.filename) allFilenames.push(cert.filename);
+            });
+          }
+        }
+
+        if (certResp.data && certResp.data.success && certResp.data.certificates) {
+          const certs = certResp.data.certificates;
+          certs.forEach(cert => {
+            if (cert.filename) allFilenames.push(cert.filename);
+          });
+        }
+
+        const seenFilenames = JSON.parse(localStorage.getItem("seenCertificates") || "[]");
+        const hasUnseen = allFilenames.some(filename => !seenFilenames.includes(filename));
+        setHasUnreadCertificates(hasUnseen);
+
+        if (activeSection === "documents") {
+          localStorage.setItem("seenCertificates", JSON.stringify(allFilenames));
+          setHasUnreadCertificates(false);
+        }
+      } catch (err) {
+        console.error("Failed to check certificates badge:", err);
+      }
     } catch (err) {
       console.error("Failed to refresh activity badges:", err);
     }
@@ -833,10 +886,95 @@ function InternDashboard() {
     }
   };
 
+  const checkUnreadTasks = (tasksList) => {
+    if (!tasksList || tasksList.length === 0) {
+      setHasUnreadTasks(false);
+      setHasUnreadIndividualTasks(false);
+      setHasUnreadSquadTasks(false);
+      return;
+    }
+    
+    let seenMap = {};
+    try {
+      seenMap = JSON.parse(localStorage.getItem("seenTasks") || "{}");
+    } catch (e) {
+      seenMap = {};
+    }
+
+    // Check if any individual task is unread
+    const unreadInd = tasksList.some(task => {
+      if (task.isTeamTask) return false;
+      const taskTime = new Date(task.updatedAt || task.createdAt || 0).getTime();
+      const lastSeenTime = seenMap[task._id] || 0;
+      return taskTime > lastSeenTime;
+    });
+
+    // Check if any squad task is unread
+    const unreadSquad = tasksList.some(task => {
+      if (!task.isTeamTask) return false;
+      const taskTime = new Date(task.updatedAt || task.createdAt || 0).getTime();
+      const lastSeenTime = seenMap[task._id] || 0;
+      return taskTime > lastSeenTime;
+    });
+
+    setHasUnreadIndividualTasks(unreadInd);
+    setHasUnreadSquadTasks(unreadSquad);
+    setHasUnreadTasks(unreadInd || unreadSquad);
+
+    // If currently viewing the tasks section:
+    if (activeSection === "tasks") {
+      const updatedSeenMap = { ...seenMap };
+      let changed = false;
+
+      tasksList.forEach(t => {
+        // Mark individual tasks seen if current view is individual
+        if (taskView === "individual" && !t.isTeamTask) {
+          const taskTime = new Date(t.updatedAt || t.createdAt || 0).getTime();
+          if ((updatedSeenMap[t._id] || 0) < taskTime) {
+            updatedSeenMap[t._id] = taskTime;
+            changed = true;
+          }
+        }
+        // Mark squad tasks seen if current view is squad
+        if (taskView === "squad" && t.isTeamTask) {
+          const taskTime = new Date(t.updatedAt || t.createdAt || 0).getTime();
+          if ((updatedSeenMap[t._id] || 0) < taskTime) {
+            updatedSeenMap[t._id] = taskTime;
+            changed = true;
+          }
+        }
+      });
+
+      if (changed) {
+        localStorage.setItem("seenTasks", JSON.stringify(updatedSeenMap));
+        
+        // Re-evaluate unread statuses after updating seen map
+        const newUnreadInd = tasksList.some(task => {
+          if (task.isTeamTask) return false;
+          const taskTime = new Date(task.updatedAt || task.createdAt || 0).getTime();
+          const lastSeenTime = updatedSeenMap[task._id] || 0;
+          return taskTime > lastSeenTime;
+        });
+
+        const newUnreadSquad = tasksList.some(task => {
+          if (!task.isTeamTask) return false;
+          const taskTime = new Date(task.updatedAt || task.createdAt || 0).getTime();
+          const lastSeenTime = updatedSeenMap[task._id] || 0;
+          return taskTime > lastSeenTime;
+        });
+
+        setHasUnreadIndividualTasks(newUnreadInd);
+        setHasUnreadSquadTasks(newUnreadSquad);
+        setHasUnreadTasks(newUnreadInd || newUnreadSquad);
+      }
+    }
+  };
+
   const fetchTasks = async () => {
     try {
       const response = await taskAPI.getInternTasks();
       setTasks(response.data.tasks);
+      checkUnreadTasks(response.data.tasks);
       setLoading(false);
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
@@ -1127,15 +1265,16 @@ function InternDashboard() {
               </thead>
               <tbody>
                 ${allInterviews.map(interview => {
-                  const overallLevel = interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel;
-                  return `
+          const overallLevel = interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel;
+          return `
                   <tr>
                     <td>${interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${interview.interviewType}</td>
                     <td>${interviewLevelTextMap[overallLevel] || overallLevel || "-"}</td>
                     <td>${interview.levelCrossed ? 'Yes' : 'No'}</td>
                   </tr>
-                `; }).join('')}
+                `;
+        }).join('')}
               </tbody>
             </table>
           </div>
@@ -1251,10 +1390,24 @@ function InternDashboard() {
     try {
       switch (section) {
         case "documents":
+          let currentFilenames = [];
           try {
             const docResp = await internAPI.getMyDocuments();
             if (docResp.data && docResp.data.success) {
-              setDocuments(docResp.data.documents || null);
+              const docs = docResp.data.documents || null;
+              setDocuments(docs);
+              if (docs) {
+                Object.entries(docs).forEach(([key, val]) => {
+                  if (key !== "otherCertificates" && val?.filename) {
+                    currentFilenames.push(val.filename);
+                  }
+                });
+                if (Array.isArray(docs.otherCertificates)) {
+                  docs.otherCertificates.forEach(cert => {
+                    if (cert.filename) currentFilenames.push(cert.filename);
+                  });
+                }
+              }
             } else {
               setDocuments(null);
             }
@@ -1262,7 +1415,25 @@ function InternDashboard() {
             console.error('Failed to fetch documents:', e);
             setDocuments(null);
           }
-          await fetchAssignedCertificates();
+          
+          try {
+            const certResp = await internAPI.getMyAssignedCertificates();
+            if (certResp.data && certResp.data.success) {
+              const certs = certResp.data.certificates || [];
+              setAssignedCerts(certs);
+              certs.forEach(cert => {
+                if (cert.filename) currentFilenames.push(cert.filename);
+              });
+            } else {
+              setAssignedCerts([]);
+            }
+          } catch (err) {
+            console.error('Failed to fetch assigned certs:', err);
+            setAssignedCerts([]);
+          }
+
+          localStorage.setItem("seenCertificates", JSON.stringify(currentFilenames));
+          setHasUnreadCertificates(false);
           break;
         case "interviews":
           const intResp = await internAPI.getMyInterviews();
@@ -1294,7 +1465,7 @@ function InternDashboard() {
                     if (myIdCandidates.includes(mid)) return true;
                   }
                 }
-              } catch (e) {}
+              } catch (e) { }
               return false;
             });
             setScheduledGds(myGds || []);
@@ -1321,7 +1492,7 @@ function InternDashboard() {
                       if (myIdCandidates.includes(mid)) return true;
                     }
                   }
-                } catch (e) {}
+                } catch (e) { }
                 return false;
               });
               setScheduledGds(finalGds || []);
@@ -1341,7 +1512,7 @@ function InternDashboard() {
                       if (myIdCandidates.includes(mid)) return true;
                     }
                   }
-                } catch (e) {}
+                } catch (e) { }
                 return false;
               });
               setScheduledGds(finalGds || []);
@@ -1850,6 +2021,7 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Tasks/Projects
+            {hasUnreadTasks && <span className="sidebar-notification-dot" aria-hidden="true" />}
           </li>
           <li
             className={activeSection === "progress-report" ? "active" : ""}
@@ -1864,6 +2036,7 @@ function InternDashboard() {
             style={{ cursor: "pointer" }}
           >
             Certificates/Documents
+            {hasUnreadCertificates && <span className="sidebar-notification-dot" aria-hidden="true" />}
           </li>
           <li
             className={activeSection === "groups" ? "active" : ""}
@@ -1909,7 +2082,7 @@ function InternDashboard() {
                   className="premium-btn-secondary"
                   onClick={handleEditClick}
                 >
-                  Edit Profile
+                  Change password
                 </button>
               </div>
             </div>
@@ -2107,7 +2280,7 @@ function InternDashboard() {
               <div className="modal-overlay" onClick={handleCloseModal}>
                 <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                   <div className="modal-header">
-                    <h2>Edit Profile</h2>
+                    <h2>Change password</h2>
                     <button className="modal-close-btn" onClick={handleCloseModal}>✕</button>
                   </div>
 
@@ -2454,199 +2627,199 @@ function InternDashboard() {
                         gap: "20px",
                       }}
                     >
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
                       <div
                         style={{
-                          fontSize: "13px",
-                          color: "#475569",
-                          marginBottom: "5px",
+                          padding: "15px",
+                          background: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        Payment Status
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#475569",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Payment Status
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          {user.paymentDoneBy || "Not Specified"}
+                        </div>
                       </div>
                       <div
                         style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "15px",
+                          background: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        {user.paymentDoneBy || "Not Specified"}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "#475569",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Payment Date
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                        }}
-                      >
-                        {user.dateOfPayment
-                          ? new Date(user.dateOfPayment).toLocaleDateString()
-                          : "Not Set"}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "#475569",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Transaction ID
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#475569",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Payment Date
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          {user.dateOfPayment
+                            ? new Date(user.dateOfPayment).toLocaleDateString()
+                            : "Not Set"}
+                        </div>
                       </div>
                       <div
                         style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "15px",
+                          background: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        {user.transactionId || "Not Available"}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "#475569",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Payment Amount
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                        }}
-                      >
-                        {user.paymentAmount || "Not Available"}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "#475569",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Completed Fees
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#475569",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Transaction ID
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          {user.transactionId || "Not Available"}
+                        </div>
                       </div>
                       <div
                         style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "15px",
+                          background: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        {user.completedFees || "0"}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "#475569",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Pending Fees
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                        }}
-                      >
-                        {user.pendingFees || "0"}
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        padding: "15px",
-                        background: "#ffffff",
-                        borderRadius: "10px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: "#475569",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Last Payment Date
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#475569",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Payment Amount
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          {user.paymentAmount || "Not Available"}
+                        </div>
                       </div>
                       <div
                         style={{
-                          fontSize: "16px",
-                          fontWeight: 600,
-                          color: "#0f172a",
+                          padding: "15px",
+                          background: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        {user.lastPaymentDate
-                          ? new Date(user.lastPaymentDate).toLocaleDateString()
-                          : "Not Set"}
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#475569",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Completed Fees
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          {user.completedFees || "0"}
+                        </div>
                       </div>
-                    </div>
+                      <div
+                        style={{
+                          padding: "15px",
+                          background: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#475569",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Pending Fees
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          {user.pendingFees || "0"}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          padding: "15px",
+                          background: "#ffffff",
+                          borderRadius: "10px",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#475569",
+                            marginBottom: "5px",
+                          }}
+                        >
+                          Last Payment Date
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            color: "#0f172a",
+                          }}
+                        >
+                          {user.lastPaymentDate
+                            ? new Date(user.lastPaymentDate).toLocaleDateString()
+                            : "Not Set"}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </>
@@ -2750,6 +2923,18 @@ function InternDashboard() {
                 >
                   {label}
                   <span style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "11px", background: taskView === id ? "#eff6ff" : "#e2e8f0", color: taskView === id ? "#2563eb" : "#64748b" }}>{count}</span>
+                  {((id === "individual" && hasUnreadIndividualTasks) || (id === "squad" && hasUnreadSquadTasks)) && (
+                    <span 
+                      style={{ 
+                        width: "8px", 
+                        height: "8px", 
+                        borderRadius: "50%", 
+                        background: "#f43f5e", 
+                        boxShadow: "0 0 0 3px rgba(244, 63, 94, 0.18)",
+                        display: "inline-block" 
+                      }} 
+                    />
+                  )}
                 </button>
               ))}
             </div>
@@ -2958,7 +3143,7 @@ function InternDashboard() {
                           rel="noreferrer"
                           style={{
                             padding: "8px 16px",
-                            background: "#10b981",
+                            background: "#344158",
                             color: "white",
                             borderRadius: "6px",
                             textDecoration: "none",
@@ -2995,7 +3180,7 @@ function InternDashboard() {
                           rel="noreferrer"
                           style={{
                             padding: "8px 16px",
-                            background: "#10b981",
+                            background: "#344158",
                             color: "white",
                             borderRadius: "6px",
                             textDecoration: "none",
@@ -3200,7 +3385,7 @@ function InternDashboard() {
                           </td>
                           <td>
                             {Array.isArray(group.assignedTrainerDetails) &&
-                            group.assignedTrainerDetails.length > 0 ? (
+                              group.assignedTrainerDetails.length > 0 ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                 {group.assignedTrainerDetails.map((trainer) => (
                                   <div key={trainer._id}>
@@ -3301,8 +3486,8 @@ function InternDashboard() {
                           </div>
                         </div>
                         {hasDisplayValue(posting.applicationLink) && (
-                          <a href={posting.applicationLink} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "10px 18px", background: "#0f172a", color: "white", borderRadius: "6px", textDecoration: "none", fontWeight: 600, fontSize: "14px", alignSelf: "flex-start" }}>
-                            Apply Now →
+                          <a href={posting.applicationLink} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "10px 18px", background: "#344158", color: "white", borderRadius: "6px", textDecoration: "none", fontWeight: 600, fontSize: "14px", alignSelf: "flex-start" }}>
+                            Apply Now
                           </a>
                         )}
                       </div>
@@ -3354,7 +3539,7 @@ function InternDashboard() {
           </>
         )}
 
-        {/* Progress Report Section */}
+        {/* Reports Section */}
         {activeSection === "progress-report" && (
           <div className="am-page" style={{ padding: 0 }}>
             <div className="premium-page-header" style={{ marginBottom: "24px" }}>

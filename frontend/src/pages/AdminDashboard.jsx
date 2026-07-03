@@ -45,6 +45,7 @@ function AdminDashboard() {
     pendingApprovalTasks: 0,
     completedTasks: 0,
   });
+  const [hasUnseenPendingApprovals, setHasUnseenPendingApprovals] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in
@@ -83,11 +84,7 @@ function AdminDashboard() {
         }
 
         console.log("Fetching task stats...");
-        const taskStatsResponse = await taskAPI.getTaskStats();
-        console.log("Task stats response:", taskStatsResponse.data);
-        if (taskStatsResponse.data.success) {
-          setTaskStats(taskStatsResponse.data.stats);
-        }
+        await fetchTaskStats();
       } catch (error) {
         console.error("Failed to fetch data:", error);
       }
@@ -97,6 +94,15 @@ function AdminDashboard() {
       fetchData();
     }
   }, [user, activeMenu]);
+
+  // Periodic refresh for admin task stats
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => {
+      fetchTaskStats();
+    }, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [user]);
 
   const fetchStats = async () => {
     try {
@@ -115,10 +121,61 @@ function AdminDashboard() {
       if (response.data.success) {
         setTaskStats(response.data.stats);
       }
+
+      // Also check for unseen pending approvals
+      const allTasksResp = await taskAPI.getAllTasks();
+      if (allTasksResp.data.success) {
+        const pending = allTasksResp.data.tasks.filter(t => t.status === "Pending Approval");
+        
+        let seenPendingMap = {};
+        try {
+          seenPendingMap = JSON.parse(localStorage.getItem("seenPendingApprovals") || "{}");
+        } catch (e) {
+          seenPendingMap = {};
+        }
+
+        const hasUnseen = pending.some(task => {
+          const taskTime = new Date(task.updatedAt || task.createdAt || 0).getTime();
+          const lastSeenTime = seenPendingMap[task._id] || 0;
+          return taskTime > lastSeenTime;
+        });
+
+        setHasUnseenPendingApprovals(hasUnseen);
+      }
     } catch (error) {
       console.error("Failed to fetch task stats:", error);
     }
   };
+
+  // Mark pending approvals as seen when viewing the pending-approvals page
+  useEffect(() => {
+    if (activeMenu === "pending-approvals") {
+      const markPendingAsSeen = async () => {
+        try {
+          const allTasksResp = await taskAPI.getAllTasks();
+          if (allTasksResp.data.success) {
+            const pending = allTasksResp.data.tasks.filter(t => t.status === "Pending Approval");
+            let seenPendingMap = {};
+            try {
+              seenPendingMap = JSON.parse(localStorage.getItem("seenPendingApprovals") || "{}");
+            } catch (e) {
+              seenPendingMap = {};
+            }
+
+            pending.forEach(task => {
+              seenPendingMap[task._id] = new Date(task.updatedAt || task.createdAt || 0).getTime();
+            });
+
+            localStorage.setItem("seenPendingApprovals", JSON.stringify(seenPendingMap));
+            setHasUnseenPendingApprovals(false);
+          }
+        } catch (e) {
+          console.error("Failed to mark pending approvals as seen:", e);
+        }
+      };
+      markPendingAsSeen();
+    }
+  }, [activeMenu]);
 
   const handleJobsInternshipsClick = () => {
     setActiveMenu("jobs-internships");
@@ -404,8 +461,20 @@ function AdminDashboard() {
                   </div>
                   <div className="stat-content">
                     <div className="stat-label">Pending Approval</div>
-                    <div className="stat-value">
+                    <div className="stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       {taskStats.pendingApprovalTasks}
+                      {hasUnseenPendingApprovals && (
+                        <span 
+                          style={{ 
+                            width: "8px", 
+                            height: "8px", 
+                            borderRadius: "50%", 
+                            background: "#f43f5e", 
+                            boxShadow: "0 0 0 3px rgba(244, 63, 94, 0.18)",
+                            display: "inline-block"
+                          }} 
+                        />
+                      )}
                     </div>
                     <div className="stat-meta">Awaiting review</div>
                   </div>
@@ -721,6 +790,9 @@ function AdminDashboard() {
               />
             </svg>
             Activity Management
+            {hasUnseenPendingApprovals && (
+              <span className="sidebar-notification-dot" aria-hidden="true" />
+            )}
           </li>
 
           <li
