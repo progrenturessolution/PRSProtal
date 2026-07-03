@@ -150,18 +150,18 @@ function PendingApprovals({ onTaskApproved, onBack }) {
         <div className="card">
           <div className="empty-state">
             <div style={{ fontSize: '48px', marginBottom: '20px' }}></div>
-            <h3 style={{ marginBottom: '10px', color: '#10b981' }}>All Caught Up!</h3>
+            <h3 style={{ marginBottom: '10px', color: '#344158' }}>All Caught Up!</h3>
             <p>No tasks are pending approval at the moment.</p>
           </div>
         </div>
       ) : (
         <>
-          <div className="card" style={{ marginBottom: '20px', background: '#fef3c7', border: '2px solid #f59e0b' }}>
+          <div className="card" style={{ marginBottom: '20px', background: 'rgba(52, 65, 88, 0.05)', border: '2px solid #344158' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '24px' }}></span>
               <div>
-                <strong style={{ color: '#92400e' }}>{tasks.length} task{tasks.length > 1 ? 's' : ''} awaiting approval</strong>
-                <p style={{ margin: '5px 0 0', fontSize: '14px', color: '#78350f' }}>
+                <strong style={{ color: '#344158' }}>{tasks.length} task{tasks.length > 1 ? 's' : ''} awaiting approval</strong>
+                <p style={{ margin: '5px 0 0', fontSize: '14px', color: '#475569' }}>
                   Review completed work and approve to finalize tasks
                 </p>
               </div>
@@ -170,15 +170,15 @@ function PendingApprovals({ onTaskApproved, onBack }) {
 
           <div className="tasks-grid">
             {tasks.map((task) => (
-              <div key={task._id} className="task-card" style={{ border: '2px solid #f59e0b' }}>
+              <div key={task._id} className="task-card" style={{ border: '2px solid #344158' }}>
                 <div className="task-header">
                   <h3>{task.title}</h3>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <span 
                       className="task-status-badge"
                       style={{
-                        backgroundColor: '#fef3c7',
-                        color: '#f59e0b'
+                        backgroundColor: 'rgba(52, 65, 88, 0.1)',
+                        color: '#344158'
                       }}
                     >
                       Pending Approval
@@ -186,8 +186,8 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                     <span 
                       className="task-status-badge"
                       style={{
-                        backgroundColor: task.isTeamTask ? '#e0f2fe' : '#f3f4f6',
-                        color: task.isTeamTask ? '#0369a1' : '#374151'
+                        backgroundColor: task.isTeamTask ? 'rgba(52, 65, 88, 0.1)' : '#f1f5f9',
+                        color: task.isTeamTask ? '#344158' : '#475569'
                       }}
                     >
                       {task.isTeamTask ? 'Squad Task' : 'Solo Task'}
@@ -222,16 +222,16 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                   <div style={{ 
                     marginBottom: '16px',
                     padding: '12px',
-                    background: '#f0fdf4',
+                    background: 'rgba(52, 65, 88, 0.05)',
                     borderRadius: '8px',
-                    border: '1px solid #dcfce7'
+                    border: '1px solid rgba(52, 65, 88, 0.15)'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#166534', marginBottom: '6px', fontWeight: 600 }}>Squad Members</div>
+                    <div style={{ fontSize: '12px', color: '#344158', marginBottom: '6px', fontWeight: 600 }}>Squad Members</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {task.teamMembers.map((member) => (
-                        <div key={member._id} style={{ fontSize: '13px', color: '#14532d', display: 'flex', justifyContent: 'space-between' }}>
+                        <div key={member._id} style={{ fontSize: '13px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
                           <span>• {member.name}</span>
-                          <span style={{ fontSize: '11px', color: '#166534' }}>({member.internId})</span>
+                          <span style={{ fontSize: '11px', color: 'rgba(52, 65, 88, 0.7)' }}>({member.internId})</span>
                         </div>
                       ))}
                     </div>
@@ -257,14 +257,14 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                 <div className="task-progress">
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 600 }}>Progress</span>
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#10b981' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#344158' }}>
                       {task.progress}%
                     </span>
                   </div>
                   <div className="progress-bar-container">
                     <div 
                       className="progress-bar-fill"
-                      style={{ width: '100%', background: 'linear-gradient(90deg, #10b981 0%, #059669 100%)' }}
+                      style={{ width: '100%', background: 'linear-gradient(90deg, #344158 0%, #4b5d78 100%)' }}
                     ></div>
                   </div>
                 </div>
@@ -284,8 +284,8 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                     marginTop: '8px',
                     padding: '12px',
                     backgroundColor: '#fff',
-                    color: '#f59e0b',
-                    border: '2px solid #f59e0b',
+                    color: '#344158',
+                    border: '2px solid #344158',
                     borderRadius: '8px',
                     fontSize: '16px',
                     fontWeight: 600,
@@ -293,7 +293,7 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                     transition: 'all 0.3s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = '#fef3c7';
+                    e.target.style.backgroundColor = 'rgba(52, 65, 88, 0.08)';
                   }}
                   onMouseLeave={(e) => {
                     e.target.style.backgroundColor = '#fff';

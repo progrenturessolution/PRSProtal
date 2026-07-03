@@ -3118,90 +3118,91 @@ function InternDashboard() {
                 }
 
                 return (
-                  <div style={{ display: "grid", gap: "16px" }}>
-                    {directDocuments.map((doc) => (
-                      <div
-                        key={doc.key}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "16px",
-                          background: "#f9fafb",
-                          borderRadius: "10px",
-                          border: "1px solid #e5e7eb",
-                        }}
-                      >
-                        <div>
-                          <strong style={{ color: "#374151", fontSize: "15px" }}>
-                            {doc.label}
-                          </strong>
-                        </div>
-                        <a
-                          href={UPLOADS_BASE + "/uploads/students/" + doc.filename}
-                          target="_blank"
-                          rel="noreferrer"
+                  <div style={{ padding: "16px", background: "#f8fafc", borderRadius: "10px", border: "2px solid #344158" }}>
+                    <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                      <strong style={{ color: "#344158", fontSize: "15px" }}>Student Documents & Letters</strong>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      {directDocuments.map((doc) => (
+                        <div
+                          key={doc.key}
                           style={{
-                            padding: "8px 16px",
-                            background: "#344158",
-                            color: "white",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                            fontSize: "13px",
-                            fontWeight: "600",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "12px",
+                            background: "white",
+                            borderRadius: "8px",
+                            border: "1px solid #e2e8f0",
                           }}
                         >
-                          View
-                        </a>
-                      </div>
-                    ))}
+                          <div>
+                            <div style={{ fontWeight: "600", color: "#0f172a" }}>{doc.label}</div>
+                          </div>
+                          <a
+                            href={UPLOADS_BASE + "/uploads/students/" + doc.filename}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              padding: "8px 16px",
+                              background: "#344158",
+                              color: "white",
+                              borderRadius: "6px",
+                              textDecoration: "none",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                            }}
+                          >
+                            View
+                          </a>
+                        </div>
+                      ))}
 
-                    {otherCertificates.length > 0 && otherCertificates.map((cert, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "16px",
-                          background: "#f9fafb",
-                          borderRadius: "10px",
-                          border: "1px solid #e5e7eb",
-                        }}
-                      >
-                        <div>
-                          <strong style={{ color: "#374151", fontSize: "15px" }}>
-                            {cert.name || cert.filename}
-                          </strong>
-                        </div>
-                        <a
-                          href={UPLOADS_BASE + "/uploads/students/" + cert.filename}
-                          target="_blank"
-                          rel="noreferrer"
+                      {otherCertificates.map((cert, idx) => (
+                        <div
+                          key={idx}
                           style={{
-                            padding: "8px 16px",
-                            background: "#344158",
-                            color: "white",
-                            borderRadius: "6px",
-                            textDecoration: "none",
-                            fontSize: "13px",
-                            fontWeight: "600",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "12px",
+                            background: "white",
+                            borderRadius: "8px",
+                            border: "1px solid #e2e8f0",
                           }}
                         >
-                          View
-                        </a>
-                      </div>
-                    ))}
+                          <div>
+                            <div style={{ fontWeight: "600", color: "#0f172a" }}>{cert.name || cert.filename}</div>
+                          </div>
+                          <a
+                            href={UPLOADS_BASE + "/uploads/students/" + cert.filename}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              padding: "8px 16px",
+                              background: "#344158",
+                              color: "white",
+                              borderRadius: "6px",
+                              textDecoration: "none",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                            }}
+                          >
+                            View
+                          </a>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 );
               })()}
 
               {/* Assigned Certificates */}
               {assignedCerts.length > 0 && (
-                <div style={{ padding: "16px", background: "#f0fdf4", borderRadius: "10px", border: "2px solid #86efac", marginTop: "20px" }}>
+                <div style={{ padding: "16px", background: "#f8fafc", borderRadius: "10px", border: "2px solid #344158", marginTop: "20px" }}>
                   <div style={{ marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                    <strong style={{ color: "#15803d", fontSize: "15px" }}>🏆 Assigned Certificates ({assignedCerts.length})</strong>
-                    <span style={{ fontSize: "12px", color: "#16a34a", background: "#dcfce7", padding: "2px 8px", borderRadius: "10px" }}>5-day download window</span>
+                    <strong style={{ color: "#344158", fontSize: "15px" }}>Assigned Certificates ({assignedCerts.length})</strong>
+                    <span style={{ fontSize: "12px", color: "#344158", background: "#e2e8f0", padding: "2px 8px", borderRadius: "10px", fontWeight: "600" }}>5-day download window</span>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                     {assignedCerts.map(cert => {
@@ -3210,10 +3211,10 @@ function InternDashboard() {
                       const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                       const expired = timeLeft <= 0;
                       return (
-                        <div key={cert._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "white", borderRadius: "8px", border: "1px solid #bbf7d0" }}>
+                        <div key={cert._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "white", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                           <div>
                             <div style={{ fontWeight: "600", color: "#0f172a" }}>{cert.name}</div>
-                            <div style={{ fontSize: "12px", color: expired ? "#dc2626" : days >= 2 ? "#16a34a" : "#d97706", marginTop: "2px" }}>
+                            <div style={{ fontSize: "12px", color: expired ? "#dc2626" : days >= 2 ? "#64748b" : "#d97706", marginTop: "2px" }}>
                               {expired ? "Expired" : `${days}d ${hours}h remaining`}
                             </div>
                           </div>
@@ -3223,7 +3224,7 @@ function InternDashboard() {
                               download
                               target="_blank"
                               rel="noreferrer"
-                              style={{ padding: "8px 16px", background: "#22c55e", color: "white", borderRadius: "6px", textDecoration: "none", fontWeight: "600", fontSize: "13px" }}
+                              style={{ padding: "8px 16px", background: "#344158", color: "white", borderRadius: "6px", textDecoration: "none", fontWeight: "600", fontSize: "13px" }}
                             >
                               Download
                             </a>

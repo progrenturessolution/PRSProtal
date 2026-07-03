@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { taskAPI, UPLOADS_BASE } from "../services/api";
 
 function TeamTasks({
@@ -14,6 +15,8 @@ function TeamTasks({
   const [sendingMessage, setSendingMessage] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
   const [msgError, setMsgError] = useState("");
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, openUpward: false });
   const messagesEndRef = useRef(null);
   const pollingRef = useRef(null);
 
@@ -212,26 +215,100 @@ function TeamTasks({
                       {task.status}
                     </span>
                   </td>
-                  <td>
+                  <td style={{ position: "relative" }}>
                     <button
-                      onClick={() => {
-                        setSelectedTask(task);
-                        setMsgError("");
-                        setTeamMessage("");
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (openDropdownId === task._id) {
+                          setOpenDropdownId(null);
+                        } else {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const spaceBelow = window.innerHeight - rect.bottom;
+                          const openUpward = spaceBelow < 60; // 60px threshold
+                          setDropdownPosition({
+                            top: openUpward ? rect.top - 4 : rect.bottom + 4,
+                            left: rect.right - 120,
+                            openUpward,
+                          });
+                          setOpenDropdownId(task._id);
+                        }
                       }}
                       style={{
-                        padding: "8px 18px",
-                        backgroundColor: "#3b82f6",
-                        color: "white",
+                        background: "none",
                         border: "none",
-                        borderRadius: "8px",
                         cursor: "pointer",
-                        fontSize: "13px",
-                        fontWeight: "600",
+                        padding: "4px",
+                        fontSize: "20px",
+                        color: "#64748b",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "50%",
+                        width: "32px",
+                        height: "32px",
+                        transition: "background-color 0.2s"
                       }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      View Details
+                      ⋮
                     </button>
+
+                    {openDropdownId === task._id && createPortal(
+                      <>
+                        <div 
+                          style={{
+                            position: "fixed",
+                            inset: 0,
+                            zIndex: 999,
+                            cursor: "default"
+                          }}
+                          onClick={() => setOpenDropdownId(null)}
+                        />
+                        <div
+                          style={{
+                            position: "fixed",
+                            left: `${dropdownPosition.left}px`,
+                            top: `${dropdownPosition.top}px`,
+                            transform: dropdownPosition.openUpward ? "translateY(-100%)" : "none",
+                            backgroundColor: "white",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "8px",
+                            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+                            zIndex: 1000,
+                            minWidth: "120px",
+                            padding: "4px 0",
+                            textAlign: "left"
+                          }}
+                        >
+                          <button
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setMsgError("");
+                              setTeamMessage("");
+                              setOpenDropdownId(null);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: "10px 16px",
+                              background: "none",
+                              border: "none",
+                              color: "#374151",
+                              fontSize: "13px",
+                              fontWeight: "500",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              display: "block"
+                            }}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </>,
+                      document.body
+                    )}
                   </td>
                 </tr>
               ))}
@@ -266,7 +343,7 @@ function TeamTasks({
             <div
               style={{
                 padding: "18px 24px",
-                backgroundColor: "#0f172a",
+                backgroundColor: "#344158",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
@@ -399,11 +476,11 @@ function TeamTasks({
                       alignItems: "center",
                       gap: "10px",
                       padding: "12px 16px",
-                      background: "linear-gradient(135deg,#dbeafe,#bfdbfe)",
+                      background: "linear-gradient(135deg, rgba(52, 65, 88, 0.08), rgba(52, 65, 88, 0.15))",
                       borderRadius: "10px",
-                      border: "1px solid #93c5fd",
+                      border: "1px solid rgba(52, 65, 88, 0.25)",
                       textDecoration: "none",
-                      color: "#1e40af",
+                      color: "#344158",
                       fontWeight: "600",
                       fontSize: "14px",
                     }}
@@ -425,15 +502,15 @@ function TeamTasks({
                   <div
                     style={{
                       padding: "12px",
-                      backgroundColor: "#fef9c3",
+                      backgroundColor: "#f8fafc",
                       borderRadius: "10px",
-                      border: "1px solid #fde68a",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
                     <div
                       style={{
                         fontSize: "10px",
-                        color: "#92400e",
+                        color: "#64748b",
                         fontWeight: "700",
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
@@ -446,7 +523,7 @@ function TeamTasks({
                       style={{
                         fontSize: "13px",
                         fontWeight: "700",
-                        color: "#78350f",
+                        color: "#344158",
                       }}
                     >
                       {formatDate(selectedTask.deadline)}
@@ -455,15 +532,15 @@ function TeamTasks({
                   <div
                     style={{
                       padding: "12px",
-                      backgroundColor: "#f0fdf4",
+                      backgroundColor: "#f8fafc",
                       borderRadius: "10px",
-                      border: "1px solid #86efac",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
                     <div
                       style={{
                         fontSize: "10px",
-                        color: "#15803d",
+                        color: "#64748b",
                         fontWeight: "700",
                         textTransform: "uppercase",
                         letterSpacing: "0.5px",
@@ -476,7 +553,7 @@ function TeamTasks({
                       style={{
                         fontSize: "13px",
                         fontWeight: "700",
-                        color: "#166534",
+                        color: "#344158",
                       }}
                     >
                       {selectedTask.createdAt
@@ -519,9 +596,9 @@ function TeamTasks({
                             gap: "12px",
                             padding: "10px 14px",
                             borderRadius: "10px",
-                            backgroundColor: isMe ? "#eff6ff" : "#f8fafc",
+                            backgroundColor: isMe ? "rgba(52, 65, 88, 0.05)" : "#f8fafc",
                             border: isMe
-                              ? "1.5px solid #bfdbfe"
+                              ? "1.5px solid rgba(52, 65, 88, 0.3)"
                               : "1px solid #e2e8f0",
                           }}
                         >
@@ -530,13 +607,13 @@ function TeamTasks({
                               width: "36px",
                               height: "36px",
                               borderRadius: "50%",
-                              backgroundColor: isMe ? "#3b82f6" : "#e0e7ff",
+                              backgroundColor: isMe ? "#344158" : "#f1f5f9",
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
                               fontSize: "14px",
                               fontWeight: "700",
-                              color: isMe ? "white" : "#4f46e5",
+                              color: isMe ? "white" : "#344158",
                               flexShrink: 0,
                             }}
                           >
@@ -565,7 +642,7 @@ function TeamTasks({
                                   style={{
                                     fontSize: "10px",
                                     padding: "2px 7px",
-                                    backgroundColor: "#3b82f6",
+                                    backgroundColor: "#344158",
                                     color: "white",
                                     borderRadius: "8px",
                                     fontWeight: "700",
@@ -579,8 +656,8 @@ function TeamTasks({
                                   style={{
                                     fontSize: "10px",
                                     padding: "2px 7px",
-                                    backgroundColor: "#dbeafe",
-                                    color: "#1e40af",
+                                    backgroundColor: "rgba(52, 65, 88, 0.1)",
+                                    color: "#344158",
                                     borderRadius: "8px",
                                     fontWeight: "600",
                                   }}
@@ -611,20 +688,20 @@ function TeamTasks({
                   <div
                     style={{
                       padding: "14px 16px",
-                      backgroundColor: "#f0fdf4",
+                      backgroundColor: "rgba(52, 65, 88, 0.05)",
                       borderRadius: "12px",
-                      border: "1.5px solid #86efac",
+                      border: "1.5px solid rgba(52, 65, 88, 0.2)",
                       display: "flex",
                       alignItems: "center",
                       gap: "12px",
                     }}
                   >
-                    <span style={{ fontSize: "24px" }}></span>
+                    <span style={{ fontSize: "24px" }}>✅</span>
                     <div>
                       <div
                         style={{
                           fontWeight: "700",
-                          color: "#15803d",
+                          color: "#344158",
                           fontSize: "14px",
                         }}
                       >
@@ -633,7 +710,7 @@ function TeamTasks({
                       <div
                         style={{
                           fontSize: "12px",
-                          color: "#16a34a",
+                          color: "#475569",
                           marginTop: "2px",
                         }}
                       >
@@ -645,9 +722,9 @@ function TeamTasks({
                   <div
                     style={{
                       padding: "14px 16px",
-                      backgroundColor: "#fffbeb",
+                      backgroundColor: "rgba(52, 65, 88, 0.05)",
                       borderRadius: "12px",
-                      border: "1.5px solid #fde68a",
+                      border: "1.5px solid rgba(52, 65, 88, 0.2)",
                       display: "flex",
                       alignItems: "center",
                       gap: "12px",
@@ -658,7 +735,7 @@ function TeamTasks({
                       <div
                         style={{
                           fontWeight: "700",
-                          color: "#92400e",
+                          color: "#344158",
                           fontSize: "14px",
                         }}
                       >
@@ -667,7 +744,7 @@ function TeamTasks({
                       <div
                         style={{
                           fontSize: "12px",
-                          color: "#b45309",
+                          color: "#475569",
                           marginTop: "2px",
                         }}
                       >
@@ -679,16 +756,16 @@ function TeamTasks({
                   <div
                     style={{
                       padding: "16px",
-                      backgroundColor: "#f0fdf4",
+                      backgroundColor: "rgba(52, 65, 88, 0.05)",
                       borderRadius: "12px",
-                      border: "1.5px solid #86efac",
+                      border: "1.5px solid rgba(52, 65, 88, 0.2)",
                     }}
                   >
                     <div
                       style={{
                         fontSize: "13px",
                         fontWeight: "700",
-                        color: "#15803d",
+                        color: "#344158",
                         marginBottom: "4px",
                       }}
                     >
@@ -697,7 +774,7 @@ function TeamTasks({
                     <div
                       style={{
                         fontSize: "12px",
-                        color: "#4ade80",
+                        color: "#64748b",
                         marginBottom: "12px",
                       }}
                     >
@@ -711,8 +788,8 @@ function TeamTasks({
                         width: "100%",
                         padding: "11px 0",
                         backgroundColor: submittingReview
-                          ? "#86efac"
-                          : "#22c55e",
+                          ? "rgba(52, 65, 88, 0.5)"
+                          : "#344158",
                         color: "white",
                         border: "none",
                         borderRadius: "8px",
@@ -721,7 +798,7 @@ function TeamTasks({
                         fontSize: "14px",
                         boxShadow: submittingReview
                           ? "none"
-                          : "0 4px 12px rgba(34,197,94,0.3)",
+                          : "0 4px 12px rgba(52, 65, 88, 0.25)",
                       }}
                     >
                       {submittingReview
@@ -750,7 +827,7 @@ function TeamTasks({
                     borderBottom: "1px solid #e2e8f0",
                     fontSize: "11px",
                     fontWeight: "700",
-                    color: "#475569",
+                    color: "#344158",
                     textTransform: "uppercase",
                     letterSpacing: "0.8px",
                     backgroundColor: "white",
@@ -821,7 +898,7 @@ function TeamTasks({
                               backgroundColor: isAdmin
                                 ? "#fef3c7"
                                 : isMe
-                                  ? "#3b82f6"
+                                  ? "#344158"
                                   : "white",
                               border: isAdmin
                                 ? "1px solid #fde68a"
@@ -994,7 +1071,7 @@ function TeamTasks({
                       backgroundColor: "#f8fafc",
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = "#3b82f6";
+                      e.target.style.borderColor = "#344158";
                       e.target.style.backgroundColor = "white";
                     }}
                     onBlur={(e) => {
@@ -1009,7 +1086,7 @@ function TeamTasks({
                       padding: "10px 18px",
                       backgroundColor:
                         teamMessage.trim() && !sendingMessage
-                          ? "#3b82f6"
+                          ? "#344158"
                           : "#e2e8f0",
                       color:
                         teamMessage.trim() && !sendingMessage

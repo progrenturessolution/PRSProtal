@@ -205,6 +205,7 @@ export default function VerifyIdentity() {
 
         .verify-feature-icon-new {
           font-size: 16px;
+          color: #0ea5b7;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -297,21 +298,21 @@ export default function VerifyIdentity() {
           width: 46px;
           height: 46px;
           border-radius: 50%;
-          background: #10b981;
+          background: #344158;
           color: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 20px;
-          font-weight: 800;
-          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+          font-weight: 600;
+          box-shadow: 0 4px 12px rgba(52, 65, 88, 0.15);
           flex-shrink: 0;
         }
 
         .verify-badge-title h4 {
           font-size: 18px;
-          font-weight: 800;
-          color: #065f46;
+          font-weight: 600;
+          color: #344158;
           margin: 0;
           letter-spacing: -0.01em;
         }
@@ -319,8 +320,8 @@ export default function VerifyIdentity() {
         .verify-badge-title p {
           margin: 3px 0 0 0;
           font-size: 12px;
-          color: #047857;
-          font-weight: 600;
+          color: #64748b;
+          font-weight: 400;
         }
 
         .verify-results-grid {
@@ -342,16 +343,16 @@ export default function VerifyIdentity() {
 
         .detail-label {
           font-size: 11px;
-          font-weight: 800;
-          color: #047857;
+          font-weight: 700;
+          color: #0f172a;
           text-transform: uppercase;
           letter-spacing: 0.05em;
         }
 
         .detail-value {
-          font-size: 14.5px;
-          font-weight: 700;
-          color: #0f172a;
+          font-size: 14px;
+          font-weight: 500;
+          color: #64748b;
         }
 
         .detail-status-pill {
@@ -361,15 +362,15 @@ export default function VerifyIdentity() {
           padding: 4px 10px;
           border-radius: 99px;
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 600;
           text-transform: uppercase;
           margin-top: 2px;
         }
 
         .status-active {
-          background: #ecfdf5;
-          color: #047857;
-          border: 1px solid #a7f3d0;
+          background: #f1f5f9;
+          color: #334155;
+          border: 1px solid #cbd5e1;
         }
 
         .status-completed {
@@ -487,7 +488,7 @@ export default function VerifyIdentity() {
           padding: 13px;
           border-radius: 10px;
           border: none;
-          background: #17233a;
+          background: #344158;
           color: white;
           font-size: 14.5px;
           font-weight: 700;
@@ -500,16 +501,16 @@ export default function VerifyIdentity() {
         }
 
         .action-btn-primary:hover {
-          background: #1e304f;
+          background: #344158;
         }
 
         .action-btn-secondary {
           flex: 1;
           padding: 13px;
           border-radius: 10px;
-          border: 1.5px solid #cbd5e1;
-          background: transparent;
-          color: #475569;
+          border: none;
+          background: #344158;
+          color: white;
           font-size: 14.5px;
           font-weight: 700;
           cursor: pointer;
@@ -521,9 +522,8 @@ export default function VerifyIdentity() {
         }
 
         .action-btn-secondary:hover {
-          border-color: #94a3b8;
-          color: #0f172a;
-          background: #f1f5f9;
+          background: #344158;
+          color: white;
         }
 
         .back-to-signin-container {
@@ -636,19 +636,19 @@ export default function VerifyIdentity() {
             <h3>Why Verify Your Profile?</h3>
             <div className="verify-features-list">
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-icon-new">✓</span>
                 <span className="verify-feature-text-new">Confirm your official enrollment status</span>
               </div>
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-icon-new">✓</span>
                 <span className="verify-feature-text-new">Ensure your registered information is accurate</span>
               </div>
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-icon-new">✓</span>
                 <span className="verify-feature-text-new">Access your verified candidate profile</span>
               </div>
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✔️</span>
+                <span className="verify-feature-icon-new">✓</span>
                 <span className="verify-feature-text-new">Validate your program affiliation anytime</span>
               </div>
             </div>
