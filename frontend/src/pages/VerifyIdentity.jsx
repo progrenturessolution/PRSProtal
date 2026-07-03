@@ -636,19 +636,19 @@ export default function VerifyIdentity() {
             <h3>Official Verification Portal</h3>
             <div className="verify-features-list">
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✓</span>
+                <span className="verify-feature-icon-new">•</span>
                 <span className="verify-feature-text-new">Confirm your official enrollment status</span>
               </div>
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✓</span>
+                <span className="verify-feature-icon-new">•</span>
                 <span className="verify-feature-text-new">Ensure your registered information is accurate</span>
               </div>
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✓</span>
+                <span className="verify-feature-icon-new">•</span>
                 <span className="verify-feature-text-new">Access your verified candidate profile</span>
               </div>
               <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">✓</span>
+                <span className="verify-feature-icon-new">•</span>
                 <span className="verify-feature-text-new">Validate your program affiliation anytime</span>
               </div>
             </div>
@@ -668,7 +668,7 @@ export default function VerifyIdentity() {
           </div>
 
           <div className="verify-left-footer">
-            <strong>Official Candidate Verification Portal</strong><br />
+            <strong>Official Verification Portal</strong><br />
             Progrentures Solution Pvt. Ltd.
           </div>
         </div>
