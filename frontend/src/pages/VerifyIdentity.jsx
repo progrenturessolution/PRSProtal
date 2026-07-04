@@ -624,9 +624,6 @@ export default function VerifyIdentity() {
 
           <div className="verify-hero">
             <h1>Validate Your Affiliation</h1>
-            <p style={{ marginBottom: '16px' }}>
-              Verify your enrollment and confirm that your registration details are officially recorded with Progrentures Solution Pvt. Ltd.
-            </p>
             <p>
               Enter your registered credentials to instantly check your candidate profile, enrollment status, and program information.
             </p>
@@ -652,19 +649,6 @@ export default function VerifyIdentity() {
                 <span className="verify-feature-text-new">Validate your program affiliation anytime</span>
               </div>
             </div>
-          </div>
-
-          <div className="verify-secure-section">
-            <h3>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}>
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              Secure & Instant Verification
-            </h3>
-            <p>
-              Your information is protected using secure verification protocols. Only registered candidates can access their verification details.
-            </p>
           </div>
 
           <div className="verify-left-footer">
