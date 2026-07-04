@@ -666,7 +666,7 @@ function InternDashboard() {
       refreshJobPostingsBadge();
       refreshActivityBadges();
       fetchTasks();
-    }, 30000); // Refresh every 30 seconds
+    }, 15000); // Refresh every 15 seconds for near real-time notifications
     return () => clearInterval(interval);
   }, [activeSection, user]);
 
@@ -757,10 +757,9 @@ function InternDashboard() {
         const interviewsList = intResp.data.interviews || [];
         const latestTimestamp = getLatestActivityTimestamp(interviewsList);
         const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledInterviewsStorageKey}-${uid}`) || 0);
-        setHasUnreadScheduledInterviews(latestTimestamp > lastSeenTimestamp);
-        if (activeSection === "scheduled-interviews") {
-          localStorage.setItem(`${scheduledInterviewsStorageKey}-${uid}`, String(latestTimestamp || Date.now()));
-          setHasUnreadScheduledInterviews(false);
+        // Only SET unread — never clear here. Clearing happens when student opens the section.
+        if (latestTimestamp > lastSeenTimestamp) {
+          setHasUnreadScheduledInterviews(true);
         }
       }
 
@@ -770,10 +769,8 @@ function InternDashboard() {
         const gdList = gdResp.data.activities || [];
         const latestTimestamp = getLatestActivityTimestamp(gdList);
         const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledGdsStorageKey}-${uid}`) || 0);
-        setHasUnreadScheduledGds(latestTimestamp > lastSeenTimestamp);
-        if (activeSection === "scheduled-gds") {
-          localStorage.setItem(`${scheduledGdsStorageKey}-${uid}`, String(latestTimestamp || Date.now()));
-          setHasUnreadScheduledGds(false);
+        if (latestTimestamp > lastSeenTimestamp) {
+          setHasUnreadScheduledGds(true);
         }
       }
 
@@ -820,10 +817,8 @@ function InternDashboard() {
 
         const latestTimestamp = getLatestActivityTimestamp(merged);
         const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledAssignmentsStorageKey}-${uid}`) || 0);
-        setHasUnreadScheduledAssignments(latestTimestamp > lastSeenTimestamp);
-        if (activeSection === "scheduled-assignments") {
-          localStorage.setItem(`${scheduledAssignmentsStorageKey}-${uid}`, String(latestTimestamp || Date.now()));
-          setHasUnreadScheduledAssignments(false);
+        if (latestTimestamp > lastSeenTimestamp) {
+          setHasUnreadScheduledAssignments(true);
         }
       } catch (err) {
         console.error("Failed to check assessment badge:", err);
