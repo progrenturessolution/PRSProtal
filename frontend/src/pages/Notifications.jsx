@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/api';
+import { adminAPI, UPLOADS_BASE } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 function Notifications() {
@@ -16,10 +16,27 @@ function Notifications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [notifications, setNotifications] = useState([]);
+  const [fetchingNotifications, setFetchingNotifications] = useState(false);
 
   useEffect(() => {
     fetchData();
+    fetchNotifications();
   }, []);
+
+  const fetchNotifications = async () => {
+    setFetchingNotifications(true);
+    try {
+      const response = await adminAPI.getAllNotifications();
+      if (response.data.success) {
+        setNotifications(response.data.notifications || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    } finally {
+      setFetchingNotifications(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -182,7 +199,11 @@ function Notifications() {
         setFile(null);
         setSelectedRecipients([]);
         setSelectedGroups([]);
-        document.getElementById('fileInput').value = '';
+        if (document.getElementById('fileInput')) {
+          document.getElementById('fileInput').value = '';
+        }
+        // Fetch recent notifications to show the new one
+        fetchNotifications();
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send notification. Please try again.');
@@ -668,12 +689,120 @@ function Notifications() {
 
       {/* Recent Notifications */}
       <div className="card" style={{ marginTop: '20px' }}>
-        <h3>Recent Notifications</h3>
-        <div style={{ marginTop: '20px', padding: '20px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
-          <p style={{ color: '#6b7280' }}>
-             Notification history will be displayed here.
-          </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ margin: 0 }}>Recent Notifications</h3>
+          <button 
+            type="button" 
+            onClick={fetchNotifications} 
+            disabled={fetchingNotifications}
+            style={{
+              padding: '6px 12px',
+              background: '#f3f4f6',
+              border: '1px solid #e5e7eb',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: '#374151',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {fetchingNotifications ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
+        
+        {fetchingNotifications && notifications.length === 0 ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+            <LoadingSpinner text="Fetching notifications..." />
+          </div>
+        ) : notifications.length === 0 ? (
+          <div style={{ padding: '30px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
+            <p style={{ color: '#6b7280', margin: 0 }}>No notifications found.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {notifications.map((notif) => {
+              const dateObj = new Date(notif.createdAt);
+              const dateStr = dateObj.toLocaleDateString();
+              const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              
+              return (
+                <div 
+                  key={notif._id} 
+                  style={{
+                    padding: '16px',
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    position: 'relative'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <h4 style={{ margin: 0, color: '#1e293b', fontSize: '15px', fontWeight: 600 }}>
+                        {notif.title}
+                      </h4>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: notif.notificationType === 'General/Announcement' ? '#f0fdf4' : notif.notificationType === 'Interview' ? '#eff6ff' : notif.notificationType === 'Test/Assessment' ? '#fef2f2' : '#f5f5f5',
+                        color: notif.notificationType === 'General/Announcement' ? '#166534' : notif.notificationType === 'Interview' ? '#1e40af' : notif.notificationType === 'Test/Assessment' ? '#991b1b' : '#404040',
+                        border: '1px solid currentColor'
+                      }}>
+                        {notif.notificationType}
+                      </span>
+                      <span style={{
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        background: '#f8fafc',
+                        color: '#64748b',
+                        border: '1px solid #e2e8f0'
+                      }}>
+                        To: {notif.sendTo} {notif.recipientModel ? `(${notif.recipientModel})` : ''}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                      {dateStr} at {timeStr}
+                    </span>
+                  </div>
+                  
+                  <p style={{ margin: '8px 0', color: '#475569', fontSize: '14px', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                    {notif.message}
+                  </p>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '8px', borderTop: '1px dashed #f1f5f9' }}>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>
+                      Sent by: {notif.createdBy?.name || 'Admin'}
+                    </span>
+                    {notif.attachment?.filename && (
+                      <a
+                        href={`${UPLOADS_BASE}/uploads/notifications/${notif.attachment.filename}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          fontSize: '13px',
+                          color: '#314158',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        📎 View Attachment
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </>
   );
