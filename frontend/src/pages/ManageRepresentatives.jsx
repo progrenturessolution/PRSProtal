@@ -607,208 +607,156 @@ function ManageRepresentatives() {
         </div>
       )}
 
-      {selectedRepDetails && (
+      {selectedRepDetails && createPortal(
         <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(15,23,42,0.45)",
-            backdropFilter: "blur(4px)",
-            zIndex: 12000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px",
-          }}
+          className="profile-modal-overlay"
           onClick={() => setSelectedRepDetails(null)}
         >
-          <div
-            style={{
-              width: "min(1120px, 100%)",
-              maxHeight: "92vh",
-              overflow: "hidden",
-              background: "#ffffff",
-              border: "1px solid #dbe7f2",
-              borderRadius: "16px",
-              boxShadow: "0 24px 60px rgba(15,23,42,0.16)",
-              display: "flex",
-              flexDirection: "column"
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header: Brand color #324158 and white text */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "20px 24px",
-                background: "#324158",
-                color: "#ffffff",
-              }}
-            >
-              <div>
-                <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 500, color: "#ffffff" }}>
-                  {selectedRepDetails.representative.name} Profile
-                </h2>
-                <p style={{ margin: "4px 0 0 0", color: "rgba(255,255,255,0.7)", fontSize: "13px", fontWeight: 400 }}>
-                  {selectedRepDetails.representative.email}
-                </p>
-              </div>
+          <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-header" style={{ background: '#324158' }}>
               <button
-                style={{
-                  background: "transparent",
-                  color: "#ffffff",
-                  border: "1px solid rgba(255,255,255,0.4)",
-                  borderRadius: "6px",
-                  padding: "8px 18px",
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  transition: "all 0.2s"
-                }}
+                className="profile-close-btn"
                 onClick={() => setSelectedRepDetails(null)}
               >
-                Close
+                ×
               </button>
+
+              <div className="profile-avatar">
+                {String(selectedRepDetails.representative.name || 'R')
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase()}
+              </div>
+              <h2 className="profile-name">{selectedRepDetails.representative.name}</h2>
+              <div className="profile-badges">
+                <span className="profile-badge">PGIR ID: {selectedRepDetails.representative.pgirId || '-'}</span>
+                <span className="profile-badge">Total Students: {selectedRepDetails.stats.totalStudents}</span>
+                <span className="profile-badge">Weekly: {selectedRepDetails.stats.weeklyStudents}</span>
+                <span className="profile-badge">Monthly: {selectedRepDetails.stats.monthlyStudents}</span>
+              </div>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: "24px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "24px" }}>
-              
-              {/* Stats Cards */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-                  gap: "16px",
-                }}
-              >
-                {[
-                  { label: "PGIR ID", value: selectedRepDetails.representative.pgirId || "-" },
-                  { label: "Total Students", value: selectedRepDetails.stats.totalStudents },
-                  { label: "This Week", value: selectedRepDetails.stats.weeklyStudents },
-                  { label: "This Month", value: selectedRepDetails.stats.monthlyStudents }
-                ].map((stat, idx) => (
-                  <div key={idx} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px", background: "#ffffff" }}>
-                    <div style={{ fontSize: "11px", textTransform: "uppercase", color: "#64748b", fontWeight: 500, letterSpacing: "0.06em" }}>
-                      {stat.label}
-                    </div>
-                    <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 500, color: "#324158" }}>
-                      {stat.value}
-                    </div>
-                  </div>
-                ))}
+            <div className="profile-body">
+              {/* Personal & Contact Information */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Personal & Contact Information
+                </h3>
+                <div className="profile-info-grid">
+                  <div className="profile-field"><label>Name</label><div className="field-value">{selectedRepDetails.representative.name || "-"}</div></div>
+                  <div className="profile-field"><label>Email</label><div className="field-value">{selectedRepDetails.representative.email || "-"}</div></div>
+                  <div className="profile-field"><label>WhatsApp Mobile</label><div className="field-value">{selectedRepDetails.representative.mobile || "-"}</div></div>
+                  <div className="profile-field"><label>Designation</label><div className="field-value">{selectedRepDetails.representative.designation || "-"}</div></div>
+                  <div className="profile-field"><label>Joining Date</label><div className="field-value">{formatDate(selectedRepDetails.representative.joiningDate)}</div></div>
+                  <div className="profile-field"><label>Password</label><div className="field-value" style={{ fontWeight: 500 }}>{selectedRepDetails.representative.plainPassword || "-"}</div></div>
+                  <div className="profile-field"><label>College</label><div className="field-value">{selectedRepDetails.representative.college || "-"}</div></div>
+                  <div className="profile-field"><label>Course/Stream</label><div className="field-value">{selectedRepDetails.representative.course || "-"}</div></div>
+                  <div className="profile-field"><label>Department</label><div className="field-value">{selectedRepDetails.representative.department || "-"}</div></div>
+                  <div className="profile-field"><label>Year</label><div className="field-value">{selectedRepDetails.representative.year || "-"}</div></div>
+                  <div className="profile-field"><label>Instagram Profile</label><div className="field-value">{selectedRepDetails.representative.instagramProfile || "-"}</div></div>
+                  <div className="profile-field"><label>LinkedIn Profile</label><div className="field-value">{selectedRepDetails.representative.linkedinProfile || "-"}</div></div>
+                  <div className="profile-field"><label>UPI ID</label><div className="field-value">{selectedRepDetails.representative.upiId || "-"}</div></div>
+                  <div className="profile-field"><label>UPI / Mobile</label><div className="field-value">{selectedRepDetails.representative.upiMobileNumber || "-"}</div></div>
+                </div>
               </div>
 
-              {/* Professional Details Section */}
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
-                <div style={{ padding: "14px 20px", fontWeight: 500, background: "#324158", color: "#ffffff", fontSize: "15px" }}>
-                  Professional Details
-                </div>
-                <div
-                  style={{
-                    padding: "20px",
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-                    gap: "16px",
-                    color: "#475569",
-                    fontSize: "13.5px",
-                    lineHeight: "1.6"
-                  }}
-                >
-                  <div><span style={{ color: "#64748b" }}>WhatsApp:</span> {selectedRepDetails.representative.mobile || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>Designation:</span> {selectedRepDetails.representative.designation || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>Joining Date:</span> {formatDate(selectedRepDetails.representative.joiningDate)}</div>
-                  <div><span style={{ color: "#64748b" }}>Password:</span> {selectedRepDetails.representative.plainPassword || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>College:</span> {selectedRepDetails.representative.college || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>Course/Stream:</span> {selectedRepDetails.representative.course || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>Department:</span> {selectedRepDetails.representative.department || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>Year:</span> {selectedRepDetails.representative.year || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>Instagram:</span> {selectedRepDetails.representative.instagramProfile || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>LinkedIn:</span> {selectedRepDetails.representative.linkedinProfile || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>UPI ID:</span> {selectedRepDetails.representative.upiId || "-"}</div>
-                  <div><span style={{ color: "#64748b" }}>UPI / Mobile:</span> {selectedRepDetails.representative.upiMobileNumber || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>Application Link:</span> {selectedRepDetails.representative.internshipApplicationFormLink || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>Internship Sheet:</span> {selectedRepDetails.representative.internshipSheetLink || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>Internship Promotional Message:</span> {selectedRepDetails.representative.internshipPromotionalMessage || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>SMS Promotional Message:</span> {selectedRepDetails.representative.smsPromotionalMessage || "-"}</div>
-                  
-                  {/* Documents Section inside grid */}
-                  <div style={{ gridColumn: "1 / -1", display: "flex", gap: "24px", flexWrap: "wrap", marginTop: "8px", paddingTop: "16px", borderTop: "1px solid #e2e8f0" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ color: "#64748b" }}>UPI Scanner:</span>{" "}
-                      {selectedRepDetails.representative.docs?.upiScanner?.filepath ? (
-                        <a
-                          href={toPublicFilePath(selectedRepDetails.representative.docs.upiScanner.filepath)}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            fontSize: "12px",
-                            color: "#ffffff",
-                            fontWeight: 500,
-                            textDecoration: "none",
-                            padding: "4px 12px",
-                            borderRadius: "6px",
-                            background: "#324158"
-                          }}
-                        >
-                          View
-                        </a>
-                      ) : <span style={{ color: "#94a3b8" }}>-</span>}
+              {/* Promotional Links & Messages */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Promotional Links & Messages
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "14px", color: "#475569" }}>
+                  <div>
+                    <strong style={{ color: "#324158", fontWeight: 500, display: "block", marginBottom: "4px" }}>Application Link:</strong>
+                    <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", wordBreak: "break-all" }}>
+                      {selectedRepDetails.representative.internshipApplicationFormLink || "-"}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ color: "#64748b" }}>Selection Letter:</span>{" "}
-                      {selectedRepDetails.representative.docs?.pgirSelectionLetter?.filepath ? (
-                        <a
-                          href={toPublicFilePath(selectedRepDetails.representative.docs.pgirSelectionLetter.filepath)}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            fontSize: "12px",
-                            color: "#ffffff",
-                            fontWeight: 500,
-                            textDecoration: "none",
-                            padding: "4px 12px",
-                            borderRadius: "6px",
-                            background: "#324158"
-                          }}
-                        >
-                          View
-                        </a>
-                      ) : <span style={{ color: "#94a3b8" }}>-</span>}
+                  </div>
+                  <div>
+                    <strong style={{ color: "#324158", fontWeight: 500, display: "block", marginBottom: "4px" }}>Internship Sheet:</strong>
+                    <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", wordBreak: "break-all" }}>
+                      {selectedRepDetails.representative.internshipSheetLink || "-"}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <span style={{ color: "#64748b" }}>Offer Letter:</span>{" "}
-                      {selectedRepDetails.representative.docs?.internshipOfferLetter?.filepath ? (
-                        <a
-                          href={toPublicFilePath(selectedRepDetails.representative.docs.internshipOfferLetter.filepath)}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            fontSize: "12px",
-                            color: "#ffffff",
-                            fontWeight: 500,
-                            textDecoration: "none",
-                            padding: "4px 12px",
-                            borderRadius: "6px",
-                            background: "#324158"
-                          }}
-                        >
-                          View
-                        </a>
-                      ) : <span style={{ color: "#94a3b8" }}>-</span>}
+                  </div>
+                  <div>
+                    <strong style={{ color: "#324158", fontWeight: 500, display: "block", marginBottom: "4px" }}>Internship Promotional Message:</strong>
+                    <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", whiteSpace: "pre-wrap" }}>
+                      {selectedRepDetails.representative.internshipPromotionalMessage || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ color: "#324158", fontWeight: 500, display: "block", marginBottom: "4px" }}>SMS Promotional Message:</strong>
+                    <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", whiteSpace: "pre-wrap" }}>
+                      {selectedRepDetails.representative.smsPromotionalMessage || "-"}
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Recent Payouts Table */}
-              <div style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
-                <div style={{ padding: "14px 20px", fontWeight: 500, background: "#324158", color: "#ffffff", fontSize: "15px" }}>
-                  Recent Payouts
+              {/* Uploaded Documents */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Uploaded Documents
+                </h3>
+                <div style={{ display: "grid", gap: "10px" }}>
+                  {[
+                    { key: "upiScanner", label: "UPI Scanner", file: selectedRepDetails.representative.docs?.upiScanner },
+                    { key: "pgirSelectionLetter", label: "Selection Letter", file: selectedRepDetails.representative.docs?.pgirSelectionLetter },
+                    { key: "internshipOfferLetter", label: "Offer Letter", file: selectedRepDetails.representative.docs?.internshipOfferLetter }
+                  ].map(({ key, label, file }) => (
+                    <div
+                      key={key}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 14px",
+                        background: "#f8fafc",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div style={{ fontSize: "14px", color: "#475569" }}>{label}</div>
+                      {file?.filepath ? (
+                        <a
+                          href={toPublicFilePath(file.filepath)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            padding: "6px 14px",
+                            background: "#324158",
+                            color: "white",
+                            textDecoration: "none",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                          }}
+                        >
+                          View
+                        </a>
+                      ) : (
+                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                          Not uploaded
+                        </span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div style={{ overflowX: "auto" }}>
+              </div>
+
+              {/* Payout History */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Payout History
+                </h3>
+                <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
                   <table className="data-table" style={{ margin: 0, width: "100%" }}>
                     <thead>
                       <tr style={{ background: "#324158" }}>
@@ -854,9 +802,21 @@ function ManageRepresentatives() {
                   </table>
                 </div>
               </div>
+
+              {/* Action buttons footer */}
+              <div className="profile-actions" style={{ marginTop: "12px" }}>
+                <button
+                  className="profile-btn profile-btn-close"
+                  style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
+                  onClick={() => setSelectedRepDetails(null)}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
