@@ -749,16 +749,17 @@ function InternDashboard() {
 
   const refreshActivityBadges = async (currentUser = user) => {
     if (!currentUser) return;
+    const uid = currentUser?._id || currentUser?.id || 'anon';
     try {
       // 1. Scheduled Interviews
       const intResp = await internAPI.getMyScheduledInterviews();
       if (intResp.data && intResp.data.success) {
         const interviewsList = intResp.data.interviews || [];
         const latestTimestamp = getLatestActivityTimestamp(interviewsList);
-        const lastSeenTimestamp = Number(localStorage.getItem(scheduledInterviewsStorageKey) || 0);
+        const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledInterviewsStorageKey}-${uid}`) || 0);
         setHasUnreadScheduledInterviews(latestTimestamp > lastSeenTimestamp);
         if (activeSection === "scheduled-interviews") {
-          localStorage.setItem(scheduledInterviewsStorageKey, String(latestTimestamp || Date.now()));
+          localStorage.setItem(`${scheduledInterviewsStorageKey}-${uid}`, String(latestTimestamp || Date.now()));
           setHasUnreadScheduledInterviews(false);
         }
       }
@@ -768,10 +769,10 @@ function InternDashboard() {
       if (gdResp.data && gdResp.data.success) {
         const gdList = gdResp.data.activities || [];
         const latestTimestamp = getLatestActivityTimestamp(gdList);
-        const lastSeenTimestamp = Number(localStorage.getItem(scheduledGdsStorageKey) || 0);
+        const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledGdsStorageKey}-${uid}`) || 0);
         setHasUnreadScheduledGds(latestTimestamp > lastSeenTimestamp);
         if (activeSection === "scheduled-gds") {
-          localStorage.setItem(scheduledGdsStorageKey, String(latestTimestamp || Date.now()));
+          localStorage.setItem(`${scheduledGdsStorageKey}-${uid}`, String(latestTimestamp || Date.now()));
           setHasUnreadScheduledGds(false);
         }
       }
@@ -818,10 +819,10 @@ function InternDashboard() {
         });
 
         const latestTimestamp = getLatestActivityTimestamp(merged);
-        const lastSeenTimestamp = Number(localStorage.getItem(scheduledAssignmentsStorageKey) || 0);
+        const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledAssignmentsStorageKey}-${uid}`) || 0);
         setHasUnreadScheduledAssignments(latestTimestamp > lastSeenTimestamp);
         if (activeSection === "scheduled-assignments") {
-          localStorage.setItem(scheduledAssignmentsStorageKey, String(latestTimestamp || Date.now()));
+          localStorage.setItem(`${scheduledAssignmentsStorageKey}-${uid}`, String(latestTimestamp || Date.now()));
           setHasUnreadScheduledAssignments(false);
         }
       } catch (err) {
@@ -1447,7 +1448,8 @@ function InternDashboard() {
             const list = schedResp.data.interviews || [];
             setScheduledInterviews(list);
             const latestTimestamp = getLatestActivityTimestamp(list);
-            localStorage.setItem(scheduledInterviewsStorageKey, String(latestTimestamp || Date.now()));
+            const _uid = user?._id || user?.id || 'anon';
+            localStorage.setItem(`${scheduledInterviewsStorageKey}-${_uid}`, String(latestTimestamp || Date.now()));
             setHasUnreadScheduledInterviews(false);
           }
           await loadScheduledAssessments();
@@ -1519,14 +1521,16 @@ function InternDashboard() {
             } catch (e2) { setScheduledGds([]); }
           }
           const latestGdTimestamp = getLatestActivityTimestamp(finalGds);
-          localStorage.setItem(scheduledGdsStorageKey, String(latestGdTimestamp || Date.now()));
+          const _uidGd = user?._id || user?.id || 'anon';
+          localStorage.setItem(`${scheduledGdsStorageKey}-${_uidGd}`, String(latestGdTimestamp || Date.now()));
           setHasUnreadScheduledGds(false);
           await loadScheduledAssessments();
           break;
         case "scheduled-assignments":
           const assessList = await loadScheduledAssessments();
           const latestAssessTimestamp = getLatestActivityTimestamp(assessList);
-          localStorage.setItem(scheduledAssignmentsStorageKey, String(latestAssessTimestamp || Date.now()));
+          const _uidAs = user?._id || user?.id || 'anon';
+          localStorage.setItem(`${scheduledAssignmentsStorageKey}-${_uidAs}`, String(latestAssessTimestamp || Date.now()));
           setHasUnreadScheduledAssignments(false);
           break;
         case "aptitude":
