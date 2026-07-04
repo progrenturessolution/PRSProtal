@@ -1338,6 +1338,7 @@ function InternshipManagement({ onAddStudentClick }) {
               <div className="profile-actions" style={{ marginTop: 12 }}>
                 <button
                   className="profile-btn profile-btn-primary"
+                  style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
                   onClick={async () => {
                     if (inactiveModalLoading) return;
                     const msg = String(inactiveModalMessage || "").trim();
@@ -1380,7 +1381,7 @@ function InternshipManagement({ onAddStudentClick }) {
                   onClick={() => {
                     if (!inactiveModalLoading) setShowInactiveModal(false);
                   }}
-                  style={{ marginLeft: 8 }}
+                  style={{ marginLeft: 8, background: "#f1f5f9", color: "#475569", border: "none" }}
                 >
                   Cancel
                 </button>
