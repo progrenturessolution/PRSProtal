@@ -10149,3 +10149,17 @@ border-radius: 8px;
 .password-toggle-btn:hover {
   color: #0f172a;
 }
+
+/* Increase font size of Scheduled Interviews, GDs, and Assessments tables in Student Panel */
+.interview-schedule-table th {
+  font-size: 13px !important;
+}
+
+.interview-schedule-table td {
+  font-size: 15px !important;
+}
+
+.interview-schedule-table .status-badge {
+  font-size: 13px !important;
+  padding: 5px 12px !important;
+}
