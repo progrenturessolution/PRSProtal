@@ -1216,7 +1216,7 @@ function ViewInterns({
                             rel="noopener noreferrer"
                             style={{
                               padding: "6px 14px",
-                              background: "#0f172a",
+                              background: "#324158",
                               color: "white",
                               textDecoration: "none",
                               borderRadius: "6px",
@@ -1278,7 +1278,7 @@ function ViewInterns({
                             rel="noopener noreferrer"
                             style={{
                               padding: "6px 14px",
-                              background: "#0f172a",
+                              background: "#324158",
                               color: "white",
                               textDecoration: "none",
                               borderRadius: "6px",
@@ -1298,6 +1298,7 @@ function ViewInterns({
                 <div className="profile-actions">
                   <button
                     className="profile-btn profile-btn-edit"
+                    style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
                     onClick={() => {
                       setShowProfileModal(false);
                       handleEdit(selectedStudent);
@@ -1307,6 +1308,7 @@ function ViewInterns({
                   </button>
                   <button
                     className="profile-btn profile-btn-certificates"
+                    style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
                     onClick={() => {
                       setShowProfileModal(false);
                       handleViewCertificates(selectedStudent);
@@ -1316,6 +1318,7 @@ function ViewInterns({
                   </button>
                   <button
                     className="profile-btn profile-btn-close"
+                    style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
                     onClick={() => {
                       setShowProfileModal(false);
                       setSelectedStudent(null);
