@@ -135,6 +135,8 @@ exports.updateProfile = async (req, res) => {
       internshipSheetLink,
       internshipPromotionalMessage,
       smsPromotionalMessage,
+      smsApplicationFormLink,
+      smsSheetLink,
       instagramProfile,
       linkedinProfile,
       joiningDate,
@@ -157,6 +159,8 @@ exports.updateProfile = async (req, res) => {
     if (internshipSheetLink !== undefined) updateData.internshipSheetLink = internshipSheetLink;
     if (internshipPromotionalMessage !== undefined) updateData.internshipPromotionalMessage = internshipPromotionalMessage;
     if (smsPromotionalMessage !== undefined) updateData.smsPromotionalMessage = smsPromotionalMessage;
+    if (smsApplicationFormLink !== undefined) updateData.smsApplicationFormLink = smsApplicationFormLink;
+    if (smsSheetLink !== undefined) updateData.smsSheetLink = smsSheetLink;
     if (instagramProfile !== undefined) updateData.instagramProfile = instagramProfile;
     if (linkedinProfile !== undefined) updateData.linkedinProfile = linkedinProfile;
     if (joiningDate !== undefined) updateData.joiningDate = joiningDate;

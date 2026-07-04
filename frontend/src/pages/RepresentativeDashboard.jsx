@@ -585,6 +585,8 @@ function RepresentativeDashboard() {
   const profileSheetLink = profile?.sheetLinks || '';
   const profileApplicationFormLink = profile?.internshipApplicationFormLink || '';
   const profileInternshipSheetLink = profile?.internshipSheetLink || '';
+  const profileSmsApplicationFormLink = profile?.smsApplicationFormLink || '';
+  const profileSmsSheetLink = profile?.smsSheetLink || '';
   const profileHighlights = [
     { label: 'Total Students', value: totalStudents, note: 'All-time referrals' },
     { label: 'This Month', value: monthlyStudents, note: 'Current month activity' },
@@ -608,6 +610,8 @@ function RepresentativeDashboard() {
   const profileLinkRows = [
     { label: 'Application Form', href: profileApplicationFormLink },
     { label: 'Internship Sheet', href: profileInternshipSheetLink },
+    { label: 'SMS Application Form', href: profileSmsApplicationFormLink },
+    { label: 'SMS Sheet', href: profileSmsSheetLink },
     { label: 'Sheet Links', href: profileSheetLink },
   ];
 
@@ -899,6 +903,14 @@ function RepresentativeDashboard() {
                     <div className="field-col">
                       <label>Internship Sheet Link</label>
                       <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.internshipSheetLink || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>SMS Application Link</label>
+                      <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.smsApplicationFormLink || 'Not provided'}</div>
+                    </div>
+                    <div className="field-col">
+                      <label>SMS Sheet Link</label>
+                      <div className="field-value" style={{ wordBreak: 'break-word' }}>{profile?.smsSheetLink || 'Not provided'}</div>
                     </div>
                     <div className="field-col">
                       <label>Sheet Links</label>
@@ -2306,6 +2318,14 @@ function RepresentativeDashboard() {
                       <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
                         <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Sheet</div>
                         {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                      </div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Application Form</div>
+                        {profileSmsApplicationFormLink ? <a href={profileSmsApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                      </div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Sheet</div>
+                        {profileSmsSheetLink ? <a href={profileSmsSheetLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
 
                       <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>

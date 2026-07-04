@@ -76,6 +76,14 @@ const representativeSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  smsApplicationFormLink: {
+    type: String,
+    trim: true
+  },
+  smsSheetLink: {
+    type: String,
+    trim: true
+  },
   joiningDate: {
     type: Date
   },

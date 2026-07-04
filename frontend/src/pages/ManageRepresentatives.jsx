@@ -12,6 +12,8 @@ const initialForm = {
   designation: "Campus Representative",
   internshipApplicationFormLink: "",
   internshipSheetLink: "",
+  smsApplicationFormLink: "",
+  smsSheetLink: "",
   internshipPromotionalMessage: "",
   smsPromotionalMessage: "",
   joiningDate: "",
@@ -180,6 +182,8 @@ function ManageRepresentatives() {
       designation: rep.designation || "Campus Representative",
       internshipApplicationFormLink: rep.internshipApplicationFormLink || "",
       internshipSheetLink: rep.internshipSheetLink || "",
+      smsApplicationFormLink: rep.smsApplicationFormLink || "",
+      smsSheetLink: rep.smsSheetLink || "",
       internshipPromotionalMessage: rep.internshipPromotionalMessage || "",
       smsPromotionalMessage: rep.smsPromotionalMessage || "",
       joiningDate: rep.joiningDate ? new Date(rep.joiningDate).toISOString().slice(0, 10) : "",
@@ -573,6 +577,8 @@ function ManageRepresentatives() {
               <div className="form-group"><label>UPI / Mobile Number (Payout)</label><input name="upiMobileNumber" value={formData.upiMobileNumber} onChange={handleInput} /></div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Intern Application Form Link</label><input name="internshipApplicationFormLink" value={formData.internshipApplicationFormLink} onChange={handleInput} /></div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>Internship Sheet Link</label><input name="internshipSheetLink" value={formData.internshipSheetLink} onChange={handleInput} /></div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>SMS Application Form Link</label><input name="smsApplicationFormLink" value={formData.smsApplicationFormLink} onChange={handleInput} /></div>
+              <div className="form-group" style={{ gridColumn: "1 / -1" }}><label>SMS Sheet Link</label><input name="smsSheetLink" value={formData.smsSheetLink} onChange={handleInput} /></div>
               <div className="form-group" style={{ gridColumn: "1 / -1" }}>
                 <label>Internship Promotional Message</label>
                 <textarea name="internshipPromotionalMessage" value={formData.internshipPromotionalMessage} onChange={handleInput} rows={3} />
@@ -681,6 +687,18 @@ function ManageRepresentatives() {
                     <strong style={{ color: "#324158", fontWeight: 500, display: "block", marginBottom: "4px" }}>Internship Sheet:</strong>
                     <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", wordBreak: "break-all" }}>
                       {selectedRepDetails.representative.internshipSheetLink || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ color: "#324158", fontWeight: 500, display: "block", marginBottom: "4px" }}>SMS Application Link:</strong>
+                    <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", wordBreak: "break-all" }}>
+                      {selectedRepDetails.representative.smsApplicationFormLink || "-"}
+                    </div>
+                  </div>
+                  <div>
+                    <strong style={{ color: "#324158", fontWeight: 500, display: "block", marginBottom: "4px" }}>SMS Sheet Link:</strong>
+                    <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", wordBreak: "break-all" }}>
+                      {selectedRepDetails.representative.smsSheetLink || "-"}
                     </div>
                   </div>
                   <div>
