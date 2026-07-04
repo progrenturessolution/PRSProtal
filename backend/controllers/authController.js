@@ -28,7 +28,7 @@ exports.adminLogin = async (req, res) => {
     const password = normalizeCredentialValue(
       normalizedBody.password ?? normalizedBody['password:']
     );
-    const blockedAdminEmails = new Set(['admin@progrentures.com']);
+    const blockedAdminEmails = new Set([]);
 
     // Validation
     if (!email || !password) {

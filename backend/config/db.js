@@ -28,6 +28,10 @@ const syncDefaultAdmins = async () => {
       {
         email: 'rohanghatol4@gamil.com',
         password: 'Rohan@2004'
+      },
+      {
+        email: 'admin@progrentures.com',
+        password: 'PRSPortal@2026'
       }
     ];
 
