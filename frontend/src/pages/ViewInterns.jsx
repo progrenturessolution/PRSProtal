@@ -1927,7 +1927,7 @@ function ViewInterns({
                   width: "100%",
                   padding: "12px",
                   background:
-                    uploadingCert || !certificateFile ? "#cbd5e1" : "#3b82f6",
+                    uploadingCert || !certificateFile ? "#cbd5e1" : "#324158",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -2001,7 +2001,7 @@ function ViewInterns({
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#0f172a",
+                          background: "#324158",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -2064,7 +2064,7 @@ function ViewInterns({
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#0f172a",
+                          background: "#324158",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -2127,7 +2127,7 @@ function ViewInterns({
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#0f172a",
+                          background: "#324158",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -2193,7 +2193,7 @@ function ViewInterns({
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#0f172a",
+                          background: "#324158",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -2256,7 +2256,7 @@ function ViewInterns({
                         rel="noopener noreferrer"
                         style={{
                           padding: "8px 16px",
-                          background: "#0f172a",
+                          background: "#324158",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -2318,7 +2318,7 @@ function ViewInterns({
                               rel="noopener noreferrer"
                               style={{
                                 padding: "6px 12px",
-                                background: "#0f172a",
+                                background: "#324158",
                                 color: "white",
                                 textDecoration: "none",
                                 borderRadius: "6px",
@@ -2341,7 +2341,7 @@ function ViewInterns({
               style={{
                 marginTop: "20px",
                 padding: "10px 20px",
-                background: "#64748b",
+                background: "#324158",
                 color: "white",
                 border: "none",
                 borderRadius: "8px",
