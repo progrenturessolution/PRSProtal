@@ -3248,7 +3248,7 @@ function InternDashboard() {
             </div>
 
             <div className="card">
-              {notifications.length === 0 ? (
+              {notifications.filter(n => n.notificationType !== 'Test/Assessment' && n.notificationType !== 'Interview').length === 0 ? (
                 <div className="empty-state">
                   <p>No notifications at this time.</p>
                 </div>
@@ -3260,7 +3260,9 @@ function InternDashboard() {
                     gap: "15px",
                   }}
                 >
-                  {notifications.map((notif) => (
+                  {notifications
+                    .filter(notif => notif.notificationType !== 'Test/Assessment' && notif.notificationType !== 'Interview')
+                    .map((notif) => (
                     <div
                       key={notif._id}
                       style={{

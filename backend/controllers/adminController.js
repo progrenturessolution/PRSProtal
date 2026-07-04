@@ -2417,18 +2417,7 @@ exports.scheduleInterview = async (req, res) => {
         details: activityDetails
       });
       savedActivity = await activity.save();
-
-      // Create student notifications for the new schedule
-      const notifTitle = `New Scheduled Interview: ${interviewType} (${mode})`;
-      const notifMessage = `You are scheduled for a ${interviewType} interview on ${date} starting at ${startTime}.`;
-      await createActivityNotification({
-        title: notifTitle,
-        message: notifMessage,
-        type: 'Interview',
-        studentIds,
-        adminId: req.user.id,
-        activityId: savedActivity._id
-      });
+      // Interview red dot is triggered automatically via Interview model docs (getMyScheduledInterviews)
     } catch (e) {
       console.error('Failed to save activity record for interviews', e);
       return res.status(500).json({ success: false, message: 'Failed to create activity record' });
@@ -2516,36 +2505,7 @@ exports.createActivity = async (req, res) => {
     const activity = new Activity({ type, title, dateTime: dateTime ? new Date(dateTime) : undefined, createdBy, createdByModel, status: status || 'Scheduled', details: details || {} });
     const saved = await activity.save();
 
-    // Send student notifications for GD
-    if (String(type).toLowerCase().includes('gd')) {
-      // Collect studentIds from both assigned array and groups structure
-      const directAssigned = details?.assigned || [];
-      const groupMembers = [];
-      if (Array.isArray(details?.groups)) {
-        details.groups.forEach(group => {
-          const members = Array.isArray(group) ? group : (group.members || []);
-          members.forEach(m => {
-            const mid = String(m?._id || m?.id || m?.studentId || m?.internId || m?.psmsId || m || '');
-            if (mid) groupMembers.push(mid);
-          });
-        });
-      }
-      const allStudentIds = Array.from(new Set([...directAssigned.map(String), ...groupMembers]));
-
-      if (allStudentIds.length > 0) {
-        const when = dateTime ? new Date(dateTime).toLocaleString() : '';
-        const titleNotif = `New Scheduled GD: ${title || 'Group Discussion'}`;
-        const messageNotif = `You are scheduled for a Group Discussion: "${title || 'Group Discussion'}".${when ? ' Time: ' + when : ''}`;
-        await createActivityNotification({
-          title: titleNotif,
-          message: messageNotif,
-          type: 'GD',
-          studentIds: allStudentIds,
-          adminId: req.user.id,
-          activityId: saved._id
-        });
-      }
-    }
+    // GD red dot is triggered automatically via Activity model docs (getMyScheduledGDs)
 
     return res.status(201).json({ success: true, activity: saved });
   } catch (error) {

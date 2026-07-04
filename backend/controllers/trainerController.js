@@ -1047,7 +1047,11 @@ exports.getMyNotifications = async (req, res) => {
       return nObj;
     });
 
-    const unreadCount = mappedNotifications.filter(n => !n.isRead).length;
+    // unreadCount only counts notifications for the general panel (excludes activity-specific ones)
+    const generalPanelNotifs = mappedNotifications.filter(
+      n => n.notificationType !== 'Test/Assessment' && n.notificationType !== 'Interview'
+    );
+    const unreadCount = generalPanelNotifs.filter(n => !n.isRead).length;
 
     res.status(200).json({
       success: true,
