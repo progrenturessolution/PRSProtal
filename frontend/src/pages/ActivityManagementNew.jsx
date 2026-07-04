@@ -289,12 +289,12 @@ export default function ActivityManagementNew() {
 
   async function saveGd() {
     try {
-      // enforce group selection
-      if (!activeGdGroupId) {
-        alert('Please select a group before saving the GD.');
+      // enforce group selection OR manual student selection
+      if (!activeGdGroupId && selectedStudents.length === 0) {
+        alert('Please select a group or choose students manually before saving the GD.');
         return;
       }
-      const payloadDetails = { form: gdForm, groups: gdGroups, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId };
+      const payloadDetails = { form: gdForm, groups: gdGroups, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId || '' };
       const activityPayload = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: gdForm.date ? `${gdForm.date}T${gdForm.startTime||'00:00'}:00` : undefined, status: 'Scheduled', details: payloadDetails };
       const isEditing = Boolean(editingGdActivityId);
       const res = isEditing
@@ -1643,14 +1643,14 @@ export default function ActivityManagementNew() {
 
                   <div className="am-field">
                     <label>Select Group</label>
-                    <select required value={activeGdGroupId} onChange={e => {
+                    <select value={activeGdGroupId} onChange={e => {
                       const gid = e.target.value;
                       if (!gid) { setActiveGdGroupId(''); setSelectedStudents([]); return; }
                       const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(gid));
                       if (found) handleGdGroupSelect(found);
                       else setActiveGdGroupId(gid);
                     }}>
-                      <option value="">-- Select group --</option>
+                      <option value="">-- Select group (Optional) --</option>
                       {groups.map(g => (
                         <option key={g._id||g.id} value={g._id||g.id||g.groupNumber||g.groupName}>{getGroupLabel(g)}</option>
                       ))}
