@@ -62,7 +62,8 @@ button, a, input, select, textarea {
 /* Login Page - Corporate Style */
 .login-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #eef2f7;
   transition: background 0.3s ease;
 }
@@ -1111,6 +1112,8 @@ button, a, input, select, textarea {
   .login-container {
     flex-direction: column;
     min-height: 100vh;
+    height: auto;
+    overflow: auto;
     background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
   }
 
@@ -1430,6 +1433,8 @@ button, a, input, select, textarea {
 @media (max-width: 480px) {
   .login-container {
     min-height: 100vh;
+    height: auto;
+    overflow: auto;
     flex-direction: column;
   }
 

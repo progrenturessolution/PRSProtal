@@ -805,6 +805,25 @@ exports.updateTrainer = async (req, res) => {
       trainer.plainPassword = String(password).trim();
     }
 
+    if (req.body.assignedStudents !== undefined && Array.isArray(req.body.assignedStudents)) {
+      const prevStudents = trainer.assignedStudents || [];
+      await Intern.updateMany(
+        { _id: { $in: prevStudents }, assignedTrainer: id },
+        { $unset: { assignedTrainer: 1 } }
+      );
+      const newStudentIds = [...new Set(req.body.assignedStudents.map(sId => String(sId)))].filter(Boolean);
+      trainer.assignedStudents = newStudentIds;
+      await Intern.updateMany(
+        { _id: { $in: newStudentIds } },
+        { assignedTrainer: id }
+      );
+    }
+
+    if (req.body.assignedGroups !== undefined && Array.isArray(req.body.assignedGroups)) {
+      const newGroupIds = [...new Set(req.body.assignedGroups.map(gId => String(gId)))].filter(Boolean);
+      trainer.assignedGroups = newGroupIds;
+    }
+
     await trainer.save();
 
     const updatedTrainer = await Trainer.findById(trainer._id)

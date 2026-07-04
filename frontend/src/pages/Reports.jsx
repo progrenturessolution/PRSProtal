@@ -184,29 +184,172 @@ function Reports({ initialReportType = "tasks" }) {
       htmlContent += `
         <html>
           <head>
-            <title>Internship Management Report</title>
+            <title>Progrenstures Student Report System</title>
             <style>
-              body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #0f172a; padding-bottom: 15px; }
-              .header h1 { margin: 10px 0; color: #0f172a; }
-              .header p { margin: 5px 0; color: #666; }
-              .report-type { font-size: 18px; font-weight: bold; margin: 20px 0 15px 0; color: #0f172a; }
-              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-              th { background-color: #0f172a; color: white; padding: 12px; text-align: left; border: 1px solid #ddd; }
-              td { padding: 10px; border: 1px solid #ddd; }
-              tr:nth-child(even) { background-color: #f9fafb; }
-              .stat-label { font-weight: bold; color: #0f172a; width: 40%; }
-              .stat-value { text-align: right; font-weight: bold; color: #333; }
-              .section { margin: 30px 0; page-break-inside: avoid; }
-              .footer { margin-top: 40px; text-align: center; border-top: 1px solid #ddd; padding-top: 15px; color: #999; font-size: 12px; }
+              @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+              body {
+                font-family: 'Outfit', sans-serif;
+                margin: 40px;
+                color: #1e293b;
+                background-color: #ffffff;
+                line-height: 1.5;
+              }
+              .header {
+                margin-bottom: 40px;
+                border-bottom: 2px solid #e2e8f0;
+                padding-bottom: 24px;
+                position: relative;
+              }
+              .header-accent {
+                position: absolute;
+                top: -40px;
+                left: -40px;
+                right: -40px;
+                height: 6px;
+                background: linear-gradient(90deg, #324158, #10b981);
+              }
+              .header h1 {
+                margin: 0 0 8px 0;
+                color: #324158;
+                font-size: 28px;
+                font-weight: 700;
+                letter-spacing: -0.02em;
+              }
+              .header .meta-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 16px;
+                margin-top: 20px;
+              }
+              .header .meta-item {
+                font-size: 13px;
+                color: #64748b;
+              }
+              .header .meta-item strong {
+                color: #334155;
+                font-weight: 600;
+              }
+              .report-type {
+                font-size: 18px;
+                font-weight: 600;
+                margin: 0 0 16px 0;
+                color: #324158;
+                border-left: 4px solid #10b981;
+                padding-left: 12px;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 16px 0;
+                border-radius: 8px;
+                overflow: hidden;
+                border: 1px solid #e2e8f0;
+              }
+              th {
+                background-color: #324158;
+                color: white;
+                padding: 12px 16px;
+                text-align: left;
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+              }
+              td {
+                padding: 12px 16px;
+                border-bottom: 1px solid #e2e8f0;
+                font-size: 14px;
+                color: #334155;
+              }
+              tr:last-child td {
+                border-bottom: none;
+              }
+              tr:nth-child(even) {
+                background-color: #f8fafc;
+              }
+              .stat-label {
+                font-weight: 600;
+                color: #475569;
+                width: 50%;
+              }
+              .stat-value {
+                text-align: right;
+                font-weight: 700;
+                color: #0f172a;
+              }
+              .kpi-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+                margin: 24px 0;
+              }
+              .kpi-card {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 18px 12px;
+                text-align: center;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+              }
+              .kpi-card .value {
+                font-size: 24px;
+                font-weight: 700;
+                color: #324158;
+                margin-bottom: 4px;
+              }
+              .kpi-card .label {
+                font-size: 11px;
+                color: #64748b;
+                text-transform: uppercase;
+                font-weight: 600;
+                letter-spacing: 0.05em;
+              }
+              .badge {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+              }
+              .badge-active { background-color: #e8f5e9; color: #2e7d32; }
+              .badge-completed { background-color: #e3f2fd; color: #1565c0; }
+              .badge-inactive { background-color: #ffebee; color: #c62828; }
+              
+              .type-tag {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+                background-color: #f1f5f9;
+                color: #475569;
+              }
+              .type-sms { background-color: #f3e5f5; color: #6a1b9a; }
+              .type-internship { background-color: #e0f7fa; color: #00838f; }
+
+              .section {
+                margin: 32px 0;
+                page-break-inside: avoid;
+              }
+              .footer {
+                margin-top: 60px;
+                text-align: center;
+                border-top: 1px solid #e2e8f0;
+                padding-top: 24px;
+                color: #94a3b8;
+                font-size: 12px;
+              }
             </style>
           </head>
           <body>
             <div class="header">
-              <h1>Internship Management System</h1>
-              <h2>Report</h2>
-              <p>Report Type: <strong>${reportType.charAt(0).toUpperCase() + reportType.slice(1)}</strong></p>
-              <p>Generated on: <strong>${new Date().toLocaleDateString()}</strong></p>
+              <div class="header-accent"></div>
+              <h1>Progrenstures Student Report System</h1>
+              <div class="meta-grid">
+                <div class="meta-item">Report Type: <strong>${reportType.charAt(0).toUpperCase() + reportType.slice(1)}</strong></div>
+                <div class="meta-item">Generated on: <strong>${new Date().toLocaleDateString()}</strong></div>
+              </div>
             </div>
       `;
 
@@ -214,54 +357,54 @@ function Reports({ initialReportType = "tasks" }) {
         htmlContent += `
           <div class="section">
             <div class="report-type">Overview Statistics</div>
-            <table>
-              <tr>
-                <td class="stat-label">Total Students</td>
-                <td class="stat-value">${stats.totalInterns}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Active Students</td>
-                <td class="stat-value">${stats.activeInterns}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Completed Students</td>
-                <td class="stat-value">${stats.completedInterns}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Internship Students</td>
-                <td class="stat-value">${stats.internshipStudents}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">SMS Students</td>
-                <td class="stat-value">${stats.smsStudents}</td>
-              </tr>
-            </table>
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="value">${stats.totalInterns}</div>
+                <div class="label">Total Students</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${stats.activeInterns}</div>
+                <div class="label">Active Students</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${stats.completedInterns}</div>
+                <div class="label">Completed Students</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${stats.internshipStudents}</div>
+                <div class="label">Internship Program</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${stats.smsStudents}</div>
+                <div class="label">SMS Program</div>
+              </div>
+            </div>
           </div>
           
           <div class="section">
             <div class="report-type">Task Statistics</div>
-            <table>
-              <tr>
-                <td class="stat-label">Total Tasks</td>
-                <td class="stat-value">${taskStats.totalTasks}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Assigned Tasks</td>
-                <td class="stat-value">${taskStats.assignedTasks}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">In Progress Tasks</td>
-                <td class="stat-value">${taskStats.inProgressTasks}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Completed Tasks</td>
-                <td class="stat-value">${taskStats.completedTasks}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Completion Rate</td>
-                <td class="stat-value">${taskStats.totalTasks > 0 ? ((taskStats.completedTasks / taskStats.totalTasks) * 100).toFixed(1) : 0}%</td>
-              </tr>
-            </table>
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="value">${taskStats.totalTasks}</div>
+                <div class="label">Total Tasks</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${taskStats.assignedTasks}</div>
+                <div class="label">Assigned Tasks</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${taskStats.inProgressTasks}</div>
+                <div class="label">In Progress</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${taskStats.completedTasks}</div>
+                <div class="label">Completed</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${taskStats.totalTasks > 0 ? ((taskStats.completedTasks / taskStats.totalTasks) * 100).toFixed(1) : 0}%</div>
+                <div class="label">Completion Rate</div>
+              </div>
+            </div>
           </div>
         `;
       } else if (reportType === "students") {
@@ -286,13 +429,15 @@ function Reports({ initialReportType = "tasks" }) {
         `;
 
         sourceArray.slice(0, 100).forEach((student) => {
+          const statusClass = String(student.status || "").toLowerCase() === "active" ? "active" : (String(student.status || "").toLowerCase() === "completed" ? "completed" : "inactive");
+          const typeClass = String(student.studentType || "").toLowerCase() === "sms" ? "sms" : "internship";
           htmlContent += `
             <tr>
-              <td>${student.internId}</td>
-              <td>${student.name}</td>
-              <td>${student.studentType}</td>
+              <td style="font-family: monospace; font-weight: 600;">${student.internId}</td>
+              <td style="font-weight: 500;">${student.name}</td>
+              <td><span class="type-tag type-${typeClass}">${student.studentType}</span></td>
               <td>${student.email}</td>
-              <td>${student.status}</td>
+              <td><span class="badge badge-${statusClass}">${student.status}</span></td>
               <td>${student.joiningDate ? new Date(student.joiningDate).toLocaleDateString() : "N/A"}</td>
             </tr>
           `;
@@ -301,7 +446,7 @@ function Reports({ initialReportType = "tasks" }) {
         htmlContent += `
               </tbody>
             </table>
-            <p style="text-align: center; color: #999; font-size: 12px; margin-top: 15px;">
+            <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 15px;">
               Showing ${Math.min(100, sourceArray.length)} of ${sourceArray.length} students
             </p>
           </div>
@@ -313,35 +458,35 @@ function Reports({ initialReportType = "tasks" }) {
         htmlContent += `
           <div class="section">
             <div class="report-type">Task Completion Report</div>
-            <table>
-              <tr>
-                <td class="stat-label">Total Tasks Created</td>
-                <td class="stat-value">${sourceStats.totalTasks}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Tasks Assigned</td>
-                <td class="stat-value">${sourceStats.assignedTasks || 0}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Tasks In Progress</td>
-                <td class="stat-value">${sourceStats.inProgressTasks || 0}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Tasks Completed</td>
-                <td class="stat-value">${sourceStats.completedTasks || 0}</td>
-              </tr>
-              <tr>
-                <td class="stat-label">Completion Rate</td>
-                <td class="stat-value">${sourceStats.totalTasks > 0 ? ((sourceStats.completedTasks / sourceStats.totalTasks) * 100).toFixed(1) : 0}%</td>
-              </tr>
-            </table>
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <div class="value">${sourceStats.totalTasks}</div>
+                <div class="label">Total Tasks Created</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${sourceStats.assignedTasks || 0}</div>
+                <div class="label">Tasks Assigned</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${sourceStats.inProgressTasks || 0}</div>
+                <div class="label">Tasks In Progress</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${sourceStats.completedTasks || 0}</div>
+                <div class="label">Tasks Completed</div>
+              </div>
+              <div class="kpi-card">
+                <div class="value">${sourceStats.totalTasks > 0 ? ((sourceStats.completedTasks / sourceStats.totalTasks) * 100).toFixed(1) : 0}%</div>
+                <div class="label">Completion Rate</div>
+              </div>
+            </div>
           </div>
         `;
       }
 
       htmlContent += `
             <div class="footer">
-              <p>This report was automatically generated by the Internship Management System</p>
+              <p>This report was automatically generated by the Progrenstures Student Report System</p>
               <p>${new Date().toLocaleString()}</p>
             </div>
           </body>

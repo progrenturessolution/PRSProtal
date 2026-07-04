@@ -271,20 +271,17 @@ export default function ActivityManagementNew() {
     }
   }
 
-  function createGdGroups() {
-    // If admin selected an existing group, preview that group's members as a single group
+  function getGdGroupsPayload() {
     if (activeGdGroupId) {
       const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeGdGroupId));
       const memberList = found ? getGroupMemberList(found) : [];
-      setGdGroups([memberList]);
-      return;
+      return [memberList];
     }
-
-    const list = selectedStudents.length ? students.filter(s => selectedStudents.includes(String(s._id||s.id))) : students.slice(0, 50);
+    const list = selectedStudents.length ? students.filter(s => selectedStudents.includes(String(s._id||s.id))) : [];
     const size = Number(gdForm.groupSize) || 5;
     const out = [];
     for (let i=0;i<list.length;i+=size) out.push(list.slice(i, i+size));
-    setGdGroups(out);
+    return out;
   }
 
   async function saveGd() {
@@ -294,7 +291,8 @@ export default function ActivityManagementNew() {
         alert('Please select a group or choose students manually before saving the GD.');
         return;
       }
-      const payloadDetails = { form: gdForm, groups: gdGroups, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId || '' };
+      const gdGroupsToSend = getGdGroupsPayload();
+      const payloadDetails = { form: gdForm, groups: gdGroupsToSend, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId || '' };
       const activityPayload = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: gdForm.date ? `${gdForm.date}T${gdForm.startTime||'00:00'}:00` : undefined, status: 'Scheduled', details: payloadDetails };
       const isEditing = Boolean(editingGdActivityId);
       const res = isEditing
@@ -906,7 +904,23 @@ export default function ActivityManagementNew() {
     }
 
     if (normalizedType.includes('gd')) {
-      const groupsList = Array.isArray(details.groups) ? details.groups : [];
+      let gdAssignedIds = assignedIds;
+      if (!gdAssignedIds.length && Array.isArray(details.groups)) {
+        const flat = [];
+        details.groups.forEach(g => {
+          const members = Array.isArray(g) ? g : (g.students || []);
+          members.forEach(m => {
+            if (m) {
+              const id = m._id || m.id || m.internId || m;
+              if (id) flat.push(String(id));
+            }
+          });
+        });
+        gdAssignedIds = Array.from(new Set(flat));
+      }
+      const dateTimeText = activityDate
+        ? `${formatReportDate(activityDate)} ${formatReportTime(details.form?.startTime || activity?.dateTime || details.startTime || '')}`
+        : '-';
       return {
         kind: 'gd',
         title: 'Group Discussion Schedule - SMS Program',
@@ -917,25 +931,17 @@ export default function ActivityManagementNew() {
           { label: 'Interviewer', value: interviewerName },
           { label: 'Group Mode', value: details.form?.groupMode || details.groupMode || 'Auto' }
         ],
-        columns: ['Group No.', 'Group Name', 'Students', 'Date & Time'],
-        rows: groupsList.map((groupEntry, index) => {
-          const members = Array.isArray(groupEntry)
-            ? groupEntry
-            : (Array.isArray(groupEntry?.students) ? groupEntry.students : []);
-          const groupName = groupEntry?.groupName || groupEntry?.groupNumber || `Group ${index + 1}`;
-          const studentsText = members.length
-            ? members.map((member) => {
-                const student = getStudentRecord(member?._id || member?.id || member?.internId || member);
-                return student?.name || member?.name || String(member?.internId || member?._id || member?.id || member);
-              }).join(', ')
-            : '-';
+        columns: ['Slot No.', 'Student Name', 'PSMS ID', 'Interviewer', 'Date & Time'],
+        rows: gdAssignedIds.length ? gdAssignedIds.map((studentId, index) => {
+          const student = getStudentRecord(studentId);
           return {
-            slotNo: `Group ${index + 1}`,
-            timeSlot: groupName,
-            studentName: studentsText,
-            psmsId: formatReportDate(activityDate)
+            slotNo: `Slot ${index + 1}`,
+            studentName: student?.name || studentId || '-',
+            psmsId: student?.internId || 'NA',
+            interviewer: interviewerName,
+            timeSlot: dateTimeText
           };
-        })
+        }) : []
       };
     }
 
@@ -1082,9 +1088,14 @@ export default function ActivityManagementNew() {
                         </thead>
                         <tbody>
                           {report.rows.map((row, index) => {
-                            const cells = report.kind === 'assessment'
-                              ? [row.slotNo, row.studentName, row.psmsId, row.timeSlot]
-                              : [row.slotNo, row.timeSlot, row.studentName, row.psmsId];
+                            let cells;
+                            if (report.kind === 'assessment') {
+                              cells = [row.slotNo, row.studentName, row.psmsId, row.timeSlot];
+                            } else if (report.kind === 'gd') {
+                              cells = [row.slotNo, row.studentName, row.psmsId, row.interviewer, row.timeSlot];
+                            } else {
+                              cells = [row.slotNo, row.timeSlot, row.studentName, row.psmsId];
+                            }
                             return (
                               <tr key={`${row.slotNo}-${index}`}>
                                 {cells.map((cell, cellIndex) => <td key={`${row.slotNo}-${cellIndex}`}>{cell}</td>)}
@@ -1586,7 +1597,7 @@ export default function ActivityManagementNew() {
               <button
                 type="button"
                 className="am-modal-close-btn"
-                onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}
+                onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); setSelectedStudents([]); setActiveGdGroupId(''); setGdGroups([]); }}
                 aria-label="Close GD schedule form"
               >
                 ×
@@ -1707,56 +1718,58 @@ export default function ActivityManagementNew() {
 
             <div className="am-preview-panel">
               <div className="am-panel-head">
-                <h4>Group Preview</h4>
-                <p>Generate groups and review them before saving.</p>
+                <h4>Preview Assignments</h4>
+                <p>Review assigned students before confirming.</p>
               </div>
 
-              {gdGroups.length > 0 ? (
+              {selectedStudents.length > 0 ? (
                 <div className="am-table-shell">
                   <div className="am-table-wrapper-scroll">
                     <table className="records-table am-records-table am-slot-table records-slot-table">
                       <thead>
                         <tr>
-                          <th>Group</th>
-                          <th>Group Name</th>
+                          <th>Slot</th>
+                          <th>Student</th>
+                          <th>PSMS ID</th>
                           <th>Interviewer</th>
                           <th>Date & Time</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {gdGroups.map((g, idx) => {
-                          const members = Array.isArray(g) ? g : (g.students || []);
-                          let label = '';
-                          if (g && (g.groupName || g.groupNumber)) label = g.groupName || g.groupNumber;
-                          else if (activeGdGroupId) {
-                            const found = groups.find(gr => String(gr._id || gr.id || gr.groupNumber || gr.groupName) === String(activeGdGroupId));
-                            label = found ? (found.groupName || found.groupNumber || (found._id||found.id)) : `Group ${idx + 1}`;
-                          } else {
-                            label = `Group ${idx + 1}`;
-                          }
-                          return (
-                            <tr key={idx}>
-                              <td>Group {idx + 1}</td>
-                              <td>{label}</td>
-                              <td>{getTrainerLabel(gdForm.interviewer)}</td>
-                              <td>{gdForm.date ? `${gdForm.date} ${gdForm.startTime || ''}` : '-'}</td>
-                            </tr>
-                          );
-                        })}
+                        {selectedStudents.map((id, idx) => {
+                          const s = students.find(st => String(st._id) === String(id) || String(st.id) === String(id) || st.internId === id || st.email === id || st.name === id);
+                          return {
+                            slotNo: idx + 1,
+                            time: gdForm.startTime || '',
+                            studentName: s ? s.name : id,
+                            psmsId: s ? (s.internId || s.email) : id,
+                            interviewer: getTrainerLabel(gdForm.interviewer),
+                            dateCell: gdForm.date ? `${gdForm.date} ${gdForm.startTime || ''}` : '-',
+                          };
+                        }).map((row) => (
+                          <tr key={row.studentId || row.slotNo}>
+                            <td>{row.slotNo}</td>
+                            <td>{row.studentName}</td>
+                            <td>{row.psmsId}</td>
+                            <td>{row.interviewer}</td>
+                            <td className="date-cell">{row.time ? `${gdForm.date || ''} ${row.time}`.trim() : (row.dateCell || '-')}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
                   <div className="am-actions-row am-actions-right">
-                    <button className="nm-btn" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}>Close</button>
-                    <button className="nm-btn primary" onClick={createGdGroups}>Create Groups</button>
+                    <button className="nm-btn" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); setSelectedStudents([]); setActiveGdGroupId(''); setGdGroups([]); }}>Close</button>
                     <button className="nm-btn primary am-confirm-btn" onClick={saveGd}>Confirm & Save</button>
                   </div>
                 </div>
               ) : (
-                <div className="am-actions-row am-actions-right">
-                  <button className="nm-btn" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); }}>Close</button>
-                  <button className="nm-btn primary" onClick={createGdGroups}>Create Groups</button>
-                </div>
+                <>
+                  <div className="am-empty">No students selected for this GD</div>
+                  <div className="am-actions-row am-actions-right">
+                    <button className="nm-btn" onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); setSelectedStudents([]); setActiveGdGroupId(''); setGdGroups([]); }}>Close</button>
+                  </div>
+                </>
               )}
             </div>
           </div>

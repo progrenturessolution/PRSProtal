@@ -152,7 +152,7 @@ function TeamTasks({
       <div className="card">
         <div className="empty-state">
           <p>
-            No squad tasks assigned yet. Your team tasks will appear here once
+            No group tasks assigned yet. Your team tasks will appear here once
             assigned by admin.
           </p>
         </div>
@@ -162,7 +162,7 @@ function TeamTasks({
 
   return (
     <>
-      {/* Squad Tasks Table */}
+      {/* Group Tasks Table */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table className="data-table">
@@ -388,7 +388,7 @@ function TeamTasks({
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: "12px", color: "#94a3b8" }}>
-                  Squad Task &nbsp;•&nbsp;{" "}
+                  Group Task &nbsp;•&nbsp;{" "}
                   {selectedTask.teamMembers?.length || 0} Members &nbsp;•&nbsp;
                   Due {formatDate(selectedTask.deadline)}
                 </p>

@@ -2939,7 +2939,7 @@ function InternDashboard() {
             <div style={{ display: "flex", gap: "4px", marginBottom: "20px", background: "#f1f5f9", padding: "6px", borderRadius: "12px", width: "fit-content" }}>
               {[
                 { id: "individual", label: "Individual Tasks", count: tasks.filter(t => !t.isTeamTask).length },
-                { id: "squad", label: "Squad Tasks", count: tasks.filter(t => t.isTeamTask).length }
+                { id: "squad", label: "Group Tasks", count: tasks.filter(t => t.isTeamTask).length }
               ].map(({ id, label, count }) => (
                 <button
                   key={id}

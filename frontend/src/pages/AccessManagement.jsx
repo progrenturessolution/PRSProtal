@@ -229,6 +229,8 @@ function AccessManagement() {
         customRole: editEmployeeData.customRole,
         joiningDate: editEmployeeData.joiningDate,
         status: editEmployeeData.status,
+        assignedStudents: editEmployeeData.assignedStudents || [],
+        assignedGroups: editEmployeeData.assignedGroups || [],
       };
 
       if (editEmployeeData.password && editEmployeeData.password.trim()) {
@@ -1455,6 +1457,8 @@ function AccessManagement() {
                                     ...trainer,
                                     joiningDate: formattedJoiningDate,
                                     password: "",
+                                    assignedStudents: (trainer?.assignedStudents || []).map(s => s._id || s),
+                                    assignedGroups: (trainer?.assignedGroups || []).map(g => g._id || g)
                                   });
                                   setShowEditEmployeeModal(true);
                                   setOpenMenuId(null);
@@ -1953,6 +1957,81 @@ function AccessManagement() {
                 )}
               </div>
 
+              {/* Edit Assignments Section */}
+              <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #e2e8f0" }}>
+                <h3 style={{ margin: "0 0 16px 0", fontSize: "16px", color: "#0f172a", fontWeight: "600" }}>
+                  Edit Assignments
+                </h3>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px" }}>
+                  {/* Groups Checkbox List */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontWeight: 600, display: "block", marginBottom: "8px", fontSize: "14px", color: "#475569" }}>
+                      Assigned Groups ({groups.length} available)
+                    </label>
+                    <div style={{ border: "1px solid #e2e8f0", borderRadius: "8px", padding: "12px", maxHeight: "200px", overflowY: "auto", background: "#f8fafc" }}>
+                      {groups.length === 0 ? (
+                        <div style={{ fontSize: "13px", color: "#64748b" }}>No groups available</div>
+                      ) : (
+                        groups.map((group) => {
+                          const isChecked = (editEmployeeData.assignedGroups || []).includes(group._id);
+                          return (
+                            <label key={group._id} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", cursor: "pointer", fontSize: "13px", color: "#334155", fontWeight: 500 }}>
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  const current = editEmployeeData.assignedGroups || [];
+                                  const next = current.includes(group._id)
+                                    ? current.filter(id => id !== group._id)
+                                    : [...current, group._id];
+                                  setEditEmployeeData({ ...editEmployeeData, assignedGroups: next });
+                                }}
+                                style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                              />
+                              <span>{group.groupName || `Group ${group.groupNumber}`}</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Students Checkbox List */}
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontWeight: 600, display: "block", marginBottom: "8px", fontSize: "14px", color: "#475569" }}>
+                      Assigned Students ({students.length} available)
+                    </label>
+                    <div style={{ border: "1px solid #e2e8f0", borderRadius: "8px", padding: "12px", maxHeight: "200px", overflowY: "auto", background: "#f8fafc" }}>
+                      {students.length === 0 ? (
+                        <div style={{ fontSize: "13px", color: "#64748b" }}>No students available</div>
+                      ) : (
+                        students.map((student) => {
+                          const isChecked = (editEmployeeData.assignedStudents || []).includes(student._id);
+                          return (
+                            <label key={student._id} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", cursor: "pointer", fontSize: "13px", color: "#334155", fontWeight: 500 }}>
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  const current = editEmployeeData.assignedStudents || [];
+                                  const next = current.includes(student._id)
+                                    ? current.filter(id => id !== student._id)
+                                    : [...current, student._id];
+                                  setEditEmployeeData({ ...editEmployeeData, assignedStudents: next });
+                                }}
+                                style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                              />
+                              <span>{student.name} ({student.internId})</span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div style={{ marginTop: "24px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
                 <button type="submit" disabled={loading} style={{ padding: "12px 28px", background: loading ? "#94a3b8" : "#0f172a", color: "white", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600 }}>
                   {loading ? "Saving..." : "Save Changes"}
@@ -1967,379 +2046,223 @@ function AccessManagement() {
       )}
 
       {/* Employee Details Modal - Shows employee info from table */}
-      {selectedTrainerDetails && (
+      {selectedTrainerDetails && createPortal(
         <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1100,
-          }}
+          className="profile-modal-overlay"
           onClick={() => setSelectedTrainerDetails(null)}
         >
-          <div
-            style={{
-              background: "white",
-              borderRadius: "16px",
-              maxWidth: "600px",
-              width: "90%",
-              maxHeight: "90vh",
-              overflow: "auto",
-              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div
-              style={{
-                background: "#0f172a",
-                padding: "24px",
-                borderTopLeftRadius: "16px",
-                borderTopRightRadius: "16px",
-                color: "white",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
+          <div className="profile-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="profile-header" style={{ background: '#324158' }}>
+              <button
+                className="profile-close-btn"
+                onClick={() => setSelectedTrainerDetails(null)}
               >
-                <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "600" }}>
-                  Employee Details
-                </h2>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  <button
-                    onClick={() => {
-                      setEditEmployeeData({
-                        ...selectedTrainerDetails,
-                        joiningDate: selectedTrainerDetails?.joiningDate ? new Date(selectedTrainerDetails.joiningDate).toISOString().split("T")[0] : "",
-                        password: "",
-                      });
-                      setShowEditEmployeeModal(true);
-                    }}
-                    style={{
-                      background: "rgba(255, 255, 255, 0.14)",
-                      border: "1px solid rgba(255, 255, 255, 0.24)",
-                      color: "white",
-                      padding: "8px 14px",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={() => setSelectedTrainerDetails(null)}
-                    style={{
-                      background: "rgba(255, 255, 255, 0.2)",
-                      border: "none",
-                      color: "white",
-                      fontSize: "24px",
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "50%",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.target.style.background = "rgba(255, 255, 255, 0.3)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.target.style.background = "rgba(255, 255, 255, 0.2)")
-                    }
-                  >
-                    X
-                  </button>
-                </div>
+                ×
+              </button>
+
+              <div className="profile-avatar">
+                {String(selectedTrainerDetails.name || 'E')
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join('')
+                  .toUpperCase()}
+              </div>
+              <h2 className="profile-name">{selectedTrainerDetails.name}</h2>
+              <div className="profile-badges">
+                <span className="profile-badge">
+                  Role: {selectedTrainerDetails.role === 'other'
+                    ? (selectedTrainerDetails.customRole || 'Other')
+                    : (selectedTrainerDetails.role === 'hr' ? 'HR' : 'Trainer')}
+                </span>
+                <span className="profile-badge">
+                  Total Students: {selectedTrainerDetails.assignedStudents?.length || 0}
+                </span>
+                <span className="profile-badge">
+                  Total Groups: {selectedTrainerDetails.assignedGroups?.length || 0}
+                </span>
+                <span className="profile-badge">
+                  Status: {selectedTrainerDetails.status || 'Active'}
+                </span>
               </div>
             </div>
 
-            {/* Content */}
-            <div style={{ padding: "32px" }}>
-              {/* Info Cards */}
-              <div style={{ display: "grid", gap: "16px" }}>
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    borderRadius: "12px",
-                    padding: "20px",
-                  }}
-                >
-                  <h3
-                    style={{
-                      margin: "0 0 16px 0",
-                      color: "#0c4a6e",
-                      fontSize: "16px",
-                    }}
-                  >
-                    Personal Information
-                  </h3>
-                  <div style={{ display: "grid", gap: "12px" }}>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#075985",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Full Name
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#0c4a6e" }}>
-                        {selectedTrainerDetails.name}
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#075985",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Email Address
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#0c4a6e" }}>
-                        {selectedTrainerDetails.email}
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#075985",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Password
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#0c4a6e", fontWeight: "600" }}>
-                        {selectedTrainerDetails.plainPassword || "trainer"}
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#075985",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Mobile Number
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#0c4a6e" }}>
-                        {selectedTrainerDetails.mobile}
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#075985",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Role
-                      </label>
-                      <div
-                        style={{
-                          fontSize: "15px",
-                          color: "#0c4a6e",
-                          textTransform: "capitalize",
-                        }}
-                      >
-                        {selectedTrainerDetails.role === "other"
-                          ? (selectedTrainerDetails.customRole || "Other")
-                          : selectedTrainerDetails.role}
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#075985",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Joining Date
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#0c4a6e" }}>
-                        {selectedTrainerDetails.joiningDate ? new Date(selectedTrainerDetails.joiningDate).toLocaleDateString("en-IN") : "-"}
-                      </div>
-                    </div>
-                  </div>
+            <div className="profile-body">
+              {/* Personal & Contact Information */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Personal & Contact Information
+                </h3>
+                <div className="profile-info-grid">
+                  <div className="profile-field"><label>Full Name</label><div className="field-value">{selectedTrainerDetails.name || "-"}</div></div>
+                  <div className="profile-field"><label>Email Address</label><div className="field-value">{selectedTrainerDetails.email || "-"}</div></div>
+                  <div className="profile-field"><label>WhatsApp Mobile</label><div className="field-value">{selectedTrainerDetails.mobile || "-"}</div></div>
+                  <div className="profile-field"><label>Role</label><div className="field-value">{selectedTrainerDetails.role === 'other' ? (selectedTrainerDetails.customRole || 'Other') : (selectedTrainerDetails.role === 'hr' ? 'HR' : 'Trainer')}</div></div>
+                  <div className="profile-field"><label>Joining Date</label><div className="field-value">{selectedTrainerDetails.joiningDate ? new Date(selectedTrainerDetails.joiningDate).toLocaleDateString("en-IN") : "-"}</div></div>
+                  <div className="profile-field"><label>Login Password</label><div className="field-value" style={{ fontWeight: 500 }}>{selectedTrainerDetails.plainPassword || "trainer"}</div></div>
+                  <div className="profile-field"><label>Account Status</label><div className="field-value"><span className={`status-pill ${String(selectedTrainerDetails.status || '').toLowerCase()}`}>{selectedTrainerDetails.status || 'Active'}</span></div></div>
                 </div>
+              </div>
 
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    borderRadius: "12px",
-                    padding: "20px",
-                  }}
-                >
-                  <h3
-                    style={{
-                      margin: "0 0 16px 0",
-                      color: "#14532d",
-                      fontSize: "16px",
-                    }}
-                  >
-                    Assignment Information
-                  </h3>
-                  <div style={{ display: "grid", gap: "12px" }}>
-                    <div>
-                      <label
+              {/* Assigned Groups */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Assigned Groups ({selectedTrainerDetails.assignedGroups?.length || 0})
+                </h3>
+                <div style={{ display: "grid", gap: "10px" }}>
+                  {(selectedTrainerDetails.assignedGroups || []).length === 0 ? (
+                    <div style={{ fontSize: "14px", color: "#64748b" }}>No groups assigned to this employee.</div>
+                  ) : (
+                    (selectedTrainerDetails.assignedGroups || []).map((group) => (
+                      <div
+                        key={group._id}
                         style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#166534",
-                          marginBottom: "4px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "10px 14px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        Assigned Groups
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#14532d" }}>
-                        {selectedTrainerDetails.assignedGroups?.length || 0}{" "}
-                        groups
+                        <div>
+                          <strong style={{ fontSize: "14px", color: "#0f172a" }}>{group.groupName || `Group ${group.groupNumber}`}</strong>
+                          <div style={{ fontSize: "12px", color: "#64748b" }}>{group.students?.length || 0} students assigned</div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Assigned Students */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Assigned Students ({selectedTrainerDetails.assignedStudents?.length || 0})
+                </h3>
+                <div style={{ display: "grid", gap: "10px" }}>
+                  {(selectedTrainerDetails.assignedStudents || []).length === 0 ? (
+                    <div style={{ fontSize: "14px", color: "#64748b" }}>No students assigned to this employee.</div>
+                  ) : (
+                    (selectedTrainerDetails.assignedStudents || []).map((student) => (
+                      <div
+                        key={student._id}
                         style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#166534",
-                          marginBottom: "4px",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "10px 14px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        Assigned Groups
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#14532d" }}>
-                        {selectedTrainerDetails.assignedGroups?.length || 0} groups
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#166534",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Work Items
-                      </label>
-                      <div style={{ fontSize: "15px", color: "#14532d" }}>
-                        {selectedTrainerDetails.workAssignments?.length || 0} items
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          color: "#166534",
-                          marginBottom: "4px",
-                        }}
-                      >
-                        Status
-                      </label>
-                      <div>
-                        <span
-                          style={{
-                            display: "inline-block",
-                            padding: "4px 12px",
-                            borderRadius: "12px",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                            background:
-                              selectedTrainerDetails.status === "Active"
-                                ? "#dcfce7"
-                                : "#fee2e2",
-                            color:
-                              selectedTrainerDetails.status === "Active"
-                                ? "#166534"
-                                : "#991b1b",
-                          }}
-                        >
-                          {selectedTrainerDetails.status}
+                        <div>
+                          <strong style={{ fontSize: "14px", color: "#0f172a" }}>{student.name}</strong>
+                          <div style={{ fontSize: "12px", color: "#64748b" }}>{student.internId} &middot; {student.email}</div>
+                        </div>
+                        <span className={`status-pill ${String(student.status || '').toLowerCase()}`} style={{ fontSize: "11px", padding: "2px 8px" }}>
+                          {student.status || 'Active'}
                         </span>
                       </div>
-                    </div>
-                  </div>
+                    ))
+                  )}
                 </div>
+              </div>
 
-                {/* Login Info Note */}
-                <div
-                  style={{
-                    background: "#fef3c7",
-                    border: "1px solid #fbbf24",
-                    borderRadius: "8px",
-                    padding: "16px",
-                  }}
-                >
-                  <div style={{ display: "flex", gap: "12px" }}>
-                   
-                    <div>
-                      <strong
+              {/* Work Assignments */}
+              <div className="profile-section">
+                <h3 className="profile-section-title">
+                  <span className="profile-section-bar" />
+                  Work Assignments ({selectedTrainerDetails.workAssignments?.length || 0})
+                </h3>
+                <div style={{ display: "grid", gap: "12px" }}>
+                  {(selectedTrainerDetails.workAssignments || []).length === 0 ? (
+                    <div style={{ fontSize: "14px", color: "#64748b" }}>No work tasks assigned yet.</div>
+                  ) : (
+                    (selectedTrainerDetails.workAssignments || []).map((work) => (
+                      <div
+                        key={work._id}
                         style={{
-                          color: "#92400e",
-                          display: "block",
-                          marginBottom: "4px",
-                          fontSize: "14px",
+                          padding: "14px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
-                        Login Credentials
-                      </strong>
-                      <p
-                        style={{
-                          margin: 0,
-                          color: "#78350f",
-                          fontSize: "13px",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        Employee can login using their email address:{" "}
-                        <strong>{selectedTrainerDetails.email}</strong> and password:{" "}
-                        <strong>{selectedTrainerDetails.plainPassword || "trainer"}</strong>
-                      </p>
-                    </div>
-                  </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                          <strong style={{ fontSize: "14px", color: "#0f172a" }}>{work.title}</strong>
+                          <span style={{ fontSize: "12px", color: "#64748b" }}>{work.workDate ? new Date(work.workDate).toLocaleDateString("en-IN") : "-"}</span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: "13px", color: "#475569", lineHeight: "1.5" }}>{work.description}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: "24px 32px",
+                borderTop: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "12px",
+                background: "#f8fafc",
+                borderBottomLeftRadius: "16px",
+                borderBottomRightRadius: "16px"
+              }}
+            >
+              <button
+                onClick={() => {
+                  setEditEmployeeData({
+                    ...selectedTrainerDetails,
+                    joiningDate: selectedTrainerDetails?.joiningDate ? new Date(selectedTrainerDetails.joiningDate).toISOString().split("T")[0] : "",
+                    password: "",
+                    assignedStudents: (selectedTrainerDetails.assignedStudents || []).map(s => s._id || s),
+                    assignedGroups: (selectedTrainerDetails.assignedGroups || []).map(g => g._id || g)
+                  });
+                  setShowEditEmployeeModal(true);
+                }}
+                style={{
+                  padding: "10px 20px",
+                  background: "#324158",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Edit Profile & Assignments
+              </button>
+              <button
+                onClick={() => setSelectedTrainerDetails(null)}
+                style={{
+                  padding: "10px 20px",
+                  background: "#e2e8f0",
+                  color: "#475569",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

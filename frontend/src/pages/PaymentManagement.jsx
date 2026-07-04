@@ -54,7 +54,7 @@ const downloadReceipt = (item) => {
           .receipt-title h2 {
             font-size: 24px;
             font-weight: 800;
-            color: #3b82f6;
+            color: #000000;
             margin: 0 0 6px 0;
             text-transform: uppercase;
             letter-spacing: 0.05em;

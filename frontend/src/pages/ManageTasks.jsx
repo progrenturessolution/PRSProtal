@@ -8,6 +8,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeSection, setActiveSection] = useState("team");
+  const [statusFilter, setStatusFilter] = useState("All");
   const [expandedTask, setExpandedTask] = useState(null);
   const [adminMessage, setAdminMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -76,8 +77,17 @@ function ManageTasks({ onTaskApproved, onBack }) {
     }
   };
 
-  const teamTasks = tasks.filter((t) => t.isTeamTask);
-  const soloTasks = tasks.filter((t) => !t.isTeamTask);
+  const filteredTasks = tasks.filter((t) => {
+    if (statusFilter === "Completed") return t.status === "Completed";
+    if (statusFilter === "Incompleted") return t.status !== "Completed";
+    return true;
+  });
+
+  const teamTasks = filteredTasks.filter((t) => t.isTeamTask);
+  const soloTasks = filteredTasks.filter((t) => !t.isTeamTask);
+
+  const totalTeamCount = tasks.filter((t) => t.isTeamTask).length;
+  const totalSoloCount = tasks.filter((t) => !t.isTeamTask).length;
 
   const showSuccess = (msg) => {
     setSuccess(msg);
@@ -482,65 +492,92 @@ function ManageTasks({ onTaskApproved, onBack }) {
           <h2>Tasks Overview</h2>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "4px",
-            padding: "12px",
-            background: "#f1f5f9",
-            borderRadius: "12px",
-            width: "fit-content",
-          }}
-        >
-          {[
-            { id: "team", label: " Squad Tasks", count: teamTasks.length },
-            { id: "solo", label: " Solo Tasks", count: soloTasks.length },
-          ].map(({ id, label, count }) => (
-            <button
-              key={id}
-              onClick={() => setActiveSection(id)}
-              style={{
-                padding: "10px 22px",
-                borderRadius: "8px",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: "700",
-                fontSize: "14px",
-                background: activeSection === id ? "white" : "transparent",
-                color: activeSection === id ? "#0f172a" : "#64748b",
-                boxShadow:
-                  activeSection === id ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
-                transition: "all 0.2s",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              {label}
-              <span
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", padding: "0 12px 12px 12px" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "4px",
+              padding: "6px",
+              background: "#f1f5f9",
+              borderRadius: "12px",
+              width: "fit-content",
+            }}
+          >
+            {[
+              { id: "team", label: "Group Tasks", count: totalTeamCount },
+              { id: "solo", label: "Individual Tasks", count: totalSoloCount },
+            ].map(({ id, label, count }) => (
+              <button
+                key={id}
+                onClick={() => setActiveSection(id)}
                 style={{
-                  padding: "2px 8px",
-                  borderRadius: "10px",
-                  fontSize: "12px",
-                  background: activeSection === id ? "#324158" : "#e2e8f0",
-                  color: activeSection === id ? "#ffffff" : "#475569",
-                  fontWeight: "600"
+                  padding: "10px 22px",
+                  borderRadius: "8px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "700",
+                  fontSize: "14px",
+                  background: activeSection === id ? "white" : "transparent",
+                  color: activeSection === id ? "#0f172a" : "#64748b",
+                  boxShadow:
+                    activeSection === id ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                {count}
-              </span>
-            </button>
-          ))}
+                {label}
+                <span
+                  style={{
+                    padding: "2px 8px",
+                    borderRadius: "10px",
+                    fontSize: "12px",
+                    background: activeSection === id ? "#324158" : "#e2e8f0",
+                    color: activeSection === id ? "#ffffff" : "#475569",
+                    fontWeight: "600"
+                  }}
+                >
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Status filter dropdown */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "14px", fontWeight: "600", color: "#64748b" }}>Status Filter:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "1px solid #e2e8f0",
+                background: "white",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#334155",
+                cursor: "pointer",
+                outline: "none",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+              }}
+            >
+              <option value="All">All Tasks</option>
+              <option value="Completed">Completed</option>
+              <option value="Incompleted">Incompleted / Active</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Squad Tasks */}
+      {/* Group Tasks */}
       {activeSection === "team" &&
         (teamTasks.length === 0 ? (
           <div className="premium-card">
             <div className="empty-state">
               <p>
-                No squad tasks created yet. Create a team task to get started.
+                No group tasks created yet. Create a team task to get started.
               </p>
             </div>
           </div>
@@ -553,7 +590,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
               className="premium-card-header"
               style={{ paddingBottom: "9px", paddingLeft: "12px",paddingTop: "12px"  }}
             >
-              <h2> Squad Tasks</h2>
+              <h2> Group Tasks</h2>
             </div>
             <table className="data-table">
               <thead>
@@ -719,7 +756,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
           </div>
         ))}
 
-      {/* Solo Tasks */}
+      {/* Individual Tasks */}
       {activeSection === "solo" &&
         (soloTasks.length === 0 ? (
           <div className="card">
@@ -739,7 +776,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                   className="premium-card-header"
                   style={{ paddingBottom: "12px",paddingLeft: "12px",paddingTop: "12px"   }}
                 >
-                  <h2>Solo Tasks</h2>
+                  <h2>Individual Tasks</h2>
                 </div>
                 <table className="data-table">
                   <thead>
@@ -1464,7 +1501,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
               gap: "4px"
             }}>
               <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                {viewingTaskDetails.isTeamTask ? "Squad Task Details" : "Solo Task Details"}
+                {viewingTaskDetails.isTeamTask ? "Group Task Details" : "Individual Task Details"}
               </span>
               <h2 style={{ margin: 0, fontSize: "19px", color: "#ffffff", fontWeight: 500 }}>
                 {viewingTaskDetails.title}
@@ -1571,11 +1608,11 @@ function ManageTasks({ onTaskApproved, onBack }) {
                 )}
               </div>
 
-              {/* Squad Members */}
+              {/* Group Members */}
               {viewingTaskDetails.isTeamTask && (
                 <div style={{ marginBottom: "10px" }}>
                   <h4 style={{ margin: "0 0 10px", fontSize: "13px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>
-                    Squad Members ({viewingTaskDetails.teamMembers?.length || 0})
+                    Group Members ({viewingTaskDetails.teamMembers?.length || 0})
                   </h4>
                   {viewingTaskDetails.teamMembers?.length > 0 ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -1771,7 +1808,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     color: "rgba(255,255,255,0.55)",
                   }}
                 >
-                  Squad Task &nbsp;•&nbsp;{" "}
+                  Group Task &nbsp;•&nbsp;{" "}
                   {expandedTask.teamMembers?.length || 0} members &nbsp;•&nbsp;
                   Deadline: {fmt(expandedTask.deadline)}
                 </p>

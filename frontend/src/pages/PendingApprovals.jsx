@@ -190,7 +190,7 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                         color: task.isTeamTask ? '#344158' : '#475569'
                       }}
                     >
-                      {task.isTeamTask ? 'Squad Task' : 'Solo Task'}
+                      {task.isTeamTask ? 'Group Task' : 'Individual Task'}
                     </span>
                   </div>
                 </div>
@@ -208,7 +208,7 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                 }}>
                   <div>
                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>
-                      {task.isTeamTask ? 'Squad Lead' : 'Intern'}
+                      {task.isTeamTask ? 'Group Lead' : 'Intern'}
                     </div>
                     <div style={{ fontWeight: 600, color: '#0f172a' }}>{task.assignedTo?.name || 'N/A'}</div>
                   </div>
@@ -226,7 +226,7 @@ function PendingApprovals({ onTaskApproved, onBack }) {
                     borderRadius: '8px',
                     border: '1px solid rgba(52, 65, 88, 0.15)'
                   }}>
-                    <div style={{ fontSize: '12px', color: '#344158', marginBottom: '6px', fontWeight: 600 }}>Squad Members</div>
+                    <div style={{ fontSize: '12px', color: '#344158', marginBottom: '6px', fontWeight: 600 }}>Group Members</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {task.teamMembers.map((member) => (
                         <div key={member._id} style={{ fontSize: '13px', color: '#475569', display: 'flex', justifyContent: 'space-between' }}>
