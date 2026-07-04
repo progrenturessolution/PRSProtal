@@ -7,6 +7,7 @@ import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
 import ErrorBoundary from "../components/ErrorBoundary";
 import GdConductModal from "../components/GdConductModal";
 import GdStudentConductModal from "../components/GdStudentConductModal";
+import { renderNotificationMessage } from "../utils/notificationMessageFormatter";
 
 function TrainerDashboard() {
   const navigate = useNavigate();
@@ -4652,13 +4653,7 @@ function TrainerDashboard() {
                     <p>No notifications at this time.</p>
                   </div>
                 ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "15px",
-                    }}
-                  >
+                  <div className="notification-list">
                     {notifications.map((notif) => {
                       const createdAt = notif.createdAt || notif.updatedAt || notif.date;
                       const message = notif.message || notif.description || notif.body || "";
@@ -4670,70 +4665,35 @@ function TrainerDashboard() {
                       return (
                         <div
                           key={notif._id || `${title}-${createdAt}`}
-                          style={{
-                            padding: "16px",
-                            background:
-                              notif.notificationType === "General/Announcement"
-                                ? "#f9fafb"
-                                : "#eff6ff",
-                            borderRadius: "10px",
-                            border:
-                              "1px solid " +
-                              (notif.notificationType === "General/Announcement"
-                                ? "#e5e7eb"
-                                : "#bfdbfe"),
-                            borderLeft:
-                              "4px solid " +
-                              (notif.notificationType === "Interview"
-                                ? "#f59e0b"
-                                : notif.notificationType === "Test/Assessment"
-                                  ? "#3b82f6"
-                                  : notif.notificationType === "Certificate"
-                                    ? "#10b981"
-                                    : "#6b7280"),
-                          }}
+                          className={`notification-card ${notif.isRead ? 'read' : 'unread'}`}
                         >
-                          <div style={{ marginBottom: "8px" }}>
-                            <h4
-                              style={{
-                                margin: "0 0 4px 0",
-                                color: "#0f172a",
-                                fontSize: "15px",
-                                fontWeight: 600,
-                              }}
-                            >
-                              {title}
-                            </h4>
-                            <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                              {createdAt ? new Date(createdAt).toLocaleDateString() : ""}
-                              {createdAt ? ` at ${new Date(createdAt).toLocaleTimeString()}` : ""}
-                            </span>
+                          <div className="notification-card-header">
+                            <div>
+                              <h3>{title}</h3>
+                              <div className="notification-message-formatted">
+                                {renderNotificationMessage(message)}
+                              </div>
+                            </div>
+                            {!notif.isRead && <span className="notification-read-pill">New</span>}
                           </div>
-                          <p
-                            style={{
-                              margin: "8px 0",
-                              color: "#374151",
-                              fontSize: "14px",
-                              lineHeight: "1.5",
-                            }}
-                          >
-                            {message}
-                          </p>
+
                           {attachmentUrl ? (
-                            <a
-                              href={attachmentUrl.startsWith("/") ? attachmentUrl : attachmentUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              style={{
-                                fontSize: "13px",
-                                color: "#3b82f6",
-                                marginTop: "8px",
-                                display: "inline-block",
-                              }}
-                            >
-                              Download Attachment
-                            </a>
+                            <div className="notification-attachment-wrap">
+                              <a
+                                href={attachmentUrl.startsWith("/") ? attachmentUrl : attachmentUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="notification-attachment-link"
+                              >
+                                View Attachment
+                              </a>
+                            </div>
                           ) : null}
+
+                          <div className="notification-card-meta">
+                            <span className="notification-type-pill">{notif.notificationType || "General"}</span>
+                            <span>{createdAt ? new Date(createdAt).toLocaleString("en-IN") : "-"}</span>
+                          </div>
                         </div>
                       );
                     })}

@@ -4,6 +4,7 @@ import { taskAPI, internAPI, UPLOADS_BASE } from "../services/api";
 import TeamTasks from "./TeamTasks";
 import logo from "../assets/logo.png";
 import "./ActivityManagementNew.css";
+import { renderNotificationMessage } from "../utils/notificationMessageFormatter";
 
 function InternDashboard() {
   const navigate = useNavigate();
@@ -3284,80 +3285,46 @@ function InternDashboard() {
                   <p>No notifications at this time.</p>
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "15px",
-                  }}
-                >
+                <div className="notification-list">
                   {notifications
                     .filter(notif => notif.notificationType !== 'Test/Assessment' && notif.notificationType !== 'Interview')
-                    .map((notif) => (
-                    <div
-                      key={notif._id}
-                      style={{
-                        padding: "16px",
-                        background:
-                          notif.notificationType === "General/Announcement"
-                            ? "#f9fafb"
-                            : "#eff6ff",
-                        borderRadius: "10px",
-                        border:
-                          "1px solid " +
-                          (notif.notificationType === "General/Announcement"
-                            ? "#e5e7eb"
-                            : "#bfdbfe"),
-                        borderLeft: "4px solid #314158",
-                      }}
-                    >
-                      <div style={{ marginBottom: "8px" }}>
-                        <h4
-                          style={{
-                            margin: "0 0 4px 0",
-                            color: "#0f172a",
-                            fontSize: "15px",
-                            fontWeight: 600,
-                          }}
+                    .map((notif) => {
+                      const createdAt = notif.createdAt || notif.updatedAt;
+                      return (
+                        <div
+                          key={notif._id}
+                          className={`notification-card ${notif.isRead ? 'read' : 'unread'}`}
                         >
-                          {notif.title}
-                        </h4>
-                        <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {new Date(notif.createdAt).toLocaleDateString()} at{" "}
-                          {new Date(notif.createdAt).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      <p
-                        style={{
-                          margin: "8px 0",
-                          color: "#374151",
-                          fontSize: "14px",
-                          lineHeight: "1.5",
-                        }}
-                      >
-                        {notif.message}
-                      </p>
-                      {notif.attachment?.filename && (
-                        <a
-                          href={
-                            UPLOADS_BASE +
-                            "/uploads/notifications/" +
-                            notif.attachment.filename
-                          }
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            fontSize: "13px",
-                            color: "#3b82f6",
-                            marginTop: "8px",
-                            display: "inline-block",
-                          }}
-                        >
-                          Download Attachment
-                        </a>
-                      )}
-                    </div>
-                  ))}
+                          <div className="notification-card-header">
+                            <div>
+                              <h3>{notif.title || 'Notification'}</h3>
+                              <div className="notification-message-formatted">
+                                {renderNotificationMessage(notif.message)}
+                              </div>
+                            </div>
+                            {!notif.isRead && <span className="notification-read-pill">New</span>}
+                          </div>
+
+                          {notif.attachment?.filename && (
+                            <div className="notification-attachment-wrap">
+                              <a
+                                href={`${UPLOADS_BASE}/uploads/notifications/${notif.attachment.filename}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="notification-attachment-link"
+                              >
+                                View Attachment
+                              </a>
+                            </div>
+                          )}
+
+                          <div className="notification-card-meta">
+                            <span className="notification-type-pill">{notif.notificationType || 'General'}</span>
+                            <span>{createdAt ? new Date(createdAt).toLocaleString('en-IN') : '-'}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

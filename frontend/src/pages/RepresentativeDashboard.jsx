@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { representativeAPI, UPLOADS_BASE } from '../services/api';
 import logo from '../assets/logo.png';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { renderNotificationMessage } from '../utils/notificationMessageFormatter';
 
 const initialStudentForm = {
   studentType: 'Internship',
@@ -2370,21 +2371,43 @@ function RepresentativeDashboard() {
                   </div>
                 ) : (
                   <div className="notification-list">
-                    {notifications.map((notification) => (
-                      <div key={notification._id} className={`notification-card ${notification.isRead ? 'read' : 'unread'}`}>
-                        <div className="notification-card-header">
-                          <div>
-                            <h3>{notification.title}</h3>
-                            <p>{notification.message}</p>
+                    {notifications.map((notification) => {
+                      const attachmentUrl = notification.attachment?.filename
+                        ? `${UPLOADS_BASE}/uploads/notifications/${notification.attachment.filename}`
+                        : '';
+
+                      return (
+                        <div key={notification._id} className={`notification-card ${notification.isRead ? 'read' : 'unread'}`}>
+                          <div className="notification-card-header">
+                            <div>
+                              <h3>{notification.title || 'Notification'}</h3>
+                              <div className="notification-message-formatted">
+                                {renderNotificationMessage(notification.message)}
+                              </div>
+                            </div>
+                            {!notification.isRead && <span className="notification-read-pill">New</span>}
                           </div>
-                          {!notification.isRead && <span className="notification-read-pill">New</span>}
+
+                          {attachmentUrl && (
+                            <div className="notification-attachment-wrap">
+                              <a
+                                href={attachmentUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="notification-attachment-link"
+                              >
+                                View Attachment
+                              </a>
+                            </div>
+                          )}
+
+                          <div className="notification-card-meta">
+                            <span className="notification-type-pill">{notification.notificationType || 'General'}</span>
+                            <span>{notification.createdAt ? new Date(notification.createdAt).toLocaleString('en-IN') : '-'}</span>
+                          </div>
                         </div>
-                        <div className="notification-card-meta">
-                          <span>{notification.notificationType || 'General'}</span>
-                          <span>{new Date(notification.createdAt).toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -1704,17 +1704,23 @@ button, a, input, select, textarea {
 }
 
 .notification-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid rgba(50, 65, 88, 0.2);
+  border-radius: 14px;
   background: #ffffff;
   padding: 16px 18px;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 10px 24px rgba(50, 65, 88, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(50, 65, 88, 0.12);
 }
 
 .notification-card.unread {
-  border-color: rgba(50, 65, 88, 0.35);
+  border-color: rgba(50, 65, 88, 0.45);
   border-left: 4px solid #324158;
-  background: linear-gradient(180deg, rgba(239, 246, 255, 0.9), #ffffff);
+  background: linear-gradient(180deg, rgba(50, 65, 88, 0.06), #ffffff);
 }
 
 .notification-card-header {
@@ -1726,14 +1732,57 @@ button, a, input, select, textarea {
 
 .notification-card-header h3 {
   margin: 0 0 6px;
-  font-size: 15px;
-  color: #0f172a;
+  font-size: 16px;
+  color: #324158;
+  font-weight: 700;
 }
 
 .notification-card-header p {
   margin: 0;
   color: #475569;
   line-height: 1.55;
+  font-size: 14px;
+}
+
+.notification-message-formatted {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.notification-message-formatted p {
+  margin: 0 0 10px;
+}
+
+.notification-message-formatted p:last-child {
+  margin-bottom: 0;
+}
+
+.notification-message-formatted ul,
+.notification-message-formatted ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.notification-message-formatted ul:last-child,
+.notification-message-formatted ol:last-child {
+  margin-bottom: 0;
+}
+
+.notification-message-formatted li {
+  margin: 4px 0;
+}
+
+.notification-inline-link {
+  color: #324158;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-word;
+}
+
+.notification-inline-link:hover {
+  color: #1f2d3f;
 }
 
 .notification-card-meta {
@@ -1743,6 +1792,9 @@ button, a, input, select, textarea {
   margin-top: 12px;
   font-size: 12px;
   color: #64748b;
+  border-top: 1px solid rgba(50, 65, 88, 0.12);
+  padding-top: 10px;
+  flex-wrap: wrap;
 }
 
 .notification-read-pill {
@@ -1750,11 +1802,44 @@ button, a, input, select, textarea {
   align-items: center;
   padding: 4px 8px;
   border-radius: 999px;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: #324158;
+  color: #ffffff;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+.notification-type-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(50, 65, 88, 0.1);
+  color: #324158;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.notification-attachment-wrap {
+  margin-top: 12px;
+}
+
+.notification-attachment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(50, 65, 88, 0.24);
+  background: #ffffff;
+  color: #324158;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.notification-attachment-link:hover {
+  background: rgba(50, 65, 88, 0.08);
 }
 
 .sidebar-activity-parent {
