@@ -751,50 +751,68 @@ function InternDashboard() {
     if (!currentUser) return;
     const uid = currentUser?._id || currentUser?.id || 'anon';
     try {
-      // 1. Scheduled Interviews
-      const intResp = await internAPI.getMyScheduledInterviews();
-      if (intResp.data && intResp.data.success) {
-        const interviewsList = intResp.data.interviews || [];
-        const latestTimestamp = getLatestActivityTimestamp(interviewsList);
+      // Fetch all three in parallel
+      const [intResp, gdResp, notifResp] = await Promise.allSettled([
+        internAPI.getMyScheduledInterviews(),
+        internAPI.getMyScheduledGDs(),
+        internAPI.getMyNotifications(),
+      ]);
+
+      // Parse notifications once — used for Interview, GD, and Assessment badge checks
+      const allNotes = (notifResp.status === 'fulfilled' && notifResp.value?.data?.success)
+        ? (notifResp.value.data.notifications || [])
+        : [];
+
+      // Helper: get latest timestamp from a list of items
+      const latestOf = (items) => getLatestActivityTimestamp(items);
+
+      // --- 1. Scheduled Interviews ---
+      {
+        const interviewsList = (intResp.status === 'fulfilled' && intResp.value?.data?.success)
+          ? (intResp.value.data.interviews || []) : [];
+        // Also include Interview-type notifications (from reschedule/complete/delete)
+        const intNotifs = allNotes
+          .filter(n => n.notificationType === 'Interview')
+          .map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt }));
+
+        const latestTimestamp = Math.max(latestOf(interviewsList), latestOf(intNotifs));
         const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledInterviewsStorageKey}-${uid}`) || 0);
-        // Only SET unread — never clear here. Clearing happens when student opens the section.
         if (latestTimestamp > lastSeenTimestamp) {
           setHasUnreadScheduledInterviews(true);
         }
       }
 
-      // 2. Scheduled GDs
-      const gdResp = await internAPI.getMyScheduledGDs();
-      if (gdResp.data && gdResp.data.success) {
-        const gdList = gdResp.data.activities || [];
-        const latestTimestamp = getLatestActivityTimestamp(gdList);
+      // --- 2. Scheduled GDs ---
+      {
+        const gdList = (gdResp.status === 'fulfilled' && gdResp.value?.data?.success)
+          ? (gdResp.value.data.activities || []) : [];
+        // Also include GD-type notifications (from reschedule/complete/delete)
+        const gdNotifs = allNotes
+          .filter(n => n.notificationType === 'GD')
+          .map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt }));
+
+        const latestTimestamp = Math.max(latestOf(gdList), latestOf(gdNotifs));
         const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledGdsStorageKey}-${uid}`) || 0);
         if (latestTimestamp > lastSeenTimestamp) {
           setHasUnreadScheduledGds(true);
         }
       }
 
-      // 3. Scheduled Assessments
+      // --- 3. Scheduled Assessments ---
       try {
-        const [notifResp] = await Promise.allSettled([internAPI.getMyNotifications()]);
-        const notificationItems = [];
-        if (notifResp.status === 'fulfilled' && notifResp.value?.data?.success) {
-          const notes = notifResp.value.data.notifications || [];
-          notes
-            .filter((note) => note.notificationType === 'Test/Assessment')
-            .forEach((note) => {
-              notificationItems.push({
-                _id: note._id,
-                type: 'Assessment',
-                title: note.title,
-                dateTime: note.createdAt,
-                createdAt: note.createdAt,
-                createdBy: note.createdBy?.email || note.createdBy?.name || 'Admin',
-                status: 'Scheduled',
-                details: { notification: note },
-              });
-            });
-        }
+        const assessNotes = allNotes
+          .filter((note) => note.notificationType === 'Test/Assessment')
+          .map((note) => ({
+            _id: note._id,
+            type: 'Assessment',
+            title: note.title,
+            dateTime: note.createdAt,
+            createdAt: note.createdAt,
+            createdBy: note.createdBy?.email || note.createdBy?.name || 'Admin',
+            status: 'Scheduled',
+            details: { notification: note },
+          }));
+
         let localItems = [];
         try {
           const rawActs = JSON.parse(localStorage.getItem('recentActivities') || '[]');
@@ -808,7 +826,7 @@ function InternDashboard() {
           localItems = [];
         }
         const seen = new Set();
-        const merged = [...notificationItems, ...localItems].filter((item) => {
+        const merged = [...assessNotes, ...localItems].filter((item) => {
           const key = item._id ? `n:${item._id}` : `${item.title || ''}_${item.dateTime || ''}`;
           if (seen.has(key)) return false;
           seen.add(key);
@@ -1442,7 +1460,14 @@ function InternDashboard() {
           if (schedResp.data && schedResp.data.success) {
             const list = schedResp.data.interviews || [];
             setScheduledInterviews(list);
-            const latestTimestamp = getLatestActivityTimestamp(list);
+            // Also fetch Interview-type notifications (reschedule/complete/delete) to sync lastSeen
+            let intNotifTimestamp = 0;
+            try {
+              const nResp = await internAPI.getMyNotifications();
+              const intNotes = (nResp.data?.notifications || []).filter(n => n.notificationType === 'Interview');
+              intNotifTimestamp = getLatestActivityTimestamp(intNotes.map(n => ({ createdAt: n.createdAt })));
+            } catch (e) { /* ignore */ }
+            const latestTimestamp = Math.max(getLatestActivityTimestamp(list), intNotifTimestamp);
             const _uid = user?._id || user?.id || 'anon';
             localStorage.setItem(`${scheduledInterviewsStorageKey}-${_uid}`, String(latestTimestamp || Date.now()));
             setHasUnreadScheduledInterviews(false);
@@ -1515,7 +1540,14 @@ function InternDashboard() {
               setScheduledGds(finalGds || []);
             } catch (e2) { setScheduledGds([]); }
           }
-          const latestGdTimestamp = getLatestActivityTimestamp(finalGds);
+          // Also fetch GD-type notifications (reschedule/complete/delete) to sync lastSeen
+          let gdNotifTimestamp = 0;
+          try {
+            const nResp = await internAPI.getMyNotifications();
+            const gdNotes = (nResp.data?.notifications || []).filter(n => n.notificationType === 'GD');
+            gdNotifTimestamp = getLatestActivityTimestamp(gdNotes.map(n => ({ createdAt: n.createdAt })));
+          } catch (e) { /* ignore */ }
+          const latestGdTimestamp = Math.max(getLatestActivityTimestamp(finalGds), gdNotifTimestamp);
           const _uidGd = user?._id || user?.id || 'anon';
           localStorage.setItem(`${scheduledGdsStorageKey}-${_uidGd}`, String(latestGdTimestamp || Date.now()));
           setHasUnreadScheduledGds(false);

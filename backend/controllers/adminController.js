@@ -21,7 +21,7 @@ const createActivityNotification = async ({ title, message, type, studentIds, ad
     if (lowerType.includes('interview')) {
       notifType = 'Interview';
     } else if (lowerType.includes('gd')) {
-      notifType = 'Interview';
+      notifType = 'GD';
     } else if (lowerType.includes('assessment')) {
       notifType = 'Test/Assessment';
     }
