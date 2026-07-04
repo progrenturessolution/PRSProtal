@@ -2762,15 +2762,6 @@ exports.scheduleAssessment = async (req, res) => {
     const when = date ? `${date}${time ? ' ' + time : ''}` : (time || '');
     const baseMessage = `${description || ''}${when ? '\nWhen: ' + when : ''}${link ? '\nLink: ' + link : ''}`;
 
-    // Create notification for trainer (if trainer is specified)
-    if (trainerId && String(trainerId).trim() !== '') {
-      try {
-        const trainerNotification = new Notification({
-          title: `Scheduled Assessment: ${title || (type || 'Assessment')}`,
-          message: baseMessage,
-          notificationType: 'Test/Assessment',
-          sendTo: 'Individual',
-          recipientIds: [trainerId],
     // Create activity record for admin feed first to get an ID
     let savedActivity;
     try {
