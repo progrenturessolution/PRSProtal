@@ -715,13 +715,16 @@ function Notifications() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
             <LoadingSpinner text="Fetching notifications..." />
           </div>
-        ) : notifications.length === 0 ? (
+        ) : notifications.filter(notif => notif.notificationType === 'General/Announcement').length === 0 ? (
           <div style={{ padding: '30px', background: '#f9fafb', borderRadius: '8px', textAlign: 'center' }}>
-            <p style={{ color: '#6b7280', margin: 0 }}>No notifications found.</p>
+            <p style={{ color: '#6b7280', margin: 0 }}>No announcements found.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {notifications.map((notif) => {
+            {notifications
+              .filter(notif => notif.notificationType === 'General/Announcement')
+              .slice(0, 5)
+              .map((notif) => {
               const dateObj = new Date(notif.createdAt);
               const dateStr = dateObj.toLocaleDateString();
               const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
