@@ -1448,7 +1448,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
                           rel="noopener noreferrer"
                           style={{
                             padding: "6px 14px",
-                            background: "#0f172a",
+                            background: "#324158",
                             color: "white",
                             textDecoration: "none",
                             borderRadius: "6px",
@@ -1493,7 +1493,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
                         rel="noopener noreferrer"
                         style={{
                           padding: "6px 14px",
-                          background: "#0f172a",
+                          background: "#324158",
                           color: "white",
                           textDecoration: "none",
                           borderRadius: "6px",
@@ -1646,7 +1646,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
                     style={{
                       width: '100%',
                       padding: '12px',
-                      background: uploadingCert || !certificateFile ? '#cbd5e1' : '#3b82f6',
+                      background: uploadingCert || !certificateFile ? '#cbd5e1' : '#324158',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
@@ -1666,13 +1666,14 @@ function SMSProgramManagement({ onAddStudentClick }) {
                     <button
                       onClick={handleEditClick}
                       className="profile-btn profile-btn-primary"
-                      style={{ background: '#344158', borderColor: '#344158' }}
+                      style={{ background: '#324158', borderColor: '#324158' }}
                     >
                       Edit Profile
                     </button>
                     <button
                       onClick={() => setShowCertificateUpload(!showCertificateUpload)}
                       className="profile-btn profile-btn-secondary"
+                      style={{ background: '#324158', color: 'white', border: 'none', boxShadow: '0 4px 12px rgba(50, 65, 88, 0.2)' }}
                     >
                       {showCertificateUpload ? 'Hide' : 'Manage Certificates'}
                     </button>
