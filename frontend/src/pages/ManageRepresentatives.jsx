@@ -612,8 +612,9 @@ function ManageRepresentatives() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0, 0, 0, 0.72)",
-            zIndex: 1200,
+            background: "rgba(15,23,42,0.45)",
+            backdropFilter: "blur(4px)",
+            zIndex: 12000,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -625,172 +626,227 @@ function ManageRepresentatives() {
             style={{
               width: "min(1120px, 100%)",
               maxHeight: "92vh",
-              overflow: "auto",
+              overflow: "hidden",
               background: "#ffffff",
-              border: "1px solid #cbd5e1",
+              border: "1px solid #dbe7f2",
               borderRadius: "16px",
-              boxShadow: "0 24px 60px rgba(0, 0, 0, 0.35)",
+              boxShadow: "0 24px 60px rgba(15,23,42,0.16)",
+              display: "flex",
+              flexDirection: "column"
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header: Brand color #324158 and white text */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "18px 22px",
-                borderBottom: "1px solid #d4d4d4",
-                background: "#344158",
+                padding: "20px 24px",
+                background: "#324158",
                 color: "#ffffff",
               }}
             >
               <div>
-                <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 700, color: "#ffffff" }}>
+                <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 500, color: "#ffffff" }}>
                   {selectedRepDetails.representative.name} Profile
                 </h2>
-                <p style={{ margin: "6px 0 0 0", color: "#ffffff", fontSize: "13px" }}>
+                <p style={{ margin: "4px 0 0 0", color: "rgba(255,255,255,0.7)", fontSize: "13px", fontWeight: 400 }}>
                   {selectedRepDetails.representative.email}
                 </p>
               </div>
               <button
-                className="table-action-btn"
-                style={{ background: "#ffffff", color: "#344158", border: "1px solid #344158" }}
+                style={{
+                  background: "transparent",
+                  color: "#ffffff",
+                  border: "1px solid rgba(255,255,255,0.4)",
+                  borderRadius: "6px",
+                  padding: "8px 18px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
                 onClick={() => setSelectedRepDetails(null)}
               >
                 Close
               </button>
             </div>
 
-            <div style={{ padding: "20px" }}>
+            {/* Modal Body */}
+            <div style={{ padding: "24px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "24px" }}>
+              
+              {/* Stats Cards */}
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-                  gap: "12px",
-                  marginBottom: "18px",
+                  gap: "16px",
                 }}
               >
-                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
-                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>PGIR ID</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#344158" }}>{selectedRepDetails.representative.pgirId || "-"}</div>
-                </div>
-                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
-                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>Total Students</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#344158" }}>{selectedRepDetails.stats.totalStudents}</div>
-                </div>
-                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
-                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>This Week</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#344158" }}>{selectedRepDetails.stats.weeklyStudents}</div>
-                </div>
-                <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", padding: "14px", background: "#fafafa" }}>
-                  <div style={{ fontSize: "12px", textTransform: "uppercase", color: "#525252", fontWeight: 700 }}>This Month</div>
-                  <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 700, color: "#344158" }}>{selectedRepDetails.stats.monthlyStudents}</div>
-                </div>
+                {[
+                  { label: "PGIR ID", value: selectedRepDetails.representative.pgirId || "-" },
+                  { label: "Total Students", value: selectedRepDetails.stats.totalStudents },
+                  { label: "This Week", value: selectedRepDetails.stats.weeklyStudents },
+                  { label: "This Month", value: selectedRepDetails.stats.monthlyStudents }
+                ].map((stat, idx) => (
+                  <div key={idx} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px", background: "#ffffff" }}>
+                    <div style={{ fontSize: "11px", textTransform: "uppercase", color: "#64748b", fontWeight: 500, letterSpacing: "0.06em" }}>
+                      {stat.label}
+                    </div>
+                    <div style={{ marginTop: "6px", fontSize: "20px", fontWeight: 500, color: "#324158" }}>
+                      {stat.value}
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", marginBottom: "16px", overflow: "hidden" }}>
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#344158", color: "#ffffff" }}>
+              {/* Professional Details Section */}
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
+                <div style={{ padding: "14px 20px", fontWeight: 500, background: "#324158", color: "#ffffff", fontSize: "15px" }}>
                   Professional Details
                 </div>
                 <div
                   style={{
-                    padding: "16px",
+                    padding: "20px",
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
-                    gap: "12px",
-                    color: "#171717",
+                    gap: "16px",
+                    color: "#475569",
+                    fontSize: "13.5px",
+                    lineHeight: "1.6"
                   }}
                 >
-                  <div><strong>WhatsApp:</strong> {selectedRepDetails.representative.mobile || "-"}</div>
-                  <div><strong>Designation:</strong> {selectedRepDetails.representative.designation || "-"}</div>
-                  <div><strong>Joining Date:</strong> {formatDate(selectedRepDetails.representative.joiningDate)}</div>
-                  <div><strong>Password:</strong> {selectedRepDetails.representative.plainPassword || "-"}</div>
-                  <div><strong>College:</strong> {selectedRepDetails.representative.college || "-"}</div>
-                  <div><strong>Course/Stream:</strong> {selectedRepDetails.representative.course || "-"}</div>
-                  <div><strong>Department:</strong> {selectedRepDetails.representative.department || "-"}</div>
-                  <div><strong>Year:</strong> {selectedRepDetails.representative.year || "-"}</div>
-                  <div><strong>Instagram:</strong> {selectedRepDetails.representative.instagramProfile || "-"}</div>
-                  <div><strong>LinkedIn:</strong> {selectedRepDetails.representative.linkedinProfile || "-"}</div>
-                  <div><strong>UPI ID:</strong> {selectedRepDetails.representative.upiId || "-"}</div>
-                  <div><strong>UPI / Mobile:</strong> {selectedRepDetails.representative.upiMobileNumber || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><strong>Application Link:</strong> {selectedRepDetails.representative.internshipApplicationFormLink || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><strong>Internship Sheet:</strong> {selectedRepDetails.representative.internshipSheetLink || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><strong>Internship Promotional Message:</strong> {selectedRepDetails.representative.internshipPromotionalMessage || "-"}</div>
-                  <div style={{ gridColumn: "1 / -1" }}><strong>SMS Promotional Message:</strong> {selectedRepDetails.representative.smsPromotionalMessage || "-"}</div>
-                  <div>
-                    <strong>UPI Scanner:</strong>{" "}
-                    {selectedRepDetails.representative.docs?.upiScanner?.filepath ? (
-                      <a
-                        href={toPublicFilePath(selectedRepDetails.representative.docs.upiScanner.filepath)}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: "#344158", fontWeight: 700, textDecoration: "underline" }}
-                      >
-                        Open
-                      </a>
-                    ) : "-"}
-                  </div>
-                  <div>
-                    <strong>Selection Letter:</strong>{" "}
-                    {selectedRepDetails.representative.docs?.pgirSelectionLetter?.filepath ? (
-                      <a
-                        href={toPublicFilePath(selectedRepDetails.representative.docs.pgirSelectionLetter.filepath)}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: "#344158", fontWeight: 700, textDecoration: "underline" }}
-                      >
-                        Open
-                      </a>
-                    ) : "-"}
-                  </div>
-                  <div>
-                    <strong>Offer Letter:</strong>{" "}
-                    {selectedRepDetails.representative.docs?.internshipOfferLetter?.filepath ? (
-                      <a
-                        href={toPublicFilePath(selectedRepDetails.representative.docs.internshipOfferLetter.filepath)}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ color: "#344158", fontWeight: 700, textDecoration: "underline" }}
-                      >
-                        Open
-                      </a>
-                    ) : "-"}
+                  <div><span style={{ color: "#64748b" }}>WhatsApp:</span> {selectedRepDetails.representative.mobile || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>Designation:</span> {selectedRepDetails.representative.designation || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>Joining Date:</span> {formatDate(selectedRepDetails.representative.joiningDate)}</div>
+                  <div><span style={{ color: "#64748b" }}>Password:</span> {selectedRepDetails.representative.plainPassword || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>College:</span> {selectedRepDetails.representative.college || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>Course/Stream:</span> {selectedRepDetails.representative.course || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>Department:</span> {selectedRepDetails.representative.department || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>Year:</span> {selectedRepDetails.representative.year || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>Instagram:</span> {selectedRepDetails.representative.instagramProfile || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>LinkedIn:</span> {selectedRepDetails.representative.linkedinProfile || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>UPI ID:</span> {selectedRepDetails.representative.upiId || "-"}</div>
+                  <div><span style={{ color: "#64748b" }}>UPI / Mobile:</span> {selectedRepDetails.representative.upiMobileNumber || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>Application Link:</span> {selectedRepDetails.representative.internshipApplicationFormLink || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>Internship Sheet:</span> {selectedRepDetails.representative.internshipSheetLink || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>Internship Promotional Message:</span> {selectedRepDetails.representative.internshipPromotionalMessage || "-"}</div>
+                  <div style={{ gridColumn: "1 / -1" }}><span style={{ color: "#64748b" }}>SMS Promotional Message:</span> {selectedRepDetails.representative.smsPromotionalMessage || "-"}</div>
+                  
+                  {/* Documents Section inside grid */}
+                  <div style={{ gridColumn: "1 / -1", display: "flex", gap: "24px", flexWrap: "wrap", marginTop: "8px", paddingTop: "16px", borderTop: "1px solid #e2e8f0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ color: "#64748b" }}>UPI Scanner:</span>{" "}
+                      {selectedRepDetails.representative.docs?.upiScanner?.filepath ? (
+                        <a
+                          href={toPublicFilePath(selectedRepDetails.representative.docs.upiScanner.filepath)}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontSize: "12px",
+                            color: "#ffffff",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            padding: "4px 12px",
+                            borderRadius: "6px",
+                            background: "#324158"
+                          }}
+                        >
+                          View
+                        </a>
+                      ) : <span style={{ color: "#94a3b8" }}>-</span>}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ color: "#64748b" }}>Selection Letter:</span>{" "}
+                      {selectedRepDetails.representative.docs?.pgirSelectionLetter?.filepath ? (
+                        <a
+                          href={toPublicFilePath(selectedRepDetails.representative.docs.pgirSelectionLetter.filepath)}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontSize: "12px",
+                            color: "#ffffff",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            padding: "4px 12px",
+                            borderRadius: "6px",
+                            background: "#324158"
+                          }}
+                        >
+                          View
+                        </a>
+                      ) : <span style={{ color: "#94a3b8" }}>-</span>}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ color: "#64748b" }}>Offer Letter:</span>{" "}
+                      {selectedRepDetails.representative.docs?.internshipOfferLetter?.filepath ? (
+                        <a
+                          href={toPublicFilePath(selectedRepDetails.representative.docs.internshipOfferLetter.filepath)}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            fontSize: "12px",
+                            color: "#ffffff",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            padding: "4px 12px",
+                            borderRadius: "6px",
+                            background: "#324158"
+                          }}
+                        >
+                          View
+                        </a>
+                      ) : <span style={{ color: "#94a3b8" }}>-</span>}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div style={{ border: "1px solid #d4d4d4", borderRadius: "12px", overflow: "hidden" }}>
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid #d4d4d4", fontWeight: 700, background: "#344158", color: "#ffffff" }}>
+              {/* Recent Payouts Table */}
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
+                <div style={{ padding: "14px 20px", fontWeight: 500, background: "#324158", color: "#ffffff", fontSize: "15px" }}>
                   Recent Payouts
                 </div>
                 <div style={{ overflowX: "auto" }}>
-                  <table className="data-table" style={{ margin: 0 }}>
+                  <table className="data-table" style={{ margin: 0, width: "100%" }}>
                     <thead>
-                      <tr>
-                        <th>Month</th>
-                        <th>Week</th>
-                        <th>Enrollments</th>
-                        <th>3000 Paid</th>
-                        <th>Eligible</th>
-                        <th>Reward %</th>
-                        <th>Payout</th>
-                        <th>Status</th>
+                      <tr style={{ background: "#324158" }}>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>Month</th>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>Week</th>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>Enrollments</th>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>3000 Paid</th>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>Eligible</th>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>Reward %</th>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>Payout</th>
+                        <th style={{ background: "#324158", color: "#ffffff", padding: "12px 16px", fontSize: "12px", fontWeight: 500, textTransform: "uppercase" }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(selectedRepDetails.payouts || []).length === 0 ? (
-                        <tr><td colSpan={8} style={{ textAlign: "center" }}>No payout records</td></tr>
+                        <tr><td colSpan={8} style={{ textAlign: "center", color: "#64748b", padding: "16px", fontSize: "13px" }}>No payout records</td></tr>
                       ) : (
                         selectedRepDetails.payouts.map((item) => (
                           <tr key={item._id}>
-                            <td>{item.monthLabel}</td>
-                            <td>{item.weekLabel}</td>
-                            <td>{item.totalEnrollmentCount}</td>
-                            <td>{item.studentsWith3000Paid}</td>
-                            <td>{item.payoutEligible}</td>
-                            <td>{item.rewardPercent}%</td>
-                            <td>₹{item.payoutAmount || 0}</td>
-                            <td>{item.payoutStatus}</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px", color: "#475569" }}>{item.monthLabel}</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px", color: "#475569" }}>{item.weekLabel}</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px", color: "#475569" }}>{item.totalEnrollmentCount}</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px", color: "#475569" }}>{item.studentsWith3000Paid}</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px", color: "#475569" }}>{item.payoutEligible}</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px", color: "#475569" }}>{item.rewardPercent}%</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px", color: "#475569", fontWeight: 500 }}>₹{item.payoutAmount || 0}</td>
+                            <td style={{ padding: "12px 16px", fontSize: "13px" }}>
+                              <span style={{
+                                padding: "3px 10px",
+                                borderRadius: "12px",
+                                fontSize: "11px",
+                                fontWeight: 500,
+                                background: item.payoutStatus?.toLowerCase() === "paid" ? "#dcfce7" : "#fef3c7",
+                                color: item.payoutStatus?.toLowerCase() === "paid" ? "#15803d" : "#b45309"
+                              }}>
+                                {item.payoutStatus}
+                              </span>
+                            </td>
                           </tr>
                         ))
                       )}
