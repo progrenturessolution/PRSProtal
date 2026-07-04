@@ -81,179 +81,7 @@ export default function VerifyIdentity() {
           box-sizing: border-box;
         }
 
-        /* Left Branding Panel */
-        .verify-left {
-          flex: 1;
-          background: linear-gradient(135deg, #0e1b33 0%, #17233b 100%);
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 40px 38px;
-          color: white;
-        }
-
-        /* Ambient glowing circles and pattern overlay */
-        .verify-left::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: 
-            radial-gradient(circle at 80% 20%, rgba(14, 165, 183, 0.15) 0%, transparent 50%),
-            linear-gradient(135deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
-            linear-gradient(225deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
-            linear-gradient(45deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%),
-            linear-gradient(315deg, rgba(255, 255, 255, 0.02) 25%, transparent 25%);
-          background-position: 0 0, 30px 0, 30px 0, 0 0, 0 0;
-          background-size: 100% 100%, 60px 60px, 60px 60px, 60px 60px, 60px 60px;
-          opacity: 0.85;
-          pointer-events: none;
-        }
-
-        .verify-left-content {
-          width: 100%;
-          max-width: 560px;
-          position: relative;
-          z-index: 2;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .verify-brand-row {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .verify-brand-logo-container {
-          width: 72px;
-          height: 72px;
-          border-radius: 16px;
-          background: white;
-          padding: 6px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.28);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .verify-brand-logo {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-
-        .verify-brand-copy h2 {
-          font-size: 18px;
-          font-weight: 800;
-          color: #f8fafc;
-          margin: 0;
-          letter-spacing: -0.01em;
-          line-height: 1.2;
-        }
-
-        .verify-brand-copy p {
-          font-size: 11px;
-          color: #0ea5b7;
-          margin: 4px 0 0 0;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          font-weight: 700;
-        }
-
-        .verify-hero h1 {
-          font-size: 26px;
-          font-weight: 800;
-          line-height: 1.2;
-          color: #ffffff;
-          margin: 0 0 12px 0;
-          letter-spacing: -0.03em;
-        }
-
-        .verify-hero p {
-          font-size: 14px;
-          line-height: 1.6;
-          color: #cbd5e1;
-          margin: 0;
-        }
-
-        .verify-why-section h3 {
-          font-size: 13.5px;
-          font-weight: 700;
-          color: #ffffff;
-          margin: 0 0 12px 0;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding-bottom: 8px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .verify-features-list {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .verify-feature-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .verify-feature-icon-new {
-          font-size: 16px;
-          color: #0ea5b7;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .verify-feature-text-new {
-          font-size: 13px;
-          color: #cbd5e1;
-          line-height: 1.4;
-          font-weight: 500;
-        }
-
-        .verify-secure-section {
-          background: rgba(14, 165, 183, 0.05);
-          border: 1px solid rgba(14, 165, 183, 0.15);
-          border-radius: 12px;
-          padding: 12px;
-        }
-
-        .verify-secure-section h3 {
-          font-size: 13px;
-          font-weight: 700;
-          color: #0ea5b7;
-          margin: 0 0 6px 0;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .verify-secure-section p {
-          font-size: 12px;
-          color: #cbd5e1;
-          margin: 0;
-          line-height: 1.5;
-        }
-
-        .verify-left-footer {
-          font-size: 11px;
-          color: #64748b;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-          padding-top: 16px;
-          line-height: 1.5;
-        }
-
-        .verify-left-footer strong {
-          color: #94a3b8;
-        }
+        /* Left Branding Panel styles now completely inherited from global .login-left in index.css */
 
         /* Right Content Panel */
         .verify-right {
@@ -610,50 +438,38 @@ export default function VerifyIdentity() {
       `}</style>
 
       {/* Left Panel */}
-      <div className="verify-left">
-        <div className="verify-left-content">
-          <div className="verify-brand-row">
-            <div className="verify-brand-logo-container">
-              <img src={logo} alt="Progrentures Logo" className="verify-brand-logo" />
+      <div className="login-left">
+        <div className="login-left-content">
+          <div className="login-brand-row">
+            <div className="login-brand-icon" aria-hidden="true">
+              <img src={logo} alt="Progrentures Logo" className="login-brand-logo" />
             </div>
-            <div className="verify-brand-copy">
+            <div className="login-brand-copy">
               <h2>Progrentures Solution Pvt. Ltd.</h2>
               <p>Credentials Registry</p>
             </div>
           </div>
 
-          <div className="verify-hero">
+          <div className="login-hero-copy">
             <h1>Validate Your Affiliation</h1>
             <p>
               Enter your registered credentials to instantly check your candidate profile, enrollment status, and program information.
             </p>
           </div>
 
-          <div className="verify-why-section">
-            <h3>Official Verification Portal</h3>
-            <div className="verify-features-list">
-              <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">•</span>
-                <span className="verify-feature-text-new">Confirm your official enrollment status</span>
-              </div>
-              <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">•</span>
-                <span className="verify-feature-text-new">Ensure your registered information is accurate</span>
-              </div>
-              <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">•</span>
-                <span className="verify-feature-text-new">Access your verified candidate profile</span>
-              </div>
-              <div className="verify-feature-item">
-                <span className="verify-feature-icon-new">•</span>
-                <span className="verify-feature-text-new">Validate your program affiliation anytime</span>
-              </div>
-            </div>
+          <div className="login-feature-list" aria-hidden="true">
+            <div className="login-feature-item">Confirm your official enrollment status</div>
+            <div className="login-feature-item">Ensure your registered information is accurate</div>
+            <div className="login-feature-item">Access your verified candidate profile</div>
+            <div className="login-feature-item">Validate your program affiliation anytime</div>
           </div>
 
-          <div className="verify-left-footer">
-            <strong>Official Verification Portal</strong><br />
-            Progrentures Solution Pvt. Ltd.
+          <div className="login-footer-copy">
+            <p>
+              Only registered candidates with valid credentials can access their verification details.
+            </p>
+            <div className="login-footer-brand">Official Verification Portal</div>
+            <div className="login-footer-rights">Progrentures Solution Pvt. Ltd.</div>
           </div>
         </div>
       </div>
