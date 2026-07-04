@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { taskAPI } from "../services/api";
+import { taskAPI, UPLOADS_BASE } from "../services/api";
 
 function ManageTasks({ onTaskApproved, onBack }) {
   const [tasks, setTasks] = useState([]);
@@ -19,6 +19,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
   });
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
+  const [viewingTaskDetails, setViewingTaskDetails] = useState(null);
 
   const toggleActionMenu = (id, event) => {
     if (openActionMenu === id) {
@@ -180,6 +181,15 @@ function ManageTasks({ onTaskApproved, onBack }) {
   const renderActionMenu = (task, isTeamTask) => {
     const isOpen = openActionMenu === task._id;
     const menuOptions = [];
+
+    // View Details (always available)
+    menuOptions.push({
+      label: "View Details",
+      action: () => {
+        setViewingTaskDetails(task);
+        setOpenActionMenu(null);
+      },
+    });
 
     if (isTeamTask) {
       menuOptions.push({
@@ -1392,6 +1402,235 @@ function ManageTasks({ onTaskApproved, onBack }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Task Details Modal */}
+      {viewingTaskDetails && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15,23,42,0.45)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 11000,
+            padding: "20px",
+          }}
+          onClick={() => setViewingTaskDetails(null)}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 12px 32px rgba(15,23,42,0.08)",
+              maxWidth: "680px",
+              width: "100%",
+              maxHeight: "calc(100vh - 40px)",
+              overflow: "auto",
+              padding: "24px",
+              position: "relative"
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setViewingTaskDetails(null)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                width: "30px",
+                height: "30px",
+                border: "1px solid #e2e8f0",
+                borderRadius: "50%",
+                background: "#ffffff",
+                color: "#64748b",
+                fontSize: "18px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1
+              }}
+            >
+              ×
+            </button>
+
+            {/* Header */}
+            <div style={{ marginBottom: "18px", borderBottom: "1px solid #e2e8f0", paddingBottom: "12px" }}>
+              <span style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "4px" }}>
+                {viewingTaskDetails.isTeamTask ? "Squad Task Details" : "Solo Task Details"}
+              </span>
+              <h2 style={{ margin: 0, fontSize: "19px", color: "#334155", fontWeight: 500 }}>
+                {viewingTaskDetails.title}
+              </h2>
+            </div>
+
+            {/* Meta details */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "18px" }}>
+              <div style={{ fontSize: "13px", color: "#475569" }}>
+                <span style={{ color: "#64748b", minWidth: "120px", display: "inline-block" }}>Status:</span>
+                <span style={{ 
+                  padding: "3px 10px", 
+                  borderRadius: "12px", 
+                  fontSize: "11px", 
+                  background: `${getStatusColor(viewingTaskDetails.status)}15`, 
+                  color: getStatusColor(viewingTaskDetails.status),
+                  border: `1px solid ${getStatusColor(viewingTaskDetails.status)}30`,
+                  fontWeight: 500
+                }}>
+                  {viewingTaskDetails.status}
+                </span>
+              </div>
+              <div style={{ fontSize: "13px", color: "#475569" }}>
+                <span style={{ color: "#64748b", minWidth: "120px", display: "inline-block" }}>Assigned On:</span>
+                <span>{fmtFull(viewingTaskDetails.createdAt)}</span>
+              </div>
+              <div style={{ fontSize: "13px", color: "#475569" }}>
+                <span style={{ color: "#64748b", minWidth: "120px", display: "inline-block" }}>Deadline:</span>
+                <span>{fmtFull(viewingTaskDetails.deadline)}</span>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div style={{ marginBottom: "20px" }}>
+              <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>
+                Task Description
+              </h4>
+              <p style={{ margin: 0, fontSize: "13.5px", color: "#475569", lineHeight: "1.6", background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0", whiteSpace: "pre-wrap" }}>
+                {viewingTaskDetails.description}
+              </p>
+            </div>
+
+            {/* Shared Document / PDF */}
+            <div style={{ marginBottom: "20px" }}>
+              <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>
+                Shared Document
+              </h4>
+              {viewingTaskDetails.taskDocument?.filename ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "#f8fafc", padding: "12px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "18px" }}>📄</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "13px", color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {viewingTaskDetails.taskDocument.filename}
+                    </div>
+                  </div>
+                  <a
+                    href={`${UPLOADS_BASE}/uploads/tasks/${viewingTaskDetails.taskDocument.filename}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      fontSize: "12px",
+                      color: "#314158",
+                      fontWeight: 500,
+                      textDecoration: "none",
+                      padding: "6px 12px",
+                      border: "1px solid #314158",
+                      borderRadius: "6px",
+                      background: "#ffffff"
+                    }}
+                  >
+                    Download PDF
+                  </a>
+                </div>
+              ) : (
+                <p style={{ margin: 0, fontSize: "13px", color: "#94a3b8" }}>No document shared with this task.</p>
+              )}
+            </div>
+
+            {/* Squad Members */}
+            {viewingTaskDetails.isTeamTask && (
+              <div style={{ marginBottom: "10px" }}>
+                <h4 style={{ margin: "0 0 10px", fontSize: "13px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>
+                  Squad Members ({viewingTaskDetails.teamMembers?.length || 0})
+                </h4>
+                {viewingTaskDetails.teamMembers?.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {viewingTaskDetails.teamMembers.map((member) => (
+                      <div
+                        key={member._id || member}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "12px",
+                          padding: "10px 12px",
+                          borderRadius: "8px",
+                          backgroundColor: "#f8fafc",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "32px",
+                            height: "32px",
+                            borderRadius: "50%",
+                            backgroundColor: "#e0e7ff",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            color: "#4f46e5",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {(member.name || "?").charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                            <span style={{ fontSize: "13px", color: "#334155", fontWeight: 500 }}>
+                              {member.name || "Unknown"}
+                            </span>
+                            {member.studentType && (
+                              <span style={{
+                                fontSize: "10px",
+                                padding: "1px 6px",
+                                backgroundColor: "#eff6ff",
+                                color: "#2563eb",
+                                borderRadius: "6px",
+                                fontWeight: 500
+                              }}>
+                                {member.studentType}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#64748b", marginTop: "1px" }}>
+                            {member.email} {member.internId ? ` • ID: ${member.internId}` : ""} {member.mobile ? ` • Phone: ${member.mobile}` : ""}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: "13px", color: "#94a3b8" }}>No team members assigned.</p>
+                )}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px", paddingTop: "12px", borderTop: "1px solid #e2e8f0" }}>
+              <button
+                type="button"
+                onClick={() => setViewingTaskDetails(null)}
+                style={{
+                  padding: "8px 16px",
+                  background: "#f1f5f9",
+                  color: "#475569",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer"
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
