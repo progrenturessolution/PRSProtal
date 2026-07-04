@@ -2224,15 +2224,9 @@ function RepresentativeDashboard() {
                     </div>
                   </div>
                 </section>
-
                 <section className="rep-docs-card rep-docs-table-card">
-                  <div className="rep-docs-card-head">
-                    <h2>Your Assigned Documents</h2>
-                    <p>All assigned certificate files in a simple view.</p>
-                  </div>
-
                   <div className="rep-docs-table-wrap">
-                    <table className="rep-docs-table">
+                    <table className="data-table view-students-table">
                       <thead>
                         <tr>
                           <th>Document</th>
@@ -2251,9 +2245,13 @@ function RepresentativeDashboard() {
                               <td className="rep-docs-break">{doc.filename || 'Not uploaded'}</td>
                               <td>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '-'}</td>
                               <td>
-                                <span className={`rep-docs-status ${isReady ? 'is-ready' : 'is-missing'}`}>
-                                  {isReady ? 'Ready' : 'Missing'}
-                                </span>
+                                {isReady ? (
+                                  <span className="rep-docs-status is-ready">
+                                    Ready
+                                  </span>
+                                ) : (
+                                  <span className="rep-docs-unavailable">Not available</span>
+                                )}
                               </td>
                               <td>
                                 {isReady ? (
@@ -2277,49 +2275,45 @@ function RepresentativeDashboard() {
                   </div>
                 </section>
 
-                <div className="rep-docs-grid">
-                  <section className="rep-docs-card rep-docs-accent">
-                    <div className="rep-docs-card-head">
-                      <h2>Certification Metadata</h2>
-                    </div>
-                    <div className="rep-docs-meta-grid">
-                      <div className="rep-docs-meta-item"><span>PGIR ID</span><strong>{profile?.pgirId || '-'}</strong></div>
-                      <div className="rep-docs-meta-item"><span>Designation</span><strong>{profile?.designation || '-'}</strong></div>
-                      <div className="rep-docs-meta-item"><span>Joining Date</span><strong>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</strong></div>
-                      <div className="rep-docs-meta-item"><span>UPI ID</span><strong>{profile?.upiId || '-'}</strong></div>
-                      <div className="rep-docs-meta-item"><span>UPI/Mobile</span><strong>{profile?.upiMobileNumber || '-'}</strong></div>
-                      <div className="rep-docs-meta-item"><span>LinkedIn</span><strong>{profile?.linkedinProfile || '-'}</strong></div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '20px' }}>
+                  <section className="premium-card" style={{ padding: '16px' }}>
+                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Certification Metadata</h2>
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>PGIR ID</strong><div style={{ marginTop: '4px' }}>{profile?.pgirId || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>Designation</strong><div style={{ marginTop: '4px' }}>{profile?.designation || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>Joining Date</strong><div style={{ marginTop: '4px' }}>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>UPI ID</strong><div style={{ marginTop: '4px' }}>{profile?.upiId || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>UPI/Mobile</strong><div style={{ marginTop: '4px' }}>{profile?.upiMobileNumber || '-'}</div></div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>LinkedIn</strong><div style={{ marginTop: '4px' }}>{profile?.linkedinProfile || '-'}</div></div>
                     </div>
                   </section>
 
-                  <section className="rep-docs-card rep-docs-accent">
-                    <div className="rep-docs-card-head">
-                      <h2>Quick Links</h2>
-                    </div>
-                    <div className="rep-docs-links-grid">
-                      <div className="rep-docs-link-item">
-                        <span>Application Form</span>
-                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
+                  <section className="premium-card" style={{ padding: '16px' }}>
+                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links</h2>
+                    <div style={{ display: 'grid', gap: '10px' }}>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Application Form</div>
+                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
-                      <div className="rep-docs-link-item">
-                        <span>Internship Sheet</span>
-                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Sheet</div>
+                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
-                      <div className="rep-docs-link-item">
-                        <span>SMS Application Form</span>
-                        {profileSmsApplicationFormLink ? <a href={profileSmsApplicationFormLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Application Form</div>
+                        {profileSmsApplicationFormLink ? <a href={profileSmsApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
-                      <div className="rep-docs-link-item">
-                        <span>SMS Sheet</span>
-                        {profileSmsSheetLink ? <a href={profileSmsSheetLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Sheet</div>
+                        {profileSmsSheetLink ? <a href={profileSmsSheetLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
                       </div>
-                      <div className="rep-docs-link-item rep-docs-message-item">
-                        <span>Internship Message</span>
-                        <div className="rep-docs-message">{profile?.internshipPromotionalMessage || 'Not provided'}</div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Message</div>
+                        <div style={{ color: '#0f172a', lineHeight: 1.5, fontSize: '13px' }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
                       </div>
-                      <div className="rep-docs-link-item rep-docs-message-item">
-                        <span>SMS Program Message</span>
-                        <div className="rep-docs-message">{profile?.smsPromotionalMessage || 'Not provided'}</div>
+                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
+                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Program Message</div>
+                        <div style={{ color: '#0f172a', lineHeight: 1.5, fontSize: '13px' }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
                       </div>
                     </div>
                   </section>

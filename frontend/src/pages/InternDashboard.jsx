@@ -2988,7 +2988,7 @@ function InternDashboard() {
                       .filter((t) => !t.isTeamTask)
                       .map((task) => {
                         const latestUpdate = getLatestTaskUpdate(task);
-                        const recentUpdates = getRecentTaskUpdates(task, 3);
+                        const recentUpdates = getRecentTaskUpdates(task, 1);
 
                         return (
                           <article key={task._id} className="individual-task-card">

@@ -282,6 +282,28 @@ function GroupManagement() {
     return `${assignedEmployees.slice(0, 2).join(", ")} +${assignedEmployees.length - 2}`;
   };
 
+  const renderDescriptionWithLinks = (text) => {
+    if (!text) return "";
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    return parts.map((part, i) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="gm-details-link"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className="gm-page">
       <div className="gm-header">
@@ -562,43 +584,62 @@ function GroupManagement() {
       {detailsGroup && (
         <div className="gm-modal-backdrop" onClick={() => setDetailsGroup(null)}>
           <div className="gm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="gm-modal-head">
-              <h2>{detailsGroup.groupName}</h2>
-              <div className="gm-row-actions">
-                <button className="gm-detail-btn gm-detail-btn-outline" onClick={() => setDetailsGroup(null)}>Close</button>
-              </div>
-            </div>
-            <div className="gm-modal-body gm-detail-body">
-              <div className="gm-detail-grid">
-                <div className="gm-detail-item">
-                  <span className="gm-detail-label">Group Number</span>
-                  <strong className="gm-detail-value">{detailsGroup.groupNumber || "-"}</strong>
+            {/* Redesigned Premium Group Details Hero */}
+            <div className="gm-details-hero">
+              <div className="gm-details-hero-top">
+                <div className="gm-details-title-area">
+                  <span className="gm-details-badge">Group #{detailsGroup.groupNumber || "-"}</span>
+                  <h2 className="gm-details-title">{detailsGroup.groupName || "-"}</h2>
                 </div>
-                <div className="gm-detail-item">
-                  <span className="gm-detail-label">Group Name</span>
-                  <strong className="gm-detail-value">{detailsGroup.groupName || "-"}</strong>
-                </div>
-                <div className="gm-detail-item">
-                  <span className="gm-detail-label">Description</span>
-                  <strong className="gm-detail-value">{detailsGroup.groupDescription || "-"}</strong>
-                </div>
-                <div className="gm-detail-item">
-                  <span className="gm-detail-label">Student Type</span>
-                  <strong className="gm-detail-value">{detailsGroup.studentType || "-"}</strong>
-                </div>
-                <div className="gm-detail-item">
-                  <span className="gm-detail-label">Total Students</span>
-                  <strong className="gm-detail-value">{(detailsGroup.students || []).length}</strong>
-                </div>
-                <div className="gm-detail-item">
-                  <span className="gm-detail-label">Assigned Employees</span>
-                  <strong className="gm-detail-value">{(detailsGroup.assignedEmployees || []).join(", ") || "-"}</strong>
-                </div>
+                <button className="gm-details-close-btn" onClick={() => setDetailsGroup(null)}>
+                  Close
+                </button>
               </div>
 
+              {detailsGroup.groupDescription && (
+                <div className="gm-details-desc-area">
+                  <p className="gm-details-desc">{renderDescriptionWithLinks(detailsGroup.groupDescription)}</p>
+                </div>
+              )}
+
+              {/* 3-Column Metadata Card Row */}
+              <div className="gm-details-meta-grid">
+                {/* Panel 1: Student Type */}
+                <div className="gm-details-meta-card">
+                  <span className="gm-details-meta-label">Student Type</span>
+                  <span className="gm-details-type-pill">{detailsGroup.studentType || "-"}</span>
+                </div>
+
+                {/* Panel 2: Total Students */}
+                <div className="gm-details-meta-card">
+                  <span className="gm-details-meta-label">Total Students</span>
+                  <div className="gm-details-count-wrapper">
+                    <span className="gm-details-count-pill">{(detailsGroup.students || []).length}</span>
+                  </div>
+                </div>
+
+                {/* Panel 3: Assigned Employees */}
+                <div className="gm-details-meta-card">
+                  <span className="gm-details-meta-label">Assigned Employees</span>
+                  <div className="gm-details-employees-list">
+                    {(detailsGroup.assignedEmployees || []).length > 0 ? (
+                      (detailsGroup.assignedEmployees || []).map((emp, i) => (
+                        <span key={i} className="gm-details-employee-pill">
+                          {emp}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="gm-details-meta-val">-</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="gm-modal-body gm-detail-body">
               <h3 className="gm-detail-section-title">Student Details</h3>
-              <div className="gm-table-wrap gm-detail-table-wrap">
-                <table className="premium-table group-students-table gm-detail-table">
+              <div style={{ overflowX: "auto", marginTop: "12px" }}>
+                <table className="data-table view-students-table">
                   <thead>
                     <tr>
                       <th>Name</th>

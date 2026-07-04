@@ -239,6 +239,8 @@ function SMSProgramManagement({ onAddStudentClick }) {
   const [filterAddedBy, setFilterAddedBy] = useState('All');
   const [feeFilter, setFeeFilter] = useState('all'); // all, pending, completed
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSmsSearchDropdownOpen, setIsSmsSearchDropdownOpen] = useState(false);
+  const [smsDropdownSearchText, setSmsDropdownSearchText] = useState('');
 
   useEffect(() => {
     fetchSMSStudents();
@@ -246,6 +248,9 @@ function SMSProgramManagement({ onAddStudentClick }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-sms-search-dropdown]')) {
+        setIsSmsSearchDropdownOpen(false);
+      }
       if (!openMenuId) return;
       if (
         e.target.closest('[data-menu]') ||
@@ -653,7 +658,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
             alignItems: 'end'
           }}
         >
-          <div>
+          <div data-sms-search-dropdown>
             <label
               style={{
                 display: 'block',
@@ -665,21 +670,124 @@ function SMSProgramManagement({ onAddStudentClick }) {
             >
               Search Students
             </label>
-            <input
-              type="text"
-              placeholder="Search by name, email, ID, designation, payment info..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px 14px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '10px',
-                fontSize: '14px',
-                background: 'white',
-                outline: 'none'
-              }}
-            />
+            <div style={{ position: 'relative' }} data-sms-search-dropdown>
+              <div
+                data-sms-search-dropdown
+                onClick={() => setIsSmsSearchDropdownOpen(!isSmsSearchDropdownOpen)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: `2px solid ${isSmsSearchDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                  borderRadius: '10px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s',
+                  color: searchQuery ? '#0f172a' : '#94a3b8',
+                  userSelect: 'none',
+                }}
+              >
+                <span>{searchQuery || 'Search & select a student...'}</span>
+                <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isSmsSearchDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+              </div>
+              {isSmsSearchDropdownOpen && (
+                <div
+                  data-sms-search-dropdown
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '6px',
+                    background: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                    zIndex: 2000,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={smsDropdownSearchText}
+                      onChange={(e) => { setSmsDropdownSearchText(e.target.value); setSearchQuery(e.target.value); }}
+                      placeholder="Type to search by name, ID, email..."
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '13px',
+                        background: '#f8fafc',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  {searchQuery && (
+                    <div
+                      data-sms-search-dropdown
+                      onClick={() => { setSearchQuery(''); setSmsDropdownSearchText(''); setIsSmsSearchDropdownOpen(false); }}
+                      style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                    >
+                      ✕ Clear search
+                    </div>
+                  )}
+                  <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                    {students
+                      .filter(s =>
+                        !smsDropdownSearchText ||
+                        s.name?.toLowerCase().includes(smsDropdownSearchText.toLowerCase()) ||
+                        s.internId?.toLowerCase().includes(smsDropdownSearchText.toLowerCase()) ||
+                        s.email?.toLowerCase().includes(smsDropdownSearchText.toLowerCase())
+                      )
+                      .slice(0, 50)
+                      .map((s) => {
+                        const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                        return (
+                          <div
+                            key={s._id}
+                            data-sms-search-dropdown
+                            onClick={() => { setSearchQuery(s.name); setSmsDropdownSearchText(s.name); setIsSmsSearchDropdownOpen(false); }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              padding: '10px 14px',
+                              borderBottom: '1px solid #f8fafc',
+                              cursor: 'pointer',
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                              {initials}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name}</div>
+                              <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId} • {s.email}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    {students.filter(s =>
+                      !smsDropdownSearchText ||
+                      s.name?.toLowerCase().includes(smsDropdownSearchText.toLowerCase()) ||
+                      s.internId?.toLowerCase().includes(smsDropdownSearchText.toLowerCase()) ||
+                      s.email?.toLowerCase().includes(smsDropdownSearchText.toLowerCase())
+                    ).length === 0 && (
+                      <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No students found</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>

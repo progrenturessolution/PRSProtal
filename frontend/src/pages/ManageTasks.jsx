@@ -515,7 +515,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                   borderRadius: "8px",
                   border: "none",
                   cursor: "pointer",
-                  fontWeight: "700",
+                  fontWeight: "400",
                   fontSize: "14px",
                   background: activeSection === id ? "white" : "transparent",
                   color: activeSection === id ? "#0f172a" : "#64748b",
@@ -535,7 +535,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     fontSize: "12px",
                     background: activeSection === id ? "#324158" : "#e2e8f0",
                     color: activeSection === id ? "#ffffff" : "#475569",
-                    fontWeight: "600"
+                    fontWeight: "400"
                   }}
                 >
                   {count}
@@ -546,7 +546,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
 
           {/* Status filter dropdown */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "14px", fontWeight: "600", color: "#64748b" }}>Status Filter:</span>
+            <span style={{ fontSize: "14px", fontWeight: "400", color: "#64748b" }}>Status Filter:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -556,7 +556,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                 border: "1px solid #e2e8f0",
                 background: "white",
                 fontSize: "14px",
-                fontWeight: "600",
+                fontWeight: "400",
                 color: "#334155",
                 cursor: "pointer",
                 outline: "none",

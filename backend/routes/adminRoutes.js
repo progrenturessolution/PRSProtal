@@ -161,6 +161,9 @@ router.post('/notifications', verifyToken, verifyAdmin, uploadNotification.singl
 // Get all notifications
 router.get('/notifications', verifyToken, verifyAdmin, adminController.getAllNotifications);
 
+// Delete notification
+router.delete('/notifications/:id', verifyToken, verifyAdmin, adminController.deleteNotification);
+
 // ========== JOB POSTINGS ==========
 
 // Create job posting

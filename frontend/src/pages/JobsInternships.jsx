@@ -582,39 +582,38 @@ function JobsInternships({ onPostingCreated }) {
             </div>
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: "12px 24px",
-                background: loading ? "#ccc" : "#324158",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
-            >
-              {loading ? (
-                <LoadingSpinner
-                  text={editingPosting ? "Updating..." : "Posting..."}
-                  inline
-                  size="sm"
-                />
-              ) : (
-                editingPosting ? "Update Opportunity" : "Post Opportunity"
-              )}
-            </button>
-            {editingPosting && (
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "12px 24px",
+                  background: loading ? "#ccc" : "#324158",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                }}
+              >
+                {loading ? (
+                  <LoadingSpinner
+                    text={editingPosting ? "Updating..." : "Posting..."}
+                    inline
+                    size="sm"
+                  />
+                ) : (
+                  editingPosting ? "Update Opportunity" : "Post Opportunity"
+                )}
+              </button>
               <button
                 type="button"
-                onClick={handleCancelEdit}
+                onClick={() => { setShowForm(false); }}
                 style={{
-                  marginLeft: "12px",
                   padding: "12px 24px",
-                  background: "#e5e7eb",
-                  color: "#111827",
+                  background: "#324158",
+                  color: "#ffffff",
                   border: "none",
                   borderRadius: "6px",
                   cursor: "pointer",
@@ -622,162 +621,181 @@ function JobsInternships({ onPostingCreated }) {
                   fontWeight: 600,
                 }}
               >
-                Cancel Edit
+                Close
               </button>
-            )}
+              {editingPosting && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  style={{
+                    padding: "12px 24px",
+                    background: "#e5e7eb",
+                    color: "#111827",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                  }}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
 
-      {/* Posted Opportunities */}
-      <div className="card">
-        <h3>Recent Postings</h3>
-        {postings.length === 0 ? (
-          <div
-            style={{
-              marginTop: "20px",
-              padding: "20px",
-              background: "#f9fafb",
-              borderRadius: "8px",
-              textAlign: "center",
-            }}
-          >
-            <p style={{ color: "#6b7280" }}>
-              No job postings yet. Create your first posting above!
-            </p>
-          </div>
-        ) : (
-          <div style={{ marginTop: "20px" }}>
-            {postings.map((posting) => (
-              <div
-                key={posting._id}
-                style={{
-                  padding: "15px",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  marginBottom: "15px",
-                  background: "white",
-                  position: "relative",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
-                  <div style={{ minWidth: "220px", flex: 1 }}>
-                    <h4 style={{ margin: 0 }}>{posting.title}</h4>
-                    <p style={{ color: "#6b7280", fontSize: "14px", margin: "8px 0" }}>
-                      {posting.company} • {posting.location} • {posting.domain}
-                    </p>
-                    <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                      <span style={{ display: "inline-flex", padding: "6px 10px", background: "#f8fafc", color: "#334155", borderRadius: "9999px", fontSize: "12px", fontWeight: 600 }}>
-                        {posting.opportunityType}
-                      </span>
-                      <span style={{ display: "inline-flex", padding: "6px 10px", background: posting.status === "closed" ? "#fee2e2" : "#dcfce7", color: posting.status === "closed" ? "#991b1b" : "#166534", borderRadius: "9999px", fontSize: "12px", fontWeight: 600 }}>
-                        {posting.status || "active"}
-                      </span>
+      {!showForm && (
+        <div className="card">
+          <h3>Recent Postings</h3>
+          {postings.length === 0 ? (
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "20px",
+                background: "#f9fafb",
+                borderRadius: "8px",
+                textAlign: "center",
+              }}
+            >
+              <p style={{ color: "#6b7280" }}>
+                No job postings yet. Create your first posting above!
+              </p>
+            </div>
+          ) : (
+            <div style={{ marginTop: "20px" }}>
+              {postings.map((posting) => (
+                <div
+                  key={posting._id}
+                  style={{
+                    padding: "15px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    marginBottom: "15px",
+                    background: "white",
+                    position: "relative",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "16px" }}>
+                    <div style={{ minWidth: "220px", flex: 1 }}>
+                      <h4 style={{ margin: 0 }}>{posting.title}</h4>
+                      <p style={{ color: "#6b7280", fontSize: "14px", margin: "8px 0" }}>
+                        {posting.company} • {posting.location} • {posting.domain}
+                      </p>
+                      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                        <span style={{ display: "inline-flex", padding: "6px 10px", background: "#f8fafc", color: "#334155", borderRadius: "9999px", fontSize: "12px", fontWeight: 600 }}>
+                          {posting.opportunityType}
+                        </span>
+                        <span style={{ display: "inline-flex", padding: "6px 10px", background: posting.status === "closed" ? "#fee2e2" : "#dcfce7", color: posting.status === "closed" ? "#991b1b" : "#166534", borderRadius: "9999px", fontSize: "12px", fontWeight: 600 }}>
+                          {posting.status || "active"}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ position: "relative", alignSelf: "flex-start" }}>
+                      <button
+                        type="button"
+                        data-menu-toggle
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMenu(posting._id, e);
+                        }}
+                        aria-label="Posting actions"
+                        style={{
+                          background: "transparent",
+                          color: "#0f172a",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          width: "36px",
+                          height: "36px",
+                          cursor: "pointer",
+                          fontSize: "20px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        ⋮
+                      </button>
+                      {openMenuId === posting._id &&
+                        createPortal(
+                          <div
+                            data-menu
+                            style={{
+                              position: "absolute",
+                              left: `${menuPosition.left}px`,
+                              top: `${menuPosition.top}px`,
+                              transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
+                              background: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "12px",
+                              boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                              zIndex: 11000,
+                              width: "160px",
+                              overflow: "hidden",
+                            }}
+                          >
+                            {[
+                              { 
+                                label: "Edit", 
+                                action: () => handleEdit(posting),
+                                color: "#0f172a",
+                                hoverBg: "#f9fafb"
+                              },
+                              { 
+                                label: "Repost", 
+                                action: () => handleRepost(posting._id),
+                                color: "#0f172a",
+                                hoverBg: "#f9fafb"
+                              },
+                              { 
+                                label: "Delete", 
+                                action: () => handleDelete(posting._id),
+                                color: "#dc2626",
+                                hoverBg: "#fef2f2"
+                              },
+                            ].map(({ label, action, color, hoverBg }, idx) => (
+                              <button
+                                key={`${posting._id}-${label}`}
+                                type="button"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  action();
+                                }}
+                                style={{
+                                  width: "100%",
+                                  padding: "12px 16px",
+                                  border: "none",
+                                  background: "white",
+                                  color: color,
+                                  cursor: "pointer",
+                                  fontWeight: "500",
+                                  fontSize: "14px",
+                                  textAlign: "left",
+                                  borderTop: idx > 0 ? "1px solid #f3f4f6" : "none",
+                                }}
+                                onMouseEnter={(e) => {
+                                  e.target.style.background = hoverBg;
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.target.style.background = "white";
+                                }}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>,
+                          document.body
+                        )
+                      }
                     </div>
                   </div>
-                  <div style={{ position: "relative", alignSelf: "flex-start" }}>
-                    <button
-                      type="button"
-                      data-menu-toggle
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleMenu(posting._id, e);
-                      }}
-                      aria-label="Posting actions"
-                      style={{
-                        background: "transparent",
-                        color: "#0f172a",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "8px",
-                        width: "36px",
-                        height: "36px",
-                        cursor: "pointer",
-                        fontSize: "20px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      ⋮
-                    </button>
-                    {openMenuId === posting._id &&
-                      createPortal(
-                        <div
-                          data-menu
-                          style={{
-                            position: "absolute",
-                            left: `${menuPosition.left}px`,
-                            top: `${menuPosition.top}px`,
-                            transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
-                            background: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "12px",
-                            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-                            zIndex: 11000,
-                            width: "160px",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {[
-                            { 
-                              label: "Edit", 
-                              action: () => handleEdit(posting),
-                              color: "#0f172a",
-                              hoverBg: "#f9fafb"
-                            },
-                            { 
-                              label: "Repost", 
-                              action: () => handleRepost(posting._id),
-                              color: "#0f172a",
-                              hoverBg: "#f9fafb"
-                            },
-                            { 
-                              label: "Delete", 
-                              action: () => handleDelete(posting._id),
-                              color: "#dc2626",
-                              hoverBg: "#fef2f2"
-                            },
-                          ].map(({ label, action, color, hoverBg }, idx) => (
-                            <button
-                              key={`${posting._id}-${label}`}
-                              type="button"
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                action();
-                              }}
-                              style={{
-                                width: "100%",
-                                padding: "12px 16px",
-                                border: "none",
-                                background: "white",
-                                color: color,
-                                cursor: "pointer",
-                                fontWeight: "500",
-                                fontSize: "14px",
-                                textAlign: "left",
-                                borderTop: idx > 0 ? "1px solid #f3f4f6" : "none",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.background = hoverBg;
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.background = "white";
-                              }}
-                            >
-                              {label}
-                            </button>
-                          ))}
-                        </div>,
-                        document.body
-                      )
-                    }
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }

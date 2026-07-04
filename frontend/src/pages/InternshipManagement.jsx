@@ -14,6 +14,8 @@ function InternshipManagement({ onAddStudentClick }) {
   const [isEditing, setIsEditing] = useState(false);
   const [filterAddedBy, setFilterAddedBy] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isImSearchDropdownOpen, setIsImSearchDropdownOpen] = useState(false);
+  const [imDropdownSearchText, setImDropdownSearchText] = useState("");
   const [showInactiveModal, setShowInactiveModal] = useState(false);
   const [inactiveModalStudent, setInactiveModalStudent] = useState(null);
   const [inactiveModalMessage, setInactiveModalMessage] = useState("");
@@ -162,6 +164,9 @@ function InternshipManagement({ onAddStudentClick }) {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
+      if (!e.target.closest("[data-im-search-dropdown]")) {
+        setIsImSearchDropdownOpen(false);
+      }
       if (!openMenuId) return;
       if (
         e.target.closest("[data-menu]") ||
@@ -573,21 +578,124 @@ function InternshipManagement({ onAddStudentClick }) {
             >
               Search Students
             </label>
-            <input
-              type="text"
-              placeholder="Search by name, email, ID, mobile, or domain..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px 14px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "10px",
-                fontSize: "14px",
-                background: "white",
-                outline: "none",
-              }}
-            />
+            <div style={{ position: 'relative' }} data-im-search-dropdown>
+              <div
+                data-im-search-dropdown
+                onClick={() => setIsImSearchDropdownOpen(!isImSearchDropdownOpen)}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: `2px solid ${isImSearchDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                  borderRadius: '10px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s',
+                  color: searchQuery ? '#0f172a' : '#94a3b8',
+                  userSelect: 'none',
+                }}
+              >
+                <span>{searchQuery || 'Search & select a student...'}</span>
+                <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isImSearchDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+              </div>
+              {isImSearchDropdownOpen && (
+                <div
+                  data-im-search-dropdown
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    marginTop: '6px',
+                    background: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+                    zIndex: 2000,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                    <input
+                      autoFocus
+                      type="text"
+                      value={imDropdownSearchText}
+                      onChange={(e) => { setImDropdownSearchText(e.target.value); setSearchQuery(e.target.value); }}
+                      placeholder="Type to search by name, ID, email..."
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '13px',
+                        background: '#f8fafc',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  {searchQuery && (
+                    <div
+                      data-im-search-dropdown
+                      onClick={() => { setSearchQuery(''); setImDropdownSearchText(''); setIsImSearchDropdownOpen(false); }}
+                      style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                    >
+                      ✕ Clear search
+                    </div>
+                  )}
+                  <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                    {students
+                      .filter(s =>
+                        !imDropdownSearchText ||
+                        s.name?.toLowerCase().includes(imDropdownSearchText.toLowerCase()) ||
+                        s.internId?.toLowerCase().includes(imDropdownSearchText.toLowerCase()) ||
+                        s.email?.toLowerCase().includes(imDropdownSearchText.toLowerCase())
+                      )
+                      .slice(0, 50)
+                      .map((s) => {
+                        const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                        return (
+                          <div
+                            key={s._id}
+                            data-im-search-dropdown
+                            onClick={() => { setSearchQuery(s.name); setImDropdownSearchText(s.name); setIsImSearchDropdownOpen(false); }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              padding: '10px 14px',
+                              borderBottom: '1px solid #f8fafc',
+                              cursor: 'pointer',
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                              {initials}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name}</div>
+                              <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId} • {s.email}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    {students.filter(s =>
+                      !imDropdownSearchText ||
+                      s.name?.toLowerCase().includes(imDropdownSearchText.toLowerCase()) ||
+                      s.internId?.toLowerCase().includes(imDropdownSearchText.toLowerCase()) ||
+                      s.email?.toLowerCase().includes(imDropdownSearchText.toLowerCase())
+                    ).length === 0 && (
+                      <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No students found</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>

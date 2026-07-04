@@ -105,6 +105,7 @@ export const adminAPI = {
   createNotification: (notificationData) =>
     api.post("/admin/notifications", notificationData),
   getAllNotifications: () => api.get("/admin/notifications"),
+  deleteNotification: (id) => api.delete(`/admin/notifications/${id}`),
 
   // Job postings
   createJobPosting: (jobData) => api.post("/admin/job-postings", jobData),

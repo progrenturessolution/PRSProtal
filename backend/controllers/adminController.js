@@ -1308,6 +1308,49 @@ exports.getAllNotifications = async (req, res) => {
   }
 };
 
+// Delete notification
+exports.deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notification = await Notification.findById(id);
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found'
+      });
+    }
+
+    // Try deleting the attachment file if it exists
+    if (notification.attachment && notification.attachment.filename) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const filePath = path.join(__dirname, '..', 'uploads', 'notifications', notification.attachment.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (err) {
+        console.error('Failed to delete notification attachment file:', err);
+      }
+    }
+
+    await Notification.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 // ========== JOB POSTINGS ==========
 
 // Create job posting
