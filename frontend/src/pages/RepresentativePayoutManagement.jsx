@@ -215,6 +215,24 @@ function RepresentativePayoutManagement() {
     }
   };
 
+  const handleDeletePayout = async (payoutId) => {
+    if (!window.confirm("Are you sure you want to delete this payout record?")) {
+      return;
+    }
+    setError("");
+    setSuccess("");
+    try {
+      const response = await adminRepAPI.deleteRepresentativePayout(payoutId);
+      if (response.data.success) {
+        setSuccess("Payout record deleted successfully");
+        fetchPayouts(filters);
+      }
+    } catch (err) {
+      console.error("Payout delete error", err);
+      setError(err.response?.data?.message || "Failed to delete payout record");
+    }
+  };
+
   return (
     <div>
       <div className="premium-page-header">
@@ -541,6 +559,29 @@ function RepresentativePayoutManagement() {
                                     onMouseLeave={(e) => (e.target.style.background = "white")}
                                   >
                                     Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleDeletePayout(item._id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px 16px",
+                                      background: "white",
+                                      border: "none",
+                                      borderTop: "1px solid #f3f4f6",
+                                      textAlign: "left",
+                                      cursor: "pointer",
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                      color: "#ef4444",
+                                    }}
+                                    onMouseEnter={(e) => (e.target.style.background = "#fef2f2")}
+                                    onMouseLeave={(e) => (e.target.style.background = "white")}
+                                  >
+                                    Delete
                                   </button>
                                 </div>,
                                 document.body

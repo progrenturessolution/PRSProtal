@@ -2157,6 +2157,23 @@ exports.getRepresentativePayouts = async (req, res) => {
   }
 };
 
+// Delete representative payout (Admin only)
+exports.deleteRepresentativePayout = async (req, res) => {
+  try {
+    const payoutId = req.params.id;
+    const payout = await RepresentativePayout.findByIdAndDelete(payoutId);
+
+    if (!payout) {
+      return res.status(404).json({ success: false, message: 'Payout not found' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Payout deleted successfully' });
+  } catch (error) {
+    console.error('Delete representative payout error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 // Get all groups
 exports.getStudentGroups = async (req, res) => {
   try {

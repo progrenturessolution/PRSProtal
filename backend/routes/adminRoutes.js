@@ -237,6 +237,7 @@ router.delete('/representative/:id', verifyToken, verifyAdmin, adminController.d
 // Representative payout management
 router.post('/representatives/payouts', verifyToken, verifyAdmin, adminController.upsertRepresentativePayout);
 router.get('/representatives/payouts', verifyToken, verifyAdmin, adminController.getRepresentativePayouts);
+router.delete('/representatives/payouts/:id', verifyToken, verifyAdmin, adminController.deleteRepresentativePayout);
 
 // Group management
 router.post('/groups', verifyToken, verifyAdmin, adminController.createStudentGroup);

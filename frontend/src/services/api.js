@@ -237,6 +237,8 @@ export const adminRepAPI = {
     api.get("/admin/representatives/payouts", { params }),
   upsertRepresentativePayout: (data) =>
     api.post("/admin/representatives/payouts", data),
+  deleteRepresentativePayout: (id) =>
+    api.delete(`/admin/representatives/payouts/${id}`),
   createGroup: (data) => api.post("/admin/groups", data),
   getGroups: () => api.get("/admin/groups"),
   getGroupDetails: (id) => api.get(`/admin/groups/${id}`),
