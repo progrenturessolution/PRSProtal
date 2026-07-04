@@ -2076,16 +2076,13 @@ function AccessManagement() {
                             onChange={(e) => setStudentSearchQuery(e.target.value)}
                             style={{
                               width: "100%",
-                              padding: "8px 12px 8px 30px",
+                              padding: "8px 12px",
                               border: "1px solid #cbd5e1",
                               borderRadius: "6px",
                               fontSize: "13px",
                               boxSizing: "border-box"
                             }}
                           />
-                          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: "12px" }}>
-                            🔍
-                          </span>
                           {studentSearchQuery && (
                             <button
                               type="button"
@@ -2102,7 +2099,7 @@ function AccessManagement() {
                                 fontSize: "12px"
                               }}
                             >
-                              ✕
+                              x
                             </button>
                           )}
                         </div>
