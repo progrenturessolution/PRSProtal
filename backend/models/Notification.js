@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
+  activityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Activity'
+  },
   title: {
     type: String,
     required: true,

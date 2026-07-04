@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
 const interviewSchema = new mongoose.Schema({
+  activityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Activity'
+  },
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Intern',

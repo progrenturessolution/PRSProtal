@@ -2358,6 +2358,41 @@ exports.scheduleInterview = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Interview type, date, and start time required' });
     }
 
+    // Record a summary activity for the admin activity feed first to get an ID
+    let savedActivity;
+    let interviewerName = '';
+    try {
+      try {
+        const trainerObj = await Trainer.findById(resolvedTrainerId).select('name email customRole');
+        if (trainerObj) interviewerName = trainerObj.customRole ? `${trainerObj.name} (${trainerObj.customRole})` : trainerObj.name;
+      } catch (er) { /* ignore */ }
+
+      const activityDetails = {
+        mode,
+        interviewType,
+        trainerId: resolvedTrainerId,
+        interviewerId: resolvedTrainerId,
+        interviewerName,
+        studentIds,
+        assigned: studentIds
+      };
+      if (groupId) activityDetails.groupId = groupId;
+
+      const activity = new Activity({
+        type: 'Interview',
+        title: `${interviewType} Interview (${mode})`,
+        dateTime: new Date(`${date}T${startTime}:00`),
+        createdBy: req.user?.id || null,
+        createdByModel: 'Admin',
+        status: 'Scheduled',
+        details: activityDetails
+      });
+      savedActivity = await activity.save();
+    } catch (e) {
+      console.error('Failed to save activity record for interviews', e);
+      return res.status(500).json({ success: false, message: 'Failed to create activity record' });
+    }
+
     const createdInterviews = [];
     const perGapMinutes = perGap || 15;
 
@@ -2387,7 +2422,8 @@ exports.scheduleInterview = async (req, res) => {
         date: slotTime,
         startTime: slotTime.toTimeString().slice(0, 5),
         attemptNumber,
-        levelCrossed: false
+        levelCrossed: false,
+        activityId: savedActivity._id // Link to Activity!
       };
 
       // If this scheduling call provided a groupId (group mode), attach it to the interview
@@ -2408,46 +2444,21 @@ exports.scheduleInterview = async (req, res) => {
       createdInterviews.push(saved);
     }
 
-      // Record a summary activity for the admin activity feed
-      try {
-        // try to resolve trainer human-readable name
-        let interviewerName = '';
-        try {
-          const trainerObj = await Trainer.findById(resolvedTrainerId).select('name email customRole');
-          if (trainerObj) interviewerName = trainerObj.customRole ? `${trainerObj.name} (${trainerObj.customRole})` : trainerObj.name;
-        } catch (er) { /* ignore */ }
+    // Update Activity details with the created interview slots and counts
+    try {
+      savedActivity.details.interviewCount = createdInterviews.length;
+      savedActivity.details.slots = createdInterviews.map(i => ({ studentId: i.studentId, date: i.date, startTime: i.startTime }));
+      savedActivity.markModified('details');
+      await savedActivity.save();
+    } catch (e) {
+      console.error('Failed to update activity slots details', e);
+    }
 
-        const studentIdList = createdInterviews.map(i => String(i.studentId));
-        const activityDetails = {
-          interviewCount: createdInterviews.length,
-          slots: createdInterviews.map(i => ({ studentId: i.studentId, date: i.date, startTime: i.startTime })),
-          mode,
-          interviewType,
-          trainerId: resolvedTrainerId,
-          interviewerId: resolvedTrainerId,
-          interviewerName,
-          studentIds: studentIdList,
-          assigned: studentIdList
-        };
-        if (groupId) activityDetails.groupId = groupId;
-
-        const activity = new Activity({
-          type: 'Interview',
-          title: `${interviewType} Interview (${mode})`,
-          dateTime: new Date(`${date}T${startTime}:00`),
-          createdBy: req.user?.id || null,
-          createdByModel: 'Admin',
-          status: 'Scheduled',
-          details: activityDetails
-        });
-        await activity.save();
-      } catch (e) { console.error('Failed to save activity record for interviews', e); }
-
-      return res.status(201).json({
-        success: true,
-        message: `${createdInterviews.length} interview(s) scheduled successfully`,
-        interviews: createdInterviews
-      });
+    return res.status(201).json({
+      success: true,
+      message: `${createdInterviews.length} interview(s) scheduled successfully`,
+      interviews: createdInterviews
+    });
   } catch (error) {
     console.error('Schedule interview error:', error && (error.stack || error));
     return res.status(500).json({ success: false, message: error?.message || 'Server error', stack: error?.stack });
@@ -2487,8 +2498,200 @@ exports.updateActivity = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body || {};
+
+    const originalActivity = await Activity.findById(id);
+    if (!originalActivity) return res.status(404).json({ success: false, message: 'Activity not found' });
+
+    const activityType = String(updates.type || originalActivity.type).toLowerCase();
+
+    if (activityType.includes('interview')) {
+      // 1. Delete existing interviews linked to this activity
+      await Interview.deleteMany({ activityId: id });
+
+      // Fallback for legacy records
+      const oldStudentIds = originalActivity.details?.studentIds || [];
+      const oldTrainerId = originalActivity.details?.trainerId || originalActivity.details?.interviewerId;
+      if (oldStudentIds.length > 0) {
+        await Interview.deleteMany({
+          studentId: { $in: oldStudentIds },
+          trainerId: oldTrainerId,
+          status: 'Scheduled'
+        });
+      }
+
+      // 2. Re-create interview documents
+      const mergedDetails = { ...(originalActivity.details || {}), ...(updates.details || {}) };
+      const studentIds = mergedDetails.studentIds || [];
+      const resolvedTrainerId = mergedDetails.trainerId || mergedDetails.interviewerId;
+      const interviewType = mergedDetails.interviewType || 'HR';
+      const mode = mergedDetails.mode || 'Individual';
+      const perGapMinutes = mergedDetails.perGap || 15;
+      const groupId = mergedDetails.groupId;
+
+      let date = mergedDetails.date;
+      let startTime = mergedDetails.startTime;
+      if (!date || !startTime) {
+        const dtStr = updates.dateTime || originalActivity.dateTime;
+        if (dtStr) {
+          const parsedDt = new Date(dtStr);
+          if (!isNaN(parsedDt.getTime())) {
+            date = parsedDt.toISOString().slice(0, 10);
+            startTime = parsedDt.toTimeString().slice(0, 5);
+          }
+        }
+      }
+
+      const createdInterviews = [];
+      if (studentIds.length > 0 && resolvedTrainerId && date && startTime) {
+        const baseTime = new Date(`${date}T${startTime}:00`);
+        for (let idx = 0; idx < studentIds.length; idx++) {
+          const studentId = studentIds[idx];
+          const slotTime = new Date(baseTime.getTime() + idx * perGapMinutes * 60000);
+          const lastInterview = await Interview.findOne({
+            studentId,
+            interviewType,
+            status: 'Completed'
+          }).sort({ attemptNumber: -1 });
+
+          const attemptNumber = lastInterview ? lastInterview.attemptNumber + 1 : 1;
+
+          const interviewData = {
+            studentId,
+            trainerId: resolvedTrainerId,
+            interviewType,
+            status: 'Scheduled',
+            mode,
+            date: slotTime,
+            startTime: slotTime.toTimeString().slice(0, 5),
+            attemptNumber,
+            levelCrossed: false,
+            activityId: id
+          };
+
+          if (groupId) {
+            interviewData.groupId = groupId;
+            try {
+              const group = await StudentGroup.findById(groupId).select('groupName groupNumber');
+              if (group) interviewData.groupName = group.groupName || group.groupNumber || '';
+            } catch (err) {}
+          }
+
+          const interview = new Interview(interviewData);
+          const saved = await interview.save();
+          createdInterviews.push(saved);
+        }
+      }
+
+      // 3. Update updates payload details with new slots
+      if (createdInterviews.length > 0) {
+        mergedDetails.slots = createdInterviews.map(i => ({ studentId: i.studentId, date: i.date, startTime: i.startTime }));
+        mergedDetails.interviewCount = createdInterviews.length;
+        // try to resolve trainer name
+        try {
+          const trainerObj = await Trainer.findById(resolvedTrainerId).select('name customRole');
+          if (trainerObj) {
+            mergedDetails.interviewerName = trainerObj.customRole ? `${trainerObj.name} (${trainerObj.customRole})` : trainerObj.name;
+          }
+        } catch (e) {}
+      }
+      updates.details = mergedDetails;
+
+    } else if (activityType.includes('assessment')) {
+      // 1. Delete old notifications linked to this activity
+      await Notification.deleteMany({ activityId: id });
+
+      // 2. Create new notifications
+      const mergedDetails = { ...(originalActivity.details || {}), ...(updates.details || {}) };
+      const studentIds = mergedDetails.assigned || mergedDetails.students || [];
+      const trainerId = mergedDetails.trainerId;
+      const groupId = mergedDetails.groupId;
+      const title = updates.title || originalActivity.title;
+      const description = mergedDetails.description || '';
+      const link = mergedDetails.link || '';
+      const type = mergedDetails.type || 'Assessment';
+      
+      let date = mergedDetails.date;
+      let time = mergedDetails.time;
+      if (!date || !time) {
+        const dtStr = updates.dateTime || originalActivity.dateTime;
+        if (dtStr) {
+          const parsedDt = new Date(dtStr);
+          if (!isNaN(parsedDt.getTime())) {
+            date = parsedDt.toISOString().slice(0, 10);
+            time = parsedDt.toTimeString().slice(0, 5);
+          }
+        }
+      }
+
+      const assessmentMode = groupId || studentIds.length > 1 ? 'Group' : 'Individual';
+      let groupName = '';
+      if (groupId) {
+        try {
+          const group = await StudentGroup.findById(groupId).select('groupName').lean();
+          groupName = group?.groupName || '';
+        } catch (e) {}
+      }
+      const assignedLabels = assessmentMode === 'Group'
+        ? [groupName || `Group ${groupId || ''}`.trim()].filter(Boolean)
+        : studentIds.map(String);
+
+      const when = date ? `${date}${time ? ' ' + time : ''}` : (time || '');
+      const baseMessage = `${description || ''}${when ? '\nWhen: ' + when : ''}${link ? '\nLink: ' + link : ''}`;
+      const adminId = req.user.id;
+
+      if (studentIds.length > 0) {
+        try {
+          const studentNotification = new Notification({
+            title: `You are scheduled for: ${title || (type || 'Assessment')}`,
+            message: baseMessage,
+            notificationType: 'Test/Assessment',
+            sendTo: studentIds.length === 1 ? 'Individual' : 'Group',
+            recipientIds: studentIds,
+            recipientModel: 'Intern',
+            assessmentMeta: {
+              assessmentMode,
+              groupId: groupId || undefined,
+              groupName,
+              assignedLabels,
+              assignedIds: studentIds
+            },
+            createdBy: adminId,
+            activityId: id
+          });
+          await studentNotification.save();
+        } catch (err) {
+          console.error('Failed to update student notification', err);
+        }
+      }
+
+      if (trainerId && String(trainerId).trim() !== '') {
+        try {
+          const trainerNotification = new Notification({
+            title: `Scheduled Assessment: ${title || (type || 'Assessment')}`,
+            message: baseMessage,
+            notificationType: 'Test/Assessment',
+            sendTo: 'Individual',
+            recipientIds: [trainerId],
+            recipientModel: 'Trainer',
+            assessmentMeta: {
+              assessmentMode,
+              groupId: groupId || undefined,
+              groupName,
+              assignedLabels,
+              assignedIds: studentIds
+            },
+            createdBy: adminId,
+            activityId: id
+          });
+          await trainerNotification.save();
+        } catch (err) {
+          console.error('Failed to update trainer notification', err);
+        }
+      }
+      updates.details = mergedDetails;
+    }
+
     const activity = await Activity.findByIdAndUpdate(id, updates, { new: true }).lean();
-    if (!activity) return res.status(404).json({ success: false, message: 'Activity not found' });
     return res.status(200).json({ success: true, activity });
   } catch (error) {
     console.error('Update activity error:', error);
@@ -2568,6 +2771,33 @@ exports.scheduleAssessment = async (req, res) => {
           notificationType: 'Test/Assessment',
           sendTo: 'Individual',
           recipientIds: [trainerId],
+    // Create activity record for admin feed first to get an ID
+    let savedActivity;
+    try {
+      const activity = new Activity({
+        type: 'Assessment',
+        title: title || (type || 'Assessment'),
+        dateTime: date ? new Date(`${date}T${time || '00:00'}:00`) : undefined,
+        createdBy: req.user?.id || null,
+        createdByModel: 'Admin',
+        status: 'Scheduled',
+        details: { type, title, description, link, assigned: studentIds, trainerId, groupId }
+      });
+      savedActivity = await activity.save();
+    } catch (e) {
+      console.error('Failed to save activity record for assessment', e);
+      return res.status(500).json({ success: false, message: 'Failed to save activity record' });
+    }
+
+    // Create notification for trainer (if trainer is specified)
+    if (trainerId && String(trainerId).trim() !== '') {
+      try {
+        const trainerNotification = new Notification({
+          title: `Scheduled Assessment: ${title || (type || 'Assessment')}`,
+          message: baseMessage,
+          notificationType: 'Test/Assessment',
+          sendTo: 'Individual',
+          recipientIds: [trainerId],
           recipientModel: 'Trainer',
           assessmentMeta: {
             assessmentMode,
@@ -2576,7 +2806,8 @@ exports.scheduleAssessment = async (req, res) => {
             assignedLabels,
             assignedIds: studentIds
           },
-          createdBy: adminId
+          createdBy: adminId,
+          activityId: savedActivity._id // Link to Activity!
         });
         await trainerNotification.save();
       } catch (err) {
@@ -2601,27 +2832,14 @@ exports.scheduleAssessment = async (req, res) => {
             assignedLabels,
             assignedIds: studentIds
           },
-          createdBy: adminId
+          createdBy: adminId,
+          activityId: savedActivity._id // Link to Activity!
         });
         await studentNotification.save();
       } catch (err) {
         console.error('Failed to create student notification', err);
       }
     }
-
-    // Create activity record for admin feed
-    try {
-      const activity = new Activity({
-        type: 'Assessment',
-        title: title || (type || 'Assessment'),
-        dateTime: date ? new Date(`${date}T${time || '00:00'}:00`) : undefined,
-        createdBy: req.user?.id || null,
-        createdByModel: 'Admin',
-        status: 'Scheduled',
-        details: { type, title, description, link, assigned: studentIds, trainerId, groupId }
-      });
-      await activity.save();
-    } catch (e) { console.error('Failed to save activity record for assessment', e); }
 
     return res.status(201).json({ success: true, message: 'Assessment scheduled and notifications created' });
   } catch (error) {
