@@ -3611,9 +3611,10 @@ table tr:hover {
 }
 
 .individual-task-card {
-  border: 1px solid #314158;
+  border: 1px solid #314150;
+  border-left: 5px solid #314150;
   border-radius: 14px;
-  background: #314158;
+  background: #ffffff;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
   padding: 18px;
   display: flex;
@@ -3624,8 +3625,8 @@ table tr:hover {
 
 .individual-task-card:hover {
   transform: translateY(-2px);
-  border-color: #4e617d;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.15);
+  border-color: #314150;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.1);
 }
 
 .individual-task-card-header {
@@ -3637,7 +3638,7 @@ table tr:hover {
 
 .individual-task-title {
   margin: 0;
-  color: #ffffff;
+  color: #314150;
   font-size: 18px;
   font-weight: 700;
   line-height: 1.35;
@@ -3646,17 +3647,18 @@ table tr:hover {
 .individual-task-deadline {
   margin-top: 6px;
   font-size: 12px;
-  color: #cbd5e1;
+  color: #314150;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+  opacity: 0.8;
 }
 
 .individual-task-overdue {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+  background: #ffffff;
+  color: #314150;
+  border: 1px solid #314150;
   border-radius: 999px;
   font-weight: 700;
   font-size: 10px;
@@ -3671,13 +3673,15 @@ table tr:hover {
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+  background-color: #314150 !important;
+  color: #ffffff !important;
 }
 
 .individual-task-description {
   margin: 0;
   font-size: 14px;
   line-height: 1.55;
-  color: #e2e8f0;
+  color: #314150;
 }
 
 .individual-task-doc-link {
@@ -3686,10 +3690,10 @@ table tr:hover {
   justify-content: center;
   width: fit-content;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid #314150;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #60a5fa;
+  background: #ffffff;
+  color: #314150;
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
@@ -3697,16 +3701,16 @@ table tr:hover {
 }
 
 .individual-task-doc-link:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-  color: #93c5fd;
+  background: #314150;
+  color: #ffffff;
+  border-color: #314150;
 }
 
 .individual-task-progress-wrap {
   padding: 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #ffffff;
+  border: 1px solid #314150;
 }
 
 .individual-task-progress-head {
@@ -3715,24 +3719,34 @@ table tr:hover {
   align-items: center;
   margin-bottom: 9px;
   font-size: 13px;
-  color: #cbd5e1;
+  color: #314150;
 }
 
 .individual-task-progress-head strong {
-  color: #60a5fa;
+  color: #314150;
   font-size: 14px;
 }
 
+.individual-task-card .progress-bar-container {
+  background: #ffffff;
+  border: 1px solid #314150;
+  margin-bottom: 0;
+}
+
+.individual-task-card .progress-bar-fill {
+  background: #314150;
+}
+
 .individual-task-updates {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #314150;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: #ffffff;
   padding: 12px;
 }
 
 .individual-task-updates.has-unread {
-  border-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
+  border-color: #314150;
+  background: #ffffff;
 }
 
 .individual-task-updates-head {
@@ -3746,14 +3760,15 @@ table tr:hover {
 .individual-task-updates-head span {
   font-size: 12px;
   font-weight: 700;
-  color: #cbd5e1;
+  color: #314150;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .individual-task-updates-head small {
   font-size: 11px;
-  color: #94a3b8;
+  color: #314150;
+  opacity: 0.8;
 }
 
 .individual-task-update-list {
@@ -3763,30 +3778,31 @@ table tr:hover {
 }
 
 .individual-task-update-item {
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #314150;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
+  background: #ffffff;
   padding: 9px 10px;
 }
 
 .individual-task-update-source {
   margin: 0 0 3px 0;
   font-size: 11px;
-  color: #60a5fa;
+  color: #314150;
   font-weight: 700;
 }
 
 .individual-task-update-message {
   margin: 0;
   font-size: 13px;
-  color: #e2e8f0;
+  color: #314150;
   line-height: 1.45;
 }
 
 .individual-task-update-empty {
   margin: 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: #314150;
+  opacity: 0.7;
 }
 
 .individual-task-action {
@@ -3798,16 +3814,16 @@ table tr:hover {
   display: block;
   font-size: 12px;
   font-weight: 700;
-  color: #cbd5e1;
+  color: #314150;
   margin-bottom: 6px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .individual-task-card select {
-  background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background-color: #ffffff;
+  border: 1px solid #314150;
+  color: #314150;
   border-radius: 6px;
   padding: 8px;
   outline: none;
@@ -3816,8 +3832,8 @@ table tr:hover {
 }
 
 .individual-task-card select option {
-  background-color: #314158;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #314150;
 }
 
 @media (max-width: 768px) {
