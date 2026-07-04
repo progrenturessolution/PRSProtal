@@ -31,6 +31,8 @@ function AccessManagement() {
   const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false);
   const [showAddEmployeePassword, setShowAddEmployeePassword] = useState(false);
   const [showEditEmployeePassword, setShowEditEmployeePassword] = useState(false);
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
   const [workFormData, setWorkFormData] = useState({
     trainerId: "",
     title: "",
@@ -67,6 +69,16 @@ function AccessManagement() {
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [openMenuId]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!showStudentDropdown) return;
+      if (e.target.closest(".student-dropdown-container")) return;
+      setShowStudentDropdown(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showStudentDropdown]);
 
   const toggleMenu = (id, event) => {
     if (openMenuId === id) {
@@ -1997,43 +2009,170 @@ function AccessManagement() {
                     </div>
                   </div>
 
-                  {/* Students Checkbox List */}
-                  <div className="form-group" style={{ margin: 0 }}>
+                  {/* Students Searchable Dropdown */}
+                  <div className="form-group student-dropdown-container" style={{ margin: 0, position: "relative" }}>
                     <label style={{ fontWeight: 600, display: "block", marginBottom: "8px", fontSize: "14px", color: "#475569" }}>
                       Assigned Students ({students.length} available)
                     </label>
-                    <div style={{ border: "1px solid #e2e8f0", borderRadius: "8px", padding: "12px", maxHeight: "200px", overflowY: "auto", background: "#f8fafc" }}>
-                      {students.length === 0 ? (
-                        <div style={{ fontSize: "13px", color: "#64748b" }}>No students available</div>
-                      ) : (
-                        students.map((student) => {
-                          const isChecked = (editEmployeeData.assignedStudents || []).includes(student._id);
-                          return (
-                            <label key={student._id} style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px", cursor: "pointer", fontSize: "13px", color: "#334155", fontWeight: 500 }}>
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  const current = editEmployeeData.assignedStudents || [];
-                                  const next = current.includes(student._id)
-                                    ? current.filter(id => id !== student._id)
-                                    : [...current, student._id];
-                                  setEditEmployeeData({ ...editEmployeeData, assignedStudents: next });
-                                }}
-                                style={{ width: "16px", height: "16px", cursor: "pointer" }}
-                              />
-                              <span>{student.name} ({student.internId})</span>
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
+                    
+                    {/* Dropdown Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowStudentDropdown(!showStudentDropdown)}
+                      style={{
+                        width: "100%",
+                        padding: "12px 14px",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "8px",
+                        background: "#ffffff",
+                        textAlign: "left",
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        fontSize: "14px",
+                        color: "#334155",
+                        fontWeight: 500,
+                        boxSizing: "border-box"
+                      }}
+                    >
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {(editEmployeeData.assignedStudents || []).length > 0
+                          ? `${(editEmployeeData.assignedStudents || []).length} Student(s) Selected`
+                          : "Select Students..."}
+                      </span>
+                      <span style={{ fontSize: "10px", color: "#64748b", flexShrink: 0 }}>
+                        {showStudentDropdown ? "▲" : "▼"}
+                      </span>
+                    </button>
+
+                    {/* Floating Dropdown Panel */}
+                    {showStudentDropdown && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: "100%",
+                          left: 0,
+                          right: 0,
+                          background: "#ffffff",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "10px",
+                          boxShadow: "0 -10px 25px rgba(0, 0, 0, 0.15)",
+                          zIndex: 13000,
+                          marginBottom: "6px",
+                          padding: "12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "10px",
+                          boxSizing: "border-box"
+                        }}
+                      >
+                        {/* Mini Search Bar */}
+                        <div style={{ position: "relative" }}>
+                          <input
+                            type="text"
+                            placeholder="Search students..."
+                            value={studentSearchQuery}
+                            onChange={(e) => setStudentSearchQuery(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "8px 12px 8px 30px",
+                              border: "1px solid #cbd5e1",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              boxSizing: "border-box"
+                            }}
+                          />
+                          <span style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", fontSize: "12px" }}>
+                            🔍
+                          </span>
+                          {studentSearchQuery && (
+                            <button
+                              type="button"
+                              onClick={() => setStudentSearchQuery("")}
+                              style={{
+                                position: "absolute",
+                                right: "10px",
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                border: "none",
+                                background: "transparent",
+                                color: "#94a3b8",
+                                cursor: "pointer",
+                                fontSize: "12px"
+                              }}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Students List with Checkboxes */}
+                        <div style={{ maxHeight: "180px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "2px" }}>
+                          {(() => {
+                            const filtered = students.filter(student => 
+                              (student.name || "").toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+                              (student.internId || "").toLowerCase().includes(studentSearchQuery.toLowerCase())
+                            );
+
+                            if (filtered.length === 0) {
+                              return <div style={{ padding: "8px", fontSize: "13px", color: "#94a3b8", textAlign: "center" }}>No students found</div>;
+                            }
+
+                            return filtered.map((student) => {
+                              const isChecked = (editEmployeeData.assignedStudents || []).includes(student._id);
+                              return (
+                                <label
+                                  key={student._id}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                    padding: "6px 8px",
+                                    borderRadius: "6px",
+                                    cursor: "pointer",
+                                    fontSize: "13px",
+                                    color: "#334155",
+                                    fontWeight: 500,
+                                    transition: "background 0.2s",
+                                    background: isChecked ? "#f0f9ff" : "transparent"
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (!isChecked) e.currentTarget.style.background = "#f8fafc";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!isChecked) e.currentTarget.style.background = "transparent";
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      const current = editEmployeeData.assignedStudents || [];
+                                      const next = current.includes(student._id)
+                                        ? current.filter(id => id !== student._id)
+                                        : [...current, student._id];
+                                      setEditEmployeeData({ ...editEmployeeData, assignedStudents: next });
+                                    }}
+                                    style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                                  />
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ color: isChecked ? "#0284c7" : "#0f172a", fontWeight: isChecked ? 600 : 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{student.name}</div>
+                                    <div style={{ fontSize: "11px", color: "#64748b" }}>{student.internId} &middot; {student.studentType}</div>
+                                  </div>
+                                </label>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div style={{ marginTop: "24px", display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                <button type="submit" disabled={loading} style={{ padding: "12px 28px", background: loading ? "#94a3b8" : "#0f172a", color: "white", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600 }}>
+                <button type="submit" disabled={loading} style={{ padding: "12px 28px", background: loading ? "#94a3b8" : "#324158", color: "white", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: 600 }}>
                   {loading ? "Saving..." : "Save Changes"}
                 </button>
                 <button type="button" onClick={() => setShowEditEmployeeModal(false)} style={{ padding: "12px 24px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "14px", fontWeight: 600 }}>
