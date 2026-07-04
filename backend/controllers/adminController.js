@@ -2518,16 +2518,29 @@ exports.createActivity = async (req, res) => {
 
     // Send student notifications for GD
     if (String(type).toLowerCase().includes('gd')) {
-      const studentIds = details?.assigned || [];
-      if (studentIds.length > 0) {
+      // Collect studentIds from both assigned array and groups structure
+      const directAssigned = details?.assigned || [];
+      const groupMembers = [];
+      if (Array.isArray(details?.groups)) {
+        details.groups.forEach(group => {
+          const members = Array.isArray(group) ? group : (group.members || []);
+          members.forEach(m => {
+            const mid = String(m?._id || m?.id || m?.studentId || m?.internId || m?.psmsId || m || '');
+            if (mid) groupMembers.push(mid);
+          });
+        });
+      }
+      const allStudentIds = Array.from(new Set([...directAssigned.map(String), ...groupMembers]));
+
+      if (allStudentIds.length > 0) {
         const when = dateTime ? new Date(dateTime).toLocaleString() : '';
         const titleNotif = `New Scheduled GD: ${title || 'Group Discussion'}`;
-        const messageNotif = `You are scheduled for a Group Discussion: ${title || 'Group Discussion'}.${when ? ' Time: ' + when : ''}`;
+        const messageNotif = `You are scheduled for a Group Discussion: "${title || 'Group Discussion'}".${when ? ' Time: ' + when : ''}`;
         await createActivityNotification({
           title: titleNotif,
           message: messageNotif,
           type: 'GD',
-          studentIds,
+          studentIds: allStudentIds,
           adminId: req.user.id,
           activityId: saved._id
         });
@@ -2758,7 +2771,35 @@ exports.updateActivity = async (req, res) => {
 
     // Send notifications to students on reschedule or completion
     try {
-      const studentIds = updates.details?.studentIds || updates.details?.assigned || originalActivity.details?.studentIds || originalActivity.details?.assigned || [];
+      // Collect student IDs from multiple possible fields (covers Interview, Assessment, GD)
+      const rawStudentIds = [
+        ...(updates.details?.studentIds || []),
+        ...(updates.details?.assigned || []),
+        ...(originalActivity.details?.studentIds || []),
+        ...(originalActivity.details?.assigned || []),
+      ];
+
+      // Also extract from GD groups structure
+      const extractFromGroups = (details) => {
+        const members = [];
+        if (!Array.isArray(details?.groups)) return members;
+        details.groups.forEach(group => {
+          const groupMembers = Array.isArray(group) ? group : (group.members || []);
+          groupMembers.forEach(m => {
+            const mid = String(m?._id || m?.id || m?.studentId || m?.internId || m?.psmsId || m || '');
+            if (mid) members.push(mid);
+          });
+        });
+        return members;
+      };
+
+      const groupMembers = [
+        ...extractFromGroups(updates.details || {}),
+        ...extractFromGroups(originalActivity.details || {}),
+      ];
+
+      const studentIds = Array.from(new Set([...rawStudentIds.map(String), ...groupMembers].filter(Boolean)));
+
       if (studentIds.length > 0) {
         const adminId = req.user.id;
         const typeStr = updates.type || originalActivity.type;
@@ -2804,8 +2845,51 @@ exports.updateActivity = async (req, res) => {
 exports.deleteActivity = async (req, res) => {
   try {
     const { id } = req.params;
-    const removed = await Activity.findByIdAndDelete(id);
-    if (!removed) return res.status(404).json({ success: false, message: 'Activity not found' });
+    const activity = await Activity.findById(id).lean();
+    if (!activity) return res.status(404).json({ success: false, message: 'Activity not found' });
+
+    const adminId = req.user?.id;
+    const activityType = String(activity.type || '').toLowerCase();
+
+    // Collect all student IDs (from assigned field + GD groups structure)
+    const rawStudentIds = [...(activity.details?.studentIds || []), ...(activity.details?.assigned || [])];
+    const groupMembers = [];
+    if (Array.isArray(activity.details?.groups)) {
+      activity.details.groups.forEach(group => {
+        const members = Array.isArray(group) ? group : (group.members || []);
+        members.forEach(m => {
+          const mid = String(m?._id || m?.id || m?.studentId || m?.internId || m?.psmsId || m || '');
+          if (mid) groupMembers.push(mid);
+        });
+      });
+    }
+    const studentIds = Array.from(new Set([...rawStudentIds.map(String), ...groupMembers].filter(Boolean)));
+
+    // 1. Send cancellation notifications to assigned students
+    if (studentIds.length > 0) {
+      const titleStr = activity.title || activity.type;
+      await createActivityNotification({
+        title: `Cancelled: ${titleStr}`,
+        message: `Your scheduled ${activity.type || 'activity'} "${titleStr}" has been cancelled by the admin.`,
+        type: activity.type,
+        studentIds,
+        adminId,
+        activityId: id
+      });
+    }
+
+    // 2. Cleanup linked Interview docs if type is Interview
+    if (activityType.includes('interview')) {
+      await Interview.deleteMany({ activityId: id });
+    }
+
+    // 3. Cleanup linked Notification docs if type is Assessment
+    if (activityType.includes('assessment')) {
+      await Notification.deleteMany({ activityId: id });
+    }
+
+    // 4. Delete the activity itself
+    await Activity.findByIdAndDelete(id);
     return res.status(200).json({ success: true, message: 'Activity deleted' });
   } catch (error) {
     console.error('Delete activity error:', error);
