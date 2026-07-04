@@ -568,7 +568,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     textAlign: "left",
                     textTransform: "uppercase",
                     letterSpacing: "0.5px"
-                  }}>#</th>
+                  }}>SR/No</th>
                   <th style={{
                     background: '#344158',
                     color: '#ffffff',
@@ -746,7 +746,18 @@ function ManageTasks({ onTaskApproved, onBack }) {
                       background: '#344158'
                     }}>
                       <th style={{
-                        width: "22%",
+                        width: "8%",
+                        background: '#344158',
+                        color: '#ffffff',
+                        padding: "16px 12px",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        textAlign: "left",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px"
+                      }}>SR/No</th>
+                      <th style={{
+                        width: "20%",
                         background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
@@ -757,7 +768,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         letterSpacing: "0.5px"
                       }}>Task Details</th>
                       <th style={{
-                        width: "15%",
+                        width: "14%",
                         background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
@@ -768,7 +779,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         letterSpacing: "0.5px"
                       }}>Assigned To</th>
                       <th style={{
-                        width: "14%",
+                        width: "13%",
                         background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
@@ -779,7 +790,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         letterSpacing: "0.5px"
                       }}>Deadline</th>
                       <th style={{
-                        width: "12%",
+                        width: "11%",
                         background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
@@ -790,7 +801,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         letterSpacing: "0.5px"
                       }}>Status</th>
                       <th style={{
-                        width: "21%",
+                        width: "20%",
                         background: '#344158',
                         color: '#ffffff',
                         padding: "16px 12px",
@@ -803,8 +814,11 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {soloTasks.map((task) => (
+                    {soloTasks.map((task, i) => (
                       <tr key={task._id}>
+                        <td style={{ color: "#94a3b8", fontSize: "13px" }}>
+                          {i + 1}
+                        </td>
                         <td>
                           <div
                             style={{
