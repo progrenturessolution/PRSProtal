@@ -13,6 +13,35 @@ const Training = require('../models/Training');
 const Activity = require('../models/Activity');
 const { createRepresentativeNotification } = require('../utils/representativeNotification');
 
+const createActivityNotification = async ({ title, message, type, studentIds, adminId, activityId }) => {
+  if (!studentIds || studentIds.length === 0) return;
+  try {
+    let notifType = 'General/Announcement';
+    const lowerType = String(type).toLowerCase();
+    if (lowerType.includes('interview')) {
+      notifType = 'Interview';
+    } else if (lowerType.includes('gd')) {
+      notifType = 'Interview';
+    } else if (lowerType.includes('assessment')) {
+      notifType = 'Test/Assessment';
+    }
+
+    const notification = new Notification({
+      title,
+      message,
+      notificationType: notifType,
+      sendTo: studentIds.length === 1 ? 'Individual' : 'Group',
+      recipientIds: studentIds,
+      recipientModel: 'Intern',
+      createdBy: adminId,
+      activityId
+    });
+    await notification.save();
+  } catch (error) {
+    console.error('Failed to create student activity notification:', error);
+  }
+};
+
 const PASSWORD_SALT_ROUNDS = (() => {
   const defaultRounds = process.env.NODE_ENV === 'production' ? 10 : 4;
   const parsed = Number.parseInt(process.env.PASSWORD_SALT_ROUNDS || String(defaultRounds), 10);
@@ -2388,6 +2417,18 @@ exports.scheduleInterview = async (req, res) => {
         details: activityDetails
       });
       savedActivity = await activity.save();
+
+      // Create student notifications for the new schedule
+      const notifTitle = `New Scheduled Interview: ${interviewType} (${mode})`;
+      const notifMessage = `You are scheduled for a ${interviewType} interview on ${date} starting at ${startTime}.`;
+      await createActivityNotification({
+        title: notifTitle,
+        message: notifMessage,
+        type: 'Interview',
+        studentIds,
+        adminId: req.user.id,
+        activityId: savedActivity._id
+      });
     } catch (e) {
       console.error('Failed to save activity record for interviews', e);
       return res.status(500).json({ success: false, message: 'Failed to create activity record' });
@@ -2474,6 +2515,25 @@ exports.createActivity = async (req, res) => {
     const createdByModel = req.user && req.user.role ? (req.user.role === 'admin' ? 'Admin' : req.user.role === 'trainer' ? 'Trainer' : 'Intern') : 'Admin';
     const activity = new Activity({ type, title, dateTime: dateTime ? new Date(dateTime) : undefined, createdBy, createdByModel, status: status || 'Scheduled', details: details || {} });
     const saved = await activity.save();
+
+    // Send student notifications for GD
+    if (String(type).toLowerCase().includes('gd')) {
+      const studentIds = details?.assigned || [];
+      if (studentIds.length > 0) {
+        const when = dateTime ? new Date(dateTime).toLocaleString() : '';
+        const titleNotif = `New Scheduled GD: ${title || 'Group Discussion'}`;
+        const messageNotif = `You are scheduled for a Group Discussion: ${title || 'Group Discussion'}.${when ? ' Time: ' + when : ''}`;
+        await createActivityNotification({
+          title: titleNotif,
+          message: messageNotif,
+          type: 'GD',
+          studentIds,
+          adminId: req.user.id,
+          activityId: saved._id
+        });
+      }
+    }
+
     return res.status(201).json({ success: true, activity: saved });
   } catch (error) {
     console.error('Create activity error:', error);
@@ -2691,7 +2751,48 @@ exports.updateActivity = async (req, res) => {
       updates.details = mergedDetails;
     }
 
+    const isCompletedNow = updates.status === 'Completed' && originalActivity.status !== 'Completed';
+    const isRescheduled = updates.dateTime && originalActivity.dateTime && new Date(updates.dateTime).getTime() !== new Date(originalActivity.dateTime).getTime();
+
     const activity = await Activity.findByIdAndUpdate(id, updates, { new: true }).lean();
+
+    // Send notifications to students on reschedule or completion
+    try {
+      const studentIds = updates.details?.studentIds || updates.details?.assigned || originalActivity.details?.studentIds || originalActivity.details?.assigned || [];
+      if (studentIds.length > 0) {
+        const adminId = req.user.id;
+        const typeStr = updates.type || originalActivity.type;
+        const titleStr = updates.title || originalActivity.title;
+
+        if (isCompletedNow) {
+          const notifTitle = `Completed ${typeStr}: ${titleStr}`;
+          const notifMessage = `Your scheduled ${typeStr} "${titleStr}" has been marked as Completed.`;
+          await createActivityNotification({
+            title: notifTitle,
+            message: notifMessage,
+            type: typeStr,
+            studentIds,
+            adminId,
+            activityId: id
+          });
+        } else if (isRescheduled) {
+          const notifTitle = `Rescheduled ${typeStr}: ${titleStr}`;
+          const whenStr = updates.dateTime ? new Date(updates.dateTime).toLocaleString() : '';
+          const notifMessage = `Your scheduled ${typeStr} "${titleStr}" has been rescheduled.${whenStr ? ' New Schedule: ' + whenStr : ''}`;
+          await createActivityNotification({
+            title: notifTitle,
+            message: notifMessage,
+            type: typeStr,
+            studentIds,
+            adminId,
+            activityId: id
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send update notifications', e);
+    }
+
     return res.status(200).json({ success: true, activity });
   } catch (error) {
     console.error('Update activity error:', error);
