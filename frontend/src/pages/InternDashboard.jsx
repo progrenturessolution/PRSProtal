@@ -2095,7 +2095,7 @@ function InternDashboard() {
 
             <div className="profile-summary-card" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32 }}>
+                <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32, background: '#314158' }}>
                   {(user.name || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -3275,15 +3275,7 @@ function InternDashboard() {
                           (notif.notificationType === "General/Announcement"
                             ? "#e5e7eb"
                             : "#bfdbfe"),
-                        borderLeft:
-                          "4px solid " +
-                          (notif.notificationType === "Interview"
-                            ? "#f59e0b"
-                            : notif.notificationType === "Test/Assessment"
-                              ? "#3b82f6"
-                              : notif.notificationType === "Certificate"
-                                ? "#10b981"
-                                : "#6b7280"),
+                        borderLeft: "4px solid #314158",
                       }}
                     >
                       <div style={{ marginBottom: "8px" }}>
