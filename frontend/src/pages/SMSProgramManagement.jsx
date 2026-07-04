@@ -237,6 +237,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, active, completed
   const [filterAddedBy, setFilterAddedBy] = useState('All');
+  const [feeFilter, setFeeFilter] = useState('all'); // all, pending, completed
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -278,12 +279,40 @@ function SMSProgramManagement({ onAddStudentClick }) {
   const getFilteredStudents = () => {
     let filtered = students;
 
+    const getPendingAmount = (student) => {
+      const total = parseMoney(student.totalFees);
+      if (total > 0) {
+        const paid = getPaidAmount(student);
+        return Math.max(0, total - paid);
+      }
+      return Math.max(0, parseMoney(student.pendingFees));
+    };
+
+    const hasCompletedFees = (student) => {
+      const total = parseMoney(student.totalFees);
+      const paid = getPaidAmount(student);
+      const pendingFromField = parseMoney(student.pendingFees);
+      const completedFromField = parseMoney(student.completedFees);
+
+      if (total > 0) return paid >= total;
+      if (completedFromField > 0 && pendingFromField <= 0) return true;
+      return false;
+    };
+
     // Apply status filter
     if (filter === 'active') {
       filtered = filtered.filter(student => student.status?.toLowerCase() === 'active');
     }
     if (filter === 'completed') {
       filtered = filtered.filter(student => student.status?.toLowerCase() === 'completed');
+    }
+
+    // Apply fees filter
+    if (feeFilter === 'pending') {
+      filtered = filtered.filter(student => getPendingAmount(student) > 0);
+    }
+    if (feeFilter === 'completed') {
+      filtered = filtered.filter(student => hasCompletedFees(student));
     }
 
     // Apply added by filter
@@ -618,7 +647,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.5fr) minmax(180px, 1fr) minmax(180px, 1fr)',
+            gridTemplateColumns: 'minmax(0, 1.5fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr)',
             gap: '12px',
             marginBottom: '20px',
             alignItems: 'end'
@@ -712,6 +741,37 @@ function SMSProgramManagement({ onAddStudentClick }) {
               <option value="All">All</option>
               <option value="Admin">Admin</option>
               <option value="Representative">Representative</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#0f172a'
+              }}
+            >
+              Fee Filter
+            </label>
+            <select
+              value={feeFilter}
+              onChange={(e) => setFeeFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '10px',
+                fontSize: '14px',
+                background: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">All Fees</option>
+              <option value="pending">Pending Fees</option>
+              <option value="completed">Completed Fees</option>
             </select>
           </div>
         </div>

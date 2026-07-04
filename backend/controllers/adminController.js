@@ -2147,7 +2147,7 @@ exports.getRepresentativePayouts = async (req, res) => {
     }
 
     const payouts = await RepresentativePayout.find(filter)
-      .populate('representative', 'name pgirId email upiId upiMobileNumber')
+      .populate('representative', 'name pgirId email upiId upiMobileNumber docs.upiScanner')
       .sort({ weekStartDate: -1 });
 
     return res.status(200).json({ success: true, count: payouts.length, payouts });

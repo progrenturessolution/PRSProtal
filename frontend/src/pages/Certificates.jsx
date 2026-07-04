@@ -193,9 +193,9 @@ function Certificates() {
                       style={{
                         padding: '8px 14px',
                         borderRadius: '999px',
-                        border: isActive ? '1px solid #1d4ed8' : '1px solid #cbd5e1',
-                        background: isActive ? '#dbeafe' : '#f8fafc',
-                        color: isActive ? '#1e40af' : '#475569',
+                        border: '1px solid #324158',
+                        background: isActive ? '#324158' : 'white',
+                        color: isActive ? 'white' : '#324158',
                         fontSize: '13px',
                         fontWeight: '700',
                         cursor: 'pointer',
@@ -481,8 +481,8 @@ function Certificates() {
               onClick={addRow}
               style={{
                 marginTop: '10px', padding: '8px 18px',
-                background: '#eff6ff', color: '#2563eb',
-                border: '1px dashed #93c5fd', borderRadius: '8px',
+                background: '#324158', color: 'white',
+                border: '1px solid #324158', borderRadius: '8px',
                 cursor: 'pointer', fontSize: '14px', fontWeight: '600'
               }}
             >

@@ -8,15 +8,19 @@ const defaultForm = {
   groupDescription: "",
   studentType: "All",
   selectedStudents: [],
-  assignedEmployeesText: "",
+  selectedEmployees: [],
 };
 
 function GroupManagement() {
   const [groups, setGroups] = useState([]);
   const [students, setStudents] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState(defaultForm);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isStudentDropdownOpen, setIsStudentDropdownOpen] = useState(false);
+  const [isEmployeeDropdownOpen, setIsEmployeeDropdownOpen] = useState(false);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [employeeSearchQuery, setEmployeeSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [detailsGroup, setDetailsGroup] = useState(null);
@@ -27,12 +31,14 @@ function GroupManagement() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [groupRes, studentRes] = await Promise.all([
+      const [groupRes, studentRes, employeeRes] = await Promise.all([
         adminRepAPI.getGroups(),
         adminAPI.getAllInterns(),
+        adminAPI.getAllTrainers(),
       ]);
       if (groupRes.data.success) setGroups(groupRes.data.groups || []);
       if (studentRes.data.success) setStudents(studentRes.data.interns || []);
+      if (employeeRes.data.success) setEmployees(employeeRes.data.trainers || []);
     } catch (err) {
       console.error("Group load error", err);
       setError("Failed to load groups");
@@ -81,6 +87,40 @@ function GroupManagement() {
     });
   }, [filteredStudents, studentSearchQuery]);
 
+  const employeeOptions = useMemo(() => {
+    const uniqueByName = new Map();
+
+    (employees || []).forEach((employee) => {
+      const name = String(employee?.name || "").trim();
+      if (!name) return;
+      if (!uniqueByName.has(name)) {
+        uniqueByName.set(name, {
+          name,
+          email: employee?.email || "",
+          role: employee?.role || employee?.customRole || "Employee",
+        });
+      }
+    });
+
+    return Array.from(uniqueByName.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [employees]);
+
+  const visibleEmployees = useMemo(() => {
+    const query = employeeSearchQuery.trim().toLowerCase();
+    if (!query) return employeeOptions;
+
+    const matches = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .includes(query);
+
+    return employeeOptions.filter((item) => {
+      return matches(item.name) || matches(item.email) || matches(item.role);
+    });
+  }, [employeeOptions, employeeSearchQuery]);
+
   const handleInput = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -98,11 +138,17 @@ function GroupManagement() {
     });
   };
 
-  const parseAssignedEmployees = (text) =>
-    text
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean);
+  const toggleEmployeeSelection = (employeeName) => {
+    setForm((prev) => {
+      const exists = prev.selectedEmployees.includes(employeeName);
+      return {
+        ...prev,
+        selectedEmployees: exists
+          ? prev.selectedEmployees.filter((item) => item !== employeeName)
+          : [...prev.selectedEmployees, employeeName],
+      };
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,7 +166,7 @@ function GroupManagement() {
       groupDescription: form.groupDescription,
       studentType: form.studentType,
       students: form.selectedStudents,
-      assignedEmployees: parseAssignedEmployees(form.assignedEmployeesText),
+      assignedEmployees: form.selectedEmployees,
     };
 
     try {
@@ -132,7 +178,12 @@ function GroupManagement() {
       }
       setSuccess(form.id ? "Group updated" : "Group created");
       setForm(defaultForm);
-      loadData();
+      setIsStudentDropdownOpen(false);
+      setIsEmployeeDropdownOpen(false);
+      setStudentSearchQuery("");
+      setEmployeeSearchQuery("");
+      setIsFormOpen(false);
+      await loadData();
     } catch (err) {
       console.error("Group save error", err);
       setError(err.response?.data?.message || "Failed to save group");
@@ -149,9 +200,34 @@ function GroupManagement() {
       groupDescription: group.groupDescription || "",
       studentType: group.studentType || "All",
       selectedStudents: (group.students || []).map((item) => item._id || item),
-      assignedEmployeesText: (group.assignedEmployees || []).join(", "),
+      selectedEmployees: group.assignedEmployees || [],
     });
+    setIsFormOpen(true);
+    setIsStudentDropdownOpen(false);
+    setIsEmployeeDropdownOpen(false);
+    setEmployeeSearchQuery("");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const openCreateForm = () => {
+    setForm(defaultForm);
+    setError("");
+    setSuccess("");
+    setStudentSearchQuery("");
+    setEmployeeSearchQuery("");
+    setIsStudentDropdownOpen(false);
+    setIsEmployeeDropdownOpen(false);
+    setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const closeForm = () => {
+    setForm(defaultForm);
+    setStudentSearchQuery("");
+    setEmployeeSearchQuery("");
+    setIsStudentDropdownOpen(false);
+    setIsEmployeeDropdownOpen(false);
+    setIsFormOpen(false);
   };
 
   const openDetails = async (groupId) => {
@@ -213,124 +289,182 @@ function GroupManagement() {
           <h1>Group Management</h1>
           <p>Create, edit, and maintain group assignments with structured student selection.</p>
         </div>
-        <div className="gm-header-stats">
-          <div className="gm-stat-pill">
-            <span>Total Groups</span>
-            <strong>{groups.length}</strong>
+        <div className="gm-header-actions">
+          <div className="gm-header-stats">
+            <div className="gm-stat-pill">
+              <span>Total Groups</span>
+              <strong>{groups.length}</strong>
+            </div>
           </div>
-          <div className="gm-stat-pill">
-            <span>Students Pool</span>
-            <strong>{filteredStudents.length}</strong>
-          </div>
+          {!isFormOpen && (
+            <button
+              type="button"
+              className="gm-btn gm-btn-primary gm-create-btn"
+              onClick={openCreateForm}
+            >
+              Create Group
+            </button>
+          )}
         </div>
       </div>
 
       {success && <div className="gm-alert gm-alert-success">{success}</div>}
       {error && <div className="gm-alert gm-alert-error">{error}</div>}
 
-      <div className="gm-card">
-        <div className="gm-card-header">
-          <h2>{form.id ? "Edit Group" : "Create Group"}</h2>
-          {form.id && <span className="gm-edit-chip">Editing Existing Group</span>}
-        </div>
-        <form onSubmit={handleSubmit} className="gm-form-wrap">
-          <div className="gm-grid-3">
-            <div className="form-group"><label>Group Number *</label><input name="groupNumber" value={form.groupNumber} onChange={handleInput} required /></div>
-            <div className="form-group"><label>Group Name *</label><input name="groupName" value={form.groupName} onChange={handleInput} required /></div>
-            <div className="form-group"><label>Select Student Type</label>
-              <select name="studentType" value={form.studentType} onChange={handleInput}>
-                <option value="All">All</option>
-                <option value="Internship">Internship</option>
-                <option value="SMS Program">SMS Program</option>
-              </select>
-            </div>
-            <div className="form-group gm-span-all">
-              <label>Group Description</label>
-              <textarea name="groupDescription" value={form.groupDescription} onChange={handleInput} rows={2} />
-            </div>
-            <div className="form-group gm-span-all">
-              <label>Group Assigned (Employee Names, comma-separated)</label>
-              <input
-                name="assignedEmployeesText"
-                value={form.assignedEmployeesText}
-                onChange={handleInput}
-                placeholder="e.g. Ananya Singh, Rahul Verma"
-              />
-            </div>
-            <div className="form-group gm-span-all">
-              <div className="gm-students-head">
-                <label>Select Students ({form.selectedStudents.length} selected)</label>
-                <div className="gm-head-actions">
-                  <button type="button" className="gm-link-btn" onClick={selectAllFilteredStudents}>Select All Shown</button>
-                  <button type="button" className="gm-link-btn" onClick={clearSelectedStudents}>Clear</button>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="gm-students-trigger"
-                onClick={() => setIsStudentDropdownOpen((prev) => !prev)}
-                aria-expanded={isStudentDropdownOpen}
-              >
-                <span>
-                  {form.selectedStudents.length > 0
-                    ? `${form.selectedStudents.length} students selected`
-                    : "Select students"}
-                </span>
-                <span className={`gm-trigger-arrow ${isStudentDropdownOpen ? "is-open" : ""}`}>▾</span>
+      {isFormOpen && (
+        <div className="gm-card">
+          <div className="gm-card-header">
+            <h2>{form.id ? "Edit Group" : "Create Group"}</h2>
+            <div className="gm-row-actions">
+              {form.id && <span className="gm-edit-chip">Editing Existing Group</span>}
+              <button type="button" className="gm-btn gm-btn-primary" onClick={closeForm}>
+                Back to Groups
               </button>
+            </div>
+          </div>
+          <form onSubmit={handleSubmit} className="gm-form-wrap">
+            <div className="gm-grid-3">
+              <div className="form-group"><label>Group Number *</label><input name="groupNumber" value={form.groupNumber} onChange={handleInput} required /></div>
+              <div className="form-group"><label>Group Name *</label><input name="groupName" value={form.groupName} onChange={handleInput} required /></div>
+              <div className="form-group"><label>Select Student Type</label>
+                <select name="studentType" value={form.studentType} onChange={handleInput}>
+                  <option value="All">All</option>
+                  <option value="Internship">Internship</option>
+                  <option value="SMS Program">SMS Program</option>
+                </select>
+              </div>
+              <div className="form-group gm-span-all">
+                <label>Group Description</label>
+                <textarea name="groupDescription" value={form.groupDescription} onChange={handleInput} rows={2} />
+              </div>
+              <div className="form-group gm-span-all">
+                <label>Group Assigned Employees ({form.selectedEmployees.length} selected)</label>
+                <button
+                  type="button"
+                  className="gm-students-trigger"
+                  onClick={() => setIsEmployeeDropdownOpen((prev) => !prev)}
+                  aria-expanded={isEmployeeDropdownOpen}
+                >
+                  <span>
+                    {form.selectedEmployees.length > 0
+                      ? `${form.selectedEmployees.length} employees selected`
+                      : "Select employees"}
+                  </span>
+                  <span className={`gm-trigger-arrow ${isEmployeeDropdownOpen ? "is-open" : ""}`}>▾</span>
+                </button>
 
-              {isStudentDropdownOpen && (
-                <div className="gm-students-dropdown">
-                  <input
-                    type="text"
-                    className="gm-student-search"
-                    placeholder="Search by name, email, ID, or type..."
-                    value={studentSearchQuery}
-                    onChange={(e) => setStudentSearchQuery(e.target.value)}
-                  />
-                  <div className="gm-students-box">
-                    {visibleStudents.length === 0 ? (
-                      <div className="gm-empty-inline">No students found for selected filters</div>
-                    ) : (
-                      visibleStudents.map((student) => {
-                        const selected = form.selectedStudents.includes(student._id);
-                        return (
-                          <label
-                            key={student._id}
-                            className={`gm-student-check-row ${selected ? "is-selected" : ""}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selected}
-                              onChange={() => toggleStudentSelection(student._id)}
-                            />
-                            <span className="gm-student-content">
-                              <strong>{student.name}</strong>
-                              <small>{student.email} • {student.internId}</small>
-                              <span className="gm-type-chip">{student.studentType}</span>
-                            </span>
-                          </label>
-                        );
-                      })
-                    )}
+                {isEmployeeDropdownOpen && (
+                  <div className="gm-students-dropdown">
+                    <input
+                      type="text"
+                      className="gm-student-search"
+                      placeholder="Search by employee name, email, or role..."
+                      value={employeeSearchQuery}
+                      onChange={(e) => setEmployeeSearchQuery(e.target.value)}
+                    />
+                    <div className="gm-students-box">
+                      {visibleEmployees.length === 0 ? (
+                        <div className="gm-empty-inline">No employees found</div>
+                      ) : (
+                        visibleEmployees.map((employee) => {
+                          const selected = form.selectedEmployees.includes(employee.name);
+                          return (
+                            <label
+                              key={employee.name}
+                              className={`gm-student-check-row ${selected ? "is-selected" : ""}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleEmployeeSelection(employee.name)}
+                              />
+                              <span className="gm-student-content">
+                                <strong>{employee.name}</strong>
+                                <small>{employee.email || "No email"} • {employee.role || "Employee"}</small>
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="form-group gm-span-all">
+                <div className="gm-students-head">
+                  <label>Select Students ({form.selectedStudents.length} selected)</label>
+                  <div className="gm-head-actions">
+                    <button type="button" className="gm-link-btn" onClick={selectAllFilteredStudents}>Select All Shown</button>
+                    <button type="button" className="gm-link-btn" onClick={clearSelectedStudents}>Clear</button>
                   </div>
                 </div>
-              )}
+                <button
+                  type="button"
+                  className="gm-students-trigger"
+                  onClick={() => setIsStudentDropdownOpen((prev) => !prev)}
+                  aria-expanded={isStudentDropdownOpen}
+                >
+                  <span>
+                    {form.selectedStudents.length > 0
+                      ? `${form.selectedStudents.length} students selected`
+                      : "Select students"}
+                  </span>
+                  <span className={`gm-trigger-arrow ${isStudentDropdownOpen ? "is-open" : ""}`}>▾</span>
+                </button>
+
+                {isStudentDropdownOpen && (
+                  <div className="gm-students-dropdown">
+                    <input
+                      type="text"
+                      className="gm-student-search"
+                      placeholder="Search by name, email, ID, or type..."
+                      value={studentSearchQuery}
+                      onChange={(e) => setStudentSearchQuery(e.target.value)}
+                    />
+                    <div className="gm-students-box">
+                      {visibleStudents.length === 0 ? (
+                        <div className="gm-empty-inline">No students found for selected filters</div>
+                      ) : (
+                        visibleStudents.map((student) => {
+                          const selected = form.selectedStudents.includes(student._id);
+                          return (
+                            <label
+                              key={student._id}
+                              className={`gm-student-check-row ${selected ? "is-selected" : ""}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => toggleStudentSelection(student._id)}
+                              />
+                              <span className="gm-student-content">
+                                <strong>{student.name}</strong>
+                                <small>{student.email} • {student.internId}</small>
+                                <span className="gm-type-chip">{student.studentType}</span>
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="gm-actions">
-            <button type="submit" className="gm-btn gm-btn-primary" disabled={saving}>
-              {saving ? "Saving..." : form.id ? "Update Group" : "Create Group"}
-            </button>
-            <button type="button" className="gm-btn gm-btn-muted" onClick={() => setForm(defaultForm)}>
-              Reset
-            </button>
-          </div>
-        </form>
-      </div>
+            <div className="gm-actions">
+              <button type="submit" className="gm-btn gm-btn-primary" disabled={saving}>
+                {saving ? "Saving..." : form.id ? "Update Group" : "Create Group"}
+              </button>
+              <button type="button" className="gm-btn gm-btn-muted" onClick={closeForm}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
-      <div className="gm-card">
+      <div className="gm-card gm-groups-card">
         <div className="gm-card-header">
           <h2>Existing Groups</h2>
         </div>
@@ -404,6 +538,16 @@ function GroupManagement() {
                           >
                             Edit Group
                           </button>
+                          <button
+                            type="button"
+                            className="gm-action-menu-item"
+                            onClick={() => {
+                              setActiveGroupMenuId(null);
+                              removeGroup(group._id);
+                            }}
+                          >
+                            Delete Group
+                          </button>
                         </div>
                       )}
                     </div>
@@ -421,35 +565,40 @@ function GroupManagement() {
             <div className="gm-modal-head">
               <h2>{detailsGroup.groupName}</h2>
               <div className="gm-row-actions">
-                <button
-                  className="gm-btn gm-btn-primary"
-                  onClick={() => {
-                    setDetailsGroup(null);
-                    editGroup(detailsGroup);
-                  }}
-                >
-                  Edit Group
-                </button>
-                <button
-                  className="gm-btn gm-btn-primary"
-                  onClick={() => removeGroup(detailsGroup._id)}
-                >
-                  Delete Group
-                </button>
-                <button className="gm-btn gm-btn-muted" onClick={() => setDetailsGroup(null)}>Close</button>
+                <button className="gm-detail-btn gm-detail-btn-outline" onClick={() => setDetailsGroup(null)}>Close</button>
               </div>
             </div>
-            <div className="gm-modal-body">
-              <p><strong>Group Number:</strong> {detailsGroup.groupNumber}</p>
-              <p><strong>Group Name:</strong> {detailsGroup.groupName}</p>
-              <p><strong>Description:</strong> {detailsGroup.groupDescription || "-"}</p>
-              <p><strong>Student Type:</strong> {detailsGroup.studentType}</p>
-              <p><strong>Total Students:</strong> {(detailsGroup.students || []).length}</p>
-              <p><strong>Assigned Employees:</strong> {(detailsGroup.assignedEmployees || []).join(", ") || "-"}</p>
+            <div className="gm-modal-body gm-detail-body">
+              <div className="gm-detail-grid">
+                <div className="gm-detail-item">
+                  <span className="gm-detail-label">Group Number</span>
+                  <strong className="gm-detail-value">{detailsGroup.groupNumber || "-"}</strong>
+                </div>
+                <div className="gm-detail-item">
+                  <span className="gm-detail-label">Group Name</span>
+                  <strong className="gm-detail-value">{detailsGroup.groupName || "-"}</strong>
+                </div>
+                <div className="gm-detail-item">
+                  <span className="gm-detail-label">Description</span>
+                  <strong className="gm-detail-value">{detailsGroup.groupDescription || "-"}</strong>
+                </div>
+                <div className="gm-detail-item">
+                  <span className="gm-detail-label">Student Type</span>
+                  <strong className="gm-detail-value">{detailsGroup.studentType || "-"}</strong>
+                </div>
+                <div className="gm-detail-item">
+                  <span className="gm-detail-label">Total Students</span>
+                  <strong className="gm-detail-value">{(detailsGroup.students || []).length}</strong>
+                </div>
+                <div className="gm-detail-item">
+                  <span className="gm-detail-label">Assigned Employees</span>
+                  <strong className="gm-detail-value">{(detailsGroup.assignedEmployees || []).join(", ") || "-"}</strong>
+                </div>
+              </div>
 
-              <h3 style={{ marginTop: "14px" }}>Student Details</h3>
-              <div className="gm-table-wrap">
-                <table className="premium-table group-students-table">
+              <h3 className="gm-detail-section-title">Student Details</h3>
+              <div className="gm-table-wrap gm-detail-table-wrap">
+                <table className="premium-table group-students-table gm-detail-table">
                   <thead>
                     <tr>
                       <th>Name</th>

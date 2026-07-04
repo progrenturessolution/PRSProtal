@@ -1045,6 +1045,53 @@ function TrainerDashboard() {
     ),
   );
 
+  const filteredGdEvaluations = (() => {
+    if (!selectedStudent) return [];
+
+    const studentIdVal = selectedStudent._id || selectedStudent.internId || selectedStudent.id;
+    if (!studentIdVal) return [];
+
+    const allEvaluations = [];
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key || !key.startsWith("gdStudentEvaluations:")) continue;
+
+      try {
+        const raw = JSON.parse(localStorage.getItem(key) || "[]");
+        if (!Array.isArray(raw)) continue;
+
+        raw.forEach((item) => {
+          if (String(item?.studentId) !== String(studentIdVal)) return;
+          allEvaluations.push(item);
+        });
+      } catch {
+        // Ignore malformed localStorage entries.
+      }
+    }
+
+    return allEvaluations
+      .filter((item) =>
+        matchesHistorySearch(
+          item?.gdTitle,
+          item?.savedAt ? new Date(item.savedAt).toLocaleDateString() : "",
+          item?.form?.participation,
+          item?.form?.communication,
+          item?.form?.confidence,
+          item?.form?.topicUnderstanding,
+          item?.form?.leadership,
+          item?.form?.overallRemark,
+          item?.form?.strengths,
+          item?.form?.improvementAreas,
+        ),
+      )
+      .sort((a, b) => {
+        const aTime = a?.savedAt ? new Date(a.savedAt).getTime() : 0;
+        const bTime = b?.savedAt ? new Date(b.savedAt).getTime() : 0;
+        return bTime - aTime;
+      });
+  })();
+
   const profileDisplayName = user?.name || "Trainer";
   const profileRole = user?.customRole || user?.role || "Trainer";
   const profileStatus = user?.status || "active";
@@ -4392,7 +4439,7 @@ function TrainerDashboard() {
 
                 {!recordsLoading && currentStudentTab && (
                   <div className="record-history record-history-below">
-                    <div className="record-history-toolbar" style={{ marginBottom: "10px" }}>
+                    <div className="record-history-toolbar" style={{ marginBottom: "16px" }}>
                       <h2 className="record-history-title" style={{ marginBottom: 0 }}>
                             {currentStudentTab === "interviews"
                               ? "Interview History"
@@ -4549,6 +4596,43 @@ function TrainerDashboard() {
                         </div>
                       )
                     )}
+
+                    {currentStudentTab === "gd" && (
+                      filteredGdEvaluations.length === 0 ? (
+                        <p>No GD evaluation records yet</p>
+                      ) : (
+                        <div className="record-table-wrap">
+                          <table className="premium-table view-students-table student-records-history-table">
+                            <thead>
+                              <tr>
+                                <th>Date</th>
+                                <th>GD</th>
+                                <th>Participation</th>
+                                <th>Communication</th>
+                                <th>Confidence</th>
+                                <th>Topic</th>
+                                <th>Leadership</th>
+                                <th>Overall Remark</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredGdEvaluations.map((gd, index) => (
+                                <tr key={`${gd.gdId || gd.gdTitle || "gd"}-${gd.savedAt || index}`}>
+                                  <td>{gd.savedAt ? new Date(gd.savedAt).toLocaleDateString() : "-"}</td>
+                                  <td>{gd.gdTitle || "GD"}</td>
+                                  <td>{gd.form?.participation || "-"}</td>
+                                  <td>{gd.form?.communication || "-"}</td>
+                                  <td>{gd.form?.confidence || "-"}</td>
+                                  <td>{gd.form?.topicUnderstanding || "-"}</td>
+                                  <td>{gd.form?.leadership || "-"}</td>
+                                  <td>{gd.form?.overallRemark || "-"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
               </div>
@@ -4689,7 +4773,7 @@ function TrainerDashboard() {
 
               <div className="profile-summary-card" style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32 }}>
+                    <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32, background: "#324158" }}>
                       {profileInitial}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -4710,7 +4794,6 @@ function TrainerDashboard() {
                   <h3>Personal Details</h3>
                   <div className="section-grid">
                     <div className="field-col"><label>Full Name</label><div className="field-value">{user?.name || "-"}</div></div>
-                    <div className="field-col"><label>Employee ID</label><div className="field-value mono-text">{user?.trainerId || user?.employeeId || "-"}</div></div>
                     <div className="field-col"><label>Role</label><div className="field-value">{profileRole || "-"}</div></div>
                     <div className="field-col"><label>Account Status</label><div className="field-value">{profileStatus || "-"}</div></div>
                     {hasDisplayValue(user?.joiningDate) && <div className="field-col"><label>Joining Date</label><div className="field-value">{new Date(user.joiningDate).toLocaleDateString()}</div></div>}

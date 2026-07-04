@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { adminRepAPI } from "../services/api";
+import { adminRepAPI, UPLOADS_BASE } from "../services/api";
 
 const formatMonthLabel = (value) => {
   if (!value) return "-";
@@ -27,6 +27,13 @@ const emptyForm = {
   payoutReleaseDate: "",
   promotionalDocumentsLink: "",
   notes: "",
+};
+
+const toPublicFilePath = (filepath) => {
+  if (!filepath) return "";
+  const normalized = String(filepath).replace(/\\/g, "/");
+  const relative = normalized.split("uploads/")[1] || "";
+  return relative ? `${UPLOADS_BASE}/uploads/${relative}` : "";
 };
 
 function RepresentativePayoutManagement() {
@@ -494,7 +501,21 @@ function RepresentativePayoutManagement() {
                           <td>{item.payoutEligible}</td>
                           <td>{item.rewardPercent}%</td>
                           <td>₹{item.payoutAmount || 0}</td>
-                          <td>{item.payoutStatus}</td>
+                          <td>
+                            <span
+                              style={{
+                                display: "inline-block",
+                                padding: "4px 10px",
+                                borderRadius: "999px",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                background: item.payoutStatus === "Paid" ? "#dcfce7" : item.payoutStatus === "Hold" ? "#fee2e2" : "#f3f4f6",
+                                color: item.payoutStatus === "Paid" ? "#166534" : item.payoutStatus === "Hold" ? "#991b1b" : "#374151",
+                              }}
+                            >
+                              {item.payoutStatus}
+                            </span>
+                          </td>
                           <td>{item.payoutReleaseDate ? new Date(item.payoutReleaseDate).toLocaleDateString("en-IN") : "-"}</td>
                           <td style={{ position: "relative" }}>                            <button
                               data-menu-toggle
@@ -559,6 +580,36 @@ function RepresentativePayoutManagement() {
                                     onMouseLeave={(e) => (e.target.style.background = "white")}
                                   >
                                     Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const scannerPath = item.representative?.docs?.upiScanner?.filepath;
+                                      const publicFileUrl = toPublicFilePath(scannerPath);
+
+                                      if (publicFileUrl) {
+                                        window.open(publicFileUrl, "_blank", "noopener,noreferrer");
+                                      } else {
+                                        window.alert("UPI Scanner file not available for this representative");
+                                      }
+                                      setOpenMenuId(null);
+                                    }}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px 16px",
+                                      background: "white",
+                                      border: "none",
+                                      borderTop: "1px solid #f3f4f6",
+                                      textAlign: "left",
+                                      cursor: "pointer",
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                      color: "#0f172a",
+                                    }}
+                                    onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                    onMouseLeave={(e) => (e.target.style.background = "white")}
+                                  >
+                                    UPI Scanner
                                   </button>
                                   <button
                                     type="button"

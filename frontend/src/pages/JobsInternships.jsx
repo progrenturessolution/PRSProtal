@@ -277,7 +277,7 @@ function JobsInternships({ onPostingCreated }) {
           }}
           style={{
             padding: "12px 24px",
-            background: "#273445",
+            background: "#324158",
             color: "white",
             border: "none",
             borderRadius: "6px",
@@ -286,7 +286,7 @@ function JobsInternships({ onPostingCreated }) {
             fontWeight: 600,
           }}
         >
-          {showForm ? "✖ Close Form" : "Post New Opportunity"}
+          {showForm ? "Close Form" : "Post New Opportunity"}
         </button>
       </div>
 
@@ -587,7 +587,7 @@ function JobsInternships({ onPostingCreated }) {
               disabled={loading}
               style={{
                 padding: "12px 24px",
-                background: loading ? "#ccc" : "#273445",
+                background: loading ? "#ccc" : "#324158",
                 color: "white",
                 border: "none",
                 borderRadius: "6px",

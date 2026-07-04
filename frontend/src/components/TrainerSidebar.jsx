@@ -20,7 +20,6 @@ function TrainerSidebar({
 }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [activityOpen, setActivityOpen] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -161,26 +160,7 @@ function TrainerSidebar({
           Notifications
           {showNotificationDot && <span className="sidebar-notification-dot" aria-hidden="true" />}
         </li>
-        {/* Activities parent - collapsible */}
-        <li
-          className={(["scheduled-individuals","scheduled-groups","scheduled-gds","scheduled-assignments"].includes(activeTab) ? "active" : "")}
-          onClick={() => setActivityOpen(!activityOpen)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ flexShrink: 0, width: 18, height: 18 }}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-6 0h6" />
-            </svg>
-            <span>Activities</span>
-            {(hasUnreadTrainerIndividuals || hasUnreadTrainerGroups || hasUnreadTrainerGds || hasUnreadTrainerAssignments) && (
-              <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />
-            )}
-          </div>
-          <div style={{ opacity: 0.9 }}>{activityOpen ? '▾' : '▸'}</div>
-        </li>
-
-        {activityOpen && (
-          <>
+        <>
             <li
               className={activeTab === "scheduled-individuals" ? "active" : ""}
               onClick={() => handleMenuClick("scheduled-individuals")}
@@ -237,7 +217,6 @@ function TrainerSidebar({
               {hasUnreadTrainerAssignments && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
             </li>
           </>
-        )}
 
         {selectedStudent && (
           <>

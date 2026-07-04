@@ -54,7 +54,12 @@ function StudentDetailReport() {
 
   const filteredRecords = useMemo(() => {
     if (!selectedMonth) {
-      return { interviews: [], aptitudes: [], assessments: [], trainings: [] };
+      return {
+        interviews: records.interviews || [],
+        aptitudes: records.aptitudes || [],
+        assessments: records.assessments || [],
+        trainings: records.trainings || [],
+      };
     }
 
     const filterByMonth = (items) =>
@@ -68,7 +73,6 @@ function StudentDetailReport() {
     };
   }, [records, selectedMonth]);
 
-  const hasSelectedMonth = Boolean(selectedMonth);
   const hasFilteredRecords =
     filteredRecords.interviews.length > 0 ||
     filteredRecords.aptitudes.length > 0 ||
@@ -150,12 +154,12 @@ function StudentDetailReport() {
   };
 
   const downloadReportPDF = () => {
-    if (!hasSelectedMonth) {
-      alert("Please select a month first from the dropdown to generate the PDF report.");
-      return;
-    }
     if (!hasFilteredRecords) {
-      alert("There are no records available for the selected month to generate a report.");
+      alert(
+        selectedMonth
+          ? "There are no records available for the selected month to generate a report."
+          : "There are no records available to generate a report.",
+      );
       return;
     }
 
@@ -192,7 +196,7 @@ function StudentDetailReport() {
             <div class="header">
               <div class="company">Progrentures Solution Pvt. Ltd.</div>
               <h1>PRS Portal Aspirant Report</h1>
-              <p>Month: <strong>${formatMonthLabel(selectedMonth)}</strong> &nbsp;|&nbsp; Generated on: <strong>${new Date().toLocaleDateString('en-IN')}</strong></p>
+              <p>Month: <strong>${selectedMonth ? formatMonthLabel(selectedMonth) : "Overall"}</strong> &nbsp;|&nbsp; Generated on: <strong>${new Date().toLocaleDateString('en-IN')}</strong></p>
             </div>
 
             <div class="section">
@@ -384,12 +388,12 @@ function StudentDetailReport() {
   };
 
   const downloadReportExcel = async () => {
-    if (!hasSelectedMonth) {
-      alert("Please select a month first from the dropdown to export Excel.");
-      return;
-    }
     if (!hasFilteredRecords) {
-      alert("There are no records available for the selected month to export Excel.");
+      alert(
+        selectedMonth
+          ? "There are no records available for the selected month to export Excel."
+          : "There are no records available to export Excel.",
+      );
       return;
     }
 
@@ -399,7 +403,7 @@ function StudentDetailReport() {
         ["PRS Portal Aspirant Report"],
         ["Company", "Progrentures Solution Pvt. Ltd."],
         ["Generated on", new Date().toLocaleDateString('en-IN')],
-        ["Month", formatMonthLabel(selectedMonth)],
+        ["Month", selectedMonth ? formatMonthLabel(selectedMonth) : "Overall"],
         [],
         ["Student Information"],
         ["Name", student.name],
@@ -486,7 +490,7 @@ function StudentDetailReport() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `Student_Report_${student.internId}_${selectedMonth}.csv`);
+      link.setAttribute("download", `Student_Report_${student.internId}_${selectedMonth || "overall"}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -614,8 +618,8 @@ function StudentDetailReport() {
         <div className="report-filter-header">
           <div>
             <span className="report-filter-kicker">Report Filter</span>
-            <h3>Choose a month to view records</h3>
-            <p>Only records from the selected month will be shown.</p>
+            <h3>Select month (optional)</h3>
+            <p>If no month is selected, overall student report is shown.</p>
           </div>
           <div className="report-filter-badge">{allMonthOptions.length} months available</div>
         </div>
@@ -638,7 +642,7 @@ function StudentDetailReport() {
               </select>
             </div>
             <span className="report-filter-help">
-              {selectedMonth ? `Showing ${formatMonthLabel(selectedMonth)}` : "Pick a month to load records"}
+              {selectedMonth ? `Showing ${formatMonthLabel(selectedMonth)}` : "Showing overall report"}
             </span>
           </div>
 
@@ -695,39 +699,38 @@ function StudentDetailReport() {
       <div className="summary-stats">
         <div className="stat-card interview-card">
           <div className="stat-content">
-            <div className="stat-value">{selectedMonth ? filteredRecords.interviews.length : 0}</div>
+            <div className="stat-value">{filteredRecords.interviews.length}</div>
             <div className="stat-label">Interviews</div>
           </div>
         </div>
         <div className="stat-card aptitude-card">
           <div className="stat-content">
-            <div className="stat-value">{selectedMonth ? filteredRecords.aptitudes.length : 0}</div>
+            <div className="stat-value">{filteredRecords.aptitudes.length}</div>
             <div className="stat-label">Aptitude Tests</div>
           </div>
         </div>
         <div className="stat-card assessment-card">
           <div className="stat-content">
-            <div className="stat-value">{selectedMonth ? filteredRecords.assessments.length : 0}</div>
+            <div className="stat-value">{filteredRecords.assessments.length}</div>
             <div className="stat-label">Assessments</div>
           </div>
         </div>
         <div className="stat-card training-card">
           <div className="stat-content">
-            <div className="stat-value">{selectedMonth ? filteredRecords.trainings.length : 0}</div>
+            <div className="stat-value">{filteredRecords.trainings.length}</div>
             <div className="stat-label">Trainings</div>
           </div>
         </div>
       </div>
 
-      {!selectedMonth ? (
-        <div className="empty-state">
-          <div className="empty-icon">🗓️</div>
-          <p>Please select a month to view the report</p>
-        </div>
-      ) : !hasFilteredRecords ? (
+      {!hasFilteredRecords ? (
         <div className="empty-state">
           <div className="empty-icon">📭</div>
-          <p>No report found for {formatMonthLabel(selectedMonth)}</p>
+          <p>
+            {selectedMonth
+              ? `No report found for ${formatMonthLabel(selectedMonth)}`
+              : "No overall report records available"}
+          </p>
         </div>
       ) : (
         <>

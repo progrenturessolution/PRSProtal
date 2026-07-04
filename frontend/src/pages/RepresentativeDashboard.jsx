@@ -821,7 +821,7 @@ function RepresentativeDashboard() {
 
               <div className="profile-summary-card" style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                  <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32 }}>
+                  <div className="profile-top-avatar" style={{ width: 72, height: 72, fontSize: 32, background: "#324158" }}>
                     {profileInitial}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -2206,34 +2206,32 @@ function RepresentativeDashboard() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gap: '16px' }}>
-                <div
-                  className="premium-card"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                    gap: '12px',
-                    padding: '16px',
-                  }}
-                >
-                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>Assigned Documents</div>
-                    <div style={{ fontSize: '22px', fontWeight: '700', color: '#111827' }}>{certificateCount}</div>
+              <div className="rep-docs-layout">
+                <section className="rep-docs-hero">
+                  <div>
+                    <h2>Document Control Center</h2>
+                    <p>All assigned certificate files and representative references in one place.</p>
                   </div>
-                  <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '12px 14px' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>Total Document Types</div>
-                    <div style={{ fontSize: '22px', fontWeight: '700', color: '#111827' }}>{assignedDocs.length}</div>
+                  <div className="rep-docs-stat-grid">
+                    <div className="rep-docs-stat-card">
+                      <span>Assigned Documents</span>
+                      <strong>{certificateCount}</strong>
+                    </div>
+                    <div className="rep-docs-stat-card">
+                      <span>Total Document Types</span>
+                      <strong>{assignedDocs.length}</strong>
+                    </div>
                   </div>
-                </div>
+                </section>
 
-                <section className="premium-card" style={{ padding: '0', overflow: 'hidden' }}>
-                  <div style={{ padding: '16px 18px', borderBottom: '1px solid #eef2f7' }}>
-                    <h2 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>Your Assigned Documents</h2>
-                    <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '13px' }}>All assigned certificate files in a simple view.</p>
+                <section className="rep-docs-card rep-docs-table-card">
+                  <div className="rep-docs-card-head">
+                    <h2>Your Assigned Documents</h2>
+                    <p>All assigned certificate files in a simple view.</p>
                   </div>
 
-                  <div style={{ overflowX: 'auto', padding: '0 12px 12px' }}>
-                    <table className="data-table view-students-table" style={{ minWidth: '760px' }}>
+                  <div className="rep-docs-table-wrap">
+                    <table className="rep-docs-table">
                       <thead>
                         <tr>
                           <th>Document</th>
@@ -2249,19 +2247,10 @@ function RepresentativeDashboard() {
                           return (
                             <tr key={doc.key}>
                               <td>{doc.label}</td>
-                              <td style={{ wordBreak: 'break-word' }}>{doc.filename || 'Not uploaded'}</td>
+                              <td className="rep-docs-break">{doc.filename || 'Not uploaded'}</td>
                               <td>{doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-IN') : '-'}</td>
                               <td>
-                                <span
-                                  style={{
-                                    padding: '4px 10px',
-                                    borderRadius: '999px',
-                                    fontSize: '11px',
-                                    fontWeight: '700',
-                                    background: isReady ? '#dcfce7' : '#f3f4f6',
-                                    color: isReady ? '#166534' : '#4b5563',
-                                  }}
-                                >
+                                <span className={`rep-docs-status ${isReady ? 'is-ready' : 'is-missing'}`}>
                                   {isReady ? 'Ready' : 'Missing'}
                                 </span>
                               </td>
@@ -2271,20 +2260,12 @@ function RepresentativeDashboard() {
                                     href={resolveFileUrl(doc.filepath)}
                                     target="_blank"
                                     rel="noreferrer"
-                                    style={{
-                                      padding: '6px 12px',
-                                      borderRadius: '8px',
-                                      background: '#344158',
-                                      color: '#fff',
-                                      textDecoration: 'none',
-                                      fontSize: '12px',
-                                      fontWeight: '600',
-                                    }}
+                                    className="rep-docs-open-btn"
                                   >
                                     Open
                                   </a>
                                 ) : (
-                                  <span style={{ color: '#9ca3af', fontSize: '12px' }}>Not available</span>
+                                  <span className="rep-docs-unavailable">Not available</span>
                                 )}
                               </td>
                             </tr>
@@ -2295,46 +2276,49 @@ function RepresentativeDashboard() {
                   </div>
                 </section>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
-                  <section className="premium-card" style={{ padding: '16px' }}>
-                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Certification Metadata</h2>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>PGIR ID</strong><div style={{ marginTop: '4px' }}>{profile?.pgirId || '-'}</div></div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>Designation</strong><div style={{ marginTop: '4px' }}>{profile?.designation || '-'}</div></div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>Joining Date</strong><div style={{ marginTop: '4px' }}>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</div></div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>UPI ID</strong><div style={{ marginTop: '4px' }}>{profile?.upiId || '-'}</div></div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>UPI/Mobile</strong><div style={{ marginTop: '4px' }}>{profile?.upiMobileNumber || '-'}</div></div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}><strong>LinkedIn</strong><div style={{ marginTop: '4px' }}>{profile?.linkedinProfile || '-'}</div></div>
+                <div className="rep-docs-grid">
+                  <section className="rep-docs-card rep-docs-accent">
+                    <div className="rep-docs-card-head">
+                      <h2>Certification Metadata</h2>
+                    </div>
+                    <div className="rep-docs-meta-grid">
+                      <div className="rep-docs-meta-item"><span>PGIR ID</span><strong>{profile?.pgirId || '-'}</strong></div>
+                      <div className="rep-docs-meta-item"><span>Designation</span><strong>{profile?.designation || '-'}</strong></div>
+                      <div className="rep-docs-meta-item"><span>Joining Date</span><strong>{profile?.joiningDate ? new Date(profile.joiningDate).toLocaleDateString('en-IN') : '-'}</strong></div>
+                      <div className="rep-docs-meta-item"><span>UPI ID</span><strong>{profile?.upiId || '-'}</strong></div>
+                      <div className="rep-docs-meta-item"><span>UPI/Mobile</span><strong>{profile?.upiMobileNumber || '-'}</strong></div>
+                      <div className="rep-docs-meta-item"><span>LinkedIn</span><strong>{profile?.linkedinProfile || '-'}</strong></div>
                     </div>
                   </section>
 
-                  <section className="premium-card" style={{ padding: '16px' }}>
-                    <h2 style={{ marginTop: 0, marginBottom: '12px' }}>Quick Links</h2>
-                    <div style={{ display: 'grid', gap: '10px' }}>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Application Form</div>
-                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                  <section className="rep-docs-card rep-docs-accent">
+                    <div className="rep-docs-card-head">
+                      <h2>Quick Links</h2>
+                    </div>
+                    <div className="rep-docs-links-grid">
+                      <div className="rep-docs-link-item">
+                        <span>Application Form</span>
+                        {profileApplicationFormLink ? <a href={profileApplicationFormLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
                       </div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Sheet</div>
-                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                      <div className="rep-docs-link-item">
+                        <span>Internship Sheet</span>
+                        {profileInternshipSheetLink ? <a href={profileInternshipSheetLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
                       </div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Application Form</div>
-                        {profileSmsApplicationFormLink ? <a href={profileSmsApplicationFormLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                      <div className="rep-docs-link-item">
+                        <span>SMS Application Form</span>
+                        {profileSmsApplicationFormLink ? <a href={profileSmsApplicationFormLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
                       </div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Sheet</div>
-                        {profileSmsSheetLink ? <a href={profileSmsSheetLink} target="_blank" rel="noreferrer" style={{ color: '#344158', fontWeight: 600 }}>Open</a> : <span style={{ color: '#9ca3af' }}>Not available</span>}
+                      <div className="rep-docs-link-item">
+                        <span>SMS Sheet</span>
+                        {profileSmsSheetLink ? <a href={profileSmsSheetLink} target="_blank" rel="noreferrer" className="rep-docs-link-button">Open</a> : <span className="rep-docs-unavailable">Not available</span>}
                       </div>
-
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>Internship Message</div>
-                        <div style={{ color: '#0f172a', lineHeight: 1.5, fontSize: '13px' }}>{profile?.internshipPromotionalMessage || 'Not provided'}</div>
+                      <div className="rep-docs-link-item rep-docs-message-item">
+                        <span>Internship Message</span>
+                        <div className="rep-docs-message">{profile?.internshipPromotionalMessage || 'Not provided'}</div>
                       </div>
-                      <div style={{ padding: '10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e5e7eb' }}>
-                        <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', marginBottom: '6px' }}>SMS Program Message</div>
-                        <div style={{ color: '#0f172a', lineHeight: 1.5, fontSize: '13px' }}>{profile?.smsPromotionalMessage || 'Not provided'}</div>
+                      <div className="rep-docs-link-item rep-docs-message-item">
+                        <span>SMS Program Message</span>
+                        <div className="rep-docs-message">{profile?.smsPromotionalMessage || 'Not provided'}</div>
                       </div>
                     </div>
                   </section>

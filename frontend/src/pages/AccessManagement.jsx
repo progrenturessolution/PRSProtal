@@ -240,6 +240,9 @@ function AccessManagement() {
         setSuccess("Employee updated successfully");
         setShowEditEmployeeModal(false);
         setEditEmployeeData(null);
+        if (selectedTrainerDetails && selectedTrainerDetails._id === editEmployeeData._id) {
+          setSelectedTrainerDetails(response.data.trainer || response.data.employee || null);
+        }
         await fetchData();
       }
     } catch (err) {
@@ -1437,6 +1440,49 @@ function AccessManagement() {
                                 }
                               >
                                 View Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  let formattedJoiningDate = "";
+                                  if (trainer?.joiningDate) {
+                                    try {
+                                      formattedJoiningDate = new Date(trainer.joiningDate).toISOString().split("T")[0];
+                                    } catch (err) {
+                                      console.error("Invalid date:", trainer.joiningDate);
+                                    }
+                                  }
+                                  setEditEmployeeData({
+                                    ...trainer,
+                                    joiningDate: formattedJoiningDate,
+                                    password: "",
+                                  });
+                                  setShowEditEmployeeModal(true);
+                                  setOpenMenuId(null);
+                                }}
+                                style={{
+                                  width: "100%",
+                                  padding: "12px 16px",
+                                  background: "white",
+                                  border: "none",
+                                  textAlign: "left",
+                                  cursor: "pointer",
+                                  fontSize: "14px",
+                                  fontWeight: "500",
+                                  color: "#0f172a",
+                                  transition: "background 0.2s",
+                                  borderTop: "1px solid #f3f4f6",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "#f9fafb")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background = "white")
+                                }
+                              >
+                                Edit Profile
                               </button>
                               <button
                                 onClick={() => {

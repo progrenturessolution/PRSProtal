@@ -314,7 +314,7 @@ function Notifications() {
                     padding: '6px 12px',
                     fontSize: '12px',
                     fontWeight: '500',
-                    background: selectedRecipients.length === getFilteredRecipients().length && getFilteredRecipients().length > 0 ? '#ef4444' : '#3b82f6',
+                    background: '#324158',
                     color: 'white',
                     border: 'none',
                     borderRadius: '5px',
@@ -323,7 +323,7 @@ function Notifications() {
                   }}
                   onMouseEnter={(e) => {
                     e.target.style.transform = 'scale(1.05)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(50, 65, 88, 0.3)';
                   }}
                   onMouseLeave={(e) => {
                     e.target.style.transform = 'scale(1)';
@@ -338,7 +338,7 @@ function Notifications() {
               <div style={{ marginBottom: '12px' }}>
                 <input
                   type="text"
-                  placeholder="🔍 Search by name, email, ID, domain..."
+                  placeholder="Search by name, email, ID, domain..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{

@@ -750,6 +750,9 @@ function Reports({ initialReportType = "tasks" }) {
           </thead>
           <tbody>
             {students.slice(0, 20).map((student) => (
+              (() => {
+                const normalizedStatus = String(student.status || "").toLowerCase();
+                return (
               <tr key={student._id}>
                 <td>{student.internId}</td>
                 <td>{student.name}</td>
@@ -758,9 +761,9 @@ function Reports({ initialReportType = "tasks" }) {
                 <td>
                   <span
                     className={`status-badge ${
-                      student.status === "Active"
+                      normalizedStatus === "active"
                         ? "status-active"
-                        : student.status === "Completed"
+                        : normalizedStatus === "completed"
                           ? "status-completed"
                           : "status-inactive"
                     }`}
@@ -774,6 +777,8 @@ function Reports({ initialReportType = "tasks" }) {
                     : "N/A"}
                 </td>
               </tr>
+                );
+              })()
             ))}
           </tbody>
         </table>
@@ -1155,6 +1160,9 @@ function Reports({ initialReportType = "tasks" }) {
             </thead>
             <tbody>
               {filteredStudents.map((student) => (
+                (() => {
+                  const normalizedStatus = String(student.status || "").toLowerCase();
+                  return (
                 <tr key={student._id}>
                   <td>{student.internId}</td>
                   <td>{student.name}</td>
@@ -1163,9 +1171,9 @@ function Reports({ initialReportType = "tasks" }) {
                   <td>
                     <span
                       className={`status-badge ${
-                        student.status === "Active"
+                        normalizedStatus === "active"
                           ? "status-active"
-                          : student.status === "Completed"
+                          : normalizedStatus === "completed"
                             ? "status-completed"
                             : "status-inactive"
                       }`}
@@ -1252,6 +1260,8 @@ function Reports({ initialReportType = "tasks" }) {
                     </div>
                   </td>
                 </tr>
+                  );
+                })()
               ))}
             </tbody>
           </table>
