@@ -522,8 +522,9 @@ function ManageTasks({ onTaskApproved, onBack }) {
                   padding: "2px 8px",
                   borderRadius: "10px",
                   fontSize: "12px",
-                  background: activeSection === id ? "#eff6ff" : "#e2e8f0",
-                  color: activeSection === id ? "#2563eb" : "#64748b",
+                  background: activeSection === id ? "#324158" : "#e2e8f0",
+                  color: activeSection === id ? "#ffffff" : "#475569",
+                  fontWeight: "600"
                 }}
               >
                 {count}
