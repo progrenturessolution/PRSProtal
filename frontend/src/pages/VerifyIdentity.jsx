@@ -453,7 +453,7 @@ export default function VerifyIdentity() {
           <div className="login-hero-copy">
             <h1>Validate Your Affiliation</h1>
             <p>
-              Enter your registered credentials to instantly check your candidate profile, enrollment status, and program information.
+              The Progrentures Credentials Registry allows candidates to securely verify their official enrollment, program details, certification records, and registered profile information through the Progrentures official verification portal.
             </p>
           </div>
 
