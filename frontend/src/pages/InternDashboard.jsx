@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { taskAPI, internAPI, UPLOADS_BASE } from "../services/api";
 import TeamTasks from "./TeamTasks";
@@ -50,10 +51,152 @@ function InternDashboard() {
   const [hasUnreadTasks, setHasUnreadTasks] = useState(false);
   const [hasUnreadIndividualTasks, setHasUnreadIndividualTasks] = useState(false);
   const [hasUnreadSquadTasks, setHasUnreadSquadTasks] = useState(false);
+  const [indiTaskModal, setIndiTaskModal] = useState(null);
+  const [indiTaskDropdown, setIndiTaskDropdown] = useState(null);
+  const [indiDropdownPosition, setIndiDropdownPosition] = useState({ top: 0, left: 0, openUpward: false });
+  const [expandedFeedbackId, setExpandedFeedbackId] = useState(null);
+  const [viewingFeedbackTask, setViewingFeedbackTask] = useState(null);
   const [error, setError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
   const [progressFilter, setProgressFilter] = useState("interviews");
   const [reportDownloading, setReportDownloading] = useState(false);
+
+  const renderFeedbackPage = (task) => {
+    const sortedComments = [...(task.comments || [])].sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+
+    return (
+      <div className="feedback-history-page" style={{ padding: "0 8px" }}>
+        {/* Back button */}
+        <div style={{ marginBottom: "20px" }}>
+          <button
+            onClick={() => setViewingFeedbackTask(null)}
+            style={{
+              background: "#324158",
+              border: "none",
+              color: "#ffffff",
+              fontSize: "13.5px",
+              fontWeight: 700,
+              cursor: "pointer",
+              padding: "8px 20px",
+              borderRadius: "6px",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = 0.9}
+            onMouseLeave={e => e.currentTarget.style.opacity = 1}
+          >
+            Back
+          </button>
+        </div>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "16px", flexWrap: "wrap" }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "24px", color: "#0f172a", fontWeight: 700 }}>Feedback History</h1>
+            <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#64748b" }}>
+              Detailed conversation history and feedback log for: <strong style={{ color: "#334155" }}>{task.title}</strong>
+            </p>
+          </div>
+          <span style={{
+            display: "inline-block",
+            padding: "6px 14px",
+            borderRadius: 20,
+            fontSize: "12px",
+            fontWeight: 700,
+            letterSpacing: "0.03em",
+            backgroundColor: `${getStatusColor(task.status)}15`,
+            color: getStatusColor(task.status),
+            border: `1px solid ${getStatusColor(task.status)}35`,
+            whiteSpace: "nowrap"
+          }}>
+            {task.status}
+          </span>
+        </div>
+
+        {/* Layout Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
+          {/* Timeline / Comments */}
+          <div className="card" style={{ padding: "24px", borderRadius: "12px", boxShadow: "0 4px 20px rgba(15,23,42,0.06)", border: "1px solid #e2e8f0", background: "white" }}>
+            <h3 style={{ margin: "0 0 20px", fontSize: "16px", color: "#0f172a", fontWeight: 700, borderBottom: "1px solid #f1f5f9", paddingBottom: "12px" }}>
+              Conversation Log
+            </h3>
+
+            {sortedComments.length === 0 ? (
+              <div style={{ padding: "40px 20px", textAlign: "center", color: "#94a3b8" }}>
+                <div style={{ fontSize: "36px", marginBottom: "12px", opacity: 0.6 }}>💬</div>
+                <p style={{ margin: 0, fontSize: "14px" }}>No feedback or comments logged for this task yet.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {sortedComments.map((comment, index) => {
+                  const isAdmin = comment.sentBy === "admin";
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        padding: "14px 16px",
+                        borderRadius: "10px",
+                        backgroundColor: isAdmin ? "#eff6ff" : "#f0fdf4",
+                        border: `1px solid ${isAdmin ? "#bfdbfe" : "#bbf7d0"}`,
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", gap: 16 }}>
+                        <span style={{ fontSize: "11.5px", fontWeight: 700, color: isAdmin ? "#1d4ed8" : "#15803d", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          {isAdmin ? "Admin Feedback" : "Your Response"}
+                        </span>
+                        <span style={{ fontSize: "11px", color: isAdmin ? "#60a5fa" : "#4ade80", fontWeight: 500 }}>
+                          {new Date(comment.sentAt).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "13.5px", color: "#1e293b", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                        {comment.message}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Task Snapshot */}
+          <div className="card" style={{ padding: "20px", borderRadius: "12px", boxShadow: "0 4px 20px rgba(15,23,42,0.06)", border: "1px solid #e2e8f0", background: "white" }}>
+            <h3 style={{ margin: "0 0 16px", fontSize: "15px", color: "#0f172a", fontWeight: 700, borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
+              Task Details
+            </h3>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", fontWeight: 600, marginBottom: "4px" }}>Task Title</div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "#1e293b" }}>{task.title}</div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", fontWeight: 600, marginBottom: "4px" }}>Deadline</div>
+                <div style={{ fontSize: "13px", color: "#475569" }}>{formatDeadline(task.deadline)}</div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", fontWeight: 600, marginBottom: "4px" }}>Completion Progress</div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: task.progress === 100 ? "#10b981" : "#3b82f6" }}>{task.progress}%</div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", fontWeight: 600, marginBottom: "6px" }}>Description</div>
+                <div style={{ fontSize: "12.5px", color: "#64748b", lineHeight: 1.5, background: "#f8fafc", padding: "10px", borderRadius: "6px", border: "1px solid #e2e8f0", whiteSpace: "pre-wrap" }}>
+                  {task.description}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderInterviews = () => {
     return (
@@ -1623,6 +1766,7 @@ function InternDashboard() {
     if (["scheduled-interviews", "scheduled-gds", "scheduled-assignments"].includes(section)) {
       setActivityMenuOpen(true);
     }
+    setViewingFeedbackTask(null);
     setActiveSection(section);
     setSidebarOpen(false);
   };
@@ -2863,8 +3007,12 @@ function InternDashboard() {
         {/* Tasks/Projects Section */}
         {activeSection === "tasks" && (
           <>
-            <div className="content-header">
-              <h1>Tasks / Projects</h1>
+            {viewingFeedbackTask ? (
+              renderFeedbackPage(viewingFeedbackTask)
+            ) : (
+              <>
+                <div className="content-header">
+                  <h1>Tasks / Projects</h1>
               <p>View and manage your assigned tasks</p>
             </div>
 
@@ -2954,7 +3102,7 @@ function InternDashboard() {
                   }}
                 >
                   {label}
-                  <span style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "11px", background: taskView === id ? "#eff6ff" : "#e2e8f0", color: taskView === id ? "#2563eb" : "#64748b" }}>{count}</span>
+                  <span style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "11px", background: "#324158", color: "#fff", fontWeight: 700 }}>{count}</span>
                   {((id === "individual" && hasUnreadIndividualTasks) || (id === "squad" && hasUnreadSquadTasks)) && (
                     <span 
                       style={{ 
@@ -2971,7 +3119,7 @@ function InternDashboard() {
               ))}
             </div>
 
-            {/* Individual Tasks */}
+            {/* Individual Tasks – Table Layout */}
             {taskView === "individual" && (
               loading ? (
                 <div className="card"><p>Loading tasks...</p></div>
@@ -2982,112 +3130,321 @@ function InternDashboard() {
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="individual-task-grid">
-                    {tasks
-                      .filter((t) => !t.isTeamTask)
-                      .map((task) => {
-                        const latestUpdate = getLatestTaskUpdate(task);
-                        const recentUpdates = getRecentTaskUpdates(task, 1);
+                <div className="card" style={{ padding: 0, overflow: "hidden", borderRadius: 0, boxShadow: "0 2px 12px rgba(15,23,42,0.07)" }}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", minWidth: "760px", borderCollapse: "collapse", fontFamily: "inherit", marginTop: 0 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>#</th>
+                          <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Task</th>
+                          <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Deadline</th>
+                          <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "center", borderBottom: "2px solid #2a3548" }}>Progress</th>
+                          <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Latest Feedback</th>
+                          <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Status</th>
+                          <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "center", borderBottom: "2px solid #2a3548" }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tasks
+                          .filter((t) => !t.isTeamTask)
+                          .map((task, idx) => {
+                            const latestUpdate = getLatestTaskUpdate(task);
+                            const isEven = idx % 2 === 0;
+                            return (
+                              <tr
+                                key={task._id}
+                                style={{ background: isEven ? "#ffffff" : "#f8fafc", borderBottom: "1px solid #f1f5f9" }}
+                                onMouseEnter={e => e.currentTarget.style.background = isEven ? "#ffffff" : "#f8fafc"}
+                                onMouseLeave={e => e.currentTarget.style.background = isEven ? "#ffffff" : "#f8fafc"}
+                              >
+                                {/* # */}
+                                <td style={{ padding: "15px 16px", verticalAlign: "middle", color: "#c1cfe0", fontSize: "12px", fontWeight: 700, width: 44 }}>
+                                  {String(idx + 1).padStart(2, "0")}
+                                </td>
 
-                        return (
-                          <article key={task._id} className="individual-task-card">
-                            <header className="individual-task-card-header">
-                              <div>
-                                <h3 className="individual-task-title">{task.title}</h3>
-                                <p className="individual-task-deadline">
-                                  Deadline: {formatDeadline(task.deadline)}
+                                {/* Task */}
+                                <td style={{ padding: "15px 16px", verticalAlign: "middle", maxWidth: "220px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+                                    <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "13.5px" }}>{task.title}</span>
+                                    {task.hasUnreadFeedback && (
+                                      <span title="New feedback" style={{ width: 7, height: 7, borderRadius: "50%", background: "#f43f5e", display: "inline-block", flexShrink: 0, boxShadow: "0 0 0 2px rgba(244,63,94,0.2)" }} />
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: "11.5px", color: "#94a3b8", lineHeight: 1.4 }}>
+                                    {task.description.length > 65 ? task.description.substring(0, 65) + "…" : task.description}
+                                  </div>
+                                </td>
+
+                                {/* Deadline */}
+                                <td style={{ padding: "15px 16px", verticalAlign: "middle", whiteSpace: "nowrap" }}>
+                                  <div style={{ fontSize: "12.5px", color: "#475569", fontWeight: 500 }}>{formatDeadline(task.deadline)}</div>
                                   {isOverdue(task.deadline) && task.status !== "Completed" && (
-                                    <span className="individual-task-overdue">Overdue</span>
+                                    <span style={{ display: "inline-block", marginTop: 5, fontSize: "10px", color: "#ef4444", fontWeight: 700, background: "#fff1f2", border: "1px solid #fecaca", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.05em" }}>OVERDUE</span>
                                   )}
-                                </p>
-                              </div>
-                              <span
-                                className="individual-task-status"
-                                style={{
-                                  backgroundColor: `${getStatusColor(task.status)}20`,
-                                  color: getStatusColor(task.status),
-                                }}
-                              >
-                                {task.status}
-                              </span>
-                            </header>
+                                </td>
 
-                            <p className="individual-task-description">{task.description}</p>
+                                {/* Progress – Circular Ring */}
+                                <td style={{ padding: "15px 16px", verticalAlign: "middle", textAlign: "center", minWidth: "90px" }}>
+                                  {(() => {
+                                    const r = 22;
+                                    const circ = 2 * Math.PI * r;
+                                    const filled = (task.progress / 100) * circ;
+                                    return (
+                                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, margin: "0 auto" }}>
+                                        <div style={{ position: "relative", width: 56, height: 56 }}>
+                                          <svg width="56" height="56" viewBox="0 0 56 56" style={{ transform: "rotate(-90deg)" }}>
+                                            {/* Background ring */}
+                                            <circle cx="28" cy="28" r={r} fill="none" stroke="#e2e8f0" strokeWidth="5" />
+                                            {/* Progress ring */}
+                                            <circle
+                                              cx="28" cy="28" r={r}
+                                              fill="none"
+                                              stroke="#324158"
+                                              strokeWidth="5"
+                                              strokeLinecap="round"
+                                              strokeDasharray={`${filled} ${circ - filled}`}
+                                              strokeDashoffset="0"
+                                              style={{ transition: "stroke-dasharray 0.5s ease" }}
+                                            />
+                                          </svg>
+                                          {/* Center text */}
+                                          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                            <span style={{ fontSize: "11px", fontWeight: 800, color: "#324158", letterSpacing: "-0.3px" }}>{task.progress}%</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
+                                </td>
 
-                            {task.taskDocument?.filename && (
-                              <a
-                                href={`${UPLOADS_BASE}/uploads/tasks/${task.taskDocument.filename}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="individual-task-doc-link"
-                              >
-                                View task document (PDF)
-                              </a>
-                            )}
+                                 {/* Latest Feedback */}
+                                 <td
+                                   onClick={async (e) => {
+                                     e.stopPropagation();
+                                     setViewingFeedbackTask(task);
+                                     if (task.hasUnreadFeedback) {
+                                       try {
+                                         await taskAPI.readFeedback(task._id);
+                                         setTasks(prev => prev.map(t => t._id === task._id ? { ...t, hasUnreadFeedback: false } : t));
+                                       } catch (e) {
+                                         console.error("Failed to mark feedback read:", e);
+                                       }
+                                     }
+                                   }}
+                                   style={{ padding: "15px 16px", verticalAlign: "middle", maxWidth: "240px", cursor: "pointer" }}
+                                   title="Click to view full feedback page"
+                                 >
+                                   {latestUpdate ? (
+                                     <div style={{ padding: "4px 0" }}>
+                                       <div style={{ fontSize: "10px", fontWeight: 700, color: "#344158", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{latestUpdate.source}</div>
+                                       <div style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                         {latestUpdate.message}
+                                       </div>
+                                       <span style={{ fontSize: "11px", color: "#3b82f6", fontWeight: 600, display: "inline-block", marginTop: 4, textDecoration: "underline" }}>View Conversation</span>
+                                     </div>
+                                   ) : (
+                                     <span style={{ fontSize: "12px", color: "#c1cfe0", fontStyle: "italic" }}>No updates yet</span>
+                                   )}
+                                 </td>
 
-                            <section className="individual-task-progress-wrap">
-                              <div className="individual-task-progress-head">
-                                <span>Progress</span>
-                                <strong>{task.progress}%</strong>
-                              </div>
-                              <div className="progress-bar-container" style={{ marginBottom: 0 }}>
-                                <div
-                                  className="progress-bar-fill"
-                                  style={{ width: `${task.progress}%` }}
-                                ></div>
-                              </div>
-                            </section>
+                                {/* Status */}
+                                <td style={{ padding: "15px 16px", verticalAlign: "middle" }}>
+                                  <span style={{ display: "inline-block", padding: "4px 11px", borderRadius: 20, fontSize: "11px", fontWeight: 700, letterSpacing: "0.03em", backgroundColor: `${getStatusColor(task.status)}15`, color: getStatusColor(task.status), border: `1px solid ${getStatusColor(task.status)}35`, whiteSpace: "nowrap" }}>
+                                    {task.status}
+                                  </span>
+                                </td>
 
-                            <section
-                              className={`individual-task-updates ${task.hasUnreadFeedback ? "has-unread" : ""}`}
-                            >
-                              <div className="individual-task-updates-head">
-                                <span>{task.hasUnreadFeedback ? "New Feedback" : "Recent Updates"}</span>
-                                {latestUpdate && (
-                                  <small>{formatTaskUpdateTime(latestUpdate.sentAt)}</small>
-                                )}
-                              </div>
+                                {/* Action – Three-dot dropdown rendered via Portal */}
+                                <td style={{ padding: "15px 16px", verticalAlign: "middle", textAlign: "center" }}>
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      if (indiTaskDropdown === task._id) {
+                                        setIndiTaskDropdown(null);
+                                      } else {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const spaceBelow = window.innerHeight - rect.bottom;
+                                        const openUpward = spaceBelow < 60; // 60px threshold
+                                        setIndiDropdownPosition({
+                                          top: openUpward ? rect.top - 4 : rect.bottom + 4,
+                                          left: rect.right - 140,
+                                          openUpward,
+                                        });
+                                        setIndiTaskDropdown(task._id);
+                                      }
+                                    }}
+                                    style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize: "18px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", lineHeight: 1, transition: "all 0.15s" }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = "#344158"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "#344158"; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.color = "#475569"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
+                                  >⋮</button>
 
-                              {recentUpdates.length > 0 ? (
-                                <div className="individual-task-update-list">
-                                  {recentUpdates.map((update, index) => (
-                                    <div key={`${task._id}-update-${index}`} className="individual-task-update-item">
-                                      <p className="individual-task-update-source">{update.source}</p>
-                                      <p className="individual-task-update-message">{update.message}</p>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="individual-task-update-empty">No updates yet.</p>
-                              )}
-                            </section>
-
-                            {task.status !== "Completed" && (
-                              <div className="individual-task-action">
-                                <label htmlFor={`progress-${task._id}`}>Update Progress</label>
-                                <select
-                                  id={`progress-${task._id}`}
-                                  value={task.progress}
-                                  onChange={(e) =>
-                                    handleProgressUpdate(task._id, parseInt(e.target.value))
-                                  }
-                                  className="progress-select"
-                                >
-                                  <option value={0}>Not Started</option>
-                                  <option value={25}>25%</option>
-                                  <option value={50}>50%</option>
-                                  <option value={75}>75%</option>
-                                  <option value={100}>Submit for Approval</option>
-                                </select>
-                              </div>
-                            )}
-                          </article>
-                        );
-                      })}
+                                  {indiTaskDropdown === task._id && createPortal(
+                                    <>
+                                      {/* Backdrop */}
+                                      <div
+                                        style={{ position: "fixed", inset: 0, zIndex: 9998 }}
+                                        onClick={() => setIndiTaskDropdown(null)}
+                                      />
+                                      {/* Menu */}
+                                      <div style={{
+                                        position: "fixed",
+                                        left: `${indiDropdownPosition.left}px`,
+                                        top: `${indiDropdownPosition.top}px`,
+                                        transform: indiDropdownPosition.openUpward ? "translateY(-100%)" : "none",
+                                        background: "white",
+                                        border: "1px solid #e5e7eb",
+                                        borderRadius: "12px",
+                                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                        zIndex: 9999,
+                                        width: "160px",
+                                        overflow: "hidden"
+                                      }}>
+                                          <button
+                                            onClick={async () => {
+                                              setIndiTaskModal(task);
+                                              setIndiTaskDropdown(null);
+                                              if (task.hasUnreadFeedback) {
+                                                try {
+                                                  await taskAPI.readFeedback(task._id);
+                                                  setTasks(prev => prev.map(t => t._id === task._id ? { ...t, hasUnreadFeedback: false } : t));
+                                                } catch (e) {
+                                                  console.error("Failed to mark feedback read:", e);
+                                                }
+                                              }
+                                            }}
+                                            style={{ width: "100%", padding: "12px 16px", background: "white", border: "none", textAlign: "left", cursor: "pointer", fontSize: "14px", fontWeight: "500", color: "#0f172a", display: "block" }}
+                                            onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                                            onMouseLeave={e => e.currentTarget.style.background = "white"}
+                                          >
+                                            View Details
+                                          </button>
+                                      </div>
+                                    </>,
+                                    document.body
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
                   </div>
-                </>
+                </div>
               )
+            )}
+
+            {/* Individual Task Details Modal */}
+            {indiTaskModal && (
+              <div
+                style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 11000, padding: 20 }}
+                onClick={() => setIndiTaskModal(null)}
+              >
+                <div
+                  style={{ background: "#fff", borderRadius: 16, border: "1px solid #dbe7f2", boxShadow: "0 20px 48px rgba(15,23,42,0.16)", maxWidth: 640, width: "100%", maxHeight: "calc(100vh - 40px)", overflow: "hidden", display: "flex", flexDirection: "column", position: "relative" }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Modal Header */}
+                  <div style={{ background: "#324158", padding: "20px 24px", color: "#fff", display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Individual Task Details</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <h2 style={{ margin: 0, fontSize: 19, color: "#fff", fontWeight: 500, flex: 1, paddingRight: 12 }}>{indiTaskModal.title}</h2>
+                      <button
+                        onClick={() => setIndiTaskModal(null)}
+                        style={{ width: 30, height: 30, border: "none", borderRadius: "50%", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, flexShrink: 0 }}
+                      >×</button>
+                    </div>
+                  </div>
+
+                  {/* Modal Body */}
+                  <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
+                    {/* Meta */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+                      <div style={{ fontSize: 13, color: "#475569" }}>
+                        <span style={{ color: "#64748b", minWidth: 120, display: "inline-block" }}>Status:</span>
+                        <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 11, background: `${getStatusColor(indiTaskModal.status)}15`, color: getStatusColor(indiTaskModal.status), border: `1px solid ${getStatusColor(indiTaskModal.status)}30`, fontWeight: 500 }}>{indiTaskModal.status}</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: "#475569" }}>
+                        <span style={{ color: "#64748b", minWidth: 120, display: "inline-block" }}>Deadline:</span>
+                        <span>{formatDeadline(indiTaskModal.deadline)}</span>
+                        {isOverdue(indiTaskModal.deadline) && indiTaskModal.status !== "Completed" && (
+                          <span style={{ marginLeft: 8, fontSize: 11, color: "#ef4444", fontWeight: 600 }}>OVERDUE</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13, color: "#475569" }}>
+                        <span style={{ color: "#64748b", minWidth: 120, display: "inline-block" }}>Progress:</span>
+                        <span style={{ fontWeight: 700, color: indiTaskModal.progress === 100 ? "#10b981" : "#3b82f6" }}>{indiTaskModal.progress}%</span>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <div style={{ marginBottom: 20 }}>
+                      <h4 style={{ margin: "0 0 6px", fontSize: 13, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>Task Description</h4>
+                      <p style={{ margin: 0, fontSize: "13.5px", color: "#475569", lineHeight: 1.6, background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0", whiteSpace: "pre-wrap" }}>{indiTaskModal.description}</p>
+                    </div>
+
+                    {/* Shared Document */}
+                    <div style={{ marginBottom: 20 }}>
+                      <h4 style={{ margin: "0 0 6px", fontSize: 13, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>Shared Document</h4>
+                      {indiTaskModal.taskDocument?.filename ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                          <span style={{ fontSize: 18 }}>📄</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, color: "#475569", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{indiTaskModal.taskDocument.filename}</div>
+                          </div>
+                          <a href={`${UPLOADS_BASE}/uploads/tasks/${indiTaskModal.taskDocument.filename}`} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: "#fff", fontWeight: 500, textDecoration: "none", padding: "6px 14px", borderRadius: 6, background: "#324158", cursor: "pointer" }}>Download PDF</a>
+                        </div>
+                      ) : (
+                        <p style={{ margin: 0, fontSize: 13, color: "#94a3b8" }}>No document shared with this task.</p>
+                      )}
+                    </div>
+
+                    {/* Admin Feedback / Comments */}
+                    {indiTaskModal.comments && indiTaskModal.comments.length > 0 && (
+                      <div style={{ marginBottom: 20 }}>
+                        <h4 style={{ margin: "0 0 10px", fontSize: 13, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>Feedback & Comments</h4>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          {indiTaskModal.comments.map((c, ci) => (
+                            <div key={ci} style={{ padding: "10px 12px", borderRadius: 8, background: c.sentBy === "admin" ? "#eff6ff" : "#f0fdf4", border: `1px solid ${c.sentBy === "admin" ? "#bfdbfe" : "#bbf7d0"}` }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: c.sentBy === "admin" ? "#1d4ed8" : "#15803d", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.05em" }}>{c.sentBy === "admin" ? "Admin" : "You"}</div>
+                              <div style={{ fontSize: 13, color: "#334155", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{c.message}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Update Progress */}
+                    {indiTaskModal.status !== "Completed" && (
+                      <div style={{ marginTop: 4 }}>
+                        <h4 style={{ margin: "0 0 8px", fontSize: 13, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>Update Progress</h4>
+                        <select
+                          value={indiTaskModal.progress}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            handleProgressUpdate(indiTaskModal._id, val);
+                            setIndiTaskModal(prev => ({ ...prev, progress: val }));
+                          }}
+                          style={{ padding: "10px 14px", borderRadius: 8, border: "2px solid #e2e8f0", background: "#f8fafc", fontSize: 14, color: "#334155", cursor: "pointer", width: "100%" }}
+                        >
+                          <option value={0}>Not Started (0%)</option>
+                          <option value={25}>25% - Getting started</option>
+                          <option value={50}>50% - Halfway there</option>
+                          <option value={75}>75% - Almost done</option>
+                          <option value={100}>Submit for Approval (100%)</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ display: "flex", justifyContent: "flex-end", padding: "16px 24px", borderTop: "1px solid #e2e8f0", background: "#f8fafc" }}>
+                    <button
+                      onClick={() => setIndiTaskModal(null)}
+                      style={{ padding: "8px 20px", background: "#324158", color: "#fff", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: "pointer" }}
+                    >Close</button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Squad Tasks */}
@@ -3104,6 +3461,8 @@ function InternDashboard() {
                   return null;
                 }}
               />
+            )}
+              </>
             )}
           </>
         )}

@@ -529,3 +529,28 @@ exports.sendAdminTeamMessage = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// Intern: Mark feedback as read
+exports.markFeedbackRead = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const internId = req.user.id;
+
+    const task = await Task.findOne({
+      _id: taskId,
+      $or: [{ assignedTo: internId }, { teamMembers: internId }]
+    });
+
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    task.hasUnreadFeedback = false;
+    await task.save();
+
+    res.status(200).json({ success: true, message: 'Feedback marked as read' });
+  } catch (error) {
+    console.error('Mark feedback read error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

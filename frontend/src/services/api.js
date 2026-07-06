@@ -191,6 +191,7 @@ export const taskAPI = {
     api.post(`/task/intern/team-message/${taskId}`, messageData),
   sendAdminTeamMessage: (taskId, messageData) =>
     api.post(`/task/admin/team-message/${taskId}`, messageData),
+  readFeedback: (taskId) => api.put(`/task/intern/tasks/${taskId}/read-feedback`),
 };
 
 // Intern APIs

@@ -1560,6 +1560,63 @@ function ManageTasks({ onTaskApproved, onBack }) {
                 </div>
               </div>
 
+              {/* Assigned To */}
+              <div style={{ marginBottom: "20px" }}>
+                <h4 style={{ margin: "0 0 10px", fontSize: "13px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>
+                  {viewingTaskDetails.isTeamTask ? "Primary Assignee" : "Assigned To"}
+                </h4>
+                {viewingTaskDetails.assignedTo ? (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px 14px",
+                    borderRadius: "10px",
+                    backgroundColor: "#f0f7ff",
+                    border: "1px solid #bfdbfe",
+                  }}>
+                    <div style={{
+                      width: "38px",
+                      height: "38px",
+                      borderRadius: "50%",
+                      backgroundColor: "#dbeafe",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      color: "#1d4ed8",
+                      flexShrink: 0,
+                    }}>
+                      {(viewingTaskDetails.assignedTo.name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 600, color: "#1e3a5f" }}>
+                        {viewingTaskDetails.assignedTo.name || "Unknown"}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#4b5563", marginTop: "2px" }}>
+                        {viewingTaskDetails.assignedTo.email || ""}
+                        {viewingTaskDetails.assignedTo.internId ? (
+                          <span style={{
+                            marginLeft: "8px",
+                            padding: "1px 8px",
+                            background: "#e0f2fe",
+                            color: "#0369a1",
+                            borderRadius: "6px",
+                            fontSize: "11px",
+                            fontWeight: 500,
+                          }}>
+                            ID: {viewingTaskDetails.assignedTo.internId}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: "13px", color: "#94a3b8" }}>No assignee information available.</p>
+                )}
+              </div>
+
               {/* Description */}
               <div style={{ marginBottom: "20px" }}>
                 <h4 style={{ margin: "0 0 6px", fontSize: "13px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 500 }}>

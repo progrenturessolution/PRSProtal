@@ -162,156 +162,186 @@ function TeamTasks({
 
   return (
     <>
-      {/* Group Tasks Table */}
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {/* Group Tasks Table – Polished & Squared */}
+      <div className="card" style={{ padding: 0, overflow: "hidden", borderRadius: 0, boxShadow: "0 2px 12px rgba(15,23,42,0.07)" }}>
         <div style={{ overflowX: "auto" }}>
-          <table className="data-table">
+          <table style={{ width: "100%", minWidth: "760px", borderCollapse: "collapse", fontFamily: "inherit", marginTop: 0 }}>
             <thead>
               <tr>
-                <th>Task Title</th>
-                <th>Description</th>
-                <th>Deadline</th>
-                <th>Team Size</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Task Title</th>
+                <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Description</th>
+                <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Deadline</th>
+                <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "center", borderBottom: "2px solid #2a3548" }}>Team Size</th>
+                <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "left", borderBottom: "2px solid #2a3548" }}>Status</th>
+                <th style={{ background: "#344158", color: "rgba(255,255,255,0.75)", padding: "13px 16px", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.7px", textAlign: "center", borderBottom: "2px solid #2a3548" }}>Action</th>
               </tr>
             </thead>
             <tbody>
-              {teamTasks.map((task) => (
-                <tr key={task._id}>
-                  <td style={{ fontWeight: 600, color: "#0f172a" }}>
-                    {task.title}
-                  </td>
-                  <td style={{ maxWidth: "260px", color: "#475569" }}>
-                    {task.description.length > 65
-                      ? task.description.substring(0, 65) + "…"
-                      : task.description}
-                  </td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    {formatDate(task.deadline)}
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <span
-                      style={{
-                        padding: "4px 12px",
-                        borderRadius: "20px",
-                        backgroundColor: "#dbeafe",
-                        color: "#1e40af",
-                        fontWeight: "600",
-                        fontSize: "13px",
-                      }}
-                    >
-                      {task.teamMembers?.length || 0} members
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className="status-badge"
-                      style={{
-                        backgroundColor: `${getStatusColor(task.status)}20`,
-                        color: getStatusColor(task.status),
-                      }}
-                    >
-                      {task.status}
-                    </span>
-                  </td>
-                  <td style={{ position: "relative" }}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (openDropdownId === task._id) {
-                          setOpenDropdownId(null);
-                        } else {
-                          const rect = e.currentTarget.getBoundingClientRect();
-                          const spaceBelow = window.innerHeight - rect.bottom;
-                          const openUpward = spaceBelow < 60; // 60px threshold
-                          setDropdownPosition({
-                            top: openUpward ? rect.top - 4 : rect.bottom + 4,
-                            left: rect.right - 120,
-                            openUpward,
-                          });
-                          setOpenDropdownId(task._id);
-                        }
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "4px",
-                        fontSize: "20px",
-                        color: "#64748b",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: "50%",
-                        width: "32px",
-                        height: "32px",
-                        transition: "background-color 0.2s"
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      ⋮
-                    </button>
+              {teamTasks.map((task, idx) => {
+                const isEven = idx % 2 === 0;
+                return (
+                  <tr
+                    key={task._id}
+                    style={{ background: isEven ? "#ffffff" : "#f8fafc", borderBottom: "1px solid #f1f5f9" }}
+                    onMouseEnter={e => e.currentTarget.style.background = isEven ? "#ffffff" : "#f8fafc"}
+                    onMouseLeave={e => e.currentTarget.style.background = isEven ? "#ffffff" : "#f8fafc"}
+                  >
+                    {/* Task Title */}
+                    <td style={{ padding: "15px 16px", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "13.5px" }}>{task.title}</span>
+                        {task.hasUnreadFeedback && (
+                          <span title="New feedback" style={{ width: 7, height: 7, borderRadius: "50%", background: "#f43f5e", display: "inline-block", flexShrink: 0, boxShadow: "0 0 0 2px rgba(244,63,94,0.2)" }} />
+                        )}
+                      </div>
+                    </td>
 
-                    {openDropdownId === task._id && createPortal(
-                      <>
-                        <div 
-                          style={{
-                            position: "fixed",
-                            inset: 0,
-                            zIndex: 999,
-                            cursor: "default"
-                          }}
-                          onClick={() => setOpenDropdownId(null)}
-                        />
-                        <div
-                          style={{
-                            position: "fixed",
-                            left: `${dropdownPosition.left}px`,
-                            top: `${dropdownPosition.top}px`,
-                            transform: dropdownPosition.openUpward ? "translateY(-100%)" : "none",
-                            backgroundColor: "white",
-                            border: "1px solid #e2e8f0",
-                            borderRadius: "8px",
-                            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
-                            zIndex: 1000,
-                            minWidth: "120px",
-                            padding: "4px 0",
-                            textAlign: "left"
-                          }}
-                        >
-                          <button
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setMsgError("");
-                              setTeamMessage("");
-                              setOpenDropdownId(null);
-                            }}
+                    {/* Description */}
+                    <td style={{ padding: "15px 16px", verticalAlign: "middle", maxWidth: "260px", color: "#64748b", fontSize: "12px", lineHeight: 1.45 }}>
+                      {task.description.length > 65
+                        ? task.description.substring(0, 65) + "…"
+                        : task.description}
+                    </td>
+
+                    {/* Deadline */}
+                    <td style={{ padding: "15px 16px", verticalAlign: "middle", whiteSpace: "nowrap", fontSize: "12.5px", color: "#475569", fontWeight: 500 }}>
+                      {formatDate(task.deadline)}
+                    </td>
+
+                    {/* Team Size */}
+                    <td style={{ padding: "15px 16px", verticalAlign: "middle", textAlign: "center" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "4px 12px",
+                          borderRadius: 20,
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.03em",
+                          backgroundColor: "#32415815",
+                          color: "#324158",
+                          border: "1px solid #32415835",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {task.teamMembers?.length || 0} members
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: "15px 16px", verticalAlign: "middle" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "4px 11px",
+                          borderRadius: 20,
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          letterSpacing: "0.03em",
+                          backgroundColor: `${getStatusColor(task.status)}15`,
+                          color: getStatusColor(task.status),
+                          border: `1px solid ${getStatusColor(task.status)}35`,
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {task.status}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td style={{ padding: "15px 16px", verticalAlign: "middle", textAlign: "center", position: "relative" }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (openDropdownId === task._id) {
+                            setOpenDropdownId(null);
+                          } else {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const spaceBelow = window.innerHeight - rect.bottom;
+                            const openUpward = spaceBelow < 60; // 60px threshold
+                            setDropdownPosition({
+                              top: openUpward ? rect.top - 4 : rect.bottom + 4,
+                              left: rect.right - 140,
+                              openUpward,
+                            });
+                            setOpenDropdownId(task._id);
+                          }
+                        }}
+                        style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#475569", fontSize: "18px", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", lineHeight: 1, transition: "all 0.15s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "#344158"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "#344158"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.color = "#475569"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
+                      >
+                        ⋮
+                      </button>
+
+                      {openDropdownId === task._id && createPortal(
+                        <>
+                          <div 
                             style={{
-                              width: "100%",
-                              padding: "10px 16px",
-                              background: "none",
-                              border: "none",
-                              color: "#374151",
-                              fontSize: "13px",
-                              fontWeight: "500",
-                              cursor: "pointer",
-                              textAlign: "left",
-                              display: "block"
+                              position: "fixed",
+                              inset: 0,
+                              zIndex: 9998,
+                              cursor: "default"
                             }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = '#f1f5f9'}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                          >
-                            View Details
-                          </button>
-                        </div>
-                      </>,
-                      document.body
-                    )}
-                  </td>
-                </tr>
-              ))}
+                            onClick={() => setOpenDropdownId(null)}
+                          />
+                          <div
+                             style={{
+                               position: "fixed",
+                               left: `${dropdownPosition.left}px`,
+                               top: `${dropdownPosition.top}px`,
+                               transform: dropdownPosition.openUpward ? "translateY(-100%)" : "none",
+                               background: "white",
+                               border: "1px solid #e5e7eb",
+                               borderRadius: "12px",
+                               boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                               zIndex: 9999,
+                               width: "160px",
+                               overflow: "hidden"
+                             }}
+                           >
+                             <button
+                               onClick={async () => {
+                                 setSelectedTask(task);
+                                 setMsgError("");
+                                 setTeamMessage("");
+                                 setOpenDropdownId(null);
+                                 if (task.hasUnreadFeedback) {
+                                   try {
+                                     await taskAPI.readFeedback(task._id);
+                                     if (onTasksRefresh) {
+                                       onTasksRefresh();
+                                     }
+                                   } catch (e) {
+                                     console.error("Failed to mark team task feedback read:", e);
+                                   }
+                                 }
+                               }}
+                               style={{
+                                 width: "100%",
+                                 padding: "12px 16px",
+                                 background: "white",
+                                 border: "none",
+                                 color: "#0f172a",
+                                 fontSize: "14px",
+                                 fontWeight: "500",
+                                 cursor: "pointer",
+                                 textAlign: "left",
+                                 display: "block"
+                               }}
+                               onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
+                               onMouseLeave={(e) => e.target.style.background = 'white'}
+                             >
+                               View Details
+                             </button>
+                          </div>
+                        </>,
+                        document.body
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -459,6 +489,7 @@ function TeamTasks({
                       padding: "14px 16px",
                       borderRadius: "10px",
                       border: "1px solid #e2e8f0",
+                      whiteSpace: "pre-wrap"
                     }}
                   >
                     {selectedTask.description}
@@ -1008,6 +1039,7 @@ function TeamTasks({
                                     : "#334155",
                                 lineHeight: "1.5",
                                 wordBreak: "break-word",
+                                whiteSpace: "pre-wrap",
                               }}
                             >
                               {msg.message}

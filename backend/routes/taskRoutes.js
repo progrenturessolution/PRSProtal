@@ -52,6 +52,7 @@ router.post('/admin/team-message/:taskId', verifyToken, verifyAdmin, taskControl
 router.get('/intern/tasks', verifyToken, taskController.getInternTasks);
 router.put('/intern/update-task/:taskId', verifyToken, taskController.updateTaskProgress);
 router.post('/intern/team-message/:taskId', verifyToken, taskController.sendTeamMessage);
+router.put('/intern/tasks/:taskId/read-feedback', verifyToken, taskController.markFeedbackRead);
 
 // Intern: fetch scheduled work assignments assigned by admin to their trainer
 router.get('/intern/my-assignments', verifyToken, trainerController.getMyWorkAssignments);

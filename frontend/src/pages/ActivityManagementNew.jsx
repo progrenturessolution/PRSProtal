@@ -1,18 +1,33 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { adminAPI } from '../services/api';
+import { adminAPI, taskAPI } from '../services/api';
 import './ActivityManagementNew.css';
 
-function IconCard({ title, onClick }) {
+function IconCard({ title, onClick, hasBadge }) {
   return (
-    <button className="am-card" onClick={onClick}>
+    <button className="am-card" onClick={onClick} style={{ position: 'relative' }}>
       <div className="am-card-title">{title}</div>
+      {hasBadge && (
+        <span
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            backgroundColor: '#f43f5e',
+            boxShadow: '0 0 0 3px rgba(244, 63, 94, 0.2)'
+          }}
+        />
+      )}
     </button>
   );
 }
 
 export default function ActivityManagementNew() {
   const [activities, setActivities] = useState([]);
+  const [hasUnseenPendingApprovals, setHasUnseenPendingApprovals] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activityFilter, setActivityFilter] = useState('all');
   const [showInterviewModal, setShowInterviewModal] = useState(false);
@@ -53,7 +68,38 @@ export default function ActivityManagementNew() {
     return normalizedType.includes(activityFilter);
   });
 
-  useEffect(() => { fetchActivities(); fetchStudents(); fetchTrainers(); fetchGroups(); }, []);
+  useEffect(() => {
+    fetchActivities();
+    fetchStudents();
+    fetchTrainers();
+    fetchGroups();
+    checkPendingApprovalsUnseen();
+  }, []);
+
+  const checkPendingApprovalsUnseen = async () => {
+    try {
+      const response = await taskAPI.getAllTasks();
+      if (response.data?.success) {
+        const pending = (response.data.tasks || []).filter(t => t.status === "Pending Approval");
+        let seenPendingMap = {};
+        try {
+          seenPendingMap = JSON.parse(localStorage.getItem("seenPendingApprovals") || "{}");
+        } catch (e) {
+          seenPendingMap = {};
+        }
+
+        const hasUnseen = pending.some(task => {
+          const taskTime = new Date(task.updatedAt || task.createdAt || 0).getTime();
+          const lastSeenTime = seenPendingMap[task._id] || 0;
+          return taskTime > lastSeenTime;
+        });
+
+        setHasUnseenPendingApprovals(hasUnseen);
+      }
+    } catch (err) {
+      console.error("Failed to check pending approvals unseen:", err);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -1121,7 +1167,7 @@ export default function ActivityManagementNew() {
       <div className="am-actions">
         <IconCard title="Assign Task" onClick={() => { window.location.hash = '#create-task'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'create-task' } })); }} />
         <IconCard title="Manage Task" onClick={() => { window.location.hash = '#manage-tasks'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'manage-tasks' } })); }} />
-        <IconCard title="Pending Approval" onClick={() => { window.location.hash = '#pending-approvals'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'pending-approvals' } })); }} />
+        <IconCard title="Pending Approval" onClick={() => { window.location.hash = '#pending-approvals'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'pending-approvals' } })); }} hasBadge={hasUnseenPendingApprovals} />
         <IconCard title="Schedule Interviews" onClick={() => { setEditingInterviewActivityId(null); setShowInterviewModal(true); }} />
         <IconCard title="Schedule GD Round" onClick={() => { setEditingGdActivityId(null); setShowGDModal(true); }} />
         <IconCard title="Schedule Assessment" onClick={() => { setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); setShowAssessmentModal(true); }} />
