@@ -8,11 +8,13 @@ function InterviewForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const today = new Date().toISOString().split("T")[0];
   const [studentInfo, setStudentInfo] = useState(null);
   const [formData, setFormData] = useState({
     interviewType: "HR",
-    date: "",
-    attemptNumber: 1,
+    attendanceStatus: "Present",
+    date: today,
+    attemptNumber: "",
     communicationLevel: "",
     confidenceLevel: "",
     bodyLanguage: "",
@@ -85,8 +87,9 @@ function InterviewForm() {
         setSuccess("Interview record added successfully!");
         setFormData({
           interviewType: "HR",
-          date: "",
-          attemptNumber: 1,
+          attendanceStatus: "Present",
+          date: today,
+          attemptNumber: "",
           communicationLevel: "",
           confidenceLevel: "",
           bodyLanguage: "",
@@ -169,7 +172,7 @@ function InterviewForm() {
           </div>
           <div className="record-spotlight-chips">
             <span className="record-chip">Type: {formData.interviewType}</span>
-            <span className="record-chip">Attempt: {formData.attemptNumber}</span>
+            <span className="record-chip">Attempt: {formData.attemptNumber || "Not set"}</span>
             <span className={`record-chip ${formData.levelCrossed ? "passed" : "pending"}`}>
               Level: {formData.levelCrossed ? "Crossed" : "Pending"}
             </span>
@@ -229,6 +232,20 @@ function InterviewForm() {
                 >
                   <option value="HR">HR</option>
                   <option value="Technical">Technical</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Attendance *</label>
+                <select
+                  name="attendanceStatus"
+                  value={formData.attendanceStatus}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Present">Present</option>
+                  <option value="Absent">Absent</option>
+                  <option value="Late">Late</option>
                 </select>
               </div>
 

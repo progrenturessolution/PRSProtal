@@ -57,8 +57,8 @@ function TrainerDashboard() {
   const [interviewFormData, setInterviewFormData] = useState({
     interviewType: "HR",
     attendanceStatus: "Present",
-    date: "",
-    attemptNumber: 1,
+    date: new Date().toISOString().split("T")[0],
+    attemptNumber: "",
     communicationLevel: "",
     confidenceLevel: "",
     bodyLanguage: "",
@@ -75,6 +75,7 @@ function TrainerDashboard() {
   });
   const [aptitudeFormData, setAptitudeFormData] = useState({
     attendanceStatus: "Present",
+    date: new Date().toISOString().split("T")[0],
     roundNumber: 1,
     score: "",
     result: "Pass",
@@ -82,6 +83,7 @@ function TrainerDashboard() {
   });
   const [assessmentFormData, setAssessmentFormData] = useState({
     attendanceStatus: "Present",
+    date: new Date().toISOString().split("T")[0],
     assessmentType: "Domain",
     score: "",
     status: "Pending",
@@ -96,11 +98,13 @@ function TrainerDashboard() {
   });
   const [showEditModal, setShowEditModal] = useState(false);
   const [gdFormData, setGdFormData] = useState({
-    participation: "3",
-    communication: "3",
-    confidence: "3",
-    topicUnderstanding: "3",
-    leadership: "3",
+    date: new Date().toISOString().split("T")[0],
+    attendanceStatus: "Present",
+    participation: "",
+    communication: "",
+    confidence: "",
+    topicUnderstanding: "",
+    leadership: "",
     overallRemark: "",
     strengths: "",
     improvementAreas: "",
@@ -338,7 +342,7 @@ function TrainerDashboard() {
           setHasUnreadNotifications(unreadCount > 0);
           const assessments = notes.filter(n => n.notificationType === 'Test/Assessment');
           // map to activity-like objects used by the dashboard recentActivities logic
-          const mapped = assessments.map(n => ({ type: 'Assessment', title: n.title, dateTime: new Date(n.createdAt).toLocaleString(), createdBy: n.createdBy?.email || 'Admin', status: 'Scheduled', details: { notification: n } }));
+          const mapped = assessments.map(n => ({ type: 'Assessment', title: n.title, dateTime: new Date(n.createdAt).toLocaleString(), createdBy: n.createdBy?.email || 'Admin', status: n.activityId?.status || 'Scheduled', details: { notification: n } }));
           // Append these to scheduledAssignments (avoid duplicates)
           setScheduledAssignments(prev => {
             const existingKeys = new Set(prev.map(a => JSON.stringify(a.details?.notification?._id || a)));
@@ -550,8 +554,8 @@ function TrainerDashboard() {
         setInterviewFormData({
           interviewType: "HR",
           attendanceStatus: "Present",
-          date: "",
-          attemptNumber: 1,
+          date: new Date().toISOString().split("T")[0],
+          attemptNumber: "",
           communicationLevel: "",
           confidenceLevel: "",
           bodyLanguage: "",
@@ -592,6 +596,7 @@ function TrainerDashboard() {
       const cleanedData = {
         studentId: selectedStudent._id,
         attendanceStatus: aptitudeFormData.attendanceStatus,
+        date: aptitudeFormData.date,
         roundNumber: aptitudeFormData.roundNumber,
         score: parseFloat(aptitudeFormData.score),
         result: aptitudeFormData.result,
@@ -605,6 +610,7 @@ function TrainerDashboard() {
         setRecordSuccess("Aptitude record added successfully!");
         setAptitudeFormData({
           attendanceStatus: "Present",
+          date: new Date().toISOString().split("T")[0],
           roundNumber: 1,
           score: "",
           result: "Pass",
@@ -628,6 +634,7 @@ function TrainerDashboard() {
       const cleanedData = {
         studentId: selectedStudent._id,
         attendanceStatus: assessmentFormData.attendanceStatus,
+        date: assessmentFormData.date,
         assessmentType: assessmentFormData.assessmentType,
         status: assessmentFormData.status,
       };
@@ -644,6 +651,7 @@ function TrainerDashboard() {
         setRecordSuccess("Assessment record added successfully!");
         setAssessmentFormData({
           attendanceStatus: "Present",
+          date: new Date().toISOString().split("T")[0],
           assessmentType: "Domain",
           score: "",
           status: "Pending",
@@ -709,31 +717,24 @@ function TrainerDashboard() {
       });
       localStorage.setItem(storageKey, JSON.stringify(next));
       setRecordSuccess("GD evaluation saved locally");
+      setGdFormData({
+        date: new Date().toISOString().split("T")[0],
+        attendanceStatus: "Present",
+        participation: "",
+        communication: "",
+        confidence: "",
+        topicUnderstanding: "",
+        leadership: "",
+        overallRemark: "",
+        strengths: "",
+        improvementAreas: "",
+      });
       setTimeout(() => setRecordSuccess(""), 3000);
       // refresh records if needed
       fetchStudentRecords(selectedStudent._id).catch(() => {});
     } catch (error) {
       console.error('Failed to save GD record', error);
       setRecordError('Failed to save GD record');
-    }
-  };
-
-  const handleUpdateStatus = async (studentId, newStatus) => {
-    try {
-      await trainerAPI.updateStudentStatus(studentId, newStatus);
-      // Update local state
-      setStudents(
-        students.map((student) =>
-          student._id === studentId
-            ? { ...student, status: newStatus }
-            : student,
-        ),
-      );
-      setSuccessMessage(`Student marked as ${newStatus}`);
-      setTimeout(() => setSuccessMessage(""), 4000);
-    } catch (error) {
-      console.error("Error updating student status:", error);
-      alert("Failed to update student status");
     }
   };
 
@@ -1021,7 +1022,7 @@ function TrainerDashboard() {
       apt.score,
       apt.result,
       apt.remarks,
-      apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "",
+      apt.date ? new Date(apt.date).toLocaleDateString() : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "",
     ),
   );
 
@@ -1032,7 +1033,7 @@ function TrainerDashboard() {
       assessment.score,
       assessment.status,
       assessment.feedback,
-      assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "",
+      assessment.date ? new Date(assessment.date).toLocaleDateString() : assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "",
     ),
   );
 
@@ -1075,7 +1076,7 @@ function TrainerDashboard() {
       .filter((item) =>
         matchesHistorySearch(
           item?.gdTitle,
-          item?.savedAt ? new Date(item.savedAt).toLocaleDateString() : "",
+          item?.form?.date ? new Date(item.form.date).toLocaleDateString() : item?.savedAt ? new Date(item.savedAt).toLocaleDateString() : "",
           item?.form?.participation,
           item?.form?.communication,
           item?.form?.confidence,
@@ -1087,8 +1088,8 @@ function TrainerDashboard() {
         ),
       )
       .sort((a, b) => {
-        const aTime = a?.savedAt ? new Date(a.savedAt).getTime() : 0;
-        const bTime = b?.savedAt ? new Date(b.savedAt).getTime() : 0;
+        const aTime = a?.form?.date ? new Date(a.form.date).getTime() : a?.savedAt ? new Date(a.savedAt).getTime() : 0;
+        const bTime = b?.form?.date ? new Date(b.form.date).getTime() : b?.savedAt ? new Date(b.savedAt).getTime() : 0;
         return bTime - aTime;
       });
   })();
@@ -1354,7 +1355,7 @@ function TrainerDashboard() {
               {/* Scheduled Interviews Section */}
               <div className="premium-card" style={{ marginTop: "24px" }}>
                 <div className="premium-card-header">
-                  <h2>Upcoming Scheduled Interviews</h2>
+                  <h2>Upcoming Scheduled Activities</h2>
                 </div>
                 <div style={{ padding: "16px 20px" }}>
                   {((scheduledInterviews.length === 0) && (scheduledGds.length === 0)) ? (
@@ -1385,7 +1386,13 @@ function TrainerDashboard() {
                               <td>{interview.interviewType || (interview.type === 'GD' ? 'GD' : '-')}</td>
                               <td>{interview.mode || (interview.type === 'GD' ? 'Group' : 'Individual')}</td>
                               <td>
-                                <span className="status-badge status-pending">
+                                <span className={`status-badge ${
+                                  String(interview.status).toLowerCase() === 'completed'
+                                    ? 'status-completed'
+                                    : String(interview.status).toLowerCase() === 'cancelled'
+                                      ? 'status-inactive'
+                                      : 'status-pending'
+                                }`}>
                                   {interview.status || 'Scheduled'}
                                 </span>
                               </td>
@@ -1434,7 +1441,13 @@ function TrainerDashboard() {
                             <td>{interview.startTime || '-'}</td>
                             <td>{interview.interviewType || '-'}</td>
                             <td>
-                              <span className="status-badge status-pending">{interview.status || 'Scheduled'}</span>
+                              <span className={`status-badge ${
+                                String(interview.status).toLowerCase() === 'completed'
+                                  ? 'status-completed'
+                                  : String(interview.status).toLowerCase() === 'cancelled'
+                                    ? 'status-inactive'
+                                    : 'status-pending'
+                              }`}>{interview.status || 'Scheduled'}</span>
                             </td>
                             <td style={{ position: "relative" }}>
                               <button
@@ -1704,7 +1717,13 @@ function TrainerDashboard() {
                                               <td>{interview.startTime || interview.details?.form?.startTime || "-"}</td>
                                               <td>{interview.interviewType || "-"}</td>
                                               <td>
-                                                <span className="status-badge status-pending">{interview.status || "Scheduled"}</span>
+                                                <span className={`status-badge ${
+                                                  String(interview.status).toLowerCase() === 'completed'
+                                                    ? 'status-completed'
+                                                    : String(interview.status).toLowerCase() === 'cancelled'
+                                                      ? 'status-inactive'
+                                                      : 'status-pending'
+                                                }`}>{interview.status || "Scheduled"}</span>
                                               </td>
                                               <td style={{ position: "relative" }}>
                                                 <button
@@ -1820,7 +1839,13 @@ function TrainerDashboard() {
                               <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
                               <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
                               <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
-                              <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                              <td><span className={`status-badge ${
+                                String(a.status).toLowerCase() === 'completed'
+                                  ? 'status-completed'
+                                  : String(a.status).toLowerCase() === 'cancelled'
+                                    ? 'status-inactive'
+                                    : 'status-pending'
+                              }`}>{a.status || 'Scheduled'}</span></td>
                               <td style={{ position: "relative" }}>
                                 <button
                                   data-scheduled-assessment-menu-toggle
@@ -1928,7 +1953,13 @@ function TrainerDashboard() {
                               <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
                               <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
                               <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
-                              <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                              <td><span className={`status-badge ${
+                                String(a.status).toLowerCase() === 'completed'
+                                  ? 'status-completed'
+                                  : String(a.status).toLowerCase() === 'cancelled'
+                                    ? 'status-inactive'
+                                    : 'status-pending'
+                              }`}>{a.status || 'Scheduled'}</span></td>
                               <td style={{ position: "relative" }}>
                                 <button
                                   data-scheduled-assessment-menu-toggle
@@ -3758,36 +3789,7 @@ function TrainerDashboard() {
                                         onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
                                         onMouseLeave={(e) => (e.target.style.background = "#ffffff")}
                                       >
-                                        View Student
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          if (!isCompleted) {
-                                            handleUpdateStatus(student._id, "completed");
-                                          }
-                                          setOpenStudentMenuId(null);
-                                        }}
-                                        disabled={isCompleted}
-                                        style={{
-                                          width: "100%",
-                                          padding: "12px 16px",
-                                          background: "#ffffff",
-                                          border: "none",
-                                          borderTop: "1px solid #f3f4f6",
-                                          textAlign: "left",
-                                          cursor: isCompleted ? "not-allowed" : "pointer",
-                                          fontSize: "14px",
-                                          fontWeight: "500",
-                                          color: isCompleted ? "#9ca3af" : "#0f172a",
-                                        }}
-                                        onMouseEnter={(e) => {
-                                          if (!isCompleted) {
-                                            e.target.style.background = "#f9fafb";
-                                          }
-                                        }}
-                                        onMouseLeave={(e) => (e.target.style.background = "#ffffff")}
-                                      >
-                                        Mark Completed
+                                        Take Activity
                                       </button>
                                       </div>
                                     )}
@@ -3924,6 +3926,20 @@ function TrainerDashboard() {
                       </div>
 
                       <div className="form-group">
+                        <label>Attendance *</label>
+                        <select
+                          name="attendanceStatus"
+                          value={interviewFormData.attendanceStatus}
+                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                          required
+                        >
+                          <option value="Present">Present</option>
+                          <option value="Absent">Absent</option>
+                          <option value="Late">Late</option>
+                        </select>
+                      </div>
+
+                      <div className="form-group">
                         <label>Date *</label>
                         <input
                           type="date"
@@ -4016,9 +4032,15 @@ function TrainerDashboard() {
                             <select
                               name="levelCrossed"
                               value={String(interviewFormData.levelCrossed)}
-                              onChange={(e) => setInterviewFormData({ ...interviewFormData, levelCrossed: e.target.value === "true" })}
+                              onChange={(e) =>
+                                setInterviewFormData({
+                                  ...interviewFormData,
+                                  levelCrossed: e.target.value === "" ? "" : e.target.value === "true",
+                                })
+                              }
                               required
                             >
+                              <option value="">Select Option</option>
                               <option value="true">Yes</option>
                               <option value="false">No</option>
                             </select>
@@ -4116,7 +4138,12 @@ function TrainerDashboard() {
                             <select
                               name="levelCrossed"
                               value={String(interviewFormData.levelCrossed)}
-                              onChange={(e) => setInterviewFormData({ ...interviewFormData, levelCrossed: e.target.value === "true" })}
+                              onChange={(e) =>
+                                setInterviewFormData({
+                                  ...interviewFormData,
+                                  levelCrossed: e.target.value === "true",
+                                })
+                              }
                               required
                             >
                               <option value="true">Yes</option>
@@ -4151,6 +4178,16 @@ function TrainerDashboard() {
                       <p>Capture round score, result, and trainer remarks in one place.</p>
                     </div>
                     <form onSubmit={handleAptitudeSubmit} className="record-form-grid">
+                      <div className="form-group">
+                        <label>Date *</label>
+                        <input
+                          type="date"
+                          name="date"
+                          value={aptitudeFormData.date}
+                          onChange={(e) => setAptitudeFormData({ ...aptitudeFormData, [e.target.name]: e.target.value })}
+                          required
+                        />
+                      </div>
                       <div className="form-group">
                         <label>Attendance *</label>
                         <select
@@ -4223,6 +4260,16 @@ function TrainerDashboard() {
                       <p>Record assessment type, score, status, and actionable feedback.</p>
                     </div>
                     <form onSubmit={handleAssessmentSubmit} className="record-form-grid">
+                      <div className="form-group">
+                        <label>Date *</label>
+                        <input
+                          type="date"
+                          name="date"
+                          value={assessmentFormData.date}
+                          onChange={(e) => setAssessmentFormData({ ...assessmentFormData, [e.target.name]: e.target.value })}
+                          required
+                        />
+                      </div>
                       <div className="form-group">
                         <label>Attendance *</label>
                         <select
@@ -4366,10 +4413,36 @@ function TrainerDashboard() {
                       <strong>GD Evaluation</strong>
                       <p>Rate student's participation, communication, confidence and add feedback.</p>
                     </div>
-                    <form onSubmit={handleGdSubmit} className="record-form-grid">
+                     <form onSubmit={handleGdSubmit} className="record-form-grid">
                       <div className="form-group">
-                        <label>Participation</label>
+                        <label>PSMS ID</label>
+                        <input type="text" value={selectedStudent?.internId || ""} readOnly />
+                      </div>
+                      <div className="form-group">
+                        <label>Date *</label>
+                        <input
+                          type="date"
+                          name="date"
+                          value={gdFormData.date}
+                          onChange={(e) => setGdFormData({ ...gdFormData, date: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Attendance *</label>
+                        <select
+                          value={gdFormData.attendanceStatus}
+                          onChange={(e) => setGdFormData({ ...gdFormData, attendanceStatus: e.target.value })}
+                          required
+                        >
+                          <option value="Present">Present</option>
+                          <option value="Absent">Absent</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Participation *</label>
                         <select value={gdFormData.participation} onChange={(e) => setGdFormData({ ...gdFormData, participation: e.target.value })} required>
+                          <option value="">Select Rating</option>
                           <option value="1">1 - Very Low</option>
                           <option value="2">2 - Low</option>
                           <option value="3">3 - Average</option>
@@ -4378,8 +4451,9 @@ function TrainerDashboard() {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Communication</label>
+                        <label>Communication *</label>
                         <select value={gdFormData.communication} onChange={(e) => setGdFormData({ ...gdFormData, communication: e.target.value })} required>
+                          <option value="">Select Rating</option>
                           <option value="1">1 - Very Low</option>
                           <option value="2">2 - Low</option>
                           <option value="3">3 - Average</option>
@@ -4388,8 +4462,9 @@ function TrainerDashboard() {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Confidence</label>
+                        <label>Confidence *</label>
                         <select value={gdFormData.confidence} onChange={(e) => setGdFormData({ ...gdFormData, confidence: e.target.value })} required>
+                          <option value="">Select Rating</option>
                           <option value="1">1 - Very Low</option>
                           <option value="2">2 - Low</option>
                           <option value="3">3 - Average</option>
@@ -4398,8 +4473,9 @@ function TrainerDashboard() {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Topic Understanding</label>
+                        <label>Topic Understanding *</label>
                         <select value={gdFormData.topicUnderstanding} onChange={(e) => setGdFormData({ ...gdFormData, topicUnderstanding: e.target.value })} required>
+                          <option value="">Select Rating</option>
                           <option value="1">1 - Very Low</option>
                           <option value="2">2 - Low</option>
                           <option value="3">3 - Average</option>
@@ -4408,8 +4484,9 @@ function TrainerDashboard() {
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Leadership</label>
+                        <label>Leadership *</label>
                         <select value={gdFormData.leadership} onChange={(e) => setGdFormData({ ...gdFormData, leadership: e.target.value })} required>
+                          <option value="">Select Rating</option>
                           <option value="1">1 - Very Low</option>
                           <option value="2">2 - Low</option>
                           <option value="3">3 - Average</option>
@@ -4525,7 +4602,7 @@ function TrainerDashboard() {
                                   <td>{apt.score}</td>
                                   <td>{apt.result}</td>
                                   <td>{apt.remarks || "-"}</td>
-                                  <td>{new Date(apt.createdAt).toLocaleDateString()}</td>
+                                  <td>{apt.date ? new Date(apt.date).toLocaleDateString() : new Date(apt.createdAt).toLocaleDateString()}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -4558,7 +4635,7 @@ function TrainerDashboard() {
                                   <td>{assessment.score || "-"}</td>
                                   <td>{assessment.status}</td>
                                   <td>{assessment.feedback || "-"}</td>
-                                  <td>{new Date(assessment.createdAt).toLocaleDateString()}</td>
+                                  <td>{assessment.date ? new Date(assessment.date).toLocaleDateString() : new Date(assessment.createdAt).toLocaleDateString()}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -4608,6 +4685,7 @@ function TrainerDashboard() {
                               <tr>
                                 <th>Date</th>
                                 <th>GD</th>
+                                <th>Attendance</th>
                                 <th>Participation</th>
                                 <th>Communication</th>
                                 <th>Confidence</th>
@@ -4621,6 +4699,7 @@ function TrainerDashboard() {
                                 <tr key={`${gd.gdId || gd.gdTitle || "gd"}-${gd.savedAt || index}`}>
                                   <td>{gd.savedAt ? new Date(gd.savedAt).toLocaleDateString() : "-"}</td>
                                   <td>{gd.gdTitle || "GD"}</td>
+                                  <td>{gd.form?.attendanceStatus || "-"}</td>
                                   <td>{gd.form?.participation || "-"}</td>
                                   <td>{gd.form?.communication || "-"}</td>
                                   <td>{gd.form?.confidence || "-"}</td>

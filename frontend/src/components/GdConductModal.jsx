@@ -23,11 +23,11 @@ export default function GdConductModal({ gd, onClose, onSave }) {
       const id = s && (s._id || s.internId || s.id) ? String(s._id || s.internId || s.id) : String(idx);
       if (!seen.has(id)) {
         seen.add(id);
-        uniq.push({ id, name: s && s.name ? s.name : (s || '-'), email: s?.email || '-', mobile: s?.mobile || '-', raw: s });
+        uniq.push({ id, internId: s?.internId || '-', name: s && s.name ? s.name : (s || '-'), email: s?.email || '-', mobile: s?.mobile || '-', raw: s });
       }
     });
 
-    setEvaluations(uniq.map(s => ({ ...s, score: '', remarks: '' })));
+    setEvaluations(uniq.map(s => ({ ...s, attendanceStatus: 'Present', score: '', remarks: '' })));
   }, [gd]);
 
   const updateEval = (id, field, value) => {
@@ -99,14 +99,21 @@ export default function GdConductModal({ gd, onClose, onSave }) {
         <div style={{ overflowX: 'auto' }}>
           <table className="data-table view-students-table">
             <thead>
-              <tr><th>#</th><th>Student</th><th>Email</th><th>Score</th><th>Remarks</th></tr>
+              <tr><th>#</th><th>PSMS ID</th><th>Student</th><th>Email</th><th>Attendance</th><th>Score</th><th>Remarks</th></tr>
             </thead>
             <tbody>
               {evaluations.map((s, idx) => (
                 <tr key={s.id}>
                   <td>{idx+1}</td>
+                  <td>{s.internId}</td>
                   <td>{s.name}</td>
                   <td>{s.email}</td>
+                  <td>
+                    <select value={s.attendanceStatus} onChange={(e) => updateEval(s.id, 'attendanceStatus', e.target.value)} style={{ padding: '6px 8px' }}>
+                      <option value="Present">Present</option>
+                      <option value="Absent">Absent</option>
+                    </select>
+                  </td>
                   <td>
                     <input type="text" value={s.score} onChange={(e) => updateEval(s.id, 'score', e.target.value)} placeholder="Score" style={{ width: 80, padding: '6px 8px' }} />
                   </td>

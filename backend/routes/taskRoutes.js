@@ -44,7 +44,7 @@ router.get('/admin/tasks', verifyToken, verifyAdmin, taskController.getAllTasks)
 router.get('/admin/task-stats', verifyToken, verifyAdmin, taskController.getTaskStats);
 router.put('/admin/approve-task/:taskId', verifyToken, verifyAdmin, taskController.approveTask);
 router.post('/admin/task-feedback/:taskId', verifyToken, verifyAdmin, taskController.sendTaskFeedback);
-router.put('/admin/edit-task/:taskId', verifyToken, verifyAdmin, taskController.editTask);
+router.put('/admin/edit-task/:taskId', verifyToken, verifyAdmin, upload.single('taskDocument'), taskController.editTask);
 router.delete('/admin/delete-task/:taskId', verifyToken, verifyAdmin, taskController.deleteTask);
 router.post('/admin/team-message/:taskId', verifyToken, verifyAdmin, taskController.sendAdminTeamMessage);
 

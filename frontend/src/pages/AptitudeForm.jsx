@@ -13,6 +13,7 @@ function AptitudeForm() {
     score: "",
     result: "Pass",
     remarks: "",
+    date: new Date().toISOString().split("T")[0],
   });
   const [aptitudes, setAptitudes] = useState([]);
   const [historySearch, setHistorySearch] = useState("");
@@ -61,6 +62,7 @@ function AptitudeForm() {
           score: "",
           result: "Pass",
           remarks: "",
+          date: new Date().toISOString().split("T")[0],
         });
         fetchAptitudes();
       }
@@ -134,6 +136,17 @@ function AptitudeForm() {
             {success && <div className="success-message">{success}</div>}
 
             <div className="record-form-grid">
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
               <div className="form-group">
                 <label>Aptitude Round Number *</label>
                 <input
@@ -256,7 +269,7 @@ function AptitudeForm() {
                           </span>
                         </td>
                         <td>{apt.remarks || "-"}</td>
-                        <td>{new Date(apt.createdAt).toLocaleDateString()}</td>
+                        <td>{apt.date ? new Date(apt.date).toLocaleDateString() : new Date(apt.createdAt).toLocaleDateString()}</td>
                       </tr>
                     ))
                   )}

@@ -655,9 +655,11 @@ exports.updateIntern = async (req, res) => {
       'completedFees',
       'pendingFees',
       'lastPaymentDate',
-      'currentDesignation'
-      ,'stipendType','stipendAmount',
-      'password'
+      'currentDesignation',
+      'stipendType',
+      'stipendAmount',
+      'password',
+      'status'
     ];
 
     const updates = {};
@@ -2679,7 +2681,7 @@ exports.updateActivity = async (req, res) => {
             studentId,
             trainerId: resolvedTrainerId,
             interviewType,
-            status: 'Scheduled',
+            status: updates.status || originalActivity.status || 'Scheduled',
             mode,
             date: slotTime,
             startTime: slotTime.toTimeString().slice(0, 5),

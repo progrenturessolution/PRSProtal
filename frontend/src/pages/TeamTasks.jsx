@@ -20,7 +20,13 @@ function TeamTasks({
   const messagesEndRef = useRef(null);
   const pollingRef = useRef(null);
 
-  const teamTasks = tasks.filter((t) => t.isTeamTask);
+  const sortTasksNewestFirst = (taskList) =>
+    [...taskList].sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+    );
+
+  const teamTasks = sortTasksNewestFirst(tasks.filter((t) => t.isTeamTask));
 
   // Scroll to latest message when modal opens or new message arrives
   useEffect(() => {

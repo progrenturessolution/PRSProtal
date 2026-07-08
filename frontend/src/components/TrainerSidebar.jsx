@@ -170,7 +170,7 @@ function TrainerSidebar({
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ flexShrink: 0, width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
                 </svg>
-                <span>Schedule Individual Interview</span>
+                <span>Scheduled Individual Interview</span>
               </div>
               {hasUnreadTrainerIndividuals && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
             </li>
@@ -184,7 +184,7 @@ function TrainerSidebar({
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ flexShrink: 0, width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H6v-2a4 4 0 014-4h4a4 4 0 014 4v2M9 4a4 4 0 100 8 4 4 0 000-8zm8 2a3 3 0 100 6 3 3 0 000-6z" />
                 </svg>
-                <span>Schedule Group Interview</span>
+                <span>Scheduled Group Interview</span>
               </div>
               {hasUnreadTrainerGroups && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
             </li>
@@ -198,7 +198,7 @@ function TrainerSidebar({
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ flexShrink: 0, width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h8M8 14h4m-8 5a2 2 0 01-2-2V7a2 2 0 012-2h3l2-2h6l2 2h3a2 2 0 012 2v10a2 2 0 01-2 2H4z" />
                 </svg>
-                <span>Schedule GD Round</span>
+                <span>Scheduled GD Round</span>
               </div>
               {hasUnreadTrainerGds && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
             </li>
@@ -212,7 +212,7 @@ function TrainerSidebar({
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ flexShrink: 0, width: 16, height: 16 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h4m-2 8v-6m0 0l-2 2m2-2l2 2M7 7h10M7 11h4" />
                 </svg>
-                <span>Schedule Assessment</span>
+                <span>Scheduled Assessment</span>
               </div>
               {hasUnreadTrainerAssignments && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
             </li>

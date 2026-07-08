@@ -26,30 +26,24 @@ exports.createAndAssignTask = async (req, res) => {
       });
     }
 
-    const normalizedTeamMembers = Array.isArray(teamMembers)
-      ? teamMembers
-          .map((member) => {
-            if (typeof member === 'object' && member !== null) {
-              return member._id || member.id || member.value || null;
-            }
-            return member;
-          })
-          .filter(Boolean)
-      : [];
-
-    if (teamTaskEnabled && normalizedTeamMembers.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide team members for team task assignment'
-      });
+    let studentIds = [];
+    if (Array.isArray(assignedTo)) {
+      studentIds = assignedTo;
+    } else if (typeof assignedTo === 'string' && assignedTo.length) {
+      try {
+        studentIds = JSON.parse(assignedTo);
+        if (!Array.isArray(studentIds)) {
+          studentIds = [assignedTo];
+        }
+      } catch (e) {
+        studentIds = assignedTo.split(',').map(s => s.trim()).filter(Boolean);
+      }
     }
 
-    // Check if intern exists
-    const intern = await Intern.findById(assignedTo);
-    if (!intern) {
-      return res.status(404).json({
+    if (studentIds.length === 0) {
+      return res.status(400).json({
         success: false,
-        message: 'Intern not found'
+        message: 'Please select at least one intern'
       });
     }
 
@@ -63,40 +57,101 @@ exports.createAndAssignTask = async (req, res) => {
       };
     }
 
-    const recipientIds = [...new Set([
-      String(assignedTo),
-      ...(teamTaskEnabled ? normalizedTeamMembers.map((id) => String(id)) : [])
-    ])];
+    if (teamTaskEnabled) {
+      const assignedToId = studentIds[0];
+      const normalizedTeamMembers = Array.isArray(teamMembers)
+        ? teamMembers
+            .map((member) => {
+              if (typeof member === 'object' && member !== null) {
+                return member._id || member.id || member.value || null;
+              }
+              return member;
+            })
+            .filter(Boolean)
+        : [];
 
-    const recipients = await Intern.find({ _id: { $in: recipientIds } }).select('name email internId');
-    if (recipients.length !== recipientIds.length) {
-      return res.status(404).json({
-        success: false,
-        message: 'One or more selected team members were not found'
+      if (normalizedTeamMembers.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide team members for team task assignment'
+        });
+      }
+
+      // Check if intern exists
+      const intern = await Intern.findById(assignedToId);
+      if (!intern) {
+        return res.status(404).json({
+          success: false,
+          message: 'Intern not found'
+        });
+      }
+
+      const recipientIds = [...new Set([
+        String(assignedToId),
+        ...normalizedTeamMembers.map((id) => String(id))
+      ])];
+
+      const recipients = await Intern.find({ _id: { $in: recipientIds } }).select('name email internId');
+      if (recipients.length !== recipientIds.length) {
+        return res.status(404).json({
+          success: false,
+          message: 'One or more selected team members were not found'
+        });
+      }
+
+      // Create task
+      const task = new Task({
+        title,
+        description,
+        deadline,
+        assignedTo: assignedToId,
+        status: 'Assigned',
+        progress: 0,
+        isTeamTask: true,
+        teamMembers: normalizedTeamMembers,
+        taskDocument: taskDocument
+      });
+
+      await task.save();
+
+      return res.status(201).json({
+        success: true,
+        message: 'Task created and assigned successfully',
+        task
+      });
+    } else {
+      // Individual mode - validate all interns and create separate tasks
+      const recipients = await Intern.find({ _id: { $in: studentIds } });
+      if (recipients.length !== studentIds.length) {
+        return res.status(404).json({
+          success: false,
+          message: 'One or more selected interns were not found'
+        });
+      }
+
+      const createdTasks = [];
+      for (const id of studentIds) {
+        const task = new Task({
+          title,
+          description,
+          deadline,
+          assignedTo: id,
+          status: 'Assigned',
+          progress: 0,
+          isTeamTask: false,
+          teamMembers: [],
+          taskDocument: taskDocument
+        });
+        await task.save();
+        createdTasks.push(task);
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: `Task created and assigned to ${studentIds.length} intern(s) successfully`,
+        tasks: createdTasks
       });
     }
-
-    // Create task
-    const task = new Task({
-      title,
-      description,
-      deadline,
-      assignedTo,
-      status: 'Assigned',
-      progress: 0,
-      isTeamTask: teamTaskEnabled,
-      teamMembers: teamTaskEnabled ? normalizedTeamMembers : [],
-      taskDocument: taskDocument
-    });
-
-    await task.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'Task created and assigned successfully',
-      task
-    });
-
   } catch (error) {
     console.error('Create task error:', error);
     res.status(500).json({
@@ -256,7 +311,7 @@ exports.getInternTasks = async (req, res) => {
       ]
     })
       .populate('teamMembers', 'name email internId mobile studentType')
-      .sort({ deadline: 1 });
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -380,7 +435,7 @@ exports.getTaskStats = async (req, res) => {
 exports.editTask = async (req, res) => {
   try {
     const { taskId } = req.params;
-    const { title, description, deadline } = req.body;
+    let { title, description, deadline, assignedTo, teamMembers, status } = req.body;
 
     const task = await Task.findById(taskId);
 
@@ -392,16 +447,53 @@ exports.editTask = async (req, res) => {
     }
 
     // Update only provided fields
-    if (title) task.title = title;
-    if (description) task.description = description;
-    if (deadline) task.deadline = deadline;
+    if (title !== undefined) task.title = title;
+    if (description !== undefined) task.description = description;
+    if (deadline !== undefined) task.deadline = deadline;
+    const validStatuses = ['Assigned', 'In Progress', 'Pending Approval', 'Completed', 'Needs Improvement', 'Reviewed'];
+    if (status && validStatuses.includes(status)) task.status = status;
+
+    // Handle file upload if present
+    if (req.file) {
+      task.taskDocument = {
+        filename: req.file.filename,
+        filepath: req.file.path,
+        uploadedAt: new Date()
+      };
+    }
+
+    if (task.isTeamTask) {
+      if (teamMembers) {
+        // Parse teamMembers if stringified
+        if (typeof teamMembers === 'string') {
+          try {
+            teamMembers = JSON.parse(teamMembers);
+          } catch (e) {
+            console.error('Failed to parse teamMembers in editTask:', e);
+          }
+        }
+        if (Array.isArray(teamMembers) && teamMembers.length > 0) {
+          task.teamMembers = teamMembers;
+          task.assignedTo = teamMembers[0];
+        }
+      }
+    } else {
+      if (assignedTo) {
+        task.assignedTo = assignedTo;
+      }
+    }
 
     await task.save();
+
+    // Populate returned task
+    const updatedTask = await Task.findById(taskId)
+      .populate('assignedTo', 'name email internId')
+      .populate('teamMembers', 'name email internId mobile studentType');
 
     res.status(200).json({
       success: true,
       message: 'Task updated successfully',
-      task
+      task: updatedTask
     });
 
   } catch (error) {

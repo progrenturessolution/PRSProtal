@@ -391,20 +391,58 @@ function GroupManagement() {
                         visibleEmployees.map((employee) => {
                           const selected = form.selectedEmployees.includes(employee.name);
                           return (
-                            <label
+                            <button
                               key={employee.name}
+                              type="button"
                               className={`gm-student-check-row ${selected ? "is-selected" : ""}`}
+                              onClick={() => toggleEmployeeSelection(employee.name)}
+                              style={{
+                                width: "100%",
+                                border: "1px solid #dbe4ef",
+                                borderRadius: "10px",
+                                cursor: "pointer",
+                                textAlign: "left",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                padding: "12px 16px",
+                                background: selected ? "#f0fdf4" : "transparent",
+                              }}
                             >
                               <input
                                 type="checkbox"
                                 checked={selected}
-                                onChange={() => toggleEmployeeSelection(employee.name)}
+                                onChange={() => {}}
+                                style={{ pointerEvents: 'none', width: '18px', height: '18px' }}
                               />
-                              <span className="gm-student-content">
-                                <strong>{employee.name}</strong>
-                                <small>{employee.email || "No email"} • {employee.role || "Employee"}</small>
+                              <div
+                                style={{
+                                  width: "36px",
+                                  height: "36px",
+                                  borderRadius: "50%",
+                                  display: "grid",
+                                  placeItems: "center",
+                                  backgroundColor: selected ? "#dbeafe" : "#f1f5f9",
+                                  color: selected ? "#2563eb" : "#475569",
+                                  fontWeight: 700,
+                                  fontSize: "12px",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {employee.name
+                                  ?.split(" ")
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .map((part) => part[0]?.toUpperCase())
+                                  .join("") || "E"}
+                              </div>
+                              <span className="gm-student-content" style={{ flex: 1 }}>
+                                <span style={{ display: 'block', fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{employee.name}</span>
+                                <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                                  {employee.role || "Employee"} • {employee.email || "No email"}
+                                </small>
                               </span>
-                            </label>
+                            </button>
                           );
                         })
                       )}
@@ -450,21 +488,59 @@ function GroupManagement() {
                         visibleStudents.map((student) => {
                           const selected = form.selectedStudents.includes(student._id);
                           return (
-                            <label
+                            <button
                               key={student._id}
+                              type="button"
                               className={`gm-student-check-row ${selected ? "is-selected" : ""}`}
+                              onClick={() => toggleStudentSelection(student._id)}
+                              style={{
+                                width: "100%",
+                                border: "1px solid #dbe4ef",
+                                borderRadius: "10px",
+                                cursor: "pointer",
+                                textAlign: "left",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "12px",
+                                padding: "12px 16px",
+                                background: selected ? "#f0fdf4" : "transparent",
+                              }}
                             >
                               <input
                                 type="checkbox"
                                 checked={selected}
-                                onChange={() => toggleStudentSelection(student._id)}
+                                onChange={() => {}}
+                                style={{ pointerEvents: 'none', width: '18px', height: '18px' }}
                               />
-                              <span className="gm-student-content">
-                                <strong>{student.name}</strong>
-                                <small>{student.email} • {student.internId}</small>
+                              <div
+                                style={{
+                                  width: "36px",
+                                  height: "36px",
+                                  borderRadius: "50%",
+                                  display: "grid",
+                                  placeItems: "center",
+                                  backgroundColor: selected ? "#dbeafe" : "#f1f5f9",
+                                  color: selected ? "#2563eb" : "#475569",
+                                  fontWeight: 700,
+                                  fontSize: "12px",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {student.name
+                                  ?.split(" ")
+                                  .filter(Boolean)
+                                  .slice(0, 2)
+                                  .map((part) => part[0]?.toUpperCase())
+                                  .join("") || "S"}
+                              </div>
+                              <span className="gm-student-content" style={{ flex: 1 }}>
+                                <span style={{ display: 'block', fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{student.name}</span>
+                                <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                                  {student.internId || student.studentId || "No ID"} • {student.email}
+                                </small>
                                 <span className="gm-type-chip">{student.studentType}</span>
                               </span>
-                            </label>
+                            </button>
                           );
                         })
                       )}
@@ -584,54 +660,59 @@ function GroupManagement() {
       {detailsGroup && (
         <div className="gm-modal-backdrop" onClick={() => setDetailsGroup(null)}>
           <div className="gm-modal" onClick={(e) => e.stopPropagation()}>
-            {/* Redesigned Premium Group Details Hero */}
             <div className="gm-details-hero">
               <div className="gm-details-hero-top">
                 <div className="gm-details-title-area">
-                  <span className="gm-details-badge">Group #{detailsGroup.groupNumber || "-"}</span>
+                  <span className="gm-details-badge">Group Overview</span>
                   <h2 className="gm-details-title">{detailsGroup.groupName || "-"}</h2>
+                  <p className="gm-details-subtitle">
+                    A structured summary of the group, assigned team members, and student intake.
+                  </p>
                 </div>
                 <button className="gm-details-close-btn" onClick={() => setDetailsGroup(null)}>
                   Close
                 </button>
               </div>
 
+              <div className="gm-details-summary-row">
+                <div className="gm-details-summary-item">
+                  <span className="gm-details-side-label">Group Number</span>
+                  <span className="gm-details-side-value">{detailsGroup.groupNumber || "-"}</span>
+                </div>
+                <div className="gm-details-summary-item">
+                  <span className="gm-details-side-label">Student Type</span>
+                  <span className="gm-details-side-value">{detailsGroup.studentType || "-"}</span>
+                </div>
+                <div className="gm-details-summary-item">
+                  <span className="gm-details-side-label">Students</span>
+                  <span className="gm-details-side-value">{(detailsGroup.students || []).length}</span>
+                </div>
+              </div>
+
               {detailsGroup.groupDescription && (
                 <div className="gm-details-desc-area">
+                  <span className="gm-details-card-kicker">Description</span>
                   <p className="gm-details-desc">{renderDescriptionWithLinks(detailsGroup.groupDescription)}</p>
                 </div>
               )}
 
-              {/* 3-Column Metadata Card Row */}
-              <div className="gm-details-meta-grid">
-                {/* Panel 1: Student Type */}
-                <div className="gm-details-meta-card">
-                  <span className="gm-details-meta-label">Student Type</span>
-                  <span className="gm-details-type-pill">{detailsGroup.studentType || "-"}</span>
+              <div className="gm-details-employee-strip">
+                <div className="gm-details-card-head">
+                  <span className="gm-details-card-kicker">Assigned Employees</span>
+                  <span className="gm-details-inline-count">
+                    {(detailsGroup.assignedEmployees || []).length}
+                  </span>
                 </div>
-
-                {/* Panel 2: Total Students */}
-                <div className="gm-details-meta-card">
-                  <span className="gm-details-meta-label">Total Students</span>
-                  <div className="gm-details-count-wrapper">
-                    <span className="gm-details-count-pill">{(detailsGroup.students || []).length}</span>
-                  </div>
-                </div>
-
-                {/* Panel 3: Assigned Employees */}
-                <div className="gm-details-meta-card">
-                  <span className="gm-details-meta-label">Assigned Employees</span>
-                  <div className="gm-details-employees-list">
-                    {(detailsGroup.assignedEmployees || []).length > 0 ? (
-                      (detailsGroup.assignedEmployees || []).map((emp, i) => (
-                        <span key={i} className="gm-details-employee-pill">
-                          {emp}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="gm-details-meta-val">-</span>
-                    )}
-                  </div>
+                <div className="gm-details-employees-list">
+                  {(detailsGroup.assignedEmployees || []).length > 0 ? (
+                    (detailsGroup.assignedEmployees || []).map((emp, i) => (
+                      <span key={i} className="gm-details-employee-pill">
+                        {emp}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="gm-details-empty-text">No employees assigned</span>
+                  )}
                 </div>
               </div>
             </div>

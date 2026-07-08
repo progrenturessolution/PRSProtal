@@ -90,13 +90,18 @@ export default function VerifyIdentity() {
           align-items: center;
           justify-content: center;
           padding: 48px;
-          overflow-y: hidden;
+          overflow-y: auto;
           position: relative;
+          min-height: 100vh;
         }
 
         .verify-right-container {
           width: 100%;
           max-width: 580px;
+        }
+
+        .verify-right-container .login-card {
+          margin: 0 auto;
         }
 
         /* Form styling inherited from login page classes */

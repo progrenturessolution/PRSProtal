@@ -180,7 +180,9 @@ export const taskAPI = {
   sendTaskFeedback: (taskId, message) =>
     api.post(`/task/admin/task-feedback/${taskId}`, { message }),
   editTask: (taskId, taskData) =>
-    api.put(`/task/admin/edit-task/${taskId}`, taskData),
+    api.put(`/task/admin/edit-task/${taskId}`, taskData, {
+      headers: taskData instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    }),
   deleteTask: (taskId) => api.delete(`/task/admin/delete-task/${taskId}`),
 
   // Intern task APIs

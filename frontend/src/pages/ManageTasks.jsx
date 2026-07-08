@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { taskAPI, UPLOADS_BASE } from "../services/api";
+import { taskAPI, adminAPI, UPLOADS_BASE } from "../services/api";
 
 function ManageTasks({ onTaskApproved, onBack }) {
   const [tasks, setTasks] = useState([]);
@@ -17,7 +17,15 @@ function ManageTasks({ onTaskApproved, onBack }) {
     title: "",
     description: "",
     deadline: "",
+    status: "",
   });
+  const [editInterns, setEditInterns] = useState([]);
+  const [editSelectedIntern, setEditSelectedIntern] = useState("");
+  const [editSelectedTeamMembers, setEditSelectedTeamMembers] = useState([]);
+  const [editSearchQuery, setEditSearchQuery] = useState("");
+  const [editFile, setEditFile] = useState(null);
+  const [editFileInputRef] = useState({ current: null });
+  const [editLoading, setEditLoading] = useState(false);
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
   const [viewingTaskDetails, setViewingTaskDetails] = useState(null);
@@ -124,32 +132,64 @@ function ManageTasks({ onTaskApproved, onBack }) {
     }
   };
 
-  const handleEditTask = (task) => {
+  const handleEditTask = async (task) => {
     setEditingTask(task);
     setEditForm({
       title: task.title,
       description: task.description,
       deadline: new Date(task.deadline).toISOString().slice(0, 16),
+      status: task.status,
     });
+    setEditFile(null);
+    setEditSearchQuery("");
+    // Pre-populate assignment
+    if (task.isTeamTask) {
+      setEditSelectedTeamMembers((task.teamMembers || []).map(m => m._id || m));
+      setEditSelectedIntern("");
+    } else {
+      setEditSelectedIntern(task.assignedTo?._id || task.assignedTo || "");
+      setEditSelectedTeamMembers([]);
+    }
+    // Load interns list
+    try {
+      const res = await adminAPI.getAllInterns();
+      setEditInterns(res.data.interns || []);
+    } catch (e) {
+      console.error("Failed to load interns for edit:", e);
+      setEditInterns([]);
+    }
   };
 
   const handleUpdateTask = async (e) => {
     e.preventDefault();
+    setEditLoading(true);
     try {
-      await taskAPI.editTask(editingTask._id, editForm);
+      const formData = new FormData();
+      formData.append("title", editForm.title);
+      formData.append("description", editForm.description);
+      formData.append("deadline", editForm.deadline);
+      formData.append("status", editForm.status);
+      if (editingTask.isTeamTask) {
+        formData.append("teamMembers", JSON.stringify(editSelectedTeamMembers));
+      } else {
+        if (editSelectedIntern) formData.append("assignedTo", editSelectedIntern);
+      }
+      if (editFile) formData.append("taskDocument", editFile);
+
+      const res = await taskAPI.editTask(editingTask._id, formData);
+      const updated = res.data.task;
       setTasks((prev) =>
-        prev.map((t) =>
-          t._id === editingTask._id
-            ? { ...t, ...editForm, deadline: new Date(editForm.deadline) }
-            : t,
-        ),
+        prev.map((t) => (t._id === editingTask._id ? updated : t)),
       );
       setEditingTask(null);
+      setEditFile(null);
       if (onTaskApproved) onTaskApproved();
-      showSuccess("Task updated successfully");
+      showSuccess("Task updated successfully!");
     } catch {
       setError("Failed to update task");
       setTimeout(() => setError(""), 4000);
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -1209,7 +1249,17 @@ function ManageTasks({ onTaskApproved, onBack }) {
         ))}
 
       {/* Edit Task Modal */}
-      {editingTask && (
+      {editingTask && (() => {
+        const filteredEditInterns = editInterns.filter(intern => {
+          const q = editSearchQuery.trim().toLowerCase();
+          if (!q) return true;
+          return (
+            (intern.name || "").toLowerCase().includes(q) ||
+            (intern.email || "").toLowerCase().includes(q) ||
+            (intern.internId || intern.studentId || "").toLowerCase().includes(q)
+          );
+        });
+        return (
         <div
           style={{
             position: "fixed",
@@ -1227,13 +1277,14 @@ function ManageTasks({ onTaskApproved, onBack }) {
             style={{
               background: "white",
               borderRadius: "20px",
-              maxWidth: "600px",
+              maxWidth: "640px",
               width: "100%",
-              maxHeight: "90vh",
+              maxHeight: "92vh",
               overflowY: "auto",
               boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
             }}
           >
+            {/* Header */}
             <div
               style={{
                 padding: "24px 32px",
@@ -1242,27 +1293,17 @@ function ManageTasks({ onTaskApproved, onBack }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
               }}
             >
               <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: "24px",
-                    color: "white",
-                    fontWeight: 700,
-                  }}
-                >
-                  Edit Task
+                <h2 style={{ margin: 0, fontSize: "22px", color: "white", fontWeight: 700 }}>
+                  Edit {editingTask.isTeamTask ? "Group" : "Individual"} Task
                 </h2>
-                <p
-                  style={{
-                    margin: "5px 0 0",
-                    fontSize: "14px",
-                    color: "rgba(255,255,255,0.7)",
-                  }}
-                >
-                  Update task details below
+                <p style={{ margin: "4px 0 0", fontSize: "13px", color: "rgba(255,255,255,0.65)" }}>
+                  Update all task details below
                 </p>
               </div>
               <button
@@ -1284,179 +1325,277 @@ function ManageTasks({ onTaskApproved, onBack }) {
                 ✕
               </button>
             </div>
-            <form onSubmit={handleUpdateTask} style={{ padding: "32px" }}>
-              <div className="form-group">
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Task Title
-                </label>
+
+            {/* Form body */}
+            <form onSubmit={handleUpdateTask} style={{ padding: "28px 32px" }}>
+
+              {/* Task Title */}
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Task Title *</label>
                 <input
                   type="text"
                   value={editForm.title}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, title: e.target.value })
-                  }
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                   required
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "2px solid #e2e8f0",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    outline: "none",
-                  }}
-                  onFocus={(e) =>
-                    (e.currentTarget.style.borderColor = "#3b82f6")
-                  }
-                  onBlur={(e) =>
-                    (e.currentTarget.style.borderColor = "#e2e8f0")
-                  }
+                  style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                 />
               </div>
-              <div className="form-group" style={{ marginTop: "20px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Description
-                </label>
+
+              {/* Description */}
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Description *</label>
                 <textarea
                   value={editForm.description}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, description: e.target.value })
-                  }
-                  rows="5"
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows="4"
                   required
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "2px solid #e2e8f0",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    resize: "vertical",
-                    fontFamily: "inherit",
-                    outline: "none",
-                  }}
-                  onFocus={(e) =>
-                    (e.currentTarget.style.borderColor = "#3b82f6")
-                  }
-                  onBlur={(e) =>
-                    (e.currentTarget.style.borderColor = "#e2e8f0")
-                  }
+                  style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "14px", resize: "vertical", fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                 />
               </div>
-              <div className="form-group" style={{ marginTop: "20px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Deadline
+
+              {/* Deadline + Status in a row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "18px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Deadline *</label>
+                  <input
+                    type="datetime-local"
+                    value={editForm.deadline}
+                    onChange={(e) => setEditForm({ ...editForm, deadline: e.target.value })}
+                    required
+                    style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "14px", outline: "none", boxSizing: "border-box" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Status</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "14px", outline: "none", boxSizing: "border-box", background: "white" }}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                  >
+                    <option value="Assigned">Assigned</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Pending Approval">Pending Approval</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Needs Improvement">Needs Improvement</option>
+                    <option value="Reviewed">Reviewed</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Assigned To — Individual Task */}
+              {!editingTask.isTeamTask && (
+                <div style={{ marginBottom: "18px" }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Assigned Student</label>
+                  <div style={{ marginBottom: "8px" }}>
+                    <input
+                      type="text"
+                      placeholder="Search by name, email or ID…"
+                      value={editSearchQuery}
+                      onChange={(e) => setEditSearchQuery(e.target.value)}
+                      style={{ width: "100%", padding: "9px 14px", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                    />
+                  </div>
+                  <div style={{ maxHeight: "180px", overflowY: "auto", border: "1.5px solid #e2e8f0", borderRadius: "10px" }}>
+                    {filteredEditInterns.length === 0 ? (
+                      <div style={{ padding: "12px 16px", color: "#94a3b8", fontSize: "13px" }}>No students found</div>
+                    ) : filteredEditInterns.map(intern => {
+                      const isSelected = editSelectedIntern === (intern._id || intern.id);
+                      return (
+                        <div
+                          key={intern._id || intern.id}
+                          onClick={() => setEditSelectedIntern(isSelected ? "" : (intern._id || intern.id))}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "12px",
+                            padding: "10px 14px", cursor: "pointer",
+                            background: isSelected ? "#324158" : "white",
+                            borderBottom: "1px solid #f1f5f9",
+                            transition: "background 0.15s",
+                          }}
+                        >
+                          <div style={{
+                            width: "34px", height: "34px", borderRadius: "50%", flexShrink: 0,
+                            background: "white",
+                            color: "#324158", display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "13px", fontWeight: 600
+                          }}>
+                            {(intern.name || "?").charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "13px", fontWeight: 500, color: isSelected ? "#ffffff" : "#0f172a" }}>{intern.name}</div>
+                            <div style={{ fontSize: "11px", color: isSelected ? "rgba(255,255,255,0.7)" : "#64748b" }}>{intern.email} · {intern.internId || intern.studentId}</div>
+                          </div>
+                          <input
+                            type="radio"
+                            checked={isSelected}
+                            readOnly
+                            style={{ pointerEvents: "none", accentColor: "#ffffff" }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {editSelectedIntern && (() => {
+                    const sel = editInterns.find(i => (i._id || i.id) === editSelectedIntern);
+                    return sel ? (
+                      <div style={{ marginTop: "6px", fontSize: "12px", color: "#3b82f6", fontWeight: 500 }}>
+                        ✓ Selected: {sel.name}
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+
+              {/* Team Members — Group Task */}
+              {editingTask.isTeamTask && (
+                <div style={{ marginBottom: "18px" }}>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                    Team Members <span style={{ fontWeight: 400, color: "#64748b" }}>({editSelectedTeamMembers.length} selected)</span>
+                  </label>
+                  <div style={{ marginBottom: "8px" }}>
+                    <input
+                      type="text"
+                      placeholder="Search by name, email or ID…"
+                      value={editSearchQuery}
+                      onChange={(e) => setEditSearchQuery(e.target.value)}
+                      style={{ width: "100%", padding: "9px 14px", border: "1.5px solid #e2e8f0", borderRadius: "10px", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                      onFocus={(e) => (e.currentTarget.style.borderColor = "#3b82f6")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
+                    />
+                  </div>
+                  <div style={{ maxHeight: "200px", overflowY: "auto", border: "1.5px solid #e2e8f0", borderRadius: "10px" }}>
+                    {filteredEditInterns.length === 0 ? (
+                      <div style={{ padding: "12px 16px", color: "#94a3b8", fontSize: "13px" }}>No students found</div>
+                    ) : filteredEditInterns.map(intern => {
+                      const internId = intern._id || intern.id;
+                      const isSelected = editSelectedTeamMembers.includes(internId);
+                      return (
+                        <div
+                          key={internId}
+                          onClick={() => setEditSelectedTeamMembers(prev =>
+                            isSelected ? prev.filter(id => id !== internId) : [...prev, internId]
+                          )}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "12px",
+                            padding: "10px 14px", cursor: "pointer",
+                            background: isSelected ? "#324158" : "white",
+                            borderBottom: "1px solid #f1f5f9",
+                            transition: "background 0.15s",
+                          }}
+                        >
+                          <div style={{
+                            width: "34px", height: "34px", borderRadius: "50%", flexShrink: 0,
+                            background: "white",
+                            color: "#324158", display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: "13px", fontWeight: 600
+                          }}>
+                            {(intern.name || "?").charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "13px", fontWeight: 500, color: isSelected ? "#ffffff" : "#0f172a" }}>{intern.name}</div>
+                            <div style={{ fontSize: "11px", color: isSelected ? "rgba(255,255,255,0.7)" : "#64748b" }}>{intern.email} · {intern.internId || intern.studentId}</div>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            readOnly
+                            style={{ pointerEvents: "none", accentColor: "#ffffff" }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Task Document Upload */}
+              <div style={{ marginBottom: "18px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                  Task Document (PDF)
+                  {editingTask.taskDocument?.filename && (
+                    <span style={{ fontWeight: 400, color: "#64748b", marginLeft: "8px" }}>
+                      — current: <a href={`${UPLOADS_BASE}/${editingTask.taskDocument.filename}`} target="_blank" rel="noreferrer" style={{ color: "#3b82f6" }}>{editingTask.taskDocument.filename}</a>
+                    </span>
+                  )}
                 </label>
-                <input
-                  type="datetime-local"
-                  value={editForm.deadline}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, deadline: e.target.value })
-                  }
-                  required
+                <div
                   style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    border: "2px solid #e2e8f0",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    outline: "none",
+                    border: "1.5px dashed #cbd5e1", borderRadius: "10px", padding: "14px 16px",
+                    display: "flex", alignItems: "center", gap: "12px", cursor: "pointer",
+                    background: editFile ? "#f0fdf4" : "#f8fafc",
                   }}
-                  onFocus={(e) =>
-                    (e.currentTarget.style.borderColor = "#3b82f6")
-                  }
-                  onBlur={(e) =>
-                    (e.currentTarget.style.borderColor = "#e2e8f0")
-                  }
-                />
+                  onClick={() => editFileInputRef.current && editFileInputRef.current.click()}
+                >
+                  <svg width="20" height="20" fill="none" stroke="#64748b" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                  <span style={{ fontSize: "13px", color: editFile ? "#15803d" : "#475569" }}>
+                    {editFile ? `✓ ${editFile.name}` : "Upload new PDF (optional, replaces existing)"}
+                  </span>
+                  <input
+                    ref={(el) => { editFileInputRef.current = el; }}
+                    type="file"
+                    accept="application/pdf"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const f = e.target.files[0];
+                      if (f && f.type === "application/pdf" && f.size <= 10 * 1024 * 1024) {
+                        setEditFile(f);
+                      } else if (f) {
+                        setError("Only PDF files under 10MB are allowed.");
+                        setTimeout(() => setError(""), 4000);
+                      }
+                    }}
+                  />
+                </div>
+                {editFile && (
+                  <button
+                    type="button"
+                    onClick={() => setEditFile(null)}
+                    style={{ marginTop: "6px", background: "none", border: "none", color: "#ef4444", fontSize: "12px", cursor: "pointer", padding: 0 }}
+                  >
+                    ✕ Remove file
+                  </button>
+                )}
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  marginTop: "32px",
-                  paddingTop: "24px",
-                  borderTop: "1px solid #e2e8f0",
-                }}
-              >
+
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: "12px", marginTop: "24px", paddingTop: "20px", borderTop: "1px solid #e2e8f0" }}>
                 <button
                   type="button"
-                  onClick={() => setEditingTask(null)}
+                  onClick={() => { setEditingTask(null); setEditFile(null); }}
                   style={{
-                    flex: 1,
-                    padding: "14px",
-                    background: "#f8fafc",
-                    color: "#334155",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "10px",
-                    fontWeight: 600,
-                    fontSize: "15px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#eff6ff";
-                    e.currentTarget.style.borderColor = "#3b82f6";
-                    e.currentTarget.style.color = "#2563eb";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#f8fafc";
-                    e.currentTarget.style.borderColor = "#cbd5e1";
-                    e.currentTarget.style.color = "#334155";
+                    flex: 1, padding: "13px", background: "#f8fafc", color: "#334155",
+                    border: "1px solid #cbd5e1", borderRadius: "10px", fontWeight: 600, fontSize: "14px", cursor: "pointer",
                   }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  disabled={editLoading}
                   style={{
-                    flex: 1,
-                    padding: "14px",
-                    background: "#344158",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontWeight: 600,
-                    fontSize: "15px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = "0.9";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = "1";
+                    flex: 1, padding: "13px",
+                    background: editLoading ? "#94a3b8" : "#344158",
+                    color: "white", border: "none", borderRadius: "10px",
+                    fontWeight: 600, fontSize: "14px", cursor: editLoading ? "not-allowed" : "pointer",
                   }}
                 >
-                  Update Task
+                  {editLoading ? "Saving…" : "Update Task"}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* View Task Details Modal */}
       {viewingTaskDetails && (

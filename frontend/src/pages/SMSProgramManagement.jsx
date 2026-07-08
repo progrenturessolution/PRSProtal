@@ -23,6 +23,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
   const [certificateName, setCertificateName] = useState('');
   const [uploadingCert, setUploadingCert] = useState(false);
   const [certificateUploadStatus, setCertificateUploadStatus] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [editForm, setEditForm] = useState({
     internId: '',
     name: '',
@@ -346,6 +347,18 @@ function SMSProgramManagement({ onAddStudentClick }) {
   };
 
   const handleEditClick = () => {
+    const total = parseMoney(selectedStudent.totalFees);
+    let completed = parseMoney(selectedStudent.completedFees);
+    if (completed <= 0) {
+      completed = parseMoney(selectedStudent.firstPaymentAmount) +
+                  parseMoney(selectedStudent.secondPaymentAmount) +
+                  parseMoney(selectedStudent.finalPaymentAmount);
+      if (completed <= 0) {
+        completed = parseMoney(selectedStudent.paymentAmount);
+      }
+    }
+    const pending = total > 0 ? Math.max(0, total - completed) : parseMoney(selectedStudent.pendingFees);
+
     setEditForm({
       internId: selectedStudent.internId || '',
       name: selectedStudent.name || '',
@@ -369,8 +382,8 @@ function SMSProgramManagement({ onAddStudentClick }) {
       paymentDoneBy: selectedStudent.paymentDoneBy || '',
       transactionId: selectedStudent.transactionId || '',
       paymentAmount: selectedStudent.paymentAmount || '',
-      completedFees: selectedStudent.completedFees || '',
-      pendingFees: selectedStudent.pendingFees || '',
+      completedFees: String(completed),
+      pendingFees: String(pending),
       dateOfPayment: selectedStudent.dateOfPayment ? selectedStudent.dateOfPayment.split('T')[0] : '',
       lastPaymentDate: selectedStudent.lastPaymentDate ? selectedStudent.lastPaymentDate.split('T')[0] : '',
       status: selectedStudent.status || 'active'
@@ -415,10 +428,11 @@ function SMSProgramManagement({ onAddStudentClick }) {
     try {
       const response = await adminAPI.updateIntern(selectedStudent._id, editForm);
       if (response.data.success) {
+        const updatedStudent = response.data.intern || { ...selectedStudent, ...editForm };
         setStudents(prev => prev.map(s =>
-          s._id === selectedStudent._id ? { ...s, ...editForm } : s
+          s._id === selectedStudent._id ? updatedStudent : s
         ));
-        setSelectedStudent({ ...selectedStudent, ...editForm });
+        setSelectedStudent(updatedStudent);
         setIsEditing(false);
         alert('Student updated successfully!');
       }
@@ -428,9 +442,29 @@ function SMSProgramManagement({ onAddStudentClick }) {
     }
   };
 
+  const formatDateValue = (value) =>
+    value ? new Date(value).toLocaleDateString('en-IN') : "Not set";
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
+    setEditForm(prev => {
+      const next = { ...prev, [name]: value };
+      if (['totalFees', 'completedFees', 'firstPaymentAmount', 'secondPaymentAmount', 'finalPaymentAmount'].includes(name)) {
+        const total = parseMoney(next.totalFees);
+        
+        let completed = parseMoney(next.completedFees);
+        if (['firstPaymentAmount', 'secondPaymentAmount', 'finalPaymentAmount'].includes(name)) {
+          const first = parseMoney(next.firstPaymentAmount);
+          const second = parseMoney(next.secondPaymentAmount);
+          const final = parseMoney(next.finalPaymentAmount);
+          completed = first + second + final;
+          next.completedFees = String(completed);
+        }
+        
+        next.pendingFees = String(Math.max(0, total - completed));
+      }
+      return next;
+    });
   };
 
   const getBatchStartMonthYear = (student) => {
@@ -452,9 +486,6 @@ function SMSProgramManagement({ onAddStudentClick }) {
   };
 
   const getPaidAmount = (student) => {
-    const directPayment = parseMoney(student.paymentAmount);
-    if (directPayment > 0) return directPayment;
-
     const completedFees = parseMoney(student.completedFees);
     if (completedFees > 0) return completedFees;
 
@@ -462,8 +493,10 @@ function SMSProgramManagement({ onAddStudentClick }) {
       parseMoney(student.firstPaymentAmount) +
       parseMoney(student.secondPaymentAmount) +
       parseMoney(student.finalPaymentAmount);
+    if (splitPayments > 0) return splitPayments;
 
-    return splitPayments;
+    const directPayment = parseMoney(student.paymentAmount);
+    return directPayment;
   };
 
   const getTotalFeesDisplay = (student) => {
@@ -963,6 +996,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
                           createPortal(
                             <div
                               data-menu
+                              onClick={() => setOpenMenuId(null)}
                               style={{
                                 position: 'absolute',
                                 left: `${menuPosition.left}px`,
@@ -992,6 +1026,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
                                   fontSize: '14px',
                                   fontWeight: '500',
                                   color: '#0f172a',
+                                  borderBottom: 'none'
                                 }}
                                 onMouseEnter={(e) => e.target.style.background = '#f9fafb'}
                                 onMouseLeave={(e) => e.target.style.background = 'white'}
@@ -1041,6 +1076,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
                                 Certificates
                               </button>
                               <div
+                                onClick={(e) => e.stopPropagation()}
                                 style={{
                                   padding: '10px 16px',
                                   fontSize: '12px',
@@ -1472,209 +1508,496 @@ function SMSProgramManagement({ onAddStudentClick }) {
             </div>
 
             <div className="profile-body">
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Contact Information
-                </h3>
-                {!isEditing ? (
-                  <div className="profile-info-grid">
-                    <div className="profile-field"><label>PSMS ID</label><div className="field-value">{selectedStudent.internId || '-'}</div></div>
-                    <div className="profile-field"><label>Name</label><div className="field-value">{selectedStudent.name || '-'}</div></div>
-                    <div className="profile-field"><label>Email</label><div className="field-value">{selectedStudent.email || '-'}</div></div>
-                    <div className="profile-field"><label>Mobile</label><div className="field-value">{selectedStudent.mobile || '-'}</div></div>
-                    <div className="profile-field"><label>Current Designation</label><div className="field-value">{selectedStudent.currentDesignation || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Added By</label><div className="field-value">{selectedStudent.addedByRepresentative ? selectedStudent.addedByRepresentative.name : 'Admin'}</div></div>
-                  </div>
-                ) : (
-                  <div className="profile-info-grid">
-                    <div className="profile-field"><label>PSMS ID</label><input type="text" name="internId" value={editForm.internId} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Name</label><input type="text" name="name" value={editForm.name} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Email</label><input type="email" name="email" value={editForm.email} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Mobile</label><input type="tel" name="mobile" value={editForm.mobile} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Current Designation</label><input type="text" name="currentDesignation" value={editForm.currentDesignation} onChange={handleInputChange} /></div>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Program Details
-                </h3>
-                {!isEditing ? (
-                  <div className="profile-info-grid">
-                    <div className="profile-field"><label>Suggested Domain</label><div className="field-value">{selectedStudent.suggestedDomain || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Current Qualification</label><div className="field-value">{selectedStudent.currentQualification || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Institute Name</label><div className="field-value">{selectedStudent.instituteName || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Institute Location</label><div className="field-value">{selectedStudent.instituteLocation || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Enrolment Date</label><div className="field-value">{selectedStudent.enrolmentDate ? new Date(selectedStudent.enrolmentDate).toLocaleDateString('en-IN') : 'N/A'}</div></div>
-                    <div className="profile-field"><label>Batch Month</label><div className="field-value">{selectedStudent.enrolBatchMonth || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Total Fees</label><div className="field-value">Rs. {selectedStudent.totalFees || 0}</div></div>
-                  </div>
-                ) : (
-                  <div className="profile-info-grid">
-                    <div className="profile-field"><label>Suggested Domain</label><input type="text" name="suggestedDomain" value={editForm.suggestedDomain} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Current Qualification</label><input type="text" name="currentQualification" value={editForm.currentQualification} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Institute Name</label><input type="text" name="instituteName" value={editForm.instituteName} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Institute Location</label><input type="text" name="instituteLocation" value={editForm.instituteLocation} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Year of Study</label><input type="text" name="yearOfStudy" value={editForm.yearOfStudy} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Enrolment Date</label><input type="date" name="enrolmentDate" value={editForm.enrolmentDate} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Batch Month</label><input type="month" name="enrolBatchMonth" value={editForm.enrolBatchMonth} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Total Fees</label><input type="number" name="totalFees" value={editForm.totalFees} onChange={handleInputChange} /></div>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Payment Details
-                </h3>
-                {!isEditing ? (
-                  <div className="profile-info-grid">
-                    <div className="profile-field"><label>Payment By</label><div className="field-value">{selectedStudent.paymentDoneBy || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Transaction ID</label><div className="field-value">{selectedStudent.transactionId || 'N/A'}</div></div>
-                    <div className="profile-field"><label>Payment Amount</label><div className="field-value">{selectedStudent.paymentAmount ? `Rs. ${selectedStudent.paymentAmount}` : 'N/A'}</div></div>
-                    <div className="profile-field"><label>First Payment</label><div className="field-value">Rs. {selectedStudent.firstPaymentAmount || 0}{selectedStudent.firstPaymentDate ? ` on ${new Date(selectedStudent.firstPaymentDate).toLocaleDateString('en-IN')}` : ''}</div></div>
-                    <div className="profile-field"><label>Second Payment</label><div className="field-value">Rs. {selectedStudent.secondPaymentAmount || 0}{selectedStudent.secondPaymentDate ? ` on ${new Date(selectedStudent.secondPaymentDate).toLocaleDateString('en-IN')}` : ''}</div></div>
-                    <div className="profile-field"><label>Final Payment</label><div className="field-value">Rs. {selectedStudent.finalPaymentAmount || 0}{selectedStudent.finalPaymentDate ? ` on ${new Date(selectedStudent.finalPaymentDate).toLocaleDateString('en-IN')}` : ''}</div></div>
-                    <div className="profile-field"><label>Completed Fees</label><div className="field-value">Rs. {selectedStudent.completedFees || 0}</div></div>
-                    <div className="profile-field"><label>Pending Fees</label><div className="field-value">Rs. {selectedStudent.pendingFees || 0}</div></div>
-                    <div className="profile-field"><label>Payment Date</label><div className="field-value">{selectedStudent.dateOfPayment ? new Date(selectedStudent.dateOfPayment).toLocaleDateString('en-IN') : 'N/A'}</div></div>
-                    <div className="profile-field"><label>Last Payment Date</label><div className="field-value">{selectedStudent.lastPaymentDate ? new Date(selectedStudent.lastPaymentDate).toLocaleDateString('en-IN') : 'N/A'}</div></div>
-                    <div className="profile-field"><label>Status</label><div className="field-value">{selectedStudent.status || 'Active'}</div></div>
-                  </div>
-                ) : (
-                  <div className="profile-info-grid">
-                    <div className="profile-field"><label>Payment By</label><input type="text" name="paymentDoneBy" value={editForm.paymentDoneBy} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Transaction ID</label><input type="text" name="transactionId" value={editForm.transactionId} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Payment Amount</label><input type="number" name="paymentAmount" value={editForm.paymentAmount} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>First Payment Amount</label><input type="number" name="firstPaymentAmount" value={editForm.firstPaymentAmount} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>First Payment Date</label><input type="date" name="firstPaymentDate" value={editForm.firstPaymentDate} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Second Payment Amount</label><input type="number" name="secondPaymentAmount" value={editForm.secondPaymentAmount} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Second Payment Date</label><input type="date" name="secondPaymentDate" value={editForm.secondPaymentDate} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Final Payment Amount</label><input type="number" name="finalPaymentAmount" value={editForm.finalPaymentAmount} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Final Payment Date</label><input type="date" name="finalPaymentDate" value={editForm.finalPaymentDate} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Completed Fees</label><input type="number" name="completedFees" value={editForm.completedFees} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Pending Fees</label><input type="number" name="pendingFees" value={editForm.pendingFees} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Payment Date</label><input type="date" name="dateOfPayment" value={editForm.dateOfPayment} onChange={handleInputChange} /></div>
-                    <div className="profile-field"><label>Last Payment Date</label><input type="date" name="lastPaymentDate" value={editForm.lastPaymentDate} onChange={handleInputChange} /></div>
-                    <div className="profile-field">
-                      <label>Status</label>
-                      <select name="status" value={editForm.status} onChange={handleInputChange}>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                        <option value="completed">Completed</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="profile-section">
-                <h3 className="profile-section-title">
-                  <span className="profile-section-bar" />
-                  Documents &amp; Certificates
-                </h3>
-                <div style={{ display: "grid", gap: "10px" }}>
-                  {[
-                    { key: "offerLetter", label: "Offer Letter" },
-                    { key: "welcomeLetter", label: "Welcome Letter" },
-                    { key: "paymentReceipt", label: "Payment Receipt" },
-                    { key: "smsProgramEnrollmentLetter", label: "SMS Program Enrollment Letter" },
-                    { key: "completionCertificate", label: "Completion Certificate" },
-                    { key: "experienceLetter", label: "Experience Letter" },
-                  ].map(({ key, label }) => (
-                    <div
-                      key={key}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "10px 14px",
-                        background: "#f8fafc",
-                        borderRadius: "8px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>
-                          {label}
-                        </div>
-                        {selectedStudent.documents?.[key] && (
-                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                            Uploaded: {new Date(selectedStudent.documents[key].uploadedAt || Date.now()).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                      {selectedStudent.documents?.[key] ? (
-                        <a
-                          href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents[key].filename}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            padding: "6px 14px",
-                            background: "#324158",
-                            color: "white",
-                            textDecoration: "none",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            fontWeight: "600",
-                          }}
-                        >
-                          View
-                        </a>
-                      ) : (
-                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                          Not uploaded
-                        </span>
+              {!isEditing ? (
+                <>
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar" />
+                      Contact Information
+                    </h3>
+                    <div className="profile-info-grid">
+                      <div className="profile-field"><label>Name</label><div className="field-value">{selectedStudent.name || "-"}</div></div>
+                      <div className="profile-field"><label>Email</label><div className="field-value">{selectedStudent.email || "-"}</div></div>
+                      <div className="profile-field"><label>Password</label><div className="field-value" style={{ fontWeight: "600", color: "#0f172a" }}>{selectedStudent.plainPassword || "intern"}</div></div>
+                      <div className="profile-field"><label>PIID</label><div className="field-value">{selectedStudent.internId || "-"}</div></div>
+                      <div className="profile-field"><label>Mobile</label><div className="field-value">{selectedStudent.mobile || "-"}</div></div>
+                      <div className="profile-field"><label>Current Designation</label><div className="field-value">{selectedStudent.currentDesignation || "Not set"}</div></div>
+                      <div className="profile-field"><label>Added By</label><div className="field-value">{selectedStudent.addedByRepresentative?.name || "Admin"}</div></div>
+                      <div className="profile-field"><label>Registered On</label><div className="field-value">{formatDateValue(selectedStudent.createdAt)}</div></div>
+                      <div className="profile-field"><label>Joining Date</label><div className="field-value">{formatDateValue(selectedStudent.joiningDate)}</div></div>
+                      <div className="profile-field"><label>Ending Date</label><div className="field-value">{formatDateValue(selectedStudent.endingDate)}</div></div>
+                      <div className="profile-field"><label>Duration</label><div className="field-value">{selectedStudent.duration || "Not set"}</div></div>
+                      {selectedStudent.assignedTrainer && (
+                        <>
+                          <div className="profile-field"><label>Assigned Employee</label><div className="field-value">{selectedStudent.assignedTrainer.name || selectedStudent.assignedTrainer}</div></div>
+                          <div className="profile-field"><label>Employee Email</label><div className="field-value">{selectedStudent.assignedTrainer.email || "Not available"}</div></div>
+                        </>
                       )}
                     </div>
-                  ))}
+                  </div>
 
-                  {(selectedStudent.documents?.otherCertificates || []).map((cert, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "10px 14px",
-                        background: "#f8fafc",
-                        borderRadius: "8px",
-                        border: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>
-                          {cert.name || `Certificate ${i + 1}`}
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar" />
+                      {selectedStudent.studentType === "Internship" ? "Internship Details" : "Program Details"}
+                    </h3>
+                    <div className="profile-info-grid">
+                      {selectedStudent.studentType === "Internship" ? (
+                        <>
+                          <div className="profile-field"><label>Domain</label><div className="field-value">{selectedStudent.domain || "Not set"}</div></div>
+                          <div className="profile-field"><label>Stipend</label><div className="field-value">{(selectedStudent.stipendType === 'Stipend') ? `Stipend — Rs. ${selectedStudent.stipendAmount || '0'}` : (selectedStudent.stipendType || 'Unstipend')}</div></div>
+                          <div className="profile-field"><label>College Name</label><div className="field-value">{selectedStudent.collegeName || "Not set"}</div></div>
+                          <div className="profile-field"><label>Branch</label><div className="field-value">{selectedStudent.branch || "Not set"}</div></div>
+                          <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || "Not set"}</div></div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="profile-field"><label>Suggested Domain</label><div className="field-value">{selectedStudent.suggestedDomain || "Not set"}</div></div>
+                          <div className="profile-field"><label>Current Qualification</label><div className="field-value">{selectedStudent.currentQualification || "Not set"}</div></div>
+                          <div className="profile-field"><label>Institute Name</label><div className="field-value">{selectedStudent.instituteName || "Not set"}</div></div>
+                          <div className="profile-field"><label>Institute Location</label><div className="field-value">{selectedStudent.instituteLocation || "Not set"}</div></div>
+                          <div className="profile-field"><label>Enrolment Date</label><div className="field-value">{formatDateValue(selectedStudent.enrolmentDate)}</div></div>
+                          <div className="profile-field"><label>Batch Month</label><div className="field-value">{selectedStudent.enrolBatchMonth || "Not set"}</div></div>
+                          <div className="profile-field"><label>Total Fees</label><div className="field-value">Rs. {selectedStudent.totalFees || 0}</div></div>
+                          <div className="profile-field"><label>Completed Fees</label><div className="field-value">Rs. {selectedStudent.completedFees || 0}</div></div>
+                          <div className="profile-field"><label>Pending Fees</label><div className="field-value">Rs. {selectedStudent.pendingFees || 0}</div></div>
+                          <div className="profile-field"><label>Gender</label><div className="field-value">{selectedStudent.gender || "Not set"}</div></div>
+                          <div className="profile-field"><label>Payment Done By</label><div className="field-value">{selectedStudent.paymentDoneBy || "Not set"}</div></div>
+                          <div className="profile-field"><label>Transaction ID</label><div className="field-value">{selectedStudent.transactionId || "Not set"}</div></div>
+                          <div className="profile-field"><label>Payment Amount</label><div className="field-value">Rs. {selectedStudent.paymentAmount || 0}</div></div>
+                          <div className="profile-field"><label>Date of Payment</label><div className="field-value">{formatDateValue(selectedStudent.dateOfPayment)}</div></div>
+                          <div className="profile-field"><label>Last Payment Date</label><div className="field-value">{formatDateValue(selectedStudent.lastPaymentDate)}</div></div>
+                          <div className="profile-field"><label>First Payment</label><div className="field-value">Rs. {selectedStudent.firstPaymentAmount || 0}{selectedStudent.firstPaymentDate ? ` on ${formatDateValue(selectedStudent.firstPaymentDate)}` : ""}</div></div>
+                          <div className="profile-field"><label>Second Payment</label><div className="field-value">Rs. {selectedStudent.secondPaymentAmount || 0}{selectedStudent.secondPaymentDate ? ` on ${formatDateValue(selectedStudent.secondPaymentDate)}` : ""}</div></div>
+                          <div className="profile-field"><label>Final Payment</label><div className="field-value">Rs. {selectedStudent.finalPaymentAmount || 0}{selectedStudent.finalPaymentDate ? ` on ${formatDateValue(selectedStudent.finalPaymentDate)}` : ""}</div></div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar"></span>
+                      Documents &amp; Certificates
+                    </h3>
+                    <div style={{ display: "grid", gap: "10px" }}>
+                      {[
+                        { key: "offerLetter", label: "Offer Letter" },
+                        { key: "welcomeLetter", label: "Welcome Letter" },
+                        { key: "paymentReceipt", label: "Payment Receipt" },
+                        { key: "smsProgramEnrollmentLetter", label: "SMS Program Enrollment Letter" },
+                        { key: "completionCertificate", label: "Completion Certificate" },
+                        { key: "experienceLetter", label: "Experience Letter" },
+                      ].map(({ key, label }) => (
+                        <div
+                          key={key}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "10px 14px",
+                            background: "#f8fafc",
+                            borderRadius: "8px",
+                            border: "1px solid #e2e8f0",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>
+                              {label}
+                            </div>
+                            {selectedStudent.documents?.[key] && (
+                              <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                                Uploaded: {new Date(selectedStudent.documents[key].uploadedAt || Date.now()).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                          {selectedStudent.documents?.[key] ? (
+                            <a
+                              href={`${UPLOADS_BASE}/uploads/students/${selectedStudent.documents[key].filename}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                padding: "6px 14px",
+                                background: "#324158",
+                                color: "white",
+                                textDecoration: "none",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              View
+                            </a>
+                          ) : (
+                            <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+                              Not uploaded
+                            </span>
+                          )}
                         </div>
-                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                          Uploaded: {new Date(cert.uploadedAt || Date.now()).toLocaleDateString()}
+                      ))}
+
+                      {/* Other Certificates */}
+                      {(selectedStudent.documents?.otherCertificates || []).map((cert, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "10px 14px",
+                            background: "#f8fafc",
+                            borderRadius: "8px",
+                            border: "1px solid #e2e8f0",
+                          }}
+                        >
+                          <div>
+                            <div style={{ fontSize: "14px", fontWeight: "600", color: "#0f172a" }}>
+                              {cert.name || `Certificate ${i + 1}`}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                              Uploaded: {new Date(cert.uploadedAt || Date.now()).toLocaleDateString()}
+                            </div>
+                          </div>
+                          <a
+                            href={`${UPLOADS_BASE}/uploads/students/${cert.filename}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              padding: "6px 14px",
+                              background: "#324158",
+                              color: "white",
+                              textDecoration: "none",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              fontWeight: "600",
+                            }}
+                          >
+                            View
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar" />
+                      Basic Information
+                    </h3>
+                    <div className="profile-info-grid">
+                      <div className="profile-field">
+                        <label>Student ID</label>
+                        <input value={editForm.internId} readOnly style={{ background: '#f1f5f9' }} />
+                      </div>
+                      <div className="profile-field">
+                        <label>Password</label>
+                        <div className="password-input-wrapper">
+                          <input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={editForm.password}
+                            onChange={handleInputChange}
+                            placeholder="Enter password"
+                          />
+                          <button
+                            type="button"
+                            className="password-toggle-btn"
+                            onClick={() => setShowPassword(!showPassword)}
+                            title={showPassword ? "Hide password" : "Show password"}
+                          >
+                            {showPassword ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                            )}
+                          </button>
                         </div>
                       </div>
-                      <a
-                        href={`${UPLOADS_BASE}/uploads/students/${cert.filename}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          padding: "6px 14px",
-                          background: "#324158",
-                          color: "white",
-                          textDecoration: "none",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          fontWeight: "600",
-                        }}
-                      >
-                        View
-                      </a>
+                      <div className="profile-field">
+                        <label>Full Name</label>
+                        <input
+                          name="name"
+                          value={editForm.name}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Email</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={editForm.email}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Mobile</label>
+                        <input
+                          name="mobile"
+                          value={editForm.mobile}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Current Designation</label>
+                        <input
+                          name="currentDesignation"
+                          value={editForm.currentDesignation}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Joining Date</label>
+                        <input
+                          type="date"
+                          name="joiningDate"
+                          value={editForm.joiningDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Ending Date</label>
+                        <input
+                          type="date"
+                          name="endingDate"
+                          value={editForm.endingDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Duration</label>
+                        <input
+                          name="duration"
+                          value={editForm.duration}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Stipend Type</label>
+                        <select name="stipendType" value={editForm.stipendType} onChange={handleInputChange}>
+                          <option value="Unstipend">Unstipend</option>
+                          <option value="Stipend">Stipend</option>
+                        </select>
+                      </div>
+                      {editForm.stipendType === 'Stipend' && (
+                        <div className="profile-field">
+                          <label>Stipend Amount (Rs.)</label>
+                          <input name="stipendAmount" value={editForm.stipendAmount} onChange={handleInputChange} />
+                        </div>
+                      )}
+                      <div className="profile-field">
+                        <label>Status</label>
+                        <select name="status" value={editForm.status} onChange={handleInputChange}>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar" />
+                      Program Details
+                    </h3>
+                    <div className="profile-info-grid">
+                      <div className="profile-field">
+                        <label>Suggested Domain</label>
+                        <input
+                          name="suggestedDomain"
+                          value={editForm.suggestedDomain}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Current Qualification</label>
+                        <input
+                          name="currentQualification"
+                          value={editForm.currentQualification}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Institute Name</label>
+                        <input
+                          name="instituteName"
+                          value={editForm.instituteName}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Institute Location</label>
+                        <input
+                          name="instituteLocation"
+                          value={editForm.instituteLocation}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Enrolment Date</label>
+                        <input
+                          type="date"
+                          name="enrolmentDate"
+                          value={editForm.enrolmentDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Batch Month</label>
+                        <input
+                          type="month"
+                          name="enrolBatchMonth"
+                          value={editForm.enrolBatchMonth}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Total Fees</label>
+                        <input
+                          name="totalFees"
+                          value={editForm.totalFees}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Completed Fees</label>
+                        <input
+                          name="completedFees"
+                          value={editForm.completedFees}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Pending Fees [Auto]</label>
+                        <input
+                          name="pendingFees"
+                          value={editForm.pendingFees}
+                          readOnly
+                          style={{ background: '#f1f5f9' }}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Gender</label>
+                        <select
+                          name="gender"
+                          value={editForm.gender}
+                          onChange={handleInputChange}
+                        >
+                          <option value="">Select gender</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="profile-section">
+                    <h3 className="profile-section-title">
+                      <span className="profile-section-bar" />
+                      Payment Details
+                    </h3>
+                    <div className="profile-info-grid">
+                      <div className="profile-field">
+                        <label>Payment Done By</label>
+                        <input
+                          name="paymentDoneBy"
+                          value={editForm.paymentDoneBy}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Transaction ID</label>
+                        <input
+                          name="transactionId"
+                          value={editForm.transactionId}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Date of Payment</label>
+                        <input
+                          type="date"
+                          name="dateOfPayment"
+                          value={editForm.dateOfPayment}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>First Payment Amount</label>
+                        <input
+                          name="firstPaymentAmount"
+                          value={editForm.firstPaymentAmount}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>First Payment Date</label>
+                        <input
+                          type="date"
+                          name="firstPaymentDate"
+                          value={editForm.firstPaymentDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Second Payment Amount</label>
+                        <input
+                          name="secondPaymentAmount"
+                          value={editForm.secondPaymentAmount}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Second Payment Date</label>
+                        <input
+                          type="date"
+                          name="secondPaymentDate"
+                          value={editForm.secondPaymentDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Final Payment Amount</label>
+                        <input
+                          name="finalPaymentAmount"
+                          value={editForm.finalPaymentAmount}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Final Payment Date</label>
+                        <input
+                          type="date"
+                          name="finalPaymentDate"
+                          value={editForm.finalPaymentDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                      <div className="profile-field">
+                        <label>Last Payment Date</label>
+                        <input
+                          type="date"
+                          name="lastPaymentDate"
+                          value={editForm.lastPaymentDate}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
               {showCertificateUpload && (
                 <div style={{
@@ -1828,35 +2151,59 @@ function SMSProgramManagement({ onAddStudentClick }) {
                 </div>
               )}
 
-              <div className="profile-actions">
+              <div className="profile-actions" style={{ padding: "20px 24px", margin: "0" }}>
                 {!isEditing ? (
                   <>
                     <button
+                      className="profile-btn profile-btn-edit"
+                      style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
                       onClick={handleEditClick}
-                      className="profile-btn profile-btn-primary"
-                      style={{ background: '#324158', borderColor: '#324158' }}
                     >
                       Edit Profile
                     </button>
                     <button
+                      className="profile-btn profile-btn-certificates"
+                      style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
                       onClick={() => setShowCertificateUpload(!showCertificateUpload)}
-                      className="profile-btn profile-btn-secondary"
-                      style={{ background: '#324158', color: 'white', border: 'none', boxShadow: '0 4px 12px rgba(50, 65, 88, 0.2)' }}
                     >
                       {showCertificateUpload ? 'Hide' : 'Manage Certificates'}
+                    </button>
+                    <button
+                      className="profile-btn profile-btn-close"
+                      style={{ background: "#324158", color: "white", border: "none", boxShadow: "0 4px 12px rgba(50, 65, 88, 0.2)" }}
+                      onClick={() => {
+                        setSelectedStudent(null);
+                        setIsEditing(false);
+                        setShowCertificateUpload(false);
+                      }}
+                    >
+                      Close
                     </button>
                   </>
                 ) : (
                   <>
-                    <button onClick={handleCancelEdit} className="profile-btn profile-btn-ghost">Cancel</button>
-                    <button onClick={handleUpdateStudent} className="profile-btn profile-btn-primary">Save Changes</button>
+                    <button
+                      type="button"
+                      className="profile-btn profile-btn-ghost"
+                      onClick={handleCancelEdit}
+                      style={{ background: '#ffffff', color: '#324158', border: '2px solid #324158' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="profile-btn profile-btn-primary"
+                      onClick={handleUpdateStudent}
+                      style={{ background: '#324158', color: 'white', border: 'none', boxShadow: '0 4px 12px rgba(50, 65, 88, 0.2)' }}
+                    >
+                      Save Changes
+                    </button>
                   </>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       {showInactiveModal && inactiveModalStudent && createPortal(
         <div
           className="profile-modal-overlay"

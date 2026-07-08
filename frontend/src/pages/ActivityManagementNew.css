@@ -84,7 +84,7 @@
 .am-summary-card strong { font-size:15px; color:#0f172a }
 .am-form-layout { display:grid; gap:16px }
 .am-form-layout-two { grid-template-columns:minmax(0, 1.1fr) minmax(340px, 0.9fr) }
-.am-form-panel, .am-preview-panel { background:#fff; border:1px solid #e6eef8; border-radius:16px; padding:18px; box-shadow:0 8px 24px rgba(15,23,42,0.04) }
+.am-form-panel, .am-preview-panel { background:#fff; border:1px solid #e6eef8; border-radius:16px; padding:18px; box-shadow:0 8px 24px rgba(15,23,42,0.04); overflow: visible; }
 .am-panel-head { margin-bottom:14px }
 .am-panel-head h4 { margin:0; font-size:16px; color:#0f172a }
 .am-panel-head p { margin:6px 0 0 0; color:#64748b; font-size:13px; line-height:1.45 }

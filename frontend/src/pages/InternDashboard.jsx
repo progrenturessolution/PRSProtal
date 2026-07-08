@@ -328,7 +328,13 @@ function InternDashboard() {
                       <td>{getScheduledInterviewMode(interview)}</td>
                       <td>{interview.trainerId?.name || interview.details?.form?.interviewerName || interview.details?.form?.trainerId || "-"}</td>
                       <td>
-                        <span className="status-badge status-pending">
+                        <span className={`status-badge ${
+                          String(interview.status).toLowerCase() === 'completed'
+                            ? 'status-completed'
+                            : String(interview.status).toLowerCase() === 'cancelled'
+                              ? 'status-inactive'
+                              : 'status-pending'
+                        }`}>
                           {interview.status || "Scheduled"}
                         </span>
                       </td>
@@ -376,7 +382,13 @@ function InternDashboard() {
                       <td>{gd.startTime || gd.details?.form?.startTime || '-'}</td>
                       <td>{getGdGroupLabelForUser(gd)}</td>
                       <td>{getGdInterviewer(gd)}</td>
-                      <td><span className="status-badge status-pending">{gd.status || 'Scheduled'}</span></td>
+                      <td><span className={`status-badge ${
+                        String(gd.status).toLowerCase() === 'completed'
+                          ? 'status-completed'
+                          : String(gd.status).toLowerCase() === 'cancelled'
+                            ? 'status-inactive'
+                            : 'status-pending'
+                      }`}>{gd.status || 'Scheduled'}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -397,7 +409,7 @@ function InternDashboard() {
         </div>
 
         <div className="card student-history-card" style={{ marginBottom: "16px" }}>
-          <h2>Upcoming Assignments — Individual</h2>
+          <h2>Upcoming Assessments — Individual</h2>
           {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").length === 0 ? (
             <p className="record-history-empty">No individual scheduled assessments yet</p>
           ) : (
@@ -419,7 +431,13 @@ function InternDashboard() {
                       <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
                       <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
                       <td>{a.createdBy || '-'}</td>
-                      <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                      <td><span className={`status-badge ${
+                        String(a.status).toLowerCase() === 'completed'
+                          ? 'status-completed'
+                          : String(a.status).toLowerCase() === 'cancelled'
+                            ? 'status-inactive'
+                            : 'status-pending'
+                      }`}>{a.status || 'Scheduled'}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -429,7 +447,7 @@ function InternDashboard() {
         </div>
 
         <div className="card student-history-card">
-          <h2>Upcoming Assignments — Group</h2>
+          <h2>Upcoming Assessments — Group</h2>
           {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").length === 0 ? (
             <p className="record-history-empty">No group scheduled assessments yet</p>
           ) : (
@@ -451,7 +469,13 @@ function InternDashboard() {
                       <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
                       <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
                       <td>{a.createdBy || '-'}</td>
-                      <td><span className="status-badge status-pending">{a.status || 'Scheduled'}</span></td>
+                      <td><span className={`status-badge ${
+                        String(a.status).toLowerCase() === 'completed'
+                          ? 'status-completed'
+                          : String(a.status).toLowerCase() === 'cancelled'
+                            ? 'status-inactive'
+                            : 'status-pending'
+                      }`}>{a.status || 'Scheduled'}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -532,7 +556,7 @@ function InternDashboard() {
                             </span>
                           </td>
                           <td>{apt.remarks || "-"}</td>
-                          <td>{apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "-"}</td>
+                          <td>{apt.date ? new Date(apt.date).toLocaleDateString() : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "-"}</td>
                         </tr>
                       ))
                     )}
@@ -622,7 +646,7 @@ function InternDashboard() {
                             </span>
                           </td>
                           <td>{assessment.feedback || "-"}</td>
-                          <td>{assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "-"}</td>
+                          <td>{assessment.date ? new Date(assessment.date).toLocaleDateString() : assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "-"}</td>
                         </tr>
                       ))
                     )}
@@ -953,7 +977,7 @@ function InternDashboard() {
             dateTime: note.createdAt,
             createdAt: note.createdAt,
             createdBy: note.createdBy?.email || note.createdBy?.name || 'Admin',
-            status: 'Scheduled',
+            status: note.activityId?.status || 'Scheduled',
             details: { notification: note },
           }));
 
@@ -1272,7 +1296,7 @@ function InternDashboard() {
               title: note.title,
               dateTime: note.createdAt,
               createdBy: note.createdBy?.email || note.createdBy?.name || 'Admin',
-              status: 'Scheduled',
+              status: note.activityId?.status || 'Scheduled',
               details: { notification: note },
             });
           });
@@ -1455,7 +1479,7 @@ function InternDashboard() {
               <tbody>
                 ${allAptitudes.map(apt => `
                   <tr>
-                    <td>${apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${apt.date ? new Date(apt.date).toLocaleDateString('en-IN') : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>Round ${apt.roundNumber}</td>
                     <td>${apt.score}</td>
                     <td>${apt.result}</td>
@@ -1483,7 +1507,7 @@ function InternDashboard() {
               <tbody>
                 ${allAssessments.map(assess => `
                   <tr>
-                    <td>${assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${assess.date ? new Date(assess.date).toLocaleDateString('en-IN') : assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${assess.assessmentType}</td>
                     <td>${assess.score || '-'}</td>
                     <td>${assess.status}</td>
@@ -1939,7 +1963,7 @@ function InternDashboard() {
       apt?.score,
       apt?.result,
       apt?.remarks,
-      apt?.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "",
+      apt?.date ? new Date(apt.date).toLocaleDateString() : apt?.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "",
     ];
 
     return fields.some((field) => String(field || "").toLowerCase().includes(query));
@@ -1955,7 +1979,7 @@ function InternDashboard() {
       assessment?.score,
       assessment?.status,
       assessment?.feedback,
-      assessment?.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "",
+      assessment?.date ? new Date(assessment.date).toLocaleDateString() : assessment?.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "",
     ];
 
     return fields.some((field) => String(field || "").toLowerCase().includes(query));
@@ -2008,6 +2032,12 @@ function InternDashboard() {
   const isOverdue = (deadline) => {
     return new Date(deadline) < new Date();
   };
+
+  const sortTasksNewestFirst = (taskList) =>
+    [...taskList].sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
+    );
 
   const getTaskStats = () => {
     const individualTasks = tasks.filter((t) => !t.isTeamTask);
@@ -3145,8 +3175,7 @@ function InternDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {tasks
-                          .filter((t) => !t.isTeamTask)
+                        {sortTasksNewestFirst(tasks.filter((t) => !t.isTeamTask))
                           .map((task, idx) => {
                             const latestUpdate = getLatestTaskUpdate(task);
                             const isEven = idx % 2 === 0;

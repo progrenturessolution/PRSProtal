@@ -49,18 +49,28 @@ export default function ActivityManagementNew() {
   const [activeGdGroupId, setActiveGdGroupId] = useState('');
   const [generatedSlots, setGeneratedSlots] = useState([]);
   const [editingInterviewActivityId, setEditingInterviewActivityId] = useState(null);
+  // Interview Individual Mode Dropdown State
+  const [isInterviewIndividualDropdownOpen, setIsInterviewIndividualDropdownOpen] = useState(false);
+  const [interviewIndividualDropdownSearchText, setInterviewIndividualDropdownSearchText] = useState('');
+  // Interview Group Mode Dropdown State
+  const [isInterviewGroupDropdownOpen, setIsInterviewGroupDropdownOpen] = useState(false);
+  const [interviewGroupDropdownSearchText, setInterviewGroupDropdownSearchText] = useState('');
 
   const [editingGdActivityId, setEditingGdActivityId] = useState(null);
 
   // GD form
   const [gdForm, setGdForm] = useState({ title: '', date: '', startTime: '09:00', groupMode: 'Auto', groupSize: 5, interviewer: '' });
   const [gdGroups, setGdGroups] = useState([]);
+  const [isGdDropdownOpen, setIsGdDropdownOpen] = useState(false);
+  const [gdDropdownSearchText, setGdDropdownSearchText] = useState('');
 
   // Assessment form
   const [assessForm, setAssessForm] = useState({ type: 'Technical', title: '', description: '', date: '', time: '09:00', duration: 60, link: '', interviewer: '' });
   const [assessSelected, setAssessSelected] = useState([]);
   const [activeAssessGroupId, setActiveAssessGroupId] = useState('');
   const [editingAssessActivityId, setEditingAssessActivityId] = useState(null);
+  const [isAssessDropdownOpen, setIsAssessDropdownOpen] = useState(false);
+  const [assessDropdownSearchText, setAssessDropdownSearchText] = useState('');
 
   const filteredActivities = activities.filter((activity) => {
     if (activityFilter === 'all') return true;
@@ -103,22 +113,51 @@ export default function ActivityManagementNew() {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!openActionMenu) return;
-      if (
-        e.target.closest("[data-menu]") ||
-        e.target.closest("[data-menu-toggle]")
-      )
-        return;
-      setOpenActionMenu(null);
-      setActionMenuPos(null);
+      // Close action menu
+      if (openActionMenu) {
+        if (
+          !e.target.closest("[data-menu]") &&
+          !e.target.closest("[data-menu-toggle]")
+        ) {
+          setOpenActionMenu(null);
+          setActionMenuPos(null);
+        }
+      }
+
+      // Close Interview Individual Dropdown
+      if (isInterviewIndividualDropdownOpen) {
+        if (!e.target.closest("[data-interview-individual-dropdown]")) {
+          setIsInterviewIndividualDropdownOpen(false);
+        }
+      }
+
+      // Close Interview Group Dropdown
+      if (isInterviewGroupDropdownOpen) {
+        if (!e.target.closest("[data-interview-group-dropdown]")) {
+          setIsInterviewGroupDropdownOpen(false);
+        }
+      }
+
+      // Close GD Dropdown
+      if (isGdDropdownOpen) {
+        if (!e.target.closest("[data-gd-dropdown]")) {
+          setIsGdDropdownOpen(false);
+        }
+      }
+
+      // Close Assessment Dropdown
+      if (isAssessDropdownOpen) {
+        if (!e.target.closest("[data-assess-dropdown]")) {
+          setIsAssessDropdownOpen(false);
+        }
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    window.addEventListener('scroll', handleClickOutside, true);
+    // Don't close dropdowns on scroll inside the modal
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      window.removeEventListener('scroll', handleClickOutside, true);
     };
-  }, [openActionMenu]);
+  }, [openActionMenu, isInterviewIndividualDropdownOpen, isInterviewGroupDropdownOpen, isGdDropdownOpen, isAssessDropdownOpen]);
 
   async function fetchActivities() {
     setLoading(true);
@@ -275,7 +314,7 @@ export default function ActivityManagementNew() {
             type: 'Interview',
             title: `${interviewTypeToSend} Interview (${interviewForm.mode})`,
             dateTime: `${interviewForm.date}T${interviewForm.startTime}:00`,
-            status: 'Scheduled',
+            status: isEditingInterviewActivity ? 'Rescheduled' : 'Scheduled',
             details: {
               trainerId: payload.trainerId,
               interviewerId: payload.trainerId,
@@ -339,7 +378,7 @@ export default function ActivityManagementNew() {
       }
       const gdGroupsToSend = getGdGroupsPayload();
       const payloadDetails = { form: gdForm, groups: gdGroupsToSend, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId || '' };
-      const activityPayload = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: gdForm.date ? `${gdForm.date}T${gdForm.startTime||'00:00'}:00` : undefined, status: 'Scheduled', details: payloadDetails };
+      const activityPayload = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: gdForm.date ? `${gdForm.date}T${gdForm.startTime||'00:00'}:00` : undefined, status: Boolean(editingGdActivityId) ? 'Rescheduled' : 'Scheduled', details: payloadDetails };
       const isEditing = Boolean(editingGdActivityId);
       const res = isEditing
         ? await adminAPI.updateActivity(editingGdActivityId, { title: activityPayload.title, dateTime: activityPayload.dateTime, status: activityPayload.status, type: activityPayload.type, details: activityPayload.details })
@@ -367,7 +406,7 @@ export default function ActivityManagementNew() {
       if (activeAssessGroupId) details.mode = 'Group';
       if (activeAssessGroupId) details.groupId = activeAssessGroupId;
 
-      const activityPayload = { type: 'Assessment', title: assessForm.title || `${assessForm.type} Assessment`, dateTime: assessForm.date ? `${assessForm.date}T${assessForm.time||'00:00'}:00` : undefined, status: 'Scheduled', details };
+      const activityPayload = { type: 'Assessment', title: assessForm.title || `${assessForm.type} Assessment`, dateTime: assessForm.date ? `${assessForm.date}T${assessForm.time||'00:00'}:00` : undefined, status: Boolean(editingAssessActivityId) ? 'Rescheduled' : 'Scheduled', details };
       const isEditing = Boolean(editingAssessActivityId);
       let res;
       if (isEditing) {
@@ -402,6 +441,250 @@ export default function ActivityManagementNew() {
       }
     } catch (e) { console.error('Save assessment error:', e); alert('Failed to schedule assessment'); }
   }
+
+  const getStudentInfo = (id) => {
+    const found = students.find(s => String(s._id || s.id) === String(id));
+    return found ? { name: found.name, internId: found.internId || found.psmsId || '-', email: found.email || '-' } : { name: 'Unknown Student', internId: '-', email: '-' };
+  };
+
+  const downloadActivityPDF = (activity) => {
+    if (!activity) return;
+    try {
+      const type = String(activity.type || '').toUpperCase();
+      const dateStr = activity.dateTime ? new Date(activity.dateTime).toLocaleString('en-IN') : 'N/A';
+      
+      let detailsHtml = '';
+      
+      if (type.includes('INTERVIEW')) {
+        const studentIds = activity.details?.studentIds || [];
+        const slots = activity.details?.slots || [];
+        const interviewer = activity.details?.interviewerName || 'N/A';
+        const mode = activity.details?.mode || 'Individual';
+        const intType = activity.details?.interviewType || 'N/A';
+        
+        detailsHtml = `
+          <div class="section-title">Interview Configuration</div>
+          <table class="info-table">
+            <tr>
+              <td><strong>Interviewer:</strong> ${interviewer}</td>
+              <td><strong>Interview Type:</strong> ${intType}</td>
+            </tr>
+            <tr>
+              <td><strong>Mode:</strong> ${mode}</td>
+              <td><strong>Total Students:</strong> ${studentIds.length}</td>
+            </tr>
+          </table>
+          
+          <div class="section-title">Assigned Students & Slots</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>PSMS ID</th>
+                <th>Student Name</th>
+                <th>Email</th>
+                <th>Slot Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${studentIds.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No students assigned</td></tr>' : 
+                studentIds.map((id, index) => {
+                  const studentInfo = getStudentInfo(id);
+                  const slot = slots.find(s => String(s.studentId) === String(id));
+                  const slotTimeStr = slot && slot.date ? new Date(slot.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : (slot?.startTime || 'N/A');
+                  return `
+                    <tr>
+                      <td>${index + 1}</td>
+                      <td>${studentInfo.internId}</td>
+                      <td>${studentInfo.name}</td>
+                      <td>${studentInfo.email}</td>
+                      <td>${slotTimeStr}</td>
+                    </tr>
+                  `;
+                }).join('')
+              }
+            </tbody>
+          </table>
+        `;
+      } else if (type.includes('GD')) {
+        const interviewer = activity.details?.interviewerName || 'N/A';
+        const groups = activity.details?.groups || [];
+        const groupName = activity.details?.form?.groupName || 'N/A';
+        
+        const gdStudents = [];
+        groups.forEach(g => {
+          const members = Array.isArray(g) ? g : (g.members || []);
+          members.forEach(m => {
+            const mid = m?._id || m?.id || m?.studentId || m || '';
+            if (mid) gdStudents.push(mid);
+          });
+        });
+        
+        detailsHtml = `
+          <div class="section-title">GD Configuration</div>
+          <table class="info-table">
+            <tr>
+              <td><strong>Moderator / Trainer:</strong> ${interviewer}</td>
+              <td><strong>Target Group:</strong> ${groupName}</td>
+            </tr>
+            <tr>
+              <td><strong>Total Participants:</strong> ${gdStudents.length}</td>
+              <td><strong>GD Status:</strong> ${activity.status || 'Scheduled'}</td>
+            </tr>
+          </table>
+          
+          <div class="section-title">GD Participants</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>PSMS ID</th>
+                <th>Student Name</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${gdStudents.length === 0 ? '<tr><td colspan="4" style="text-align:center;">No participants assigned</td></tr>' : 
+                gdStudents.map((id, index) => {
+                  const studentInfo = getStudentInfo(id);
+                  return `
+                    <tr>
+                      <td>${index + 1}</td>
+                      <td>${studentInfo.internId}</td>
+                      <td>${studentInfo.name}</td>
+                      <td>${studentInfo.email}</td>
+                    </tr>
+                  `;
+                }).join('')
+              }
+            </tbody>
+          </table>
+        `;
+      } else if (type.includes('ASSESSMENT')) {
+        const interviewer = activity.details?.interviewerName || 'N/A';
+        const assigned = activity.details?.assigned || [];
+        const description = activity.details?.form?.description || 'N/A';
+        const dueDate = activity.details?.form?.dueDate || 'N/A';
+        const dueTime = activity.details?.form?.dueTime || 'N/A';
+        const link = activity.details?.form?.link || 'N/A';
+        
+        detailsHtml = `
+          <div class="section-title">Assessment Configuration</div>
+          <table class="info-table">
+            <tr>
+              <td><strong>Evaluator:</strong> ${interviewer}</td>
+              <td><strong>Due Date:</strong> ${dueDate} at ${dueTime}</td>
+            </tr>
+            <tr>
+              <td colspan="2"><strong>Submission Link:</strong> ${link}</td>
+            </tr>
+            <tr>
+              <td colspan="2"><strong>Description:</strong> ${description}</td>
+            </tr>
+          </table>
+          
+          <div class="section-title">Assigned Students</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>PSMS ID</th>
+                <th>Student Name</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${assigned.length === 0 ? '<tr><td colspan="4" style="text-align:center;">No students assigned</td></tr>' : 
+                assigned.map((id, index) => {
+                  const studentInfo = getStudentInfo(id);
+                  return `
+                    <tr>
+                      <td>${index + 1}</td>
+                      <td>${studentInfo.internId}</td>
+                      <td>${studentInfo.name}</td>
+                      <td>${studentInfo.email}</td>
+                    </tr>
+                  `;
+                }).join('')
+              }
+            </tbody>
+          </table>
+        `;
+      } else {
+        const assigned = activity.details?.assigned || [];
+        detailsHtml = `
+          <div class="section-title">Activity Configuration</div>
+          <table class="info-table">
+            <tr>
+              <td><strong>Total Assigned:</strong> ${assigned.length}</td>
+              <td><strong>Activity Status:</strong> ${activity.status || 'Scheduled'}</td>
+            </tr>
+          </table>
+        `;
+      }
+      
+      const htmlContent = `
+        <html>
+          <head>
+            <title>Activity Report - ${activity.title}</title>
+            <style>
+              body { font-family: Arial, sans-serif; color: #000000; background-color: #ffffff; line-height: 1.5; padding: 20px; }
+              .header { text-align: center; border-bottom: 2px solid #000000; padding-bottom: 10px; margin-bottom: 20px; }
+              .header .company { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+              .header h1 { font-size: 22px; margin: 5px 0 0 0; text-transform: uppercase; }
+              .info-section { margin-bottom: 25px; }
+              .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+              .info-table th, .info-table td { padding: 8px; border: 1px solid #000000; text-align: left; font-size: 14px; }
+              .info-table th { background-color: #000000; color: #ffffff; font-weight: bold; }
+              .section-title { font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 4px; margin-bottom: 10px; margin-top: 20px; }
+              .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              .data-table th, .data-table td { padding: 8px; border: 1px solid #000000; text-align: left; font-size: 13px; }
+              .data-table th { background-color: #f2f2f2; color: #000000; font-weight: bold; border-bottom: 2px solid #000000; }
+              .footer { margin-top: 50px; text-align: center; border-top: 1px solid #000000; padding-top: 10px; font-size: 11px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="company">Progrentures Solution Pvt. Ltd.</div>
+              <h1>Activity Evaluation & Schedule Report</h1>
+              <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
+            </div>
+            
+            <div class="info-section">
+              <div class="section-title">General Details</div>
+              <table class="info-table">
+                <tr>
+                  <td><strong>Activity Title:</strong> ${activity.title || 'N/A'}</td>
+                  <td><strong>Activity Type:</strong> ${activity.type || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td><strong>Scheduled Date & Time:</strong> ${dateStr}</td>
+                  <td><strong>Status:</strong> ${activity.status || 'Scheduled'}</td>
+                </tr>
+              </table>
+              
+              ${detailsHtml}
+            </div>
+            
+            <div class="footer">
+              <p>This document is generated by PRS Portal. Confirmed and verified by Progrentures Solution Pvt. Ltd.</p>
+            </div>
+          </body>
+        </html>
+      `;
+      
+      const printWindow = window.open("", "", "height=600,width=800");
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    } catch (error) {
+      console.error('Failed to download activity PDF', error);
+      alert('Failed to generate PDF');
+    }
+  };
 
   async function saveEditedActivity() {
     try {
@@ -1050,6 +1333,7 @@ export default function ActivityManagementNew() {
                   <label>Status</label>
                   <select value={editActivity.status || 'Scheduled'} onChange={e => setEditActivity(prev => ({ ...prev, status: e.target.value }))}>
                     <option>Scheduled</option>
+                    <option>Rescheduled</option>
                     <option>Completed</option>
                     <option>Cancelled</option>
                   </select>
@@ -1359,6 +1643,30 @@ export default function ActivityManagementNew() {
                                 </button>
                                 
                                 <button
+                                  onClick={() => {
+                                    downloadActivityPDF(activity);
+                                    setOpenActionMenu(null);
+                                    setActionMenuPos(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#0f172a",
+                                    borderTop: "1px solid #f3f4f6",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Download PDF
+                                </button>
+                                
+                                <button
                                   onClick={async () => {
                                     if (!confirm('Delete this activity?')) return;
                                     try {
@@ -1495,16 +1803,160 @@ export default function ActivityManagementNew() {
                 </div>
 
                 {interviewForm.mode === 'Individual' ? (
-                  <div className="am-student-list">
-                    {students.map(s => (
-                      <div key={s._id||s.id} className="am-student-row">
-                        <div>
-                          <strong>{s.name}</strong>
-                          <span>{s.internId}</span>
-                        </div>
-                        <div><input type="checkbox" checked={interviewSelectedStudents.includes(String(s._id||s.id))} onChange={() => toggleInterviewStudent(String(s._id||s.id))} /></div>
+                  <div data-interview-individual-dropdown style={{ position: 'relative' }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: '6px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#0f172a'
+                      }}
+                    >
+                      Search & Select Students
+                    </label>
+                    <div style={{ position: 'relative' }} data-interview-individual-dropdown>
+                      <div
+                        data-interview-individual-dropdown
+                        onClick={() => setIsInterviewIndividualDropdownOpen(!isInterviewIndividualDropdownOpen)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          border: `2px solid ${isInterviewIndividualDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                          borderRadius: '10px',
+                          background: 'white',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          transition: 'all 0.2s',
+                          color: interviewSelectedStudents.length > 0 ? '#0f172a' : '#94a3b8',
+                          userSelect: 'none',
+                        }}
+                      >
+                        <span>{interviewSelectedStudents.length > 0 ? `${interviewSelectedStudents.length} student(s) selected` : 'Search & select students...'}</span>
+                        <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isInterviewIndividualDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
                       </div>
-                    ))}
+                      {isInterviewIndividualDropdownOpen && (
+                        <div
+                          data-interview-individual-dropdown
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            marginTop: '6px',
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                            zIndex: 99999,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                            <input
+                              autoFocus
+                              type="text"
+                              value={interviewIndividualDropdownSearchText}
+                              onChange={(e) => setInterviewIndividualDropdownSearchText(e.target.value)}
+                              placeholder="Type to search by name, ID, email..."
+                              style={{
+                                width: '100%',
+                                padding: '9px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '13px',
+                                background: '#f8fafc',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                              }}
+                            />
+                          </div>
+                          {interviewIndividualDropdownSearchText && (
+                            <div
+                              data-interview-individual-dropdown
+                              onClick={() => { setInterviewIndividualDropdownSearchText(''); }}
+                              style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                            >
+                              ✕ Clear search
+                            </div>
+                          )}
+                          {interviewSelectedStudents.length > 0 && (
+                            <div
+                              data-interview-individual-dropdown
+                              onClick={() => { setInterviewSelectedStudents([]); }}
+                              style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                            >
+                              ✕ Clear all selections
+                            </div>
+                          )}
+                          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                            {students
+                              .filter(s =>
+                                !interviewIndividualDropdownSearchText ||
+                                s.name?.toLowerCase().includes(interviewIndividualDropdownSearchText.toLowerCase()) ||
+                                s.internId?.toLowerCase().includes(interviewIndividualDropdownSearchText.toLowerCase()) ||
+                                s.email?.toLowerCase().includes(interviewIndividualDropdownSearchText.toLowerCase())
+                              )
+                              .slice(0, 50)
+                              .map((s) => {
+                                const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                return (
+                                  <div
+                                    key={s._id || s.id}
+                                    data-interview-individual-dropdown
+                                    onClick={(e) => { e.stopPropagation(); toggleInterviewStudent(String(s._id || s.id)); }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '10px',
+                                      padding: '10px 14px',
+                                      borderBottom: '1px solid #f8fafc',
+                                      cursor: 'pointer',
+                                      transition: 'background 0.15s',
+                                      background: interviewSelectedStudents.includes(String(s._id || s.id)) ? '#f1f5f9' : 'transparent',
+                                    }}
+                                    onMouseEnter={e => {
+                                      if (!interviewSelectedStudents.includes(String(s._id || s.id))) {
+                                        e.currentTarget.style.background = '#f1f5f9';
+                                      }
+                                    }}
+                                    onMouseLeave={e => {
+                                      if (!interviewSelectedStudents.includes(String(s._id || s.id))) {
+                                        e.currentTarget.style.background = 'transparent';
+                                      }
+                                    }}
+                                  >
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                      {initials}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name}</div>
+                                      <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId} • {s.email}</div>
+                                    </div>
+                                    <input
+                                      type="checkbox"
+                                      checked={interviewSelectedStudents.includes(String(s._id || s.id))}
+                                      onChange={() => toggleInterviewStudent(String(s._id || s.id))}
+                                      style={{ cursor: 'pointer' }}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            {students.filter(s =>
+                              !interviewIndividualDropdownSearchText ||
+                              s.name?.toLowerCase().includes(interviewIndividualDropdownSearchText.toLowerCase()) ||
+                              s.internId?.toLowerCase().includes(interviewIndividualDropdownSearchText.toLowerCase()) ||
+                              s.email?.toLowerCase().includes(interviewIndividualDropdownSearchText.toLowerCase())
+                            ).length === 0 && (
+                              <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No students found</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="am-group-list">
@@ -1548,22 +2000,142 @@ export default function ActivityManagementNew() {
                                   </label>
                                   <span className="am-group-help">Uncheck any member to schedule a partial group. The group remains the same.</span>
                                 </div>
-                                {memberList.map((member) => {
-                                  const memberId = getGroupMemberId(member);
-                                  return (
-                                    <label key={memberId} className="am-member-row">
-                                      <div>
-                                        <strong>{member.name || 'Unnamed Student'}</strong>
-                                        <span>{member.internId || member.email || memberId}</span>
+                                <div data-interview-group-dropdown style={{ position: 'relative' }}>
+                                  <div style={{ position: 'relative', marginTop: '10px' }} data-interview-group-dropdown>
+                                    <div
+                                      data-interview-group-dropdown
+                                      onClick={() => setIsInterviewGroupDropdownOpen(!isInterviewGroupDropdownOpen)}
+                                      style={{
+                                        width: '100%',
+                                        padding: '12px 14px',
+                                        border: `2px solid ${isInterviewGroupDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                                        borderRadius: '10px',
+                                        background: 'white',
+                                        cursor: 'pointer',
+                                        fontSize: '14px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        transition: 'all 0.2s',
+                                        color: interviewSelectedStudents.length > 0 ? '#0f172a' : '#94a3b8',
+                                        userSelect: 'none',
+                                      }}
+                                    >
+                                      <span>{interviewSelectedStudents.length > 0 ? `${interviewSelectedStudents.length} member(s) selected` : 'Search & select group members...'}</span>
+                                      <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isInterviewGroupDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                                    </div>
+                                    {isInterviewGroupDropdownOpen && (
+                                      <div
+                          data-interview-group-dropdown
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            marginTop: '6px',
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                            zIndex: 99999,
+                            overflow: 'hidden',
+                          }}
+                        >
+                                        <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                                          <input
+                                            autoFocus
+                                            type="text"
+                                            value={interviewGroupDropdownSearchText}
+                                            onChange={(e) => setInterviewGroupDropdownSearchText(e.target.value)}
+                                            placeholder="Type to search by name, ID, email..."
+                                            style={{
+                                              width: '100%',
+                                              padding: '9px 12px',
+                                              borderRadius: '8px',
+                                              border: '1px solid #e2e8f0',
+                                              fontSize: '13px',
+                                              background: '#f8fafc',
+                                              outline: 'none',
+                                              boxSizing: 'border-box',
+                                            }}
+                                          />
+                                        </div>
+                                        {interviewGroupDropdownSearchText && (
+                                          <div
+                                            data-interview-group-dropdown
+                                            onClick={() => { setInterviewGroupDropdownSearchText(''); }}
+                                            style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                                          >
+                                            ✕ Clear search
+                                          </div>
+                                        )}
+                                        <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                                          {memberList
+                                            .filter(member =>
+                                              !interviewGroupDropdownSearchText ||
+                                              member.name?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
+                                              member.internId?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
+                                              member.email?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase())
+                                            )
+                                            .slice(0, 50)
+                                            .map((member) => {
+                                              const memberId = getGroupMemberId(member);
+                                              const initials = (member.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                              return (
+                                                <div
+                                                  key={memberId}
+                                                  data-interview-group-dropdown
+                                                  onClick={(e) => { e.stopPropagation(); toggleInterviewStudent(memberId); }}
+                                                  style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px',
+                                                    padding: '10px 14px',
+                                                    borderBottom: '1px solid #f8fafc',
+                                                    cursor: 'pointer',
+                                                    transition: 'background 0.15s',
+                                                    background: interviewSelectedStudents.includes(memberId) ? '#f1f5f9' : 'transparent',
+                                                  }}
+                                                  onMouseEnter={e => {
+                                                    if (!interviewSelectedStudents.includes(memberId)) {
+                                                      e.currentTarget.style.background = '#f1f5f9';
+                                                    }
+                                                  }}
+                                                  onMouseLeave={e => {
+                                                    if (!interviewSelectedStudents.includes(memberId)) {
+                                                      e.currentTarget.style.background = 'transparent';
+                                                    }
+                                                  }}
+                                                >
+                                                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                                    {initials}
+                                                  </div>
+                                                  <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{member.name || 'Unnamed Student'}</div>
+                                                    <div style={{ fontSize: '12px', color: '#64748b' }}>{member.internId || member.email || memberId}</div>
+                                                  </div>
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={interviewSelectedStudents.includes(memberId)}
+                                                    onChange={() => toggleInterviewStudent(memberId)}
+                                                    style={{ cursor: 'pointer' }}
+                                                  />
+                                                </div>
+                                              );
+                                            })}
+                                          {memberList.filter(member =>
+                                            !interviewGroupDropdownSearchText ||
+                                            member.name?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
+                                            member.internId?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
+                                            member.email?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase())
+                                          ).length === 0 && (
+                                            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No members found</div>
+                                          )}
+                                        </div>
                                       </div>
-                                      <input
-                                        type="checkbox"
-                                        checked={interviewSelectedStudents.includes(memberId)}
-                                        onChange={() => toggleInterviewStudent(memberId)}
-                                      />
-                                    </label>
-                                  );
-                                })}
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -1726,38 +2298,181 @@ export default function ActivityManagementNew() {
                   <h4>Participants</h4>
                   <p>Select students to include. If left blank, the system uses the default group set.</p>
                 </div>
-                <div className="am-student-list">
-                  {(function(){
-                    // If an existing group is selected, show only that group's members
-                    if (activeGdGroupId) {
-                      const found = groups.find(g => String(g._id||g.id||g.groupNumber||g.groupName) === String(activeGdGroupId));
-                      const members = found ? getGroupMemberList(found) : [];
-                      if (!members.length) return <div className="am-empty">No members in selected group</div>;
-                      return members.map(m => {
-                        const id = getGroupMemberId(m);
-                        return (
-                          <div key={id} className="am-student-row">
-                            <div>
-                              <strong>{m.name || (m.firstName && `${m.firstName} ${m.lastName}`) || 'Unnamed Student'}</strong>
-                              <span>{m.internId || m.email || id}</span>
-                            </div>
-                            <div><input type="checkbox" checked={selectedStudents.includes(String(id))} onChange={() => toggleStudent(String(id))} /></div>
-                          </div>
-                        );
-                      });
-                    }
-
-                    // Fallback: show all students
-                    return students.map(s => (
-                      <div key={s._id||s.id} className="am-student-row">
-                        <div>
-                          <strong>{s.name}</strong>
-                          <span>{s.internId}</span>
+                <div data-gd-dropdown style={{ position: 'relative' }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      marginBottom: '6px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: '#0f172a'
+                    }}
+                  >
+                    Search & Select Students
+                  </label>
+                  <div style={{ position: 'relative' }} data-gd-dropdown>
+                    <div
+                      data-gd-dropdown
+                      onClick={() => setIsGdDropdownOpen(!isGdDropdownOpen)}
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        border: `2px solid ${isGdDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                        borderRadius: '10px',
+                        background: 'white',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        transition: 'all 0.2s',
+                        color: selectedStudents.length > 0 ? '#0f172a' : '#94a3b8',
+                        userSelect: 'none',
+                      }}
+                    >
+                      <span>{selectedStudents.length > 0 ? `${selectedStudents.length} student(s) selected` : 'Search & select students...'}</span>
+                      <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isGdDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                    </div>
+                    {isGdDropdownOpen && (
+                      <div
+                          data-gd-dropdown
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            marginTop: '6px',
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                            zIndex: 99999,
+                            overflow: 'hidden',
+                          }}
+                        >
+                        <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                          <input
+                            autoFocus
+                            type="text"
+                            value={gdDropdownSearchText}
+                            onChange={(e) => setGdDropdownSearchText(e.target.value)}
+                            placeholder="Type to search by name, ID, email..."
+                            style={{
+                              width: '100%',
+                              padding: '9px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid #e2e8f0',
+                              fontSize: '13px',
+                              background: '#f8fafc',
+                              outline: 'none',
+                              boxSizing: 'border-box',
+                            }}
+                          />
                         </div>
-                        <div><input type="checkbox" checked={selectedStudents.includes(String(s._id||s.id))} onChange={() => toggleStudent(String(s._id||s.id))} /></div>
+                        {gdDropdownSearchText && (
+                          <div
+                            data-gd-dropdown
+                            onClick={() => { setGdDropdownSearchText(''); }}
+                            style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                          >
+                            ✕ Clear search
+                          </div>
+                        )}
+                        {selectedStudents.length > 0 && (
+                          <div
+                            data-gd-dropdown
+                            onClick={() => { setSelectedStudents([]); }}
+                            style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                          >
+                            ✕ Clear all selections
+                          </div>
+                        )}
+                        <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                          {(function() {
+                            let studentsList = [];
+                            if (activeGdGroupId) {
+                              const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeGdGroupId));
+                              studentsList = found ? getGroupMemberList(found) : [];
+                            } else {
+                              studentsList = students;
+                            }
+                            return studentsList
+                              .filter(s =>
+                                !gdDropdownSearchText ||
+                                s.name?.toLowerCase().includes(gdDropdownSearchText.toLowerCase()) ||
+                                s.internId?.toLowerCase().includes(gdDropdownSearchText.toLowerCase()) ||
+                                s.email?.toLowerCase().includes(gdDropdownSearchText.toLowerCase())
+                              )
+                              .slice(0, 50)
+                              .map((s) => {
+                                const id = activeGdGroupId ? getGroupMemberId(s) : String(s._id || s.id);
+                                const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                return (
+                                  <div
+                                    key={id}
+                                    data-gd-dropdown
+                                    onClick={(e) => { e.stopPropagation(); toggleStudent(id); }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '10px',
+                                      padding: '10px 14px',
+                                      borderBottom: '1px solid #f8fafc',
+                                      cursor: 'pointer',
+                                      transition: 'background 0.15s',
+                                      background: selectedStudents.includes(id) ? '#f1f5f9' : 'transparent',
+                                    }}
+                                    onMouseEnter={e => {
+                                      if (!selectedStudents.includes(id)) {
+                                        e.currentTarget.style.background = '#f1f5f9';
+                                      }
+                                    }}
+                                    onMouseLeave={e => {
+                                      if (!selectedStudents.includes(id)) {
+                                        e.currentTarget.style.background = 'transparent';
+                                      }
+                                    }}
+                                  >
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                      {initials}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name || 'Unnamed Student'}</div>
+                                      <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId || s.email || id}</div>
+                                    </div>
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedStudents.includes(id)}
+                                      onChange={() => toggleStudent(id)}
+                                      style={{ cursor: 'pointer' }}
+                                    />
+                                  </div>
+                                );
+                              });
+                          })()}
+                          {(function() {
+                            let studentsList = [];
+                            if (activeGdGroupId) {
+                              const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeGdGroupId));
+                              studentsList = found ? getGroupMemberList(found) : [];
+                            } else {
+                              studentsList = students;
+                            }
+                            const filteredCount = studentsList.filter(s =>
+                              !gdDropdownSearchText ||
+                              s.name?.toLowerCase().includes(gdDropdownSearchText.toLowerCase()) ||
+                              s.internId?.toLowerCase().includes(gdDropdownSearchText.toLowerCase()) ||
+                              s.email?.toLowerCase().includes(gdDropdownSearchText.toLowerCase())
+                            ).length;
+                            if (filteredCount === 0) {
+                              return <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No students found</div>;
+                            }
+                            return null;
+                          })()}
+                        </div>
                       </div>
-                    ));
-                  })()}
+                    )}
+                  </div>
                 </div>
               </section>
             </div>
@@ -1937,35 +2652,181 @@ export default function ActivityManagementNew() {
                     </select>
                   </div>
 
-                  <div className="am-student-list">
-                    {(function(){
-                      if (activeAssessGroupId) {
-                        const found = groups.find(g => String(g._id||g.id||g.groupNumber||g.groupName) === String(activeAssessGroupId));
-                        const members = found ? getGroupMemberList(found) : [];
-                        if (!members.length) return <div className="am-empty">No members in selected group</div>;
-                        return members.map(m => {
-                          const id = getGroupMemberId(m);
-                          return (
-                            <div key={id} className="am-student-row">
-                              <div>
-                                <strong>{m.name || 'Unnamed Student'}</strong>
-                                <span>{m.internId || m.email || id}</span>
-                              </div>
-                              <div><input type="checkbox" checked={assessSelected.includes(String(id))} onChange={() => toggleStudent(String(id), setAssessSelected)} /></div>
-                            </div>
-                          );
-                        });
-                      }
-                      return students.map(s => (
-                        <div key={s._id||s.id} className="am-student-row">
-                          <div>
-                            <strong>{s.name}</strong>
-                            <span>{s.internId}</span>
+                  <div data-assess-dropdown style={{ position: 'relative' }}>
+                    <label
+                      style={{
+                        display: 'block',
+                        marginBottom: '6px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#0f172a'
+                      }}
+                    >
+                      Search & Select Students
+                    </label>
+                    <div style={{ position: 'relative' }} data-assess-dropdown>
+                      <div
+                        data-assess-dropdown
+                        onClick={() => setIsAssessDropdownOpen(!isAssessDropdownOpen)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          border: `2px solid ${isAssessDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                          borderRadius: '10px',
+                          background: 'white',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          transition: 'all 0.2s',
+                          color: assessSelected.length > 0 ? '#0f172a' : '#94a3b8',
+                          userSelect: 'none',
+                        }}
+                      >
+                        <span>{assessSelected.length > 0 ? `${assessSelected.length} student(s) selected` : 'Search & select students...'}</span>
+                        <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isAssessDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                      </div>
+                      {isAssessDropdownOpen && (
+                        <div
+                          data-assess-dropdown
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            marginTop: '6px',
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                            zIndex: 99999,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                            <input
+                              autoFocus
+                              type="text"
+                              value={assessDropdownSearchText}
+                              onChange={(e) => setAssessDropdownSearchText(e.target.value)}
+                              placeholder="Type to search by name, ID, email..."
+                              style={{
+                                width: '100%',
+                                padding: '9px 12px',
+                                borderRadius: '8px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '13px',
+                                background: '#f8fafc',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                              }}
+                            />
                           </div>
-                          <div><input type="checkbox" checked={assessSelected.includes(String(s._id||s.id))} onChange={() => toggleStudent(String(s._id||s.id), setAssessSelected)} /></div>
+                          {assessDropdownSearchText && (
+                            <div
+                              data-assess-dropdown
+                              onClick={() => { setAssessDropdownSearchText(''); }}
+                              style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                            >
+                              ✕ Clear search
+                            </div>
+                          )}
+                          {assessSelected.length > 0 && (
+                            <div
+                              data-assess-dropdown
+                              onClick={() => { setAssessSelected([]); }}
+                              style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
+                            >
+                              ✕ Clear all selections
+                            </div>
+                          )}
+                          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                            {(function() {
+                              let studentsList = [];
+                              if (activeAssessGroupId) {
+                                const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeAssessGroupId));
+                                studentsList = found ? getGroupMemberList(found) : [];
+                              } else {
+                                studentsList = students;
+                              }
+                              return studentsList
+                                .filter(s =>
+                                  !assessDropdownSearchText ||
+                                  s.name?.toLowerCase().includes(assessDropdownSearchText.toLowerCase()) ||
+                                  s.internId?.toLowerCase().includes(assessDropdownSearchText.toLowerCase()) ||
+                                  s.email?.toLowerCase().includes(assessDropdownSearchText.toLowerCase())
+                                )
+                                .slice(0, 50)
+                                .map((s) => {
+                                  const id = activeAssessGroupId ? getGroupMemberId(s) : String(s._id || s.id);
+                                  const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                  return (
+                                    <div
+                                      key={id}
+                                      data-assess-dropdown
+                                      onClick={(e) => { e.stopPropagation(); toggleStudent(id, setAssessSelected); }}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '10px 14px',
+                                        borderBottom: '1px solid #f8fafc',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.15s',
+                                        background: assessSelected.includes(id) ? '#f1f5f9' : 'transparent',
+                                      }}
+                                      onMouseEnter={e => {
+                                        if (!assessSelected.includes(id)) {
+                                          e.currentTarget.style.background = '#f1f5f9';
+                                        }
+                                      }}
+                                      onMouseLeave={e => {
+                                        if (!assessSelected.includes(id)) {
+                                          e.currentTarget.style.background = 'transparent';
+                                        }
+                                      }}
+                                    >
+                                      <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                        {initials}
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name || 'Unnamed Student'}</div>
+                                        <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId || s.email || id}</div>
+                                      </div>
+                                      <input
+                                        type="checkbox"
+                                        checked={assessSelected.includes(id)}
+                                        onChange={() => toggleStudent(id, setAssessSelected)}
+                                        style={{ cursor: 'pointer' }}
+                                      />
+                                    </div>
+                                  );
+                                });
+                            })()}
+                            {(function() {
+                              let studentsList = [];
+                              if (activeAssessGroupId) {
+                                const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeAssessGroupId));
+                                studentsList = found ? getGroupMemberList(found) : [];
+                              } else {
+                                studentsList = students;
+                              }
+                              const filteredCount = studentsList.filter(s =>
+                                !assessDropdownSearchText ||
+                                s.name?.toLowerCase().includes(assessDropdownSearchText.toLowerCase()) ||
+                                s.internId?.toLowerCase().includes(assessDropdownSearchText.toLowerCase()) ||
+                                s.email?.toLowerCase().includes(assessDropdownSearchText.toLowerCase())
+                              ).length;
+                              if (filteredCount === 0) {
+                                return <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No students found</div>;
+                              }
+                              return null;
+                            })()}
+                          </div>
                         </div>
-                      ));
-                    })()}
+                      )}
+                    </div>
                   </div>
               </section>
             </div>

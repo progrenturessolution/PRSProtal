@@ -1549,28 +1549,6 @@ function RepresentativeDashboard() {
                                       >
                                         View Profile
                                       </button>
-                                      <button
-                                        onClick={() => {
-                                          handleDeleteStudent(student._id, student.name);
-                                          setOpenMenuId(null);
-                                        }}
-                                        style={{
-                                          width: '100%',
-                                          padding: '12px 16px',
-                                          background: 'white',
-                                          border: 'none',
-                                          textAlign: 'left',
-                                          cursor: 'pointer',
-                                          fontSize: '14px',
-                                          fontWeight: '500',
-                                          color: '#dc2626',
-                                          borderTop: '1px solid #f3f4f6',
-                                        }}
-                                        onMouseEnter={(e) => (e.target.style.background = '#fef2f2')}
-                                        onMouseLeave={(e) => (e.target.style.background = 'white')}
-                                      >
-                                        Delete Student
-                                      </button>
                                     </div>
                                   )}
                                 </td>

@@ -11,6 +11,10 @@ const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const StudentGroup = require('../models/StudentGroup');
 const Activity = require('../models/Activity');
+const {
+  filterEvaluatedInterviews,
+  normalizeInterviewAttemptNumber,
+} = require('../utils/interviewUtils');
 
 const getAccessibleStudentIds = async (trainerId) => {
   const trainer = await Trainer.findById(trainerId)
@@ -167,8 +171,16 @@ exports.addInterview = async (req, res) => {
       hrRemarks,
       technicalRemarks
     } = req.body;
+    const normalizedAttemptNumber = normalizeInterviewAttemptNumber(attemptNumber);
     const normalizedLevelCrossed =
       levelCrossed === true || levelCrossed === 'true' || levelCrossed === '1' || levelCrossed === 1;
+
+    if (!normalizedAttemptNumber) {
+      return res.status(400).json({
+        success: false,
+        message: 'Interview attempt is required'
+      });
+    }
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -186,9 +198,10 @@ exports.addInterview = async (req, res) => {
       studentId,
       trainerId,
       interviewType,
+      status: 'Completed',
       attendanceStatus,
       date,
-      attemptNumber,
+      attemptNumber: normalizedAttemptNumber,
       communicationLevel,
       confidenceLevel,
       bodyLanguage,
@@ -198,9 +211,11 @@ exports.addInterview = async (req, res) => {
       problemSolving,
       codingAbility,
       logicAndApproach,
+      overallLevel,
       overallHRLevel,
       overallTechnicalLevel,
       levelCrossed: normalizedLevelCrossed,
+      remarks,
       hrRemarks,
       technicalRemarks
     });
@@ -234,7 +249,7 @@ exports.addInterview = async (req, res) => {
 exports.addAptitude = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { studentId, attendanceStatus, roundNumber, score, result, remarks } = req.body;
+    const { studentId, attendanceStatus, date, roundNumber, score, result, remarks } = req.body;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -252,6 +267,7 @@ exports.addAptitude = async (req, res) => {
       studentId,
       trainerId,
       attendanceStatus,
+      date,
       roundNumber,
       score,
       result,
@@ -287,7 +303,7 @@ exports.addAptitude = async (req, res) => {
 exports.addAssessment = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { studentId, attendanceStatus, assessmentType, score, status, feedback } = req.body;
+    const { studentId, attendanceStatus, date, assessmentType, score, status, feedback } = req.body;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -305,6 +321,7 @@ exports.addAssessment = async (req, res) => {
       studentId,
       trainerId,
       attendanceStatus,
+      date,
       assessmentType,
       score,
       status,
@@ -463,9 +480,10 @@ exports.getStudentRecords = async (req, res) => {
       });
     }
 
-    const interviews = await Interview.find({ studentId }).sort({ date: -1 });
-    const aptitudes = await Aptitude.find({ studentId }).sort({ createdAt: -1 });
-    const assessments = await Assessment.find({ studentId }).sort({ createdAt: -1 });
+    const allInterviews = await Interview.find({ studentId }).sort({ date: -1 });
+    const interviews = filterEvaluatedInterviews(allInterviews);
+    const aptitudes = await Aptitude.find({ studentId }).sort({ date: -1, createdAt: -1 });
+    const assessments = await Assessment.find({ studentId }).sort({ date: -1, createdAt: -1 });
     const trainings = await Training.find({ studentId }).sort({ date: -1 });
 
     res.status(200).json({
@@ -663,9 +681,10 @@ exports.getMyStudentRecords = async (req, res) => {
       });
     }
 
-    const interviews = await Interview.find({ studentId }).sort({ date: -1 });
-    const aptitudes = await Aptitude.find({ studentId }).sort({ createdAt: -1 });
-    const assessments = await Assessment.find({ studentId }).sort({ createdAt: -1 });
+    const allInterviews = await Interview.find({ studentId }).sort({ date: -1 });
+    const interviews = filterEvaluatedInterviews(allInterviews);
+    const aptitudes = await Aptitude.find({ studentId }).sort({ date: -1, createdAt: -1 });
+    const assessments = await Assessment.find({ studentId }).sort({ date: -1, createdAt: -1 });
     const trainings = await Training.find({ studentId }).sort({ date: -1 });
 
     res.status(200).json({
@@ -718,7 +737,7 @@ exports.getMyAptitude = async (req, res) => {
 
     const aptitudeRecords = await Aptitude.find({ studentId })
       .populate('trainerId', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ date: -1, createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -743,7 +762,7 @@ exports.getMyAssessments = async (req, res) => {
 
     const assessments = await Assessment.find({ studentId })
       .populate('trainerId', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ date: -1, createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -1014,6 +1033,7 @@ exports.getMyNotifications = async (req, res) => {
         ]
       })
       .populate('createdBy', 'name email')
+      .populate('activityId')
       .sort({ createdAt: -1 });
     } else if (trainerLikeRoles.has(String(userRole || '').toLowerCase()) || await Trainer.exists({ _id: userId })) {
       // For trainers
@@ -1033,6 +1053,7 @@ exports.getMyNotifications = async (req, res) => {
         ]
       })
       .populate('createdBy', 'name email')
+      .populate('activityId')
       .sort({ createdAt: -1 });
     } else {
       return res.status(400).json({
@@ -1223,7 +1244,7 @@ exports.getScheduledInterviews = async (req, res) => {
     
     const interviews = await Interview.find({
       trainerId,
-      status: 'Scheduled'
+      status: { $in: ['Scheduled', 'Rescheduled', 'Completed', 'Cancelled'] }
     })
       .populate('studentId', 'name email internId psmsId registrationId')
       .sort({ date: 1 });
@@ -1340,7 +1361,7 @@ exports.getMyScheduledInterviews = async (req, res) => {
 
     const interviews = await Interview.find({
       studentId,
-      status: 'Scheduled'
+      status: { $in: ['Scheduled', 'Rescheduled', 'Completed', 'Cancelled'] }
     })
       .populate('trainerId', 'name email')
       .sort({ date: 1 });

@@ -8,6 +8,7 @@ function CreateTask({ onTaskCreated, onBack }) {
   const [individualSearchQuery, setIndividualSearchQuery] = useState("");
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
   const [isIndividualDropdownOpen, setIsIndividualDropdownOpen] = useState(false);
+  const [selectedIndividualInterns, setSelectedIndividualInterns] = useState([]);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [formData, setFormData] = useState({
@@ -90,6 +91,23 @@ function CreateTask({ onTaskCreated, onBack }) {
     }
   };
 
+  const toggleIndividualIntern = (internId) => {
+    setSelectedIndividualInterns((prev) => {
+      if (prev.includes(internId)) {
+        return prev.filter((id) => id !== internId);
+      }
+      return [...prev, internId];
+    });
+  };
+
+  const handleSelectAllIndividuals = () => {
+    if (selectedIndividualInterns.length === filteredIndividualInterns.length) {
+      setSelectedIndividualInterns([]);
+    } else {
+      setSelectedIndividualInterns(filteredIndividualInterns.map((intern) => intern._id));
+    }
+  };
+
   const handleTeamMemberToggle = (internId) => {
     setSelectedTeamMembers((prev) => {
       if (prev.includes(internId)) {
@@ -104,6 +122,7 @@ function CreateTask({ onTaskCreated, onBack }) {
     setAssignmentType(type);
     setFormData((prev) => ({ ...prev, assignedTo: "" }));
     setSelectedTeamMembers([]);
+    setSelectedIndividualInterns([]);
     setIndividualSearchQuery("");
     setTeamSearchQuery("");
     setIsIndividualDropdownOpen(false);
@@ -149,8 +168,8 @@ function CreateTask({ onTaskCreated, onBack }) {
     setError("");
     setSuccess("");
 
-    if (assignmentType === "individual" && !formData.assignedTo) {
-      setError("Please select an intern from the dropdown");
+    if (assignmentType === "individual" && selectedIndividualInterns.length === 0) {
+      setError("Please select at least one intern from the dropdown");
       setLoading(false);
       return;
     }
@@ -169,7 +188,7 @@ function CreateTask({ onTaskCreated, onBack }) {
         taskFormData.append("title", formData.title);
         taskFormData.append("description", formData.description);
         taskFormData.append("deadline", formData.deadline);
-        taskFormData.append("assignedTo", formData.assignedTo);
+        taskFormData.append("assignedTo", JSON.stringify(selectedIndividualInterns));
 
         if (selectedFile) {
           taskFormData.append("taskDocument", selectedFile);
@@ -196,7 +215,7 @@ function CreateTask({ onTaskCreated, onBack }) {
         setSuccess(
           assignmentType === "team"
             ? `Task created and assigned to ${selectedTeamMembers.length} team members successfully!`
-            : "Task created and assigned successfully!",
+            : `Task created and assigned to ${selectedIndividualInterns.length} intern(s) successfully!`,
         );
 
         setFormData({
@@ -205,6 +224,7 @@ function CreateTask({ onTaskCreated, onBack }) {
           deadline: "",
           assignedTo: "",
         });
+        setSelectedIndividualInterns([]);
         setSelectedTeamMembers([]);
         setIndividualSearchQuery("");
         setTeamSearchQuery("");
@@ -249,16 +269,7 @@ function CreateTask({ onTaskCreated, onBack }) {
     overflow: "hidden",
   };
 
-  const dropdownSearchStyle = {
-    width: "100%",
-    padding: "14px 16px 14px 44px",
-    fontSize: "14px",
-    border: "none",
-    borderBottom: "1px solid #e2e8f0",
-    outline: "none",
-    backgroundColor: "#f8fafc",
-    color: "#0f172a",
-  };
+
 
   return (
     <>
@@ -421,54 +432,97 @@ function CreateTask({ onTaskCreated, onBack }) {
 
           {assignmentType === "individual" && (
             <div className="form-group" ref={individualDropdownRef} style={{ position: "relative" }}>
-              <label>Assign to Intern * {formData.assignedTo && "✓"}</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ fontSize: '15px', fontWeight: '500', color: '#1f2937', marginBottom: '0' }}>
+                  Assign to Intern * ({selectedIndividualInterns.length} selected)
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSelectAllIndividuals}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    background: '#324158',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.05)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(50, 65, 88, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  {selectedIndividualInterns.length === filteredIndividualInterns.length && filteredIndividualInterns.length > 0 ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
 
-              <button
-                type="button"
-                className="gm-students-trigger"
+              <div
                 onClick={openIndividualDropdown}
-                aria-expanded={isIndividualDropdownOpen}
-                style={{ marginTop: "10px" }}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: `2px solid ${isIndividualDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                  borderRadius: '10px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s',
+                  color: selectedIndividualInterns.length > 0 ? '#0f172a' : '#94a3b8',
+                  userSelect: 'none',
+                  boxSizing: 'border-box',
+                  marginTop: '10px',
+                }}
               >
-                <span style={{ minWidth: 0, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "3px" }}>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {selectedIntern ? selectedIntern.name : "Select a student"}
-                  </span>
-                  <span style={{ fontSize: "12px", fontWeight: 500, color: "#64748b" }}>
-                    {selectedIntern
-                      ? `${selectedIntern.studentId || "No ID"} • ${selectedIntern.studentType || "Student"}`
-                      : "Search by name, email, ID, or student type"}
-                  </span>
+                <span>
+                  {selectedIndividualInterns.length > 0
+                    ? `${selectedIndividualInterns.length} student(s) selected`
+                    : "Search students by name, ID, email..."}
                 </span>
-                <span className={`gm-trigger-arrow ${isIndividualDropdownOpen ? "is-open" : ""}`}>▾</span>
-              </button>
+                <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isIndividualDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+              </div>
 
               {isIndividualDropdownOpen && (
                 <div
                   className="gm-students-dropdown"
-                  style={{ maxHeight: "380px", position: "static", zIndex: 20 }}
+                  style={{
+                    position: 'relative',
+                    marginTop: '10px',
+                    background: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+                    zIndex: 20,
+                    overflow: 'hidden',
+                    maxHeight: '380px',
+                  }}
                 >
-                  <div style={{ position: "relative" }}>
-                    <span
-                      style={{
-                        position: "absolute",
-                        left: "16px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        color: "#94a3b8",
-                        pointerEvents: "none",
-                        fontSize: "14px",
-                      }}
-                    >
-                      🔍
-                    </span>
+                  <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
                     <input
                       ref={individualSearchInputRef}
                       type="text"
                       placeholder="Search students..."
                       value={individualSearchQuery}
                       onChange={(e) => setIndividualSearchQuery(e.target.value)}
-                      style={dropdownSearchStyle}
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb',
+                        fontSize: '13px',
+                        background: '#f8fafc',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
                     />
                   </div>
 
@@ -484,62 +538,56 @@ function CreateTask({ onTaskCreated, onBack }) {
                         <button
                           key={intern._id}
                           type="button"
-                          className={`gm-student-row ${formData.assignedTo === intern._id ? "is-selected" : ""}`}
-                          onClick={() => {
-                            setFormData((prev) => ({ ...prev, assignedTo: intern._id }));
-                            setIndividualSearchQuery("");
-                            setIsIndividualDropdownOpen(false);
-                          }}
+                          className={`gm-student-row ${selectedIndividualInterns.includes(intern._id) ? "is-selected" : ""}`}
+                          onClick={() => toggleIndividualIntern(intern._id)}
                           style={{
                             width: "100%",
                             border: "1px solid #dbe4ef",
                             borderRadius: "10px",
                             cursor: "pointer",
                             textAlign: "left",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (formData.assignedTo !== intern._id) {
-                              e.currentTarget.style.backgroundColor = "#f8fafc";
-                              e.currentTarget.style.transform = "translateX(2px)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (formData.assignedTo !== intern._id) {
-                              e.currentTarget.style.backgroundColor = "transparent";
-                              e.currentTarget.style.transform = "translateX(0)";
-                            }
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px 16px',
+                            background: selectedIndividualInterns.includes(intern._id) ? '#f0fdf4' : 'transparent',
                           }}
                         >
-                          <div style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}>
-                            <div
-                              style={{
-                                width: "36px",
-                                height: "36px",
-                                borderRadius: "50%",
-                                display: "grid",
-                                placeItems: "center",
-                                backgroundColor:
-                                  formData.assignedTo === intern._id ? "#dbeafe" : "#f1f5f9",
-                                color: formData.assignedTo === intern._id ? "#2563eb" : "#475569",
-                                fontWeight: 700,
-                                fontSize: "12px",
-                                flexShrink: 0,
-                              }}
-                            >
-                              {intern.name
-                                ?.split(" ")
-                                .filter(Boolean)
-                                .slice(0, 2)
-                                .map((part) => part[0]?.toUpperCase())
-                                .join("") || "S"}
-                            </div>
-
-                            <span className="gm-student-content">
-                              <strong>{intern.name}</strong>
-                              <small>{intern.email} • {intern.studentId || "No ID"}</small>
-                              <span className="gm-type-chip">{intern.studentType}</span>
-                            </span>
+                          <input
+                            type="checkbox"
+                            checked={selectedIndividualInterns.includes(intern._id)}
+                            onChange={() => {}}
+                            style={{ pointerEvents: 'none', width: '18px', height: '18px' }}
+                          />
+                          <div
+                            style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              display: "grid",
+                              placeItems: "center",
+                              backgroundColor: selectedIndividualInterns.includes(intern._id) ? "#dbeafe" : "#f1f5f9",
+                              color: selectedIndividualInterns.includes(intern._id) ? "#2563eb" : "#475569",
+                              fontWeight: 700,
+                              fontSize: "12px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {intern.name
+                              ?.split(" ")
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .map((part) => part[0]?.toUpperCase())
+                              .join("") || "S"}
                           </div>
+
+                          <span className="gm-student-content" style={{ flex: 1 }}>
+                            <strong style={{ display: 'block', fontSize: '14px', color: '#0f172a' }}>{intern.name}</strong>
+                            <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                              {intern.studentId || "No ID"} • {intern.email}
+                            </small>
+                            <span className="gm-type-chip">{intern.studentType}</span>
+                          </span>
                         </button>
                       ))
                     )}
@@ -547,29 +595,40 @@ function CreateTask({ onTaskCreated, onBack }) {
                 </div>
               )}
 
-              {formData.assignedTo && !isIndividualDropdownOpen && selectedIntern && (
+              {selectedIndividualInterns.length > 0 && !isIndividualDropdownOpen && (
                 <div
                   style={{
                     marginTop: "12px",
                     padding: "12px 14px",
                     backgroundColor: "#f0fdf4",
+                    borderRadius: "8px",
                     border: "1px solid #bbf7d0",
-                    borderRadius: "12px",
+                    color: "#16a34a",
                     fontSize: "14px",
-                    color: "#166534",
-                    fontWeight: "600",
+                    fontWeight: 600,
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: "12px",
+                    flexDirection: "column",
+                    gap: "8px",
                   }}
                 >
-                  <span>Selected: {selectedIntern.name}</span>
-                  <span style={{ fontSize: "12px", color: "#16a34a" }}>{selectedIntern.studentId || "No ID"}</span>
+                  <div>
+                    Selected: {selectedIndividualInterns.length} student(s)
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {selectedIndividualInterns.map((id) => {
+                      const s = interns.find(intern => intern._id === id);
+                      if (!s) return null;
+                      return (
+                        <span key={id} style={{ background: '#dcfce7', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#15803d' }}>
+                          {s.name}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              <input type="hidden" name="assignedTo" value={formData.assignedTo} required />
+              <input type="hidden" name="assignedTo" value={selectedIndividualInterns.length > 0 ? JSON.stringify(selectedIndividualInterns) : ''} required />
             </div>
           )}
 

@@ -16,6 +16,10 @@ const assessmentSchema = new mongoose.Schema({
     enum: ['Present', 'Absent', 'Late'],
     default: 'Present'
   },
+  date: {
+    type: Date,
+    default: Date.now
+  },
   assessmentType: {
     type: String,
     required: true,

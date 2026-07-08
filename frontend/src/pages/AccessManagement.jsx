@@ -190,10 +190,6 @@ function AccessManagement() {
       if (response.data.success) {
         setSuccess("Employee added successfully!");
 
-        // Show credentials modal
-        setNewTrainerCredentials(credentials);
-        setShowCredentialsModal(true);
-
         setTrainerFormData({
           name: "",
           email: "",

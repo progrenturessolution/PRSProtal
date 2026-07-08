@@ -13,6 +13,7 @@ function AssessmentForm() {
     score: "",
     status: "Pending",
     feedback: "",
+    date: new Date().toISOString().split("T")[0],
   });
   const [assessments, setAssessments] = useState([]);
   const [historySearch, setHistorySearch] = useState("");
@@ -61,6 +62,7 @@ function AssessmentForm() {
           score: "",
           status: "Pending",
           feedback: "",
+          date: new Date().toISOString().split("T")[0],
         });
         fetchAssessments();
       }
@@ -136,6 +138,17 @@ function AssessmentForm() {
             {success && <div className="success-message">{success}</div>}
 
             <div className="record-form-grid">
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
               <div className="form-group">
                 <label>Assessment Type *</label>
                 <select
@@ -267,7 +280,7 @@ function AssessmentForm() {
                         </td>
                         <td>{assessment.feedback || "-"}</td>
                         <td>
-                          {new Date(assessment.createdAt).toLocaleDateString()}
+                          {assessment.date ? new Date(assessment.date).toLocaleDateString() : new Date(assessment.createdAt).toLocaleDateString()}
                         </td>
                       </tr>
                     ))

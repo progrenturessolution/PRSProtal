@@ -160,18 +160,6 @@ function PendingApprovals({ onTaskApproved, onBack }) {
         </div>
       ) : (
         <>
-          <div className="card" style={{ marginBottom: '20px', background: 'rgba(52, 65, 88, 0.05)', border: '2px solid #344158' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '24px' }}></span>
-              <div>
-                <strong style={{ color: '#344158' }}>{tasks.length} task{tasks.length > 1 ? 's' : ''} awaiting approval</strong>
-                <p style={{ margin: '5px 0 0', fontSize: '14px', color: '#475569' }}>
-                  Review completed work and approve to finalize tasks
-                </p>
-              </div>
-            </div>
-          </div>
-
           <div className="card" style={{ padding: 0, overflow: "hidden", borderRadius: 0, boxShadow: "0 2px 12px rgba(15,23,42,0.07)" }}>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse", fontFamily: "inherit", marginTop: 0 }}>

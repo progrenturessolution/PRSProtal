@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const ratingOptions = [
+  { value: "", label: "Select Rating" },
   { value: "1", label: "1 - Very Low" },
   { value: "2", label: "2 - Low" },
   { value: "3", label: "3 - Average" },
@@ -10,11 +11,12 @@ const ratingOptions = [
 
 export default function GdStudentConductModal({ gd, student, onClose, onSave }) {
   const [form, setForm] = useState({
-    participation: "3",
-    communication: "3",
-    confidence: "3",
-    topicUnderstanding: "3",
-    leadership: "3",
+    attendanceStatus: "Present",
+    participation: "",
+    communication: "",
+    confidence: "",
+    topicUnderstanding: "",
+    leadership: "",
     overallRemark: "",
     strengths: "",
     improvementAreas: "",
@@ -45,6 +47,12 @@ export default function GdStudentConductModal({ gd, student, onClose, onSave }) 
   };
 
   const handleSave = () => {
+    // Validate required fields
+    if (!form.participation || !form.communication || !form.confidence || !form.topicUnderstanding || !form.leadership) {
+      alert("Please select ratings for all required fields.");
+      return;
+    }
+
     try {
       const current = JSON.parse(localStorage.getItem(storageKey) || "[]");
       const next = current.filter((item) => String(item.studentId) !== String(student._id || student.internId || student.id));
@@ -95,36 +103,47 @@ export default function GdStudentConductModal({ gd, student, onClose, onSave }) 
               <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Time</div>
               <strong>{gd?.details?.form?.startTime || "-"}</strong>
             </div>
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 12 }}>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>PSMS ID</div>
+              <strong>{student?.internId || student?.id || "-"}</strong>
+            </div>
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 12 }}>
+              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 4 }}>Attendance</div>
+              <select value={form.attendanceStatus} onChange={(e) => handleChange("attendanceStatus", e.target.value)} style={inputStyle} required>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+              </select>
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 16 }}>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Participation</label>
-              <select value={form.participation} onChange={(e) => handleChange("participation", e.target.value)} style={inputStyle}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Participation *</label>
+              <select value={form.participation} onChange={(e) => handleChange("participation", e.target.value)} style={inputStyle} required>
                 {ratingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Communication</label>
-              <select value={form.communication} onChange={(e) => handleChange("communication", e.target.value)} style={inputStyle}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Communication *</label>
+              <select value={form.communication} onChange={(e) => handleChange("communication", e.target.value)} style={inputStyle} required>
                 {ratingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Confidence</label>
-              <select value={form.confidence} onChange={(e) => handleChange("confidence", e.target.value)} style={inputStyle}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Confidence *</label>
+              <select value={form.confidence} onChange={(e) => handleChange("confidence", e.target.value)} style={inputStyle} required>
                 {ratingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Topic Understanding</label>
-              <select value={form.topicUnderstanding} onChange={(e) => handleChange("topicUnderstanding", e.target.value)} style={inputStyle}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Topic Understanding *</label>
+              <select value={form.topicUnderstanding} onChange={(e) => handleChange("topicUnderstanding", e.target.value)} style={inputStyle} required>
                 {ratingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Leadership</label>
-              <select value={form.leadership} onChange={(e) => handleChange("leadership", e.target.value)} style={inputStyle}>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Leadership *</label>
+              <select value={form.leadership} onChange={(e) => handleChange("leadership", e.target.value)} style={inputStyle} required>
                 {ratingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>

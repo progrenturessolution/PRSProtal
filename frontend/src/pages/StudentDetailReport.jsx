@@ -80,9 +80,10 @@ function StudentDetailReport() {
     filteredRecords.trainings.length > 0;
 
   const getInterviewOverallLevel = (interview) =>
-    interview.interviewType === "Technical"
+    interview.overallLevel ||
+    (interview.interviewType === "Technical"
       ? interview.overallTechnicalLevel
-      : interview.overallHRLevel;
+      : interview.overallHRLevel);
 
   const getInterviewOverallLabel = (level) => {
     switch (level) {
@@ -94,9 +95,36 @@ function StudentDetailReport() {
         return "Advanced";
       case "E":
         return "Expert";
+      case "F":
+        return "Fail";
+      case "C":
+        return "Clear";
+      case "P":
+        return "Pass";
       default:
         return "-";
     }
+  };
+
+  const formatInterviewLevel = (level) => {
+    if (!level) return "-";
+    return getInterviewOverallLabel(level);
+  };
+
+  const getInterviewScoreColumns = (interview) => {
+    if (interview.interviewType === "Technical") {
+      return {
+        communication: formatInterviewLevel(interview.technicalKnowledge),
+        confidence: formatInterviewLevel(interview.problemSolving),
+        clarity: formatInterviewLevel(interview.codingAbility || interview.logicAndApproach),
+      };
+    }
+
+    return {
+      communication: formatInterviewLevel(interview.communicationLevel),
+      confidence: formatInterviewLevel(interview.confidenceLevel),
+      clarity: formatInterviewLevel(interview.clarityLevel || interview.clarityOfAnswer),
+    };
   };
 
   const getBackPath = () => {
@@ -261,18 +289,25 @@ function StudentDetailReport() {
                 <tr>
                   <th>Date</th>
                   <th>Type</th>
+                  <th>Communication</th>
+                  <th>Confidence</th>
+                  <th>Clarity</th>
                   <th>Overall</th>
                   <th>Level Crossed</th>
                 </tr>
               </thead>
               <tbody>
                 ${filteredRecords.interviews.map(interview => {
+          const scoreColumns = getInterviewScoreColumns(interview);
           const overallLevel = getInterviewOverallLevel(interview);
           return `
                   <tr>
                     <td>${interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${interview.interviewType}</td>
-                    <td>${getInterviewOverallLabel(overallLevel)}</td>
+                    <td>${scoreColumns.communication}</td>
+                    <td>${scoreColumns.confidence}</td>
+                    <td>${scoreColumns.clarity}</td>
+                    <td>${formatInterviewLevel(overallLevel)}</td>
                     <td>${interview.levelCrossed ? 'Yes' : 'No'}</td>
                   </tr>
                 `;
@@ -299,7 +334,7 @@ function StudentDetailReport() {
               <tbody>
                 ${filteredRecords.aptitudes.map(apt => `
                   <tr>
-                    <td>${apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${apt.date ? new Date(apt.date).toLocaleDateString('en-IN') : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>Round ${apt.roundNumber}</td>
                     <td>${apt.score}</td>
                     <td>${apt.result}</td>
@@ -327,7 +362,7 @@ function StudentDetailReport() {
               <tbody>
                 ${filteredRecords.assessments.map(assess => `
                   <tr>
-                    <td>${assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${assess.date ? new Date(assess.date).toLocaleDateString('en-IN') : assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
                     <td>${assess.assessmentType}</td>
                     <td>${assess.score || '-'}</td>
                     <td>${assess.status}</td>
@@ -422,13 +457,17 @@ function StudentDetailReport() {
 
       if (filteredRecords.interviews?.length > 0) {
         ws_data.push([], ["Interview Records"]);
-        ws_data.push(["Date", "Type", "Overall", "Level Crossed"]);
+        ws_data.push(["Date", "Type", "Communication", "Confidence", "Clarity", "Overall", "Level Crossed"]);
         filteredRecords.interviews.forEach(interview => {
+          const scoreColumns = getInterviewScoreColumns(interview);
           const overallLevel = getInterviewOverallLevel(interview);
           ws_data.push([
             interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A',
             interview.interviewType,
-            getInterviewOverallLabel(overallLevel),
+            scoreColumns.communication,
+            scoreColumns.confidence,
+            scoreColumns.clarity,
+            formatInterviewLevel(overallLevel),
             interview.levelCrossed ? 'Yes' : 'No'
           ]);
         });
@@ -439,7 +478,7 @@ function StudentDetailReport() {
         ws_data.push(["Date", "Round", "Score", "Result"]);
         filteredRecords.aptitudes.forEach(apt => {
           ws_data.push([
-            apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A',
+            apt.date ? new Date(apt.date).toLocaleDateString('en-IN') : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A',
             `Round ${apt.roundNumber}`,
             apt.score,
             apt.result
@@ -452,7 +491,7 @@ function StudentDetailReport() {
         ws_data.push(["Date", "Type", "Score", "Status"]);
         filteredRecords.assessments.forEach(assess => {
           ws_data.push([
-            assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A',
+            assess.date ? new Date(assess.date).toLocaleDateString('en-IN') : assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A',
             assess.assessmentType,
             assess.score || '-',
             assess.status
@@ -762,7 +801,12 @@ function StudentDetailReport() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRecords.interviews.map((interview, idx) => (
+                    {filteredRecords.interviews.map((interview, idx) => {
+                      const scoreColumns = getInterviewScoreColumns(interview);
+                      const overallLevel = getInterviewOverallLevel(interview);
+                      const remarksVal = interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "";
+
+                      return (
                       <tr key={idx} className="table-row">
                         <td className="date-cell">
                           {interview.date
@@ -774,27 +818,22 @@ function StudentDetailReport() {
                         </td>
                         <td>{interview.attemptNumber}</td>
                         <td>
-                          <span className="level-badge">{interview.communicationLevel}</span>
+                          <span className="level-badge">{scoreColumns.communication}</span>
                         </td>
                         <td>
-                          <span className="level-badge">{interview.confidenceLevel}</span>
+                          <span className="level-badge">{scoreColumns.confidence}</span>
                         </td>
                         <td>
-                          <span className="level-badge">
-                            {getInterviewOverallLabel(interview.clarityLevel || interview.clarityOfAnswer)}
-                          </span>
+                          <span className="level-badge">{scoreColumns.clarity}</span>
                         </td>
                         <td>
-                          {(() => {
-                            const overallLevel = getInterviewOverallLevel(interview);
-                            return overallLevel ? (
-                              <span className={`result-badge result-${overallLevel.toLowerCase()}`}>
-                                {getInterviewOverallLabel(overallLevel)}
+                          {overallLevel ? (
+                              <span className={`result-badge result-${String(overallLevel).toLowerCase()}`}>
+                                {formatInterviewLevel(overallLevel)}
                               </span>
                             ) : (
                               "-"
-                            );
-                          })()}
+                            )}
                         </td>
                         <td>
                           <span
@@ -803,16 +842,12 @@ function StudentDetailReport() {
                             {interview.levelCrossed ? "✓ Yes" : "✗ No"}
                           </span>
                         </td>
-                        {(() => {
-                          const remarksVal = interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "";
-                          return (
-                            <td className="remarks-cell" title={remarksVal}>
-                              {remarksVal ? (remarksVal.length > 30 ? remarksVal.substring(0, 30) + "..." : remarksVal) : "-"}
-                            </td>
-                          );
-                        })()}
+                        <td className="remarks-cell" title={remarksVal}>
+                          {remarksVal ? (remarksVal.length > 30 ? remarksVal.substring(0, 30) + "..." : remarksVal) : "-"}
+                        </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -845,9 +880,11 @@ function StudentDetailReport() {
                     {filteredRecords.aptitudes.map((aptitude, idx) => (
                       <tr key={idx} className="table-row">
                         <td className="date-cell">
-                          {aptitude.createdAt
-                            ? new Date(aptitude.createdAt).toLocaleDateString("en-IN")
-                            : "N/A"}
+                          {aptitude.date
+                            ? new Date(aptitude.date).toLocaleDateString("en-IN")
+                            : aptitude.createdAt
+                              ? new Date(aptitude.createdAt).toLocaleDateString("en-IN")
+                              : "N/A"}
                         </td>
                         <td className="round-cell">Round {aptitude.roundNumber}</td>
                         <td className="score-cell">{aptitude.score}</td>
@@ -893,9 +930,11 @@ function StudentDetailReport() {
                     {filteredRecords.assessments.map((assessment, idx) => (
                       <tr key={idx} className="table-row">
                         <td className="date-cell">
-                          {assessment.createdAt
-                            ? new Date(assessment.createdAt).toLocaleDateString("en-IN")
-                            : "N/A"}
+                          {assessment.date
+                            ? new Date(assessment.date).toLocaleDateString("en-IN")
+                            : assessment.createdAt
+                              ? new Date(assessment.createdAt).toLocaleDateString("en-IN")
+                              : "N/A"}
                         </td>
                         <td>
                           <span className="type-badge">{assessment.assessmentType}</span>
