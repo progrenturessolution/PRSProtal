@@ -3124,7 +3124,7 @@ function InternDashboard() {
                   onClick={() => setTaskView(id)}
                   style={{
                     padding: "9px 18px", borderRadius: "8px", border: "none", cursor: "pointer",
-                    fontWeight: "700", fontSize: "13px",
+                    fontWeight: "normal", fontSize: "13px",
                     background: taskView === id ? "white" : "transparent",
                     color: taskView === id ? "#0f172a" : "#64748b",
                     boxShadow: taskView === id ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
@@ -3132,7 +3132,7 @@ function InternDashboard() {
                   }}
                 >
                   {label}
-                  <span style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "11px", background: "#324158", color: "#fff", fontWeight: 700 }}>{count}</span>
+                  <span style={{ padding: "2px 7px", borderRadius: "10px", fontSize: "11px", background: "#324158", color: "#fff", fontWeight: "normal" }}>{count}</span>
                   {((id === "individual" && hasUnreadIndividualTasks) || (id === "squad" && hasUnreadSquadTasks)) && (
                     <span 
                       style={{ 
@@ -3187,14 +3187,14 @@ function InternDashboard() {
                                 onMouseLeave={e => e.currentTarget.style.background = isEven ? "#ffffff" : "#f8fafc"}
                               >
                                 {/* # */}
-                                <td style={{ padding: "15px 16px", verticalAlign: "middle", color: "#c1cfe0", fontSize: "12px", fontWeight: 700, width: 44 }}>
+                                <td style={{ padding: "15px 16px", verticalAlign: "middle", color: "#c1cfe0", fontSize: "12px", fontWeight: "normal", width: 44 }}>
                                   {String(idx + 1).padStart(2, "0")}
                                 </td>
 
                                 {/* Task */}
                                 <td style={{ padding: "15px 16px", verticalAlign: "middle", maxWidth: "220px" }}>
                                   <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
-                                    <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "13.5px" }}>{task.title}</span>
+                                    <span style={{ fontWeight: "normal", color: "#0f172a", fontSize: "13.5px" }}>{task.title}</span>
                                     {task.hasUnreadFeedback && (
                                       <span title="New feedback" style={{ width: 7, height: 7, borderRadius: "50%", background: "#f43f5e", display: "inline-block", flexShrink: 0, boxShadow: "0 0 0 2px rgba(244,63,94,0.2)" }} />
                                     )}
@@ -3206,9 +3206,9 @@ function InternDashboard() {
 
                                 {/* Deadline */}
                                 <td style={{ padding: "15px 16px", verticalAlign: "middle", whiteSpace: "nowrap" }}>
-                                  <div style={{ fontSize: "12.5px", color: "#475569", fontWeight: 500 }}>{formatDeadline(task.deadline)}</div>
+                                  <div style={{ fontSize: "12.5px", color: "#475569", fontWeight: "normal" }}>{formatDeadline(task.deadline)}</div>
                                   {isOverdue(task.deadline) && task.status !== "Completed" && (
-                                    <span style={{ display: "inline-block", marginTop: 5, fontSize: "10px", color: "#ef4444", fontWeight: 700, background: "#fff1f2", border: "1px solid #fecaca", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.05em" }}>OVERDUE</span>
+                                    <span style={{ display: "inline-block", marginTop: 5, fontSize: "10px", color: "#ef4444", fontWeight: "normal", background: "#fff1f2", border: "1px solid #fecaca", borderRadius: 5, padding: "2px 7px", letterSpacing: "0.05em" }}>OVERDUE</span>
                                   )}
                                 </td>
 
@@ -3238,7 +3238,7 @@ function InternDashboard() {
                                           </svg>
                                           {/* Center text */}
                                           <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                            <span style={{ fontSize: "11px", fontWeight: 800, color: "#324158", letterSpacing: "-0.3px" }}>{task.progress}%</span>
+                                            <span style={{ fontSize: "11px", fontWeight: "normal", color: "#324158", letterSpacing: "-0.3px" }}>{task.progress}%</span>
                                           </div>
                                         </div>
                                       </div>
@@ -3265,11 +3265,11 @@ function InternDashboard() {
                                  >
                                    {latestUpdate ? (
                                      <div style={{ padding: "4px 0" }}>
-                                       <div style={{ fontSize: "10px", fontWeight: 700, color: "#344158", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{latestUpdate.source}</div>
+                                       <div style={{ fontSize: "10px", fontWeight: "normal", color: "#344158", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>{latestUpdate.source}</div>
                                        <div style={{ fontSize: "12px", color: "#64748b", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis" }}>
                                          {latestUpdate.message}
                                        </div>
-                                       <span style={{ fontSize: "11px", color: "#3b82f6", fontWeight: 600, display: "inline-block", marginTop: 4, textDecoration: "underline" }}>View Conversation</span>
+                                       <span style={{ fontSize: "11px", color: "#3b82f6", fontWeight: "normal", display: "inline-block", marginTop: 4, textDecoration: "underline" }}>View Conversation</span>
                                      </div>
                                    ) : (
                                      <span style={{ fontSize: "12px", color: "#c1cfe0", fontStyle: "italic" }}>No updates yet</span>
@@ -3278,7 +3278,7 @@ function InternDashboard() {
 
                                 {/* Status */}
                                 <td style={{ padding: "15px 16px", verticalAlign: "middle" }}>
-                                  <span style={{ display: "inline-block", padding: "4px 11px", borderRadius: 20, fontSize: "11px", fontWeight: 700, letterSpacing: "0.03em", backgroundColor: `${getStatusColor(task.status)}15`, color: getStatusColor(task.status), border: `1px solid ${getStatusColor(task.status)}35`, whiteSpace: "nowrap" }}>
+                                  <span style={{ display: "inline-block", padding: "4px 11px", borderRadius: 20, fontSize: "11px", fontWeight: "normal", letterSpacing: "0.03em", backgroundColor: `${getStatusColor(task.status)}15`, color: getStatusColor(task.status), border: `1px solid ${getStatusColor(task.status)}35`, whiteSpace: "nowrap" }}>
                                     {task.status}
                                   </span>
                                 </td>

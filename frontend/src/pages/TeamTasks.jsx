@@ -195,7 +195,7 @@ function TeamTasks({
                     {/* Task Title */}
                     <td style={{ padding: "15px 16px", verticalAlign: "middle" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                        <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "13.5px" }}>{task.title}</span>
+                        <span style={{ fontWeight: "normal", color: "#0f172a", fontSize: "13.5px" }}>{task.title}</span>
                         {task.hasUnreadFeedback && (
                           <span title="New feedback" style={{ width: 7, height: 7, borderRadius: "50%", background: "#f43f5e", display: "inline-block", flexShrink: 0, boxShadow: "0 0 0 2px rgba(244,63,94,0.2)" }} />
                         )}
@@ -210,7 +210,7 @@ function TeamTasks({
                     </td>
 
                     {/* Deadline */}
-                    <td style={{ padding: "15px 16px", verticalAlign: "middle", whiteSpace: "nowrap", fontSize: "12.5px", color: "#475569", fontWeight: 500 }}>
+                    <td style={{ padding: "15px 16px", verticalAlign: "middle", whiteSpace: "nowrap", fontSize: "12.5px", color: "#475569", fontWeight: "normal" }}>
                       {formatDate(task.deadline)}
                     </td>
 
@@ -222,7 +222,7 @@ function TeamTasks({
                           padding: "4px 12px",
                           borderRadius: 20,
                           fontSize: "11px",
-                          fontWeight: 700,
+                          fontWeight: "normal",
                           letterSpacing: "0.03em",
                           backgroundColor: "#32415815",
                           color: "#324158",
@@ -242,7 +242,7 @@ function TeamTasks({
                           padding: "4px 11px",
                           borderRadius: 20,
                           fontSize: "11px",
-                          fontWeight: 700,
+                          fontWeight: "normal",
                           letterSpacing: "0.03em",
                           backgroundColor: `${getStatusColor(task.status)}15`,
                           color: getStatusColor(task.status),

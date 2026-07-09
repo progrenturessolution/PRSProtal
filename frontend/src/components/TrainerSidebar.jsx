@@ -202,20 +202,6 @@ function TrainerSidebar({
               </div>
               {hasUnreadTrainerGds && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
             </li>
-
-            <li
-              className={activeTab === "scheduled-assignments" ? "active" : ""}
-              onClick={() => handleMenuClick("scheduled-assignments")}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ flexShrink: 0, width: 16, height: 16 }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h4m-2 8v-6m0 0l-2 2m2-2l2 2M7 7h10M7 11h4" />
-                </svg>
-                <span>Scheduled Assessment</span>
-              </div>
-              {hasUnreadTrainerAssignments && <span className="sidebar-notification-dot" aria-hidden="true" style={{ margin: 0 }} />}
-            </li>
           </>
 
         {selectedStudent && (

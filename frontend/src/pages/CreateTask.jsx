@@ -8,6 +8,7 @@ function CreateTask({ onTaskCreated, onBack }) {
   const [individualSearchQuery, setIndividualSearchQuery] = useState("");
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
   const [isIndividualDropdownOpen, setIsIndividualDropdownOpen] = useState(false);
+  const [isTeamDropdownOpen, setIsTeamDropdownOpen] = useState(false);
   const [selectedIndividualInterns, setSelectedIndividualInterns] = useState([]);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -23,6 +24,8 @@ function CreateTask({ onTaskCreated, onBack }) {
 
   const individualDropdownRef = useRef(null);
   const individualSearchInputRef = useRef(null);
+  const teamDropdownRef = useRef(null);
+  const teamSearchInputRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -36,6 +39,12 @@ function CreateTask({ onTaskCreated, onBack }) {
         !individualDropdownRef.current.contains(event.target)
       ) {
         setIsIndividualDropdownOpen(false);
+      }
+      if (
+        teamDropdownRef.current &&
+        !teamDropdownRef.current.contains(event.target)
+      ) {
+        setIsTeamDropdownOpen(false);
       }
     };
 
@@ -52,8 +61,18 @@ function CreateTask({ onTaskCreated, onBack }) {
     }
   }, [isIndividualDropdownOpen]);
 
+  useEffect(() => {
+    if (isTeamDropdownOpen) {
+      teamSearchInputRef.current?.focus({ preventScroll: true });
+    }
+  }, [isTeamDropdownOpen]);
+
   const openIndividualDropdown = () => {
     setIsIndividualDropdownOpen((prev) => !prev);
+  };
+
+  const openTeamDropdown = () => {
+    setIsTeamDropdownOpen((prev) => !prev);
   };
 
   const filterInternsByQuery = (query) => {
@@ -108,6 +127,14 @@ function CreateTask({ onTaskCreated, onBack }) {
     }
   };
 
+  const handleSelectAllTeam = () => {
+    if (selectedTeamMembers.length === filteredTeamInterns.length) {
+      setSelectedTeamMembers([]);
+    } else {
+      setSelectedTeamMembers(filteredTeamInterns.map((intern) => intern._id));
+    }
+  };
+
   const handleTeamMemberToggle = (internId) => {
     setSelectedTeamMembers((prev) => {
       if (prev.includes(internId)) {
@@ -126,6 +153,7 @@ function CreateTask({ onTaskCreated, onBack }) {
     setIndividualSearchQuery("");
     setTeamSearchQuery("");
     setIsIndividualDropdownOpen(false);
+    setIsTeamDropdownOpen(false);
     setError("");
     setSuccess("");
   };
@@ -229,6 +257,7 @@ function CreateTask({ onTaskCreated, onBack }) {
         setIndividualSearchQuery("");
         setTeamSearchQuery("");
         setIsIndividualDropdownOpen(false);
+        setIsTeamDropdownOpen(false);
         setSelectedFile(null);
 
         if (fileInputRef.current) {
@@ -582,7 +611,7 @@ function CreateTask({ onTaskCreated, onBack }) {
                           </div>
 
                           <span className="gm-student-content" style={{ flex: 1 }}>
-                            <strong style={{ display: 'block', fontSize: '14px', color: '#0f172a' }}>{intern.name}</strong>
+                            <span style={{ display: 'block', fontSize: '14px', color: '#0f172a', fontWeight: 'normal' }}>{intern.name}</span>
                             <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                               {intern.studentId || "No ID"} • {intern.email}
                             </small>
@@ -633,83 +662,202 @@ function CreateTask({ onTaskCreated, onBack }) {
           )}
 
           {assignmentType === "team" && (
-            <div className="form-group">
-              <label>Select Team Members * ({selectedTeamMembers.length} selected)</label>
-
-              <input
-                type="text"
-                placeholder="Search by name, email, ID, or type..."
-                value={teamSearchQuery}
-                onChange={(e) => setTeamSearchQuery(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  fontSize: "14px",
-                  border: "2px solid #e2e8f0",
-                  borderRadius: "10px",
-                  marginBottom: "12px",
-                  outline: "none",
-                }}
-              />
+            <div className="form-group" ref={teamDropdownRef} style={{ position: "relative" }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ fontSize: '15px', fontWeight: '500', color: '#1f2937', marginBottom: '0' }}>
+                  Select Team Members * ({selectedTeamMembers.length} selected)
+                </label>
+                <button
+                  type="button"
+                  onClick={handleSelectAllTeam}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    background: '#324158',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.05)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(50, 65, 88, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  {selectedTeamMembers.length === filteredTeamInterns.length && filteredTeamInterns.length > 0 ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
 
               <div
+                onClick={openTeamDropdown}
                 style={{
-                  maxHeight: "300px",
-                  overflowY: "auto",
-                  border: "2px solid #e2e8f0",
-                  borderRadius: "10px",
-                  backgroundColor: "#f8fafc",
+                  width: '100%',
+                  padding: '12px 14px',
+                  border: `2px solid ${isTeamDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                  borderRadius: '10px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s',
+                  color: selectedTeamMembers.length > 0 ? '#0f172a' : '#94a3b8',
+                  userSelect: 'none',
+                  boxSizing: 'border-box',
+                  marginTop: '10px',
                 }}
               >
-                {filteredTeamInterns.length === 0 ? (
-                  <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}>
-                    {teamSearchQuery ? "No interns found matching your search" : "No interns available"}
-                  </div>
-                ) : (
-                  filteredTeamInterns.map((intern) => (
-                    <label
-                      key={intern._id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        padding: "12px 16px",
-                        borderBottom: "1px solid #e2e8f0",
-                        cursor: "pointer",
-                        transition: "background-color 0.2s",
-                        backgroundColor: selectedTeamMembers.includes(intern._id)
-                          ? "#dbeafe"
-                          : "transparent",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!selectedTeamMembers.includes(intern._id)) {
-                          e.currentTarget.style.backgroundColor = "#f1f5f9";
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!selectedTeamMembers.includes(intern._id)) {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedTeamMembers.includes(intern._id)}
-                        onChange={() => handleTeamMemberToggle(intern._id)}
-                        style={{ width: "18px", height: "18px", cursor: "pointer" }}
-                      />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: "600", fontSize: "15px", color: "#0f172a" }}>
-                          {intern.name}
-                        </div>
-                        <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>
-                          {intern.email} • {intern.studentId || "No ID"} • {intern.studentType}
-                        </div>
-                      </div>
-                    </label>
-                  ))
-                )}
+                <span>
+                  {selectedTeamMembers.length > 0
+                    ? `${selectedTeamMembers.length} student(s) selected`
+                    : "Search students by name, ID, email..."}
+                </span>
+                <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isTeamDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
               </div>
+
+              {isTeamDropdownOpen && (
+                <div
+                  className="gm-students-dropdown"
+                  style={{
+                    position: 'relative',
+                    marginTop: '10px',
+                    background: 'white',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+                    zIndex: 20,
+                    overflow: 'hidden',
+                    maxHeight: '380px',
+                  }}
+                >
+                  <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                    <input
+                      ref={teamSearchInputRef}
+                      type="text"
+                      placeholder="Search students..."
+                      value={teamSearchQuery}
+                      onChange={(e) => setTeamSearchQuery(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e5e7eb',
+                        fontSize: '13px',
+                        background: '#f8fafc',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+
+                  <div className="gm-students-box" style={{ maxHeight: "280px" }}>
+                    {filteredTeamInterns.length === 0 ? (
+                      <div className="gm-empty-inline">
+                        {teamSearchQuery
+                          ? "No students found matching your search"
+                          : "No students available"}
+                      </div>
+                    ) : (
+                      filteredTeamInterns.map((intern) => (
+                        <button
+                          key={intern._id}
+                          type="button"
+                          className={`gm-student-row ${selectedTeamMembers.includes(intern._id) ? "is-selected" : ""}`}
+                          onClick={() => handleTeamMemberToggle(intern._id)}
+                          style={{
+                            width: "100%",
+                            border: "1px solid #dbe4ef",
+                            borderRadius: "10px",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px 16px',
+                            background: selectedTeamMembers.includes(intern._id) ? '#f0fdf4' : 'transparent',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedTeamMembers.includes(intern._id)}
+                            onChange={() => {}}
+                            style={{ pointerEvents: 'none', width: '18px', height: '18px' }}
+                          />
+                          <div
+                            style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              display: "grid",
+                              placeItems: "center",
+                              backgroundColor: selectedTeamMembers.includes(intern._id) ? "#dbeafe" : "#f1f5f9",
+                              color: selectedTeamMembers.includes(intern._id) ? "#2563eb" : "#475569",
+                              fontWeight: 700,
+                              fontSize: "12px",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {intern.name
+                              ?.split(" ")
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .map((part) => part[0]?.toUpperCase())
+                              .join("") || "S"}
+                          </div>
+
+                          <span className="gm-student-content" style={{ flex: 1 }}>
+                            <span style={{ display: 'block', fontSize: '14px', color: '#0f172a', fontWeight: 'normal' }}>{intern.name}</span>
+                            <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                              {intern.studentId || "No ID"} • {intern.email}
+                            </small>
+                            <span className="gm-type-chip">{intern.studentType}</span>
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedTeamMembers.length > 0 && !isTeamDropdownOpen && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    padding: "12px 14px",
+                    backgroundColor: "#f0fdf4",
+                    borderRadius: "8px",
+                    border: "1px solid #bbf7d0",
+                    color: "#16a34a",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  <div>
+                    Selected: {selectedTeamMembers.length} student(s)
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {selectedTeamMembers.map((id) => {
+                      const s = interns.find(intern => intern._id === id);
+                      if (!s) return null;
+                      return (
+                        <span key={id} style={{ background: '#dcfce7', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', color: '#15803d' }}>
+                          {s.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

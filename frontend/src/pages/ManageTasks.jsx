@@ -718,7 +718,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                     <td>
                       <div
                         style={{
-                          fontWeight: 600,
+                          fontWeight: "normal",
                           color: "#0f172a",
                           fontSize: "15px",
                         }}
@@ -761,7 +761,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                           borderRadius: "20px",
                           backgroundColor: "#dbeafe",
                           color: "#1e40af",
-                          fontWeight: "600",
+                          fontWeight: "normal",
                           fontSize: "13px",
                         }}
                       >
@@ -774,7 +774,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                           padding: "6px 12px",
                           borderRadius: "20px",
                           fontSize: "12px",
-                          fontWeight: 600,
+                          fontWeight: "normal",
                           backgroundColor: `${getStatusColor(task.status)}20`,
                           color: getStatusColor(task.status),
                         }}
@@ -900,7 +900,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         <td>
                           <div
                             style={{
-                              fontWeight: 600,
+                              fontWeight: "normal",
                               color: "#0f172a",
                               fontSize: "15px",
                               marginBottom: "6px",
@@ -922,7 +922,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                         <td>
                           <div
                             style={{
-                              fontWeight: 600,
+                              fontWeight: "normal",
                               color: "#0f172a",
                               marginBottom: "4px",
                             }}
@@ -936,7 +936,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                               borderRadius: "6px",
                               display: "inline-block",
                               fontSize: "12px",
-                              fontWeight: 600,
+                              fontWeight: "normal",
                               color: "#475569",
                             }}
                           >
@@ -955,7 +955,7 @@ function ManageTasks({ onTaskApproved, onBack }) {
                               padding: "6px 12px",
                               borderRadius: "20px",
                               fontSize: "12px",
-                              fontWeight: 600,
+                              fontWeight: "normal",
                               backgroundColor: `${getStatusColor(task.status)}20`,
                               color: getStatusColor(task.status),
                               whiteSpace: "nowrap",

@@ -2754,42 +2754,6 @@ function TrainerDashboard() {
                     })()
                   ) : (
                     <div>
-                      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong>Date:</strong> {selectedGd.details?.form?.date || selectedGd.dateTime || '-'} &nbsp; <strong>Time:</strong> {selectedGd.details?.form?.startTime || '-'}
-                        </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button
-                            onClick={() => setShowGdModal(true)}
-                            style={{
-                              background: 'linear-gradient(135deg, #10b981, #059669)',
-                              color: '#ffffff',
-                              border: 'none',
-                              padding: '10px 16px',
-                              borderRadius: '10px',
-                              cursor: 'pointer',
-                              fontWeight: '600',
-                              boxShadow: '0 8px 18px rgba(16, 185, 129, 0.22)'
-                            }}
-                          >
-                            Conduct GD
-                          </button>
-                          <button
-                            onClick={() => { setSelectedGd(null); }}
-                            style={{
-                              background: '#f8fafc',
-                              color: '#334155',
-                              border: '1px solid #cbd5e1',
-                              padding: '10px 16px',
-                              borderRadius: '10px',
-                              cursor: 'pointer',
-                              fontWeight: '600'
-                            }}
-                          >
-                            Back
-                          </button>
-                        </div>
-                      </div>
 
                       <div style={{ padding: '0 20px 16px 20px' }}>
                         <input
@@ -3377,7 +3341,7 @@ function TrainerDashboard() {
                                                     onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
                                                     onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
                                                   >
-                                                    View Details
+                                                    Take activity
                                                   </button>
                                                 )}
                                               </div>

@@ -81,13 +81,13 @@ function RepSidebar({ activeTab, onSelectTab, sidebarOpen, setSidebarOpen, user,
           <img src={logo} alt="PRS Portal" className="sidebar-logo" />
         </div>
         <h2>PRS PORTAL</h2>
-        <p>Representative Portal</p>
+        <p>PGIR Portal</p>
       </div>
 
       <div className="sidebar-user-summary">
         <p className="sidebar-user-label">Welcome,</p>
-        <p className="sidebar-user-name">{user?.name || "Representative"}</p>
-        <p className="sidebar-user-role">Representative</p>
+        <p className="sidebar-user-name">{user?.name || "PGIR"}</p>
+        <p className="sidebar-user-role">PGIR</p>
       </div>
       <ul className="sidebar-menu">
         {items.map(item => (
