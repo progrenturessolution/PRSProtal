@@ -2619,7 +2619,7 @@ function TrainerDashboard() {
                         <div style={{ overflowX: 'auto' }}>
                           {allScheduledGdGroups.map((group) => {
                           const groupStudents = Array.isArray(group.students) ? group.students : [];
-                          const groupId = group._id || String(group.groupNumber || group.groupName || Math.random());
+                          const groupId = group.id || group._id || String(group.groupNumber || group.groupName || Math.random());
                           const isExpanded = !!expandedGroups[groupId];
                           const groupStudentQuery = (groupStudentSearch[groupId] || "").trim().toLowerCase();
                           const visibleGroupStudents = groupStudents.filter((student) => {
