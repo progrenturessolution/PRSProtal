@@ -31,6 +31,44 @@ const AdminPaymentSchema = new mongoose.Schema({
   },
   sendDate: {
     type: Date
+  },
+  connectedBy: {
+    type: String,
+    trim: true
+  },
+  totalPayment: {
+    type: Number,
+    default: 0
+  },
+  firstPayment: {
+    type: Number,
+    default: 0
+  },
+  firstPaymentSendDate: {
+    type: Date
+  },
+  firstPaymentReceiveDate: {
+    type: Date
+  },
+  secondPayment: {
+    type: Number,
+    default: 0
+  },
+  secondPaymentSendDate: {
+    type: Date
+  },
+  secondPaymentReceiveDate: {
+    type: Date
+  },
+  finalPayment: {
+    type: Number,
+    default: 0
+  },
+  finalPaymentSendDate: {
+    type: Date
+  },
+  finalPaymentReceiveDate: {
+    type: Date
   }
 }, {
   timestamps: true

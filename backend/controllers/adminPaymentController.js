@@ -15,7 +15,7 @@ const getPayments = async (req, res) => {
       };
     }
 
-    const payments = await AdminPayment.find(query).sort({ createdAt: -1 });
+    const payments = await AdminPayment.find(query).sort({ updatedAt: -1 });
     res.status(200).json({
       success: true,
       payments
@@ -32,7 +32,22 @@ const getPayments = async (req, res) => {
 // Create a payment record
 const createPayment = async (req, res) => {
   try {
-    const { name, role, paymentGoal, payment, pendingPayment, receiveDate, sendDate } = req.body;
+    const {
+      name,
+      role,
+      paymentGoal,
+      connectedBy,
+      totalPayment,
+      firstPayment,
+      firstPaymentSendDate,
+      firstPaymentReceiveDate,
+      secondPayment,
+      secondPaymentSendDate,
+      secondPaymentReceiveDate,
+      finalPayment,
+      finalPaymentSendDate,
+      finalPaymentReceiveDate
+    } = req.body;
 
     if (!name || !role) {
       return res.status(400).json({
@@ -41,17 +56,32 @@ const createPayment = async (req, res) => {
       });
     }
 
-    const payNum = Number(payment) || 0;
-    const pendingNum = Number(pendingPayment) || 0;
+    const totPay = Number(totalPayment) || 0;
+    const fPay = Number(firstPayment) || 0;
+    const sPay = Number(secondPayment) || 0;
+    const lPay = Number(finalPayment) || 0;
+    const paidSum = fPay + sPay + lPay;
+    const pendPay = totPay - paidSum;
 
     const newPayment = new AdminPayment({
       name,
       role,
       paymentGoal: paymentGoal || 'Pending',
-      payment: payNum,
-      pendingPayment: pendingNum,
-      receiveDate: receiveDate || null,
-      sendDate: sendDate || null
+      payment: paidSum,
+      pendingPayment: pendPay,
+      receiveDate: firstPaymentReceiveDate || null,
+      sendDate: firstPaymentSendDate || null,
+      connectedBy: connectedBy || '',
+      totalPayment: totPay,
+      firstPayment: fPay,
+      firstPaymentSendDate: firstPaymentSendDate || null,
+      firstPaymentReceiveDate: firstPaymentReceiveDate || null,
+      secondPayment: sPay,
+      secondPaymentSendDate: secondPaymentSendDate || null,
+      secondPaymentReceiveDate: secondPaymentReceiveDate || null,
+      finalPayment: lPay,
+      finalPaymentSendDate: finalPaymentSendDate || null,
+      finalPaymentReceiveDate: finalPaymentReceiveDate || null
     });
 
     await newPayment.save();
@@ -73,7 +103,22 @@ const createPayment = async (req, res) => {
 // Update a payment record
 const updatePayment = async (req, res) => {
   try {
-    const { name, role, paymentGoal, payment, pendingPayment, receiveDate, sendDate } = req.body;
+    const {
+      name,
+      role,
+      paymentGoal,
+      connectedBy,
+      totalPayment,
+      firstPayment,
+      firstPaymentSendDate,
+      firstPaymentReceiveDate,
+      secondPayment,
+      secondPaymentSendDate,
+      secondPaymentReceiveDate,
+      finalPayment,
+      finalPaymentSendDate,
+      finalPaymentReceiveDate
+    } = req.body;
     const { id } = req.params;
 
     const paymentRecord = await AdminPayment.findById(id);
@@ -84,18 +129,33 @@ const updatePayment = async (req, res) => {
       });
     }
 
-    if (name) paymentRecord.name = name;
-    if (role) paymentRecord.role = role;
-    
+    if (name !== undefined) paymentRecord.name = name;
+    if (role !== undefined) paymentRecord.role = role;
     if (paymentGoal !== undefined) paymentRecord.paymentGoal = paymentGoal;
-    if (payment !== undefined) paymentRecord.payment = Number(payment) || 0;
-    
-    if (pendingPayment !== undefined) {
-      paymentRecord.pendingPayment = Number(pendingPayment) || 0;
-    }
-    
-    if (receiveDate !== undefined) paymentRecord.receiveDate = receiveDate || null;
-    if (sendDate !== undefined) paymentRecord.sendDate = sendDate || null;
+    if (connectedBy !== undefined) paymentRecord.connectedBy = connectedBy;
+
+    if (totalPayment !== undefined) paymentRecord.totalPayment = Number(totalPayment) || 0;
+    if (firstPayment !== undefined) paymentRecord.firstPayment = Number(firstPayment) || 0;
+    if (secondPayment !== undefined) paymentRecord.secondPayment = Number(secondPayment) || 0;
+    if (finalPayment !== undefined) paymentRecord.finalPayment = Number(finalPayment) || 0;
+
+    if (firstPaymentSendDate !== undefined) paymentRecord.firstPaymentSendDate = firstPaymentSendDate || null;
+    if (firstPaymentReceiveDate !== undefined) paymentRecord.firstPaymentReceiveDate = firstPaymentReceiveDate || null;
+    if (secondPaymentSendDate !== undefined) paymentRecord.secondPaymentSendDate = secondPaymentSendDate || null;
+    if (secondPaymentReceiveDate !== undefined) paymentRecord.secondPaymentReceiveDate = secondPaymentReceiveDate || null;
+    if (finalPaymentSendDate !== undefined) paymentRecord.finalPaymentSendDate = finalPaymentSendDate || null;
+    if (finalPaymentReceiveDate !== undefined) paymentRecord.finalPaymentReceiveDate = finalPaymentReceiveDate || null;
+
+    // Recalculate computed payment and pendingPayment values
+    const fPayVal = paymentRecord.firstPayment || 0;
+    const sPayVal = paymentRecord.secondPayment || 0;
+    const lPayVal = paymentRecord.finalPayment || 0;
+    paymentRecord.payment = fPayVal + sPayVal + lPayVal;
+    paymentRecord.pendingPayment = (paymentRecord.totalPayment || 0) - paymentRecord.payment;
+
+    // Backward-compatible receiveDate / sendDate fallback matching 1st payment
+    paymentRecord.receiveDate = paymentRecord.firstPaymentReceiveDate || null;
+    paymentRecord.sendDate = paymentRecord.firstPaymentSendDate || null;
 
     await paymentRecord.save();
 

@@ -72,10 +72,43 @@ export default function ActivityManagementNew() {
   const [isAssessDropdownOpen, setIsAssessDropdownOpen] = useState(false);
   const [assessDropdownSearchText, setAssessDropdownSearchText] = useState('');
 
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
+  const [modeFilter, setModeFilter] = useState('all');
+  const [createdByFilter, setCreatedByFilter] = useState('all');
+
   const filteredActivities = activities.filter((activity) => {
-    if (activityFilter === 'all') return true;
-    const normalizedType = String(activity.type || '').toLowerCase();
-    return normalizedType.includes(activityFilter);
+    // 1. Activity Type Filter
+    if (activityFilter !== 'all') {
+      const normalizedType = String(activity.type || '').toLowerCase();
+      if (!normalizedType.includes(activityFilter)) return false;
+    }
+
+    // 2. Status Filter
+    if (statusFilter !== 'all') {
+      const status = String(activity.status || 'Scheduled').toLowerCase();
+      if (status !== statusFilter.toLowerCase()) return false;
+    }
+
+    // 3. Date Filter
+    if (dateFilter) {
+      const activityDate = activity.dateTime ? new Date(activity.dateTime).toISOString().split('T')[0] : '';
+      if (activityDate !== dateFilter) return false;
+    }
+
+    // 4. Mode Filter
+    if (modeFilter !== 'all') {
+      const mode = String(getActivityModeLabel(activity)).toLowerCase();
+      if (!mode.includes(modeFilter.toLowerCase())) return false;
+    }
+
+    // 5. Created By Filter
+    if (createdByFilter !== 'all') {
+      const creator = String(activity.createdByModel || 'Admin').toLowerCase();
+      if (creator !== createdByFilter.toLowerCase()) return false;
+    }
+
+    return true;
   });
 
   useEffect(() => {
@@ -1480,6 +1513,143 @@ export default function ActivityManagementNew() {
             </button>
           </div>
         </div>
+
+        {/* Advanced Filters Panel */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '12px',
+          padding: '16px',
+          background: '#f8fafc',
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0',
+          marginBottom: '16px'
+        }}>
+          {/* Status Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                background: 'white',
+                fontSize: '13px',
+                color: '#324158',
+                fontWeight: '500'
+              }}
+            >
+              <option value="all">All Statuses</option>
+              <option value="Scheduled">Scheduled</option>
+              <option value="Rescheduled">Rescheduled</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+
+          {/* Date Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Date</label>
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                fontSize: '13px',
+                color: '#324158',
+                fontWeight: '500',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Mode Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Mode</label>
+            <select
+              value={modeFilter}
+              onChange={(e) => setModeFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                background: 'white',
+                fontSize: '13px',
+                color: '#324158',
+                fontWeight: '500'
+              }}
+            >
+              <option value="all">All Modes</option>
+              <option value="Individual">Individual</option>
+              <option value="Group">Group</option>
+            </select>
+          </div>
+
+          {/* Created By Filter */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Created By</label>
+            <select
+              value={createdByFilter}
+              onChange={(e) => setCreatedByFilter(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                background: 'white',
+                fontSize: '13px',
+                color: '#324158',
+                fontWeight: '500'
+              }}
+            >
+              <option value="all">All Creators</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+
+          {/* Reset Filters */}
+          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setStatusFilter('all');
+                setDateFilter('');
+                setModeFilter('all');
+                setCreatedByFilter('all');
+              }}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #324158',
+                background: 'transparent',
+                color: '#324158',
+                fontWeight: '600',
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#324158';
+                e.target.style.color = '#ffffff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#324158';
+              }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        </div>
+
         {loading ? <div>Loading...</div> : (
           <div className="table-container am-table-wrap">
             {filteredActivities.length === 0 ? (

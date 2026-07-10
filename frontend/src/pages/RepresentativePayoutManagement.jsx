@@ -13,6 +13,13 @@ const formatMonthLabel = (value) => {
   return text;
 };
 
+const formatDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-IN");
+};
+
 const emptyForm = {
   id: "",
   representativeId: "",
@@ -51,6 +58,9 @@ function RepresentativePayoutManagement() {
   const [success, setSuccess] = useState("");
   const [repSearchText, setRepSearchText] = useState("");
   const [showRepDropdown, setShowRepDropdown] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedRepDetails, setSelectedRepDetails] = useState(null);
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
   useEffect(() => {
     if (formData.representativeId && representatives.length > 0) {
@@ -129,12 +139,12 @@ function RepresentativePayoutManagement() {
       const rect = event.currentTarget.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      const menuHeight = 150;
+      const menuHeight = 190;
       const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
 
       setMenuPosition({
         top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
-        left: rect.right - 160 + window.scrollX,
+        left: rect.right - 190 + window.scrollX,
         openUpward,
       });
       setOpenMenuId(id);
@@ -194,6 +204,24 @@ function RepresentativePayoutManagement() {
     });
     setActiveTab("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleOpenRepresentativeStudents = async (representativeId) => {
+    if (!representativeId) return;
+    setError("");
+    setStudentSearchQuery("");
+    setDetailsLoading(true);
+    try {
+      const response = await adminRepAPI.getRepresentativeDetails(representativeId);
+      if (response.data.success) {
+        setSelectedRepDetails(response.data);
+      }
+    } catch (err) {
+      console.error("Representative details fetch error", err);
+      setError(err.response?.data?.message || "Failed to load enrolled students");
+    } finally {
+      setDetailsLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -500,7 +528,7 @@ function RepresentativePayoutManagement() {
                           <td>{item.studentsWith3000Paid}</td>
                           <td>{item.payoutEligible}</td>
                           <td>{item.rewardPercent}%</td>
-                          <td>₹{item.payoutAmount || 0}</td>
+                          <td>Rs {item.payoutAmount || 0}</td>
                           <td>
                             <span
                               style={{
@@ -538,7 +566,7 @@ function RepresentativePayoutManagement() {
                                 justifyContent: "center",
                               }}
                             >
-                              ⋮
+                              ...
                             </button>
 
                             {openMenuId === item._id &&
@@ -555,10 +583,32 @@ function RepresentativePayoutManagement() {
                                     borderRadius: "12px",
                                     boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
                                     zIndex: 11000,
-                                    width: "160px",
+                                    width: "190px",
                                     overflow: "hidden",
                                   }}
                                 >
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleOpenRepresentativeStudents(item.representative?._id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px 16px",
+                                      background: "white",
+                                      border: "none",
+                                      textAlign: "left",
+                                      cursor: "pointer",
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                      color: "#0f172a",
+                                    }}
+                                    onMouseEnter={(e) => (e.target.style.background = "#f1f5f9")}
+                                    onMouseLeave={(e) => (e.target.style.background = "white")}
+                                  >
+                                    Enroll Student ({representatives.find(r => r._id === item.representative?._id)?.totalStudents || 0})
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -570,6 +620,7 @@ function RepresentativePayoutManagement() {
                                       padding: "12px 16px",
                                       background: "white",
                                       border: "none",
+                                      borderTop: "1px solid #f3f4f6",
                                       textAlign: "left",
                                       cursor: "pointer",
                                       fontSize: "14px",
@@ -648,6 +699,417 @@ function RepresentativePayoutManagement() {
             )}
           </div>
         </>
+      )}
+
+      {detailsLoading && createPortal(
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.36)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 12000 }}>
+          <div style={{ background: "#fff", borderRadius: "20px", padding: "28px 32px", textAlign: "center", boxShadow: "0 24px 60px rgba(15, 23, 42, 0.25)" }}>
+            <div style={{ fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>Loading enrolled students...</div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedRepDetails && createPortal(
+        <div
+          onClick={() => setSelectedRepDetails(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 12500,
+            background: "rgba(15, 23, 42, 0.45)",
+            backdropFilter: "blur(8px)",
+            padding: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflowY: "auto",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(1280px, 100%)",
+              maxHeight: "90vh",
+              background: "#ffffff",
+              borderRadius: "24px",
+              overflow: "hidden",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                background: "#324158",
+                color: "#ffffff",
+                padding: "16px 28px",
+                borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              {/* Top Row: Label & Close Button */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <div style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.7)", fontWeight: 700 }}>
+                  Representative Performance Hub
+                </div>
+                {/* Circular Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setSelectedRepDetails(null)}
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "50%",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(255,255,255,0.1)",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.2s ease-in-out",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+                    e.currentTarget.style.transform = "scale(1.08)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" style={{ width: "12px", height: "12px" }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Main Content Row */}
+              <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff" }}>{selectedRepDetails.representative?.name || "Representative"}</h2>
+                  <div style={{ marginTop: "6px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
+                      PGIR ID: {selectedRepDetails.representative?.pgirId || "-"}
+                    </span>
+                    <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
+                      Total Enrolled: {selectedRepDetails.stats?.totalStudents || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Content Container */}
+            <div style={{ padding: "32px", overflowY: "auto", flex: 1, backgroundColor: "#ffffff" }}>
+              {/* Sleek KPI Metrics Bar */}
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "16px",
+                  padding: "24px",
+                  marginBottom: "28px",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gap: "24px",
+                  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+                }}
+              >
+                {[
+                  {
+                    label: "Internship Enrolled",
+                    value: selectedRepDetails.stats?.byType?.internship || 0,
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.62 48.62 0 0112 20.9c2.785 0 5.43-.233 8.006-.684a60.428 60.428 0 00-.49-6.347M12 2.25l-9 4.875 9 4.875 9-4.875-9-4.875zM3.72 10.5l8.28 4.5 8.28-4.5" />
+                      </svg>
+                    )
+                  },
+                  {
+                    label: "SMS Program Enrolled",
+                    value: selectedRepDetails.stats?.byType?.smsProgram || 0,
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                      </svg>
+                    )
+                  },
+                  {
+                    label: "Enrolled This Week",
+                    value: selectedRepDetails.stats?.weeklyStudents || 0,
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008zM12 15h.008v.008H12V15zm0 2.25h.008v.008H12v-.008zM9.75 15h.008v.008H9.75V15zm0 2.25h.008v.008H9.75v-.008zM7.5 15h.008v.008H7.5V15zm0 2.25h.008v.008H7.5v-.008zm6.75-4.5h.008v.008h-.008v-.008zm0 2.25h.008v.008h-.008V15zm0 2.25h.008v.008h-.008v-.008zm2.25-4.5h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V15z" />
+                      </svg>
+                    )
+                  },
+                  {
+                    label: "Enrolled This Month",
+                    value: selectedRepDetails.stats?.monthlyStudents || 0,
+                    icon: (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: "20px", height: "20px" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-.1-8.203-.27m16.406 0a11.986 11.986 0 00-1.683-4.218M4.203 10.23a11.986 11.986 0 011.683-4.218" />
+                      </svg>
+                    )
+                  }
+                ].map((card) => (
+                  <div
+                    key={card.label}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "12px 16px",
+                      background: "#f8fafc",
+                      borderRadius: "12px",
+                      borderLeft: "4px solid #324158",
+                      transition: "all 0.2s ease-in-out",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(50, 65, 88, 0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <div>
+                      <div style={{ color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: "4px" }}>
+                        {card.label}
+                      </div>
+                      <div style={{ fontSize: "28px", fontWeight: 800, color: "#324158", lineHeight: 1.1 }}>
+                        {card.value}
+                      </div>
+                    </div>
+                    <div style={{ color: "#324158", background: "#ffffff", padding: "8px", borderRadius: "8px", border: "1px solid #cbd5e1", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {card.icon}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Table Section */}
+              <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "20px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.02)", overflow: "hidden" }}>
+                {/* Search Header */}
+                <div style={{ padding: "20px 24px", borderBottom: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", gap: "16px", flexWrap: "wrap", alignItems: "center", backgroundColor: "#ffffff" }}>
+                  <div>
+                    <h3 style={{ margin: 0, color: "#324158", fontSize: "18px", fontWeight: 700 }}>Enrolled Students List</h3>
+                  </div>
+                  <div style={{ position: "relative", minWidth: "280px", maxWidth: "420px", width: "100%" }}>
+                    <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", display: "flex", alignItems: "center" }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: "18px", height: "18px" }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Search student name, email, mobile, ID..."
+                      value={studentSearchQuery}
+                      onChange={(e) => setStudentSearchQuery(e.target.value)}
+                      style={{
+                        width: "100%",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "12px",
+                        padding: "12px 14px 12px 42px",
+                        background: "#ffffff",
+                        fontSize: "14px",
+                        outline: "none",
+                        transition: "all 0.2s",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#324158";
+                        e.target.style.boxShadow = "0 0 0 3px rgba(50, 65, 88, 0.15)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#cbd5e1";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Table Container */}
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ background: "#324158", borderBottom: "1px solid #cbd5e1" }}>
+                        {['Student Info', 'Program Type', 'Contact Info', 'College / Institute', 'Course Details', 'Payment Summary', 'Key Dates', 'Status'].map((heading) => (
+                          <th key={heading} style={{ textAlign: "left", padding: "16px 20px", fontSize: "11px", color: "#ffffff", backgroundColor: "#324158", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+                            {heading}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(selectedRepDetails.enrolledStudents || []).filter((student) => {
+                        const query = studentSearchQuery.trim().toLowerCase();
+                        if (!query) return true;
+                        return [student.name, student.email, student.mobile, student.internId, student.studentType, student.domain, student.currentDesignation, student.collegeName, student.instituteName].filter(Boolean).join(" ").toLowerCase().includes(query);
+                      }).length === 0 ? (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: "center", padding: "48px 16px", color: "#64748b" }}>
+                            <div style={{ fontSize: "15px", fontWeight: 600, marginBottom: "4px" }}>No Enrolled Students Found</div>
+                            <div style={{ fontSize: "13px", color: "#94a3b8" }}>Search term match nahi hua ya representative ne koi student add nahi kiya.</div>
+                          </td>
+                        </tr>
+                      ) : (
+                        (selectedRepDetails.enrolledStudents || []).filter((student) => {
+                          const query = studentSearchQuery.trim().toLowerCase();
+                          if (!query) return true;
+                          return [student.name, student.email, student.mobile, student.internId, student.studentType, student.domain, student.currentDesignation, student.collegeName, student.instituteName].filter(Boolean).join(" ").toLowerCase().includes(query);
+                        }).map((student) => {
+                          const isSMS = student.studentType === "SMS Program";
+                          const isCompleted = student.status === "completed";
+                          const isActive = student.status === "active";
+                          
+                          // Fee Calculations
+                          const completedFeesVal = student.completedFees || student.paymentAmount || 0;
+                          const pendingFeesVal = student.pendingFees || 0;
+
+                          return (
+                            <tr
+                              key={student._id}
+                              style={{ borderBottom: "1px solid #cbd5e1", transition: "background-color 0.15s" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f8fafc"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                            >
+                              {/* Student Info */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <div style={{ fontSize: "14px", fontWeight: 700, color: "#324158" }}>{student.name || "-"}</div>
+                                <div style={{ marginTop: "6px", display: "inline-block", fontFamily: "monospace", fontSize: "12px", background: "rgba(50, 65, 88, 0.06)", padding: "2px 6px", borderRadius: "4px", color: "#324158" }}>
+                                  ID: {student.internId || "-"}
+                                </div>
+                                <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b" }}>
+                                  Qual: {student.currentQualification || student.yearOfStudy || "-"}
+                                </div>
+                              </td>
+
+                              {/* Program Type */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <div
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    padding: "4px 10px",
+                                    borderRadius: "999px",
+                                    background: isSMS ? "#ffffff" : "#324158",
+                                    color: isSMS ? "#324158" : "#ffffff",
+                                    border: isSMS ? "1px solid #324158" : "none",
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: isSMS ? "#324158" : "#ffffff" }}></span>
+                                  {student.studentType || "-"}
+                                </div>
+                                <div style={{ marginTop: "8px", fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+                                  Role: {student.currentDesignation || "Student"}
+                                </div>
+                              </td>
+
+                              {/* Contact Info */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 500, wordBreak: "break-all" }}>{student.email || "-"}</div>
+                                <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#64748b" }}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: "14px", height: "14px" }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                                  </svg>
+                                  {student.mobile || "-"}
+                                </div>
+                              </td>
+
+                              {/* College / Institute */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 600, lineHeight: 1.4, maxWidth: "220px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={student.instituteName || student.collegeName}>
+                                  {student.instituteName || student.collegeName || "-"}
+                                </div>
+                                <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b" }}>
+                                  Loc: {student.branch || student.instituteLocation || "-"}
+                                </div>
+                              </td>
+
+                              {/* Course Details */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 500 }}>
+                                  Domain: <span style={{ fontWeight: 600, color: "#324158" }}>{student.domain || "-"}</span>
+                                </div>
+                                <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b" }}>
+                                  Duration: {student.duration || "-"}
+                                </div>
+                                <div style={{ marginTop: "4px", fontSize: "12px", color: "#64748b" }}>
+                                  Batch: {student.enrolBatchMonth || "-"}
+                                </div>
+                              </td>
+
+                              {/* Payment Summary */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 700 }}>
+                                  Paid: Rs {completedFeesVal}
+                                </div>
+                                {pendingFeesVal > 0 ? (
+                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "#324158", fontWeight: 700 }}>
+                                    Pending: Rs {pendingFeesVal}
+                                  </div>
+                                ) : (
+                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+                                    Fully Paid
+                                  </div>
+                                )}
+                                {student.transactionId && (
+                                  <div style={{ marginTop: "4px", fontSize: "11px", color: "#94a3b8", fontFamily: "monospace" }}>
+                                    Txn: {student.transactionId}
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Key Dates */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <div style={{ fontSize: "12px", color: "#475569" }}>
+                                  <span style={{ color: "#94a3b8" }}>Added:</span> {formatDate(student.createdAt)}
+                                </div>
+                                <div style={{ marginTop: "6px", fontSize: "12px", color: "#475569" }}>
+                                  <span style={{ color: "#94a3b8" }}>Start:</span> {formatDate(student.joiningDate || student.enrolmentDate)}
+                                </div>
+                                <div style={{ marginTop: "4px", fontSize: "12px", color: "#475569" }}>
+                                  <span style={{ color: "#94a3b8" }}>End:</span> {formatDate(student.endingDate || student.lastPaymentDate)}
+                                </div>
+                              </td>
+
+                              {/* Status */}
+                              <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    padding: "4px 10px",
+                                    borderRadius: "999px",
+                                    background: isActive ? "#324158" : "#ffffff",
+                                    color: isActive ? "#ffffff" : "#324158",
+                                    border: isActive ? "none" : "1px solid #324158",
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    textTransform: "capitalize",
+                                  }}
+                                >
+                                  {student.status || "-"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

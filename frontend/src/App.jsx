@@ -11,8 +11,15 @@ import AssessmentForm from './pages/AssessmentForm';
 import TrainingForm from './pages/TrainingForm';
 import StudentDetailReport from './pages/StudentDetailReport';
 import VerifyIdentity from './pages/VerifyIdentity';
+import MaintenancePage from './pages/MaintenancePage';
+
+const IS_MAINTENANCE = true;
 
 function App() {
+  if (IS_MAINTENANCE) {
+    return <MaintenancePage />;
+  }
+
   return (
     <Router>
         <Routes>

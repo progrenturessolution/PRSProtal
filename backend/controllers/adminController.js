@@ -1895,7 +1895,7 @@ exports.getRepresentativeDetails = async (req, res) => {
       weeklyStudents,
       monthlyStudents,
       typeBreakdown,
-      recentStudents,
+      enrolledStudents,
       payouts
     ] = await Promise.all([
       Intern.countDocuments(baseFilter),
@@ -1906,9 +1906,8 @@ exports.getRepresentativeDetails = async (req, res) => {
         { $group: { _id: '$studentType', count: { $sum: 1 } } }
       ]),
       Intern.find(baseFilter)
-        .select('name email internId studentType mobile createdAt paymentAmount completedFees pendingFees dateOfPayment lastPaymentDate currentDesignation paymentDoneBy transactionId domain joiningDate endingDate duration status')
-        .sort({ createdAt: -1 })
-        .limit(20),
+        .select('name email internId studentType mobile createdAt paymentAmount completedFees pendingFees dateOfPayment lastPaymentDate currentDesignation paymentDoneBy transactionId domain joiningDate endingDate duration status collegeName branch yearOfStudy instituteName instituteLocation currentQualification enrolmentDate enrolBatchMonth totalFees firstPaymentAmount firstPaymentDate secondPaymentAmount secondPaymentDate finalPaymentAmount finalPaymentDate')
+        .sort({ createdAt: -1 }),
       RepresentativePayout.find({ representative: representative._id })
         .sort({ weekStartDate: -1 })
         .limit(20)
@@ -1937,7 +1936,7 @@ exports.getRepresentativeDetails = async (req, res) => {
         monthlyStudents,
         byType
       },
-      recentStudents,
+      enrolledStudents,
       payouts
     });
   } catch (error) {

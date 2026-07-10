@@ -286,6 +286,17 @@ const emptyForm = {
   pendingPayment: "0",
   receiveDate: "",
   sendDate: "",
+  connectedBy: "",
+  totalPayment: "0",
+  firstPayment: "0",
+  firstPaymentSendDate: "",
+  firstPaymentReceiveDate: "",
+  secondPayment: "0",
+  secondPaymentSendDate: "",
+  secondPaymentReceiveDate: "",
+  finalPayment: "0",
+  finalPaymentSendDate: "",
+  finalPaymentReceiveDate: "",
 };
 
 function PaymentManagement() {
@@ -300,58 +311,118 @@ function PaymentManagement() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [selectedMonthFilter, setSelectedMonthFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [minAmountFilter, setMinAmountFilter] = useState("");
+  const [maxAmountFilter, setMaxAmountFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState("all");
+  const [selectedPaymentDetails, setSelectedPaymentDetails] = useState(null);
+
+  useEffect(() => {
+    const total = Number(formData.totalPayment) || 0;
+    const first = Number(formData.firstPayment) || 0;
+    const second = Number(formData.secondPayment) || 0;
+    const final = Number(formData.finalPayment) || 0;
+    const pending = total - (first + second + final);
+    setFormData((prev) => ({
+      ...prev,
+      pendingPayment: String(pending),
+      payment: String(first + second + final)
+    }));
+  }, [formData.totalPayment, formData.firstPayment, formData.secondPayment, formData.finalPayment]);
+
+  const getUniquePaymentMonths = () => {
+    const months = {};
+    payments.forEach((item) => {
+      const datesToCheck = [item.receiveDate, item.firstPaymentReceiveDate, item.secondPaymentReceiveDate, item.finalPaymentReceiveDate].filter(Boolean);
+      datesToCheck.forEach((dStr) => {
+        const d = new Date(dStr);
+        if (!isNaN(d.getTime())) {
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+          const label = d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+          months[key] = { key, label, year: d.getFullYear(), monthIndex: d.getMonth() };
+        }
+      });
+    });
+    return Object.values(months).sort((a, b) => {
+      if (a.year !== b.year) return b.year - a.year;
+      return b.monthIndex - a.monthIndex;
+    });
+  };
 
   const calculateMonthlyData = () => {
     const monthlyGroups = {};
 
+    const getMonthGroup = (dateStr) => {
+      const dateObj = new Date(dateStr);
+      if (isNaN(dateObj.getTime())) return null;
+      const year = dateObj.getFullYear();
+      const monthIndex = dateObj.getMonth();
+      const monthKey = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+      
+      if (!monthlyGroups[monthKey]) {
+        monthlyGroups[monthKey] = {
+          monthKey,
+          monthName: dateObj.toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+          year,
+          monthIndex,
+          revenue: 0,
+          burnRate: 0,
+          pending: 0,
+        };
+      }
+      return monthlyGroups[monthKey];
+    };
+
     payments.forEach((item) => {
-      // 1. Process Receive Date (Revenue & Pending)
-      if (item.receiveDate) {
-        const dateObj = new Date(item.receiveDate);
-        if (!isNaN(dateObj.getTime())) {
-          const year = dateObj.getFullYear();
-          const monthIndex = dateObj.getMonth(); // 0-11
-          const monthKey = `${year}-${String(monthIndex + 1).padStart(2, "0")}`; // e.g. "2025-11"
-          
-          if (!monthlyGroups[monthKey]) {
-            monthlyGroups[monthKey] = {
-              monthKey,
-              monthName: dateObj.toLocaleDateString("en-IN", { month: "long", year: "numeric" }), // e.g. "November 2025"
-              year,
-              monthIndex,
-              revenue: 0,
-              burnRate: 0,
-              pending: 0,
-            };
-          }
-          
-          monthlyGroups[monthKey].revenue += Number(item.payment) || 0;
-          monthlyGroups[monthKey].pending += Number(item.pendingPayment) || 0;
+      // 1. Process 1st Installment
+      if (item.firstPaymentReceiveDate) {
+        const group = getMonthGroup(item.firstPaymentReceiveDate);
+        if (group) group.revenue += Number(item.firstPayment) || 0;
+      }
+      if (item.firstPaymentSendDate) {
+        const group = getMonthGroup(item.firstPaymentSendDate);
+        if (group) group.burnRate += Number(item.firstPayment) || 0;
+      }
+
+      // 2. Process 2nd Installment
+      if (item.secondPaymentReceiveDate) {
+        const group = getMonthGroup(item.secondPaymentReceiveDate);
+        if (group) group.revenue += Number(item.secondPayment) || 0;
+      }
+      if (item.secondPaymentSendDate) {
+        const group = getMonthGroup(item.secondPaymentSendDate);
+        if (group) group.burnRate += Number(item.secondPayment) || 0;
+      }
+
+      // 3. Process Final Installment
+      if (item.finalPaymentReceiveDate) {
+        const group = getMonthGroup(item.finalPaymentReceiveDate);
+        if (group) group.revenue += Number(item.finalPayment) || 0;
+      }
+      if (item.finalPaymentSendDate) {
+        const group = getMonthGroup(item.finalPaymentSendDate);
+        if (group) group.burnRate += Number(item.finalPayment) || 0;
+      }
+
+      // 4. Process Fallback Dates (existing simple payment records)
+      if (!item.firstPaymentReceiveDate && !item.secondPaymentReceiveDate && !item.finalPaymentReceiveDate) {
+        if (item.receiveDate) {
+          const group = getMonthGroup(item.receiveDate);
+          if (group) group.revenue += Number(item.payment) || 0;
+        }
+      }
+      if (!item.firstPaymentSendDate && !item.secondPaymentSendDate && !item.finalPaymentSendDate) {
+        if (item.sendDate) {
+          const group = getMonthGroup(item.sendDate);
+          if (group) group.burnRate += Number(item.payment) || 0;
         }
       }
 
-      // 2. Process Send Date (Burn Rate)
-      if (item.sendDate) {
-        const dateObj = new Date(item.sendDate);
-        if (!isNaN(dateObj.getTime())) {
-          const year = dateObj.getFullYear();
-          const monthIndex = dateObj.getMonth();
-          const monthKey = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-          
-          if (!monthlyGroups[monthKey]) {
-            monthlyGroups[monthKey] = {
-              monthKey,
-              monthName: dateObj.toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
-              year,
-              monthIndex,
-              revenue: 0,
-              burnRate: 0,
-              pending: 0,
-            };
-          }
-          
-          monthlyGroups[monthKey].burnRate += Number(item.payment) || 0;
-        }
+      // 5. Attribute Pending Amount (to the month of firstPaymentReceiveDate or general receiveDate)
+      const pendingDate = item.firstPaymentReceiveDate || item.receiveDate;
+      if (pendingDate && (Number(item.pendingPayment) > 0)) {
+        const group = getMonthGroup(pendingDate);
+        if (group) group.pending += Number(item.pendingPayment) || 0;
       }
     });
 
@@ -376,20 +447,24 @@ function PaymentManagement() {
   const getTransactionsForMonth = (monthKey) => {
     return payments.filter((item) => {
       let match = false;
-      if (item.receiveDate) {
-        const d = new Date(item.receiveDate);
+      const datesToCheck = [
+        item.receiveDate,
+        item.sendDate,
+        item.firstPaymentReceiveDate,
+        item.firstPaymentSendDate,
+        item.secondPaymentReceiveDate,
+        item.secondPaymentSendDate,
+        item.finalPaymentReceiveDate,
+        item.finalPaymentSendDate
+      ].filter(Boolean);
+
+      datesToCheck.forEach((dStr) => {
+        const d = new Date(dStr);
         if (!isNaN(d.getTime())) {
           const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
           if (key === monthKey) match = true;
         }
-      }
-      if (item.sendDate) {
-        const d = new Date(item.sendDate);
-        if (!isNaN(d.getTime())) {
-          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-          if (key === monthKey) match = true;
-        }
-      }
+      });
       return match;
     });
   };
@@ -515,18 +590,12 @@ function PaymentManagement() {
               margin-bottom: 35px;
             }
             .metric-card {
-              border: 1px solid #e2e8f0;
-              border-radius: 10px;
+              border: 1px solid #cbd5e1;
+              border-radius: 8px;
               padding: 14px;
-              background-color: #f8fafc;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+              background-color: #ffffff;
+              border-top: 3px solid #324158;
             }
-            .metric-card.accent-blue { border-left: 3px solid #3b82f6; }
-            .metric-card.accent-slate { border-left: 3px solid #64748b; }
-            .metric-card.accent-indigo { border-left: 3px solid #6366f1; }
-            .metric-card.accent-sky { border-left: 3px solid #0ea5e9; }
-            .metric-card.accent-cyan { border-left: 3px solid #06b6d4; }
-            .metric-card.accent-red { border-left: 3px solid #f43f5e; }
             
             .metric-label {
               font-size: 10px;
@@ -651,31 +720,31 @@ function PaymentManagement() {
             </div>
 
             <div class="metrics-grid">
-              <div class="metric-card accent-blue">
+              <div class="metric-card">
                 <div class="metric-label">${isAll ? "Total Revenue" : "Revenue"}</div>
                 <div class="metric-value">₹${displayRevenue.toLocaleString("en-IN")}</div>
                 <div class="metric-desc">${isAll ? "Inflow payments received" : "Monthly inflow received"}</div>
               </div>
-              <div class="metric-card accent-slate">
+              <div class="metric-card">
                 <div class="metric-label">${isAll ? "Total Burn" : "Burn Rate"}</div>
                 <div class="metric-value">₹${displayBurnRate.toLocaleString("en-IN")}</div>
                 <div class="metric-desc">${isAll ? "Outflow payments sent" : "Monthly outflow sent"}</div>
               </div>
-              <div class="metric-card accent-indigo">
+              <div class="metric-card">
                 <div class="metric-label">${isAll ? "Total Pending" : "Pending"}</div>
                 <div class="metric-value">₹${displayPending.toLocaleString("en-IN")}</div>
                 <div class="metric-desc">${isAll ? "Unpaid balances" : "Monthly unpaid balance"}</div>
               </div>
-              <div class="metric-card ${displayNetWithout >= 0 ? "accent-sky" : "accent-red"}">
+              <div class="metric-card">
                 <div class="metric-label">Net Profit (Excl.)</div>
-                <div class="metric-value ${displayNetWithout < 0 ? "neg" : ""}">
+                <div class="metric-value">
                   ${displayNetWithout < 0 ? "-" : ""}₹${Math.abs(displayNetWithout).toLocaleString("en-IN")}
                 </div>
                 <div class="metric-desc">Revenue minus Burn Rate</div>
               </div>
-              <div class="metric-card ${displayNetWith >= 0 ? "accent-cyan" : "accent-red"}">
+              <div class="metric-card">
                 <div class="metric-label">Net Profit (Incl.)</div>
-                <div class="metric-value ${displayNetWith < 0 ? "neg" : ""}">
+                <div class="metric-value">
                   ${displayNetWith < 0 ? "-" : ""}₹${Math.abs(displayNetWith).toLocaleString("en-IN")}
                 </div>
                 <div class="metric-desc">Adjusted with pending</div>
@@ -733,13 +802,13 @@ function PaymentManagement() {
 
   const renderMonthlyGraph = (displayRevenue, displayBurnRate, displayPending, displayNetWithout, displayNetWith, isAll) => {
     const data = [
-      { label: isAll ? "Total Revenue" : "Revenue", value: displayRevenue, desc: isAll ? "Inflow payments received" : "Monthly inflow received", color1: "#3b82f6", color2: "#1d4ed8" },
-      { label: isAll ? "Total Burn Rate" : "Burn Rate", value: displayBurnRate, desc: isAll ? "Outflow payments sent" : "Monthly outflow sent", color1: "#64748b", color2: "#475569" },
-      { label: isAll ? "Total Pending" : "Pending", value: displayPending, desc: isAll ? "Unpaid balances" : "Monthly unpaid balance", color1: "#6366f1", color2: "#4f46e5" },
+      { label: isAll ? "Total Revenue" : "Revenue", value: displayRevenue, desc: isAll ? "Inflow payments received" : "Monthly inflow received", color1: "#324158", color2: "#1e293b" },
+      { label: isAll ? "Total Burn Rate" : "Burn Rate", value: displayBurnRate, desc: isAll ? "Outflow payments sent" : "Monthly outflow sent", color1: "rgba(50, 65, 88, 0.75)", color2: "rgba(30, 41, 59, 0.75)" },
+      { label: isAll ? "Total Pending" : "Pending", value: displayPending, desc: isAll ? "Unpaid balances" : "Monthly unpaid balance", color1: "rgba(50, 65, 88, 0.45)", color2: "rgba(30, 41, 59, 0.45)" },
       { label: "Net Profit (Excl. Pending)", value: displayNetWithout, desc: "Revenue minus Burn Rate", 
-        color1: displayNetWithout >= 0 ? "#0ea5e9" : "#f43f5e", color2: displayNetWithout >= 0 ? "#0284c7" : "#e11d48" },
+        color1: displayNetWithout >= 0 ? "#324158" : "#ef4444", color2: displayNetWithout >= 0 ? "#1e293b" : "#b91c1c" },
       { label: "Net Profit (Incl. Pending)", value: displayNetWith, desc: "Adjusted with pending balance", 
-        color1: displayNetWith >= 0 ? "#06b6d4" : "#f43f5e", color2: displayNetWith >= 0 ? "#0891b2" : "#e11d48" },
+        color1: displayNetWith >= 0 ? "#324158" : "#ef4444", color2: displayNetWith >= 0 ? "#1e293b" : "#b91c1c" },
     ];
 
     const values = data.map(d => d.value);
@@ -981,17 +1050,59 @@ function PaymentManagement() {
   };
 
   const getFilteredPayments = () => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return payments;
+    let filtered = payments;
 
-    return payments.filter((item) => {
-      const name = item.name || "";
-      const role = item.role || "";
-      return (
-        name.toLowerCase().includes(query) ||
-        role.toLowerCase().includes(query)
-      );
-    });
+    // 1. Text Search Filter (Name / Role / Connected By)
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      filtered = filtered.filter((item) => {
+        const name = item.name || "";
+        const role = item.role || "";
+        const connectedBy = item.connectedBy || "";
+        return (
+          name.toLowerCase().includes(query) ||
+          role.toLowerCase().includes(query) ||
+          connectedBy.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    // 2. Status Filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((item) => item.paymentGoal === statusFilter);
+    }
+
+    // 3. Amount Filters (based on total paid amount `payment`)
+    if (minAmountFilter !== "") {
+      const minVal = Number(minAmountFilter);
+      if (!isNaN(minVal)) {
+        filtered = filtered.filter((item) => (item.payment || 0) >= minVal);
+      }
+    }
+    if (maxAmountFilter !== "") {
+      const maxVal = Number(maxAmountFilter);
+      if (!isNaN(maxVal)) {
+        filtered = filtered.filter((item) => (item.payment || 0) <= maxVal);
+      }
+    }
+
+    // 4. Month Filter
+    if (monthFilter !== "all") {
+      filtered = filtered.filter((item) => {
+        let match = false;
+        const datesToCheck = [item.receiveDate, item.firstPaymentReceiveDate, item.secondPaymentReceiveDate, item.finalPaymentReceiveDate].filter(Boolean);
+        datesToCheck.forEach((dStr) => {
+          const d = new Date(dStr);
+          if (!isNaN(d.getTime())) {
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            if (key === monthFilter) match = true;
+          }
+        });
+        return match;
+      });
+    }
+
+    return filtered;
   };
 
   const editEntry = (entry) => {
@@ -1006,6 +1117,17 @@ function PaymentManagement() {
       pendingPayment: String(entry.pendingPayment || 0),
       receiveDate: entry.receiveDate ? new Date(entry.receiveDate).toISOString().slice(0, 10) : "",
       sendDate: entry.sendDate ? new Date(entry.sendDate).toISOString().slice(0, 10) : "",
+      connectedBy: entry.connectedBy || "",
+      totalPayment: String(entry.totalPayment || 0),
+      firstPayment: String(entry.firstPayment || 0),
+      firstPaymentSendDate: entry.firstPaymentSendDate ? new Date(entry.firstPaymentSendDate).toISOString().slice(0, 10) : "",
+      firstPaymentReceiveDate: entry.firstPaymentReceiveDate ? new Date(entry.firstPaymentReceiveDate).toISOString().slice(0, 10) : "",
+      secondPayment: String(entry.secondPayment || 0),
+      secondPaymentSendDate: entry.secondPaymentSendDate ? new Date(entry.secondPaymentSendDate).toISOString().slice(0, 10) : "",
+      secondPaymentReceiveDate: entry.secondPaymentReceiveDate ? new Date(entry.secondPaymentReceiveDate).toISOString().slice(0, 10) : "",
+      finalPayment: String(entry.finalPayment || 0),
+      finalPaymentSendDate: entry.finalPaymentSendDate ? new Date(entry.finalPaymentSendDate).toISOString().slice(0, 10) : "",
+      finalPaymentReceiveDate: entry.finalPaymentReceiveDate ? new Date(entry.finalPaymentReceiveDate).toISOString().slice(0, 10) : "",
     });
     setActiveTab("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1051,10 +1173,17 @@ function PaymentManagement() {
         name: formData.name,
         role: formData.role,
         paymentGoal: formData.paymentGoal,
-        payment: Number(formData.payment) || 0,
-        pendingPayment: Number(formData.pendingPayment) || 0,
-        receiveDate: formData.receiveDate || null,
-        sendDate: formData.sendDate || null,
+        connectedBy: formData.connectedBy,
+        totalPayment: Number(formData.totalPayment) || 0,
+        firstPayment: Number(formData.firstPayment) || 0,
+        firstPaymentSendDate: formData.firstPaymentSendDate || null,
+        firstPaymentReceiveDate: formData.firstPaymentReceiveDate || null,
+        secondPayment: Number(formData.secondPayment) || 0,
+        secondPaymentSendDate: formData.secondPaymentSendDate || null,
+        secondPaymentReceiveDate: formData.secondPaymentReceiveDate || null,
+        finalPayment: Number(formData.finalPayment) || 0,
+        finalPaymentSendDate: formData.finalPaymentSendDate || null,
+        finalPaymentReceiveDate: formData.finalPaymentReceiveDate || null,
       };
 
       if (formData.id) {
@@ -1299,7 +1428,130 @@ function PaymentManagement() {
                 />
               </div>
               <div className="form-group">
-                <label>Payment Goal *</label>
+                <label>Connected By</label>
+                <input
+                  type="text"
+                  name="connectedBy"
+                  value={formData.connectedBy}
+                  onChange={handleInput}
+                  placeholder="Connected by"
+                />
+              </div>
+              <div className="form-group">
+                <label>Total Payment (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  name="totalPayment"
+                  value={formData.totalPayment}
+                  onChange={handleInput}
+                  placeholder="Total payment"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>1st Payment (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  name="firstPayment"
+                  value={formData.firstPayment}
+                  onChange={handleInput}
+                  placeholder="1st Payment Amount"
+                />
+              </div>
+              <div className="form-group">
+                <label>1st Payment Send Date</label>
+                <input
+                  type="date"
+                  name="firstPaymentSendDate"
+                  value={formData.firstPaymentSendDate}
+                  onChange={handleInput}
+                />
+              </div>
+              <div className="form-group">
+                <label>1st Payment Receive Date</label>
+                <input
+                  type="date"
+                  name="firstPaymentReceiveDate"
+                  value={formData.firstPaymentReceiveDate}
+                  onChange={handleInput}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>2nd Payment (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  name="secondPayment"
+                  value={formData.secondPayment}
+                  onChange={handleInput}
+                  placeholder="2nd Payment Amount"
+                />
+              </div>
+              <div className="form-group">
+                <label>2nd Payment Send Date</label>
+                <input
+                  type="date"
+                  name="secondPaymentSendDate"
+                  value={formData.secondPaymentSendDate}
+                  onChange={handleInput}
+                />
+              </div>
+              <div className="form-group">
+                <label>2nd Payment Receive Date</label>
+                <input
+                  type="date"
+                  name="secondPaymentReceiveDate"
+                  value={formData.secondPaymentReceiveDate}
+                  onChange={handleInput}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Last/Final Payment (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  name="finalPayment"
+                  value={formData.finalPayment}
+                  onChange={handleInput}
+                  placeholder="Final Payment Amount"
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Payment Send Date</label>
+                <input
+                  type="date"
+                  name="finalPaymentSendDate"
+                  value={formData.finalPaymentSendDate}
+                  onChange={handleInput}
+                />
+              </div>
+              <div className="form-group">
+                <label>Last Payment Receive Date</label>
+                <input
+                  type="date"
+                  name="finalPaymentReceiveDate"
+                  value={formData.finalPaymentReceiveDate}
+                  onChange={handleInput}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Pending Payment (₹) — Auto Calculated</label>
+                <input
+                  type="number"
+                  name="pendingPayment"
+                  value={formData.pendingPayment}
+                  readOnly
+                  style={{ backgroundColor: "#f1f5f9", cursor: "not-allowed" }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Payment Status *</label>
                 <select
                   name="paymentGoal"
                   value={formData.paymentGoal}
@@ -1320,47 +1572,9 @@ function PaymentManagement() {
                   <option value="Completed">Completed</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Failed">Failed</option>
+                  <option value="Cancel">Cancel</option>
+                  <option value="Refund">Refund</option>
                 </select>
-              </div>
-              <div className="form-group">
-                <label>Payment (₹)</label>
-                <input
-                  type="number"
-                  min="0"
-                  name="payment"
-                  value={formData.payment}
-                  onChange={handleInput}
-                  placeholder="Enter paid amount"
-                />
-              </div>
-              <div className="form-group">
-                <label>Pending Payment (₹)</label>
-                <input
-                  type="number"
-                  min="0"
-                  name="pendingPayment"
-                  value={formData.pendingPayment}
-                  onChange={handleInput}
-                  placeholder="Enter pending amount"
-                />
-              </div>
-              <div className="form-group">
-                <label>Receive Date</label>
-                <input
-                  type="date"
-                  name="receiveDate"
-                  value={formData.receiveDate}
-                  onChange={handleInput}
-                />
-              </div>
-              <div className="form-group">
-                <label>Send Date</label>
-                <input
-                  type="date"
-                  name="sendDate"
-                  value={formData.sendDate}
-                  onChange={handleInput}
-                />
               </div>
             </div>
             <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
@@ -1383,17 +1597,94 @@ function PaymentManagement() {
         </div>
       ) : (
         <>
-          <div className="premium-card" style={{ marginBottom: "14px", padding: "14px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
+          <div className="premium-card" style={{ marginBottom: "16px", padding: "20px" }}>
+            <h3 style={{ margin: "0 0 16px", fontSize: "15px", color: "#324158", fontWeight: 700, letterSpacing: "-0.01em" }}>Filters & Bank-Statement Query</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+              {/* Search text */}
               <div className="form-group" style={{ margin: 0 }}>
-                <label>Search Payments</label>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Search Name / Role / Connector</label>
                 <input
                   type="text"
-                  placeholder="Search by Name or Role"
+                  placeholder="e.g. Shrikant, Intern..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
                 />
               </div>
+              
+              {/* Status Filter */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Payment Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "white" }}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Completed">Completed</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Failed">Failed</option>
+                  <option value="Cancel">Cancel</option>
+                  <option value="Refund">Refund</option>
+                </select>
+              </div>
+
+              {/* Min amount */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Min Paid Amount (₹)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={minAmountFilter}
+                  onChange={(e) => setMinAmountFilter(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+                />
+              </div>
+
+              {/* Max amount */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Max Paid Amount (₹)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 20000"
+                  value={maxAmountFilter}
+                  onChange={(e) => setMaxAmountFilter(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1" }}
+                />
+              </div>
+
+              {/* Month selector */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Select Month</label>
+                <select
+                  value={monthFilter}
+                  onChange={(e) => setMonthFilter(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "white" }}
+                >
+                  <option value="all">All Months</option>
+                  {getUniquePaymentMonths().map((m) => (
+                    <option key={m.key} value={m.key}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            {/* Reset Filters button */}
+            <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setMinAmountFilter("");
+                  setMaxAmountFilter("");
+                  setMonthFilter("all");
+                }}
+                style={{ padding: "6px 14px", border: "1px solid #324158", borderRadius: "6px", background: "transparent", color: "#324158", fontWeight: "600", fontSize: "12px", cursor: "pointer" }}
+              >
+                Reset Filters
+              </button>
             </div>
           </div>
 
@@ -1407,11 +1698,11 @@ function PaymentManagement() {
                     <tr>
                       <th>Name</th>
                       <th>Role</th>
-                      <th>Payment Goal</th>
-                      <th>Payment</th>
+                      <th>Connected By</th>
+                      <th>Total Payment</th>
+                      <th>Total Paid</th>
                       <th>Pending Payment</th>
-                      <th>Receive Date</th>
-                      <th>Send Date</th>
+                      <th>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -1425,13 +1716,25 @@ function PaymentManagement() {
                         <tr key={item._id}>
                           <td style={{ fontWeight: "600" }}>{item.name}</td>
                           <td>{item.role}</td>
-                          <td>{item.paymentGoal || "Pending"}</td>
+                          <td>{item.connectedBy || "-"}</td>
+                          <td>₹{item.totalPayment || 0}</td>
                           <td>₹{item.payment || 0}</td>
                           <td style={{ color: (item.pendingPayment > 0) ? "#ef4444" : "#10b981", fontWeight: "600" }}>
                             ₹{item.pendingPayment || 0}
                           </td>
-                          <td>{item.receiveDate ? new Date(item.receiveDate).toLocaleDateString("en-IN") : "-"}</td>
-                          <td>{item.sendDate ? new Date(item.sendDate).toLocaleDateString("en-IN") : "-"}</td>
+                          <td>
+                            <span style={{
+                              padding: "4px 10px",
+                              borderRadius: "999px",
+                              backgroundColor: "#324158",
+                              color: "#ffffff",
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              textTransform: "capitalize"
+                            }}>
+                              {item.paymentGoal || "Pending"}
+                            </span>
+                          </td>
                           <td style={{ position: "relative" }}>
                             <button
                               data-menu-toggle
@@ -1478,6 +1781,29 @@ function PaymentManagement() {
                                   <button
                                     type="button"
                                     onClick={() => {
+                                      setSelectedPaymentDetails(item);
+                                      setOpenMenuId(null);
+                                    }}
+                                    style={{
+                                      width: "100%",
+                                      padding: "12px 16px",
+                                      background: "white",
+                                      border: "none",
+                                      textAlign: "left",
+                                      cursor: "pointer",
+                                      fontSize: "14px",
+                                      fontWeight: "500",
+                                      color: "#0f172a",
+                                      display: "block",
+                                    }}
+                                    onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
+                                    onMouseLeave={(e) => (e.target.style.background = "white")}
+                                  >
+                                    View Details
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
                                       editEntry(item);
                                       setOpenMenuId(null);
                                     }}
@@ -1492,6 +1818,7 @@ function PaymentManagement() {
                                       fontWeight: "500",
                                       color: "#0f172a",
                                       display: "block",
+                                      borderTop: "1px solid #f1f5f9"
                                     }}
                                     onMouseEnter={(e) => (e.target.style.background = "#f9fafb")}
                                     onMouseLeave={(e) => (e.target.style.background = "white")}
@@ -1560,6 +1887,105 @@ function PaymentManagement() {
             )}
           </div>
         </>
+      )}
+
+      {/* Detailed Payment View Modal */}
+      {selectedPaymentDetails && createPortal(
+         <div onClick={() => setSelectedPaymentDetails(null)} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, padding: "20px" }}>
+           <div onClick={(e) => e.stopPropagation()} style={{ width: "90%", maxWidth: "700px", background: "#ffffff", borderRadius: "20px", display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
+             {/* Header */}
+             <div style={{ background: "#324158", color: "#ffffff", padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+               <div>
+                 <div style={{ fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.7)", fontWeight: 700 }}>Payment Details</div>
+                 <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#ffffff" }}>{selectedPaymentDetails.name}</h2>
+               </div>
+               <button
+                 type="button"
+                 onClick={() => setSelectedPaymentDetails(null)}
+                 style={{ width: "28px", height: "28px", borderRadius: "50%", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.1)", color: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+               >
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" style={{ width: "12px", height: "12px" }}>
+                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                 </svg>
+               </button>
+             </div>
+
+             {/* Content */}
+             <div style={{ padding: "24px", overflowY: "auto" }}>
+               {/* Quick Info Grid */}
+               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px" }}>
+                   <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Role / Designation</div>
+                   <div style={{ fontSize: "14px", fontWeight: 700, color: "#324158", marginTop: "4px" }}>{selectedPaymentDetails.role}</div>
+                 </div>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px" }}>
+                   <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Connected By</div>
+                   <div style={{ fontSize: "14px", fontWeight: 700, color: "#324158", marginTop: "4px" }}>{selectedPaymentDetails.connectedBy || "-"}</div>
+                 </div>
+               </div>
+
+               {/* Metrics */}
+               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: "4px solid #324158" }}>
+                   <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Total Payment</div>
+                   <div style={{ fontSize: "18px", fontWeight: 800, color: "#324158", marginTop: "4px" }}>₹{selectedPaymentDetails.totalPayment || 0}</div>
+                 </div>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: "4px solid #16a34a" }}>
+                   <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Total Paid</div>
+                   <div style={{ fontSize: "18px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>₹{selectedPaymentDetails.payment || 0}</div>
+                 </div>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: "4px solid #dc2626" }}>
+                   <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Pending Amount</div>
+                   <div style={{ fontSize: "18px", fontWeight: 800, color: "#dc2626", marginTop: "4px" }}>₹{selectedPaymentDetails.pendingPayment || 0}</div>
+                 </div>
+               </div>
+
+               {/* Installment Timeline */}
+               <h3 style={{ margin: "0 0 12px", color: "#324158", fontSize: "14px", fontWeight: 700 }}>Installments Payment Status</h3>
+               <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                 <thead>
+                   <tr style={{ background: "#324158", color: "#ffffff", borderBottom: "1px solid #cbd5e1" }}>
+                     <th style={{ textAlign: "left", padding: "10px 12px", fontSize: "11px", textTransform: "uppercase", fontWeight: 700, backgroundColor: "#324158" }}>Installment</th>
+                     <th style={{ textAlign: "right", padding: "10px 12px", fontSize: "11px", textTransform: "uppercase", fontWeight: 700, backgroundColor: "#324158" }}>Amount</th>
+                     <th style={{ textAlign: "center", padding: "10px 12px", fontSize: "11px", textTransform: "uppercase", fontWeight: 700, backgroundColor: "#324158" }}>Send Date</th>
+                     <th style={{ textAlign: "center", padding: "10px 12px", fontSize: "11px", textTransform: "uppercase", fontWeight: 700, backgroundColor: "#324158" }}>Receive Date</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {[
+                     { name: "1st Installment", amount: selectedPaymentDetails.firstPayment || 0, send: selectedPaymentDetails.firstPaymentSendDate, recv: selectedPaymentDetails.firstPaymentReceiveDate },
+                     { name: "2nd Installment", amount: selectedPaymentDetails.secondPayment || 0, send: selectedPaymentDetails.secondPaymentSendDate, recv: selectedPaymentDetails.secondPaymentReceiveDate },
+                     { name: "Final Installment", amount: selectedPaymentDetails.finalPayment || 0, send: selectedPaymentDetails.finalPaymentSendDate, recv: selectedPaymentDetails.finalPaymentReceiveDate },
+                   ].map((inst) => (
+                     <tr key={inst.name} style={{ borderBottom: "1px solid #cbd5e1" }}>
+                       <td style={{ padding: "12px", fontSize: "13px", fontWeight: 600, color: "#324158" }}>{inst.name}</td>
+                       <td style={{ padding: "12px", fontSize: "13px", fontWeight: 700, color: "#324158", textAlign: "right" }}>₹{inst.amount}</td>
+                       <td style={{ padding: "12px", fontSize: "12px", color: "#64748b", textAlign: "center" }}>{inst.send ? new Date(inst.send).toLocaleDateString("en-IN") : "-"}</td>
+                       <td style={{ padding: "12px", fontSize: "12px", color: "#64748b", textAlign: "center" }}>{inst.recv ? new Date(inst.recv).toLocaleDateString("en-IN") : "-"}</td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+
+               {/* Goal/Status Badge */}
+               <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
+                 <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 600 }}>Payment Status:</span>
+                 <span style={{
+                   padding: "6px 16px",
+                   borderRadius: "999px",
+                   backgroundColor: "#324158",
+                   color: "#ffffff",
+                   fontSize: "12px",
+                   fontWeight: 700,
+                   textTransform: "capitalize",
+                 }}>
+                   {selectedPaymentDetails.paymentGoal}
+                 </span>
+               </div>
+             </div>
+           </div>
+         </div>,
+         document.body
       )}
     </div>
   );

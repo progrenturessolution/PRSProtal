@@ -4,6 +4,10 @@ import LoadingSpinner from "../components/LoadingSpinner";
 
 function CreateTask({ onTaskCreated, onBack }) {
   const [interns, setInterns] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const [groupSearchQuery, setGroupSearchQuery] = useState("");
+  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [assignmentType, setAssignmentType] = useState("individual");
   const [individualSearchQuery, setIndividualSearchQuery] = useState("");
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
@@ -26,10 +30,13 @@ function CreateTask({ onTaskCreated, onBack }) {
   const individualSearchInputRef = useRef(null);
   const teamDropdownRef = useRef(null);
   const teamSearchInputRef = useRef(null);
+  const groupDropdownRef = useRef(null);
+  const groupSearchInputRef = useRef(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchInterns();
+    fetchGroups();
   }, []);
 
   useEffect(() => {
@@ -45,6 +52,12 @@ function CreateTask({ onTaskCreated, onBack }) {
         !teamDropdownRef.current.contains(event.target)
       ) {
         setIsTeamDropdownOpen(false);
+      }
+      if (
+        groupDropdownRef.current &&
+        !groupDropdownRef.current.contains(event.target)
+      ) {
+        setIsGroupDropdownOpen(false);
       }
     };
 
@@ -66,6 +79,12 @@ function CreateTask({ onTaskCreated, onBack }) {
       teamSearchInputRef.current?.focus({ preventScroll: true });
     }
   }, [isTeamDropdownOpen]);
+
+  useEffect(() => {
+    if (isGroupDropdownOpen) {
+      groupSearchInputRef.current?.focus({ preventScroll: true });
+    }
+  }, [isGroupDropdownOpen]);
 
   const openIndividualDropdown = () => {
     setIsIndividualDropdownOpen((prev) => !prev);
@@ -100,6 +119,13 @@ function CreateTask({ onTaskCreated, onBack }) {
   const filteredIndividualInterns = filterInternsByQuery(individualSearchQuery);
   const filteredTeamInterns = filterInternsByQuery(teamSearchQuery);
 
+  const filteredGroups = groups.filter((group) => {
+    const name = group.groupName?.toLowerCase() || "";
+    const num = group.groupNumber?.toLowerCase() || "";
+    const query = groupSearchQuery.trim().toLowerCase();
+    return name.includes(query) || num.includes(query);
+  });
+
   const fetchInterns = async () => {
     try {
       const response = await adminAPI.getAllInterns();
@@ -107,6 +133,28 @@ function CreateTask({ onTaskCreated, onBack }) {
     } catch (err) {
       console.error("Failed to fetch interns:", err);
       setError("Failed to load interns");
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const response = await adminAPI.getGroups();
+      setGroups(response.data.groups || []);
+    } catch (err) {
+      console.error("Failed to fetch groups:", err);
+    }
+  };
+
+  const handleGroupChange = (groupId) => {
+    setSelectedGroup(groupId);
+    if (!groupId) {
+      setSelectedTeamMembers([]);
+      return;
+    }
+    const group = groups.find((g) => g._id === groupId);
+    if (group && group.students) {
+      const studentIds = group.students.map((s) => (typeof s === "object" ? s._id : s));
+      setSelectedTeamMembers(studentIds);
     }
   };
 
@@ -154,6 +202,7 @@ function CreateTask({ onTaskCreated, onBack }) {
     setTeamSearchQuery("");
     setIsIndividualDropdownOpen(false);
     setIsTeamDropdownOpen(false);
+    setSelectedGroup("");
     setError("");
     setSuccess("");
   };
@@ -258,6 +307,7 @@ function CreateTask({ onTaskCreated, onBack }) {
         setTeamSearchQuery("");
         setIsIndividualDropdownOpen(false);
         setIsTeamDropdownOpen(false);
+        setSelectedGroup("");
         setSelectedFile(null);
 
         if (fileInputRef.current) {
@@ -662,7 +712,128 @@ function CreateTask({ onTaskCreated, onBack }) {
           )}
 
           {assignmentType === "team" && (
-            <div className="form-group" ref={teamDropdownRef} style={{ position: "relative" }}>
+            <>
+              <div className="form-group" ref={groupDropdownRef} style={{ position: "relative", marginBottom: "20px" }}>
+                <label style={{ fontSize: '15px', fontWeight: '500', color: '#1f2937', marginBottom: '8px', display: 'block' }}>
+                  Select Group
+                </label>
+                
+                <div
+                  onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    border: `2px solid ${isGroupDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                    borderRadius: '10px',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    transition: 'all 0.2s',
+                    color: selectedGroup ? '#0f172a' : '#94a3b8',
+                    userSelect: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <span>
+                    {(() => {
+                      const selectedGroupObj = groups.find(g => g._id === selectedGroup);
+                      return selectedGroupObj 
+                        ? `${selectedGroupObj.groupName} (${selectedGroupObj.groupNumber}) - ${selectedGroupObj.students?.length || 0} Students`
+                        : "Search and select a group...";
+                    })()}
+                  </span>
+                  <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isGroupDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                </div>
+
+                {isGroupDropdownOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      marginTop: '6px',
+                      background: 'white',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '10px',
+                      boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
+                      zIndex: 30,
+                      overflow: 'hidden',
+                      maxHeight: '300px',
+                    }}
+                  >
+                    <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
+                      <input
+                        ref={groupSearchInputRef}
+                        type="text"
+                        placeholder="Search groups by name or number..."
+                        value={groupSearchQuery}
+                        onChange={(e) => setGroupSearchQuery(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          width: '100%',
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          border: '1px solid #e5e7eb',
+                          fontSize: '13px',
+                          background: '#f8fafc',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ maxHeight: "200px", overflowY: "auto", padding: "6px" }}>
+                      {filteredGroups.length === 0 ? (
+                        <div style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                          No groups found
+                        </div>
+                      ) : (
+                        filteredGroups.map((group) => (
+                          <button
+                            key={group._id}
+                            type="button"
+                            onClick={() => {
+                              handleGroupChange(group._id);
+                              setIsGroupDropdownOpen(false);
+                            }}
+                            style={{
+                              width: "100%",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              padding: '10px 14px',
+                              background: selectedGroup === group._id ? '#f0fdf4' : 'transparent',
+                              color: '#0f172a',
+                              display: 'block',
+                              marginBottom: '2px',
+                              fontSize: '13px',
+                              fontWeight: selectedGroup === group._id ? '600' : 'normal'
+                            }}
+                            onMouseEnter={(e) => {
+                              if (selectedGroup !== group._id) e.target.style.background = '#f8fafc';
+                            }}
+                            onMouseLeave={(e) => {
+                              if (selectedGroup !== group._id) e.target.style.background = 'transparent';
+                            }}
+                          >
+                            <div style={{ fontWeight: '600', color: '#324158' }}>{group.groupName} ({group.groupNumber})</div>
+                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                              Type: {group.studentType} • {group.students?.length || 0} Students
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group" ref={teamDropdownRef} style={{ position: "relative" }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <label style={{ fontSize: '15px', fontWeight: '500', color: '#1f2937', marginBottom: '0' }}>
                   Select Team Members * ({selectedTeamMembers.length} selected)
@@ -859,6 +1030,7 @@ function CreateTask({ onTaskCreated, onBack }) {
                 </div>
               )}
             </div>
+            </>
           )}
 
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
