@@ -27,7 +27,7 @@ export default function GdConductModal({ gd, onClose, onSave }) {
       }
     });
 
-    setEvaluations(uniq.map(s => ({ ...s, attendanceStatus: 'Present', score: '', remarks: '' })));
+    setEvaluations(uniq.map(s => ({ ...s, attendanceStatus: 'Present', score: '', outOf: '', remarks: '' })));
   }, [gd]);
 
   const updateEval = (id, field, value) => {
@@ -99,7 +99,7 @@ export default function GdConductModal({ gd, onClose, onSave }) {
         <div style={{ overflowX: 'auto' }}>
           <table className="data-table view-students-table">
             <thead>
-              <tr><th>#</th><th>PSMS ID</th><th>Student</th><th>Email</th><th>Attendance</th><th>Score</th><th>Remarks</th></tr>
+              <tr><th>#</th><th>PSMS ID</th><th>Student</th><th>Email</th><th>Attendance</th><th>Score</th><th>Out Of</th><th>Remarks</th></tr>
             </thead>
             <tbody>
               {evaluations.map((s, idx) => (
@@ -116,6 +116,9 @@ export default function GdConductModal({ gd, onClose, onSave }) {
                   </td>
                   <td>
                     <input type="text" value={s.score} onChange={(e) => updateEval(s.id, 'score', e.target.value)} placeholder="Score" style={{ width: 80, padding: '6px 8px' }} />
+                  </td>
+                  <td>
+                    <input type="text" value={s.outOf} onChange={(e) => updateEval(s.id, 'outOf', e.target.value)} placeholder="Out Of" style={{ width: 80, padding: '6px 8px' }} />
                   </td>
                   <td>
                     <input type="text" value={s.remarks} onChange={(e) => updateEval(s.id, 'remarks', e.target.value)} placeholder="Remarks" style={{ width: '100%', padding: '6px 8px' }} />

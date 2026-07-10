@@ -119,6 +119,12 @@ const interviewSchema = new mongoose.Schema({
   technicalRemarks: {
     type: String,
     trim: true
+  },
+  score: {
+    type: Number
+  },
+  outOf: {
+    type: Number
   }
 }, {
   timestamps: true

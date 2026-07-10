@@ -8,6 +8,10 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import GdConductModal from "../components/GdConductModal";
 import GdStudentConductModal from "../components/GdStudentConductModal";
 import { renderNotificationMessage } from "../utils/notificationMessageFormatter";
+import {
+  NOTIFICATION_TYPE_GROUPS,
+  markNotificationsReadLocally,
+} from "../utils/notificationBadges";
 
 function TrainerDashboard() {
   const navigate = useNavigate();
@@ -55,7 +59,7 @@ function TrainerDashboard() {
   const [trainings, setTrainings] = useState([]);
   const [workAssignmentsState, setWorkAssignmentsState] = useState([]);
   const [interviewFormData, setInterviewFormData] = useState({
-    interviewType: "HR",
+    interviewType: "",
     attendanceStatus: "Present",
     date: new Date().toISOString().split("T")[0],
     attemptNumber: "",
@@ -72,12 +76,15 @@ function TrainerDashboard() {
     levelCrossed: false,
     hrRemarks: "",
     technicalRemarks: "",
+    score: "",
+    outOf: "",
   });
   const [aptitudeFormData, setAptitudeFormData] = useState({
     attendanceStatus: "Present",
     date: new Date().toISOString().split("T")[0],
     roundNumber: 1,
     score: "",
+    outOf: "",
     result: "Pass",
     remarks: "",
   });
@@ -86,6 +93,7 @@ function TrainerDashboard() {
     date: new Date().toISOString().split("T")[0],
     assessmentType: "Domain",
     score: "",
+    outOf: "",
     status: "Pending",
     feedback: "",
   });
@@ -95,6 +103,8 @@ function TrainerDashboard() {
     skillImprovementNote: "",
     engagementLevel: "Medium",
     trainerRemarks: "",
+    score: "",
+    outOf: "",
   });
   const [showEditModal, setShowEditModal] = useState(false);
   const [gdFormData, setGdFormData] = useState({
@@ -108,6 +118,8 @@ function TrainerDashboard() {
     overallRemark: "",
     strengths: "",
     improvementAreas: "",
+    score: "",
+    outOf: "",
   });
   const [editFormData, setEditFormData] = useState({
     name: "",
@@ -297,6 +309,28 @@ function TrainerDashboard() {
     };
   }, []);
 
+  const refreshNotificationBadge = async () => {
+    try {
+      const response = await trainerAPI.getNotifications();
+      if (!response.data?.success) return;
+
+      const notes = response.data.notifications || [];
+      setNotifications(notes);
+      const unreadCount = response.data.unreadCount ?? response.data.unreadCounts?.general ?? 0;
+
+      if (activeTab === "notifications") {
+        await trainerAPI.markNotificationsRead(NOTIFICATION_TYPE_GROUPS.GENERAL);
+        setHasUnreadNotifications(false);
+        setNotifications((prev) => markNotificationsReadLocally(prev, NOTIFICATION_TYPE_GROUPS.GENERAL));
+        return;
+      }
+
+      setHasUnreadNotifications(unreadCount > 0);
+    } catch (error) {
+      console.error("Failed to refresh trainer notification badge:", error);
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       const [profileResult, studentsResult, scheduledInterviewsResult, workAssignmentsResult, notificationsResult, scheduledGdsResult] = await Promise.allSettled([
@@ -338,7 +372,9 @@ function TrainerDashboard() {
         try {
           const notes = notificationsResult.value.data.notifications || [];
           setNotifications(notes);
-          const unreadCount = notificationsResult.value.data.unreadCount || 0;
+          const unreadCount = notificationsResult.value.data.unreadCount
+            ?? notificationsResult.value.data.unreadCounts?.general
+            ?? 0;
           setHasUnreadNotifications(unreadCount > 0);
           const assessments = notes.filter(n => n.notificationType === 'Test/Assessment');
           // map to activity-like objects used by the dashboard recentActivities logic
@@ -469,17 +505,31 @@ function TrainerDashboard() {
   }, [activeTab, user]);
 
   useEffect(() => {
-    const markAsRead = async () => {
-      if (activeTab === 'notifications') {
-        try {
-          await trainerAPI.markNotificationsRead();
-          setHasUnreadNotifications(false);
-        } catch (e) {
-          console.error("Failed to mark trainer notifications read:", e);
+    if (!user) return undefined;
+
+    refreshNotificationBadge();
+    const interval = setInterval(refreshNotificationBadge, 15000);
+    return () => clearInterval(interval);
+  }, [activeTab, user]);
+
+  useEffect(() => {
+    const markGeneralNotificationsRead = async () => {
+      if (activeTab !== "notifications") return;
+
+      try {
+        await trainerAPI.markNotificationsRead(NOTIFICATION_TYPE_GROUPS.GENERAL);
+        setHasUnreadNotifications(false);
+        setNotifications((prev) => markNotificationsReadLocally(prev, NOTIFICATION_TYPE_GROUPS.GENERAL));
+        const refreshed = await trainerAPI.getNotifications();
+        if (refreshed.data?.success) {
+          setNotifications(refreshed.data.notifications || []);
         }
+      } catch (error) {
+        console.error("Failed to mark trainer notifications read:", error);
       }
     };
-    markAsRead();
+
+    markGeneralNotificationsRead();
   }, [activeTab]);
 
   // clear any locked tab when leaving the student-records view
@@ -548,11 +598,13 @@ function TrainerDashboard() {
       if (interviewFormData.overallTechnicalLevel) cleanedData.overallTechnicalLevel = interviewFormData.overallTechnicalLevel;
       if (interviewFormData.hrRemarks) cleanedData.hrRemarks = interviewFormData.hrRemarks;
       if (interviewFormData.technicalRemarks) cleanedData.technicalRemarks = interviewFormData.technicalRemarks;
+      if (interviewFormData.score) cleanedData.score = parseFloat(interviewFormData.score);
+      if (interviewFormData.outOf) cleanedData.outOf = parseFloat(interviewFormData.outOf);
       const response = await trainerAPI.addInterview(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Interview record added successfully!");
         setInterviewFormData({
-          interviewType: "HR",
+          interviewType: "",
           attendanceStatus: "Present",
           date: new Date().toISOString().split("T")[0],
           attemptNumber: "",
@@ -569,6 +621,8 @@ function TrainerDashboard() {
           levelCrossed: false,
           hrRemarks: "",
           technicalRemarks: "",
+          score: "",
+          outOf: "",
         });
         fetchStudentRecords(selectedStudent._id);
       }
@@ -601,6 +655,9 @@ function TrainerDashboard() {
         score: parseFloat(aptitudeFormData.score),
         result: aptitudeFormData.result,
       };
+      if (aptitudeFormData.outOf) {
+        cleanedData.outOf = parseFloat(aptitudeFormData.outOf);
+      }
       // Only add remarks if present
       if (aptitudeFormData.remarks) {
         cleanedData.remarks = aptitudeFormData.remarks;
@@ -613,6 +670,7 @@ function TrainerDashboard() {
           date: new Date().toISOString().split("T")[0],
           roundNumber: 1,
           score: "",
+          outOf: "",
           result: "Pass",
           remarks: "",
         });
@@ -639,8 +697,11 @@ function TrainerDashboard() {
         status: assessmentFormData.status,
       };
       // Only add score if present and is a valid number
-      if (assessmentFormData.score && assessmentFormData.score !== "") {
+       if (assessmentFormData.score && assessmentFormData.score !== "") {
         cleanedData.score = parseFloat(assessmentFormData.score);
+      }
+      if (assessmentFormData.outOf && assessmentFormData.outOf !== "") {
+        cleanedData.outOf = parseFloat(assessmentFormData.outOf);
       }
       // Only add feedback if present
       if (assessmentFormData.feedback) {
@@ -654,6 +715,7 @@ function TrainerDashboard() {
           date: new Date().toISOString().split("T")[0],
           assessmentType: "Domain",
           score: "",
+          outOf: "",
           status: "Pending",
           feedback: "",
         });
@@ -679,6 +741,8 @@ function TrainerDashboard() {
       // Clean up empty notes and remarks
       if (!cleanedData.skillImprovementNote) delete cleanedData.skillImprovementNote;
       if (!cleanedData.trainerRemarks) delete cleanedData.trainerRemarks;
+      if (cleanedData.score) cleanedData.score = parseFloat(cleanedData.score);
+      if (cleanedData.outOf) cleanedData.outOf = parseFloat(cleanedData.outOf);
       const response = await trainerAPI.addTraining(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Training record added successfully!");
@@ -688,6 +752,8 @@ function TrainerDashboard() {
           skillImprovementNote: "",
           engagementLevel: "Medium",
           trainerRemarks: "",
+          score: "",
+          outOf: "",
         });
         fetchStudentRecords(selectedStudent._id);
       }
@@ -728,6 +794,8 @@ function TrainerDashboard() {
         overallRemark: "",
         strengths: "",
         improvementAreas: "",
+        score: "",
+        outOf: "",
       });
       setTimeout(() => setRecordSuccess(""), 3000);
       // refresh records if needed
@@ -997,8 +1065,11 @@ function TrainerDashboard() {
   };
 
   const getScheduledAssessmentMode = (assessment) => {
-    const rawMode = assessment?.details?.notification?.assessmentMeta?.assessmentMode || assessment?.details?.form?.mode || assessment?.mode || (Array.isArray(assessment?.details?.assigned) && assessment.details.assigned.length > 1 ? "Group" : "Individual");
-    return String(rawMode).toLowerCase() === "group" ? "Group" : "Individual";
+    const hasGroupId = assessment?.details?.notification?.assessmentMeta?.groupId || 
+                       assessment?.details?.groupId || 
+                       assessment?.details?.form?.groupId || 
+                       assessment?.groupId;
+    return hasGroupId ? "Group" : "Individual";
   };
 
   const filteredInterviews = interviews.filter((interview) =>
@@ -3872,6 +3943,7 @@ function TrainerDashboard() {
                           }}
                           required
                         >
+                          <option value="" disabled>Select Interview Type</option>
                           <option value="HR">HR</option>
                           <option value="Technical">Technical</option>
                         </select>
@@ -3914,7 +3986,29 @@ function TrainerDashboard() {
                         />
                       </div>
 
-                      {interviewFormData.interviewType === "HR" ? (
+                      <div className="form-group">
+                        <label>Score</label>
+                        <input
+                          type="number"
+                          name="score"
+                          value={interviewFormData.score}
+                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                          placeholder="Score"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Out Of</label>
+                        <input
+                          type="number"
+                          name="outOf"
+                          value={interviewFormData.outOf}
+                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
+                          placeholder="Out Of"
+                        />
+                      </div>
+
+                      {interviewFormData.interviewType === "HR" && (
                         <>
                           <div className="form-group">
                             <label>Communication Level (B/I/A/E) *</label>
@@ -4020,7 +4114,8 @@ function TrainerDashboard() {
                             />
                           </div>
                         </>
-                      ) : (
+                      )}
+                      {interviewFormData.interviewType === "Technical" && (
                         <>
                           <div className="form-group">
                             <label>Technical Knowledge (B/I/A/E) *</label>
@@ -4188,6 +4283,17 @@ function TrainerDashboard() {
                         />
                       </div>
                       <div className="form-group">
+                        <label>Out Of</label>
+                        <input
+                          type="number"
+                          name="outOf"
+                          value={aptitudeFormData.outOf}
+                          onChange={(e) => setAptitudeFormData({ ...aptitudeFormData, [e.target.name]: e.target.value })}
+                          min="0"
+                          placeholder="Out Of"
+                        />
+                      </div>
+                      <div className="form-group">
                         <label>Result *</label>
                         <select
                           name="result"
@@ -4267,6 +4373,17 @@ function TrainerDashboard() {
                           onChange={(e) => setAssessmentFormData({ ...assessmentFormData, [e.target.name]: e.target.value })}
                           min="0"
                           max="100"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Out Of</label>
+                        <input
+                          type="number"
+                          name="outOf"
+                          value={assessmentFormData.outOf}
+                          onChange={(e) => setAssessmentFormData({ ...assessmentFormData, [e.target.name]: e.target.value })}
+                          min="0"
+                          placeholder="Out Of"
                         />
                       </div>
                       <div className="form-group">
@@ -4354,6 +4471,28 @@ function TrainerDashboard() {
                         </select>
                       </div>
                       <div className="form-group">
+                        <label>Score</label>
+                        <input
+                          type="number"
+                          name="score"
+                          value={trainingFormData.score}
+                          onChange={(e) => setTrainingFormData({ ...trainingFormData, [e.target.name]: e.target.value })}
+                          min="0"
+                          placeholder="Score"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Out Of</label>
+                        <input
+                          type="number"
+                          name="outOf"
+                          value={trainingFormData.outOf}
+                          onChange={(e) => setTrainingFormData({ ...trainingFormData, [e.target.name]: e.target.value })}
+                          min="0"
+                          placeholder="Out Of"
+                        />
+                      </div>
+                      <div className="form-group">
                         <label>Trainer Remarks</label>
                         <textarea
                           name="trainerRemarks"
@@ -4402,6 +4541,28 @@ function TrainerDashboard() {
                           <option value="Present">Present</option>
                           <option value="Absent">Absent</option>
                         </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Score</label>
+                        <input
+                          type="number"
+                          name="score"
+                          value={gdFormData.score}
+                          onChange={(e) => setGdFormData({ ...gdFormData, score: e.target.value })}
+                          min="0"
+                          placeholder="Score"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Out Of</label>
+                        <input
+                          type="number"
+                          name="outOf"
+                          value={gdFormData.outOf}
+                          onChange={(e) => setGdFormData({ ...gdFormData, outOf: e.target.value })}
+                          min="0"
+                          placeholder="Out Of"
+                        />
                       </div>
                       <div className="form-group">
                         <label>Participation *</label>
@@ -4520,6 +4681,7 @@ function TrainerDashboard() {
                                 <th>Clarity</th>
                                 <th>Overall</th>
                                 <th>Level Crossed</th>
+                                <th>Score</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -4534,6 +4696,7 @@ function TrainerDashboard() {
                                   <td>{interview.clarityLevel || interview.clarityOfAnswer || "-"}</td>
                                   <td>{interview.overallLevel || (interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel) || "-"}</td>
                                   <td>{interview.levelCrossed ? "Crossed" : "Not Crossed"}</td>
+                                  <td>{interview.score !== undefined && interview.score !== null ? `${interview.score}${interview.outOf ? '/' + interview.outOf : ''}` : "-"}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -4563,7 +4726,7 @@ function TrainerDashboard() {
                                 <tr key={index}>
                                   <td>{apt.attendanceStatus || "-"}</td>
                                   <td>{apt.roundNumber}</td>
-                                  <td>{apt.score}</td>
+                                  <td>{apt.score}{apt.outOf ? '/' + apt.outOf : ''}</td>
                                   <td>{apt.result}</td>
                                   <td>{apt.remarks || "-"}</td>
                                   <td>{apt.date ? new Date(apt.date).toLocaleDateString() : new Date(apt.createdAt).toLocaleDateString()}</td>
@@ -4596,7 +4759,7 @@ function TrainerDashboard() {
                                 <tr key={index}>
                                   <td>{assessment.attendanceStatus || "-"}</td>
                                   <td>{assessment.assessmentType}</td>
-                                  <td>{assessment.score || "-"}</td>
+                                  <td>{assessment.score !== undefined && assessment.score !== null ? `${assessment.score}${assessment.outOf ? '/' + assessment.outOf : ''}` : "-"}</td>
                                   <td>{assessment.status}</td>
                                   <td>{assessment.feedback || "-"}</td>
                                   <td>{assessment.date ? new Date(assessment.date).toLocaleDateString() : new Date(assessment.createdAt).toLocaleDateString()}</td>
@@ -4619,6 +4782,7 @@ function TrainerDashboard() {
                                 <th>Date</th>
                                 <th>Attendance</th>
                                 <th>Engagement Level</th>
+                                <th>Score</th>
                                 <th>Skill Improvement</th>
                                 <th>Remarks</th>
                               </tr>
@@ -4629,6 +4793,7 @@ function TrainerDashboard() {
                                   <td>{new Date(training.date).toLocaleDateString()}</td>
                                   <td>{training.attendance}</td>
                                   <td>{training.engagementLevel}</td>
+                                  <td>{training.score !== undefined && training.score !== null ? `${training.score}${training.outOf ? '/' + training.outOf : ''}` : "-"}</td>
                                   <td>{training.skillImprovementNote || "-"}</td>
                                   <td>{training.trainerRemarks || "-"}</td>
                                 </tr>
@@ -4650,6 +4815,7 @@ function TrainerDashboard() {
                                 <th>Date</th>
                                 <th>GD</th>
                                 <th>Attendance</th>
+                                <th>Score</th>
                                 <th>Participation</th>
                                 <th>Communication</th>
                                 <th>Confidence</th>
@@ -4664,6 +4830,7 @@ function TrainerDashboard() {
                                   <td>{gd.savedAt ? new Date(gd.savedAt).toLocaleDateString() : "-"}</td>
                                   <td>{gd.gdTitle || "GD"}</td>
                                   <td>{gd.form?.attendanceStatus || "-"}</td>
+                                  <td>{gd.form?.score !== undefined && gd.form?.score !== null ? `${gd.form.score}${gd.form.outOf ? '/' + gd.form.outOf : ''}` : "-"}</td>
                                   <td>{gd.form?.participation || "-"}</td>
                                   <td>{gd.form?.communication || "-"}</td>
                                   <td>{gd.form?.confidence || "-"}</td>
@@ -4691,13 +4858,15 @@ function TrainerDashboard() {
               </div>
 
               <div className="card">
-                {notifications.length === 0 ? (
+                {notifications.filter((notif) => NOTIFICATION_TYPE_GROUPS.GENERAL.includes(notif.notificationType)).length === 0 ? (
                   <div className="empty-state">
                     <p>No notifications at this time.</p>
                   </div>
                 ) : (
                   <div className="notification-list">
-                    {notifications.map((notif) => {
+                    {notifications
+                      .filter((notif) => NOTIFICATION_TYPE_GROUPS.GENERAL.includes(notif.notificationType))
+                      .map((notif) => {
                       const createdAt = notif.createdAt || notif.updatedAt || notif.date;
                       const message = notif.message || notif.description || notif.body || "";
                       const title = notif.title || notif.subject || notif.notificationType || "Notification";

@@ -11,6 +11,65 @@ const Notification = require('../models/Notification');
 const JobPosting = require('../models/JobPosting');
 const StudentGroup = require('../models/StudentGroup');
 const Activity = require('../models/Activity');
+
+const NOTIFICATION_TYPE_GROUPS = {
+  general: ['General/Announcement', 'Certificate'],
+  interview: ['Interview'],
+  assessment: ['Test/Assessment'],
+  gd: ['GD'],
+};
+
+const buildNotificationRecipientFilter = (userRole, userId) => {
+  const objUserId = new mongoose.Types.ObjectId(userId);
+
+  if (userRole === 'intern') {
+    return {
+      $or: [
+        { sendTo: 'All' },
+        { sendTo: 'Group', recipientModel: 'Intern', recipientIds: objUserId },
+        { sendTo: 'Individual', recipientModel: 'Intern', recipientIds: objUserId },
+      ],
+    };
+  }
+
+  return {
+    $or: [
+      { sendTo: 'All' },
+      { sendTo: 'Group', recipientModel: 'Trainer', recipientIds: objUserId },
+      { sendTo: 'Individual', recipientModel: 'Trainer', recipientIds: objUserId },
+    ],
+  };
+};
+
+const resolveNotificationUserRole = async (userId, explicitRole) => {
+  let userRole = explicitRole;
+
+  if (!userRole) {
+    const [trainerExists, internExists] = await Promise.all([
+      Trainer.exists({ _id: userId }),
+      Intern.exists({ _id: userId }),
+    ]);
+
+    if (trainerExists) {
+      userRole = 'trainer';
+    } else if (internExists) {
+      userRole = 'intern';
+    }
+  }
+
+  const trainerLikeRoles = new Set(['trainer', 'hr', 'other']);
+  if (trainerLikeRoles.has(String(userRole || '').toLowerCase()) || await Trainer.exists({ _id: userId })) {
+    return 'trainer';
+  }
+  if (userRole === 'intern') {
+    return 'intern';
+  }
+  return null;
+};
+
+const countUnreadByTypes = (notifications, types) =>
+  notifications.filter((notification) => types.includes(notification.notificationType) && !notification.isRead).length;
+
 const {
   filterEvaluatedInterviews,
   normalizeInterviewAttemptNumber,
@@ -169,7 +228,9 @@ exports.addInterview = async (req, res) => {
       levelCrossed,
       remarks,
       hrRemarks,
-      technicalRemarks
+      technicalRemarks,
+      score,
+      outOf
     } = req.body;
     const normalizedAttemptNumber = normalizeInterviewAttemptNumber(attemptNumber);
     const normalizedLevelCrossed =
@@ -217,7 +278,9 @@ exports.addInterview = async (req, res) => {
       levelCrossed: normalizedLevelCrossed,
       remarks,
       hrRemarks,
-      technicalRemarks
+      technicalRemarks,
+      score,
+      outOf
     });
 
     await interview.save();
@@ -249,7 +312,7 @@ exports.addInterview = async (req, res) => {
 exports.addAptitude = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { studentId, attendanceStatus, date, roundNumber, score, result, remarks } = req.body;
+    const { studentId, attendanceStatus, date, roundNumber, score, result, remarks, outOf } = req.body;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -271,7 +334,8 @@ exports.addAptitude = async (req, res) => {
       roundNumber,
       score,
       result,
-      remarks
+      remarks,
+      outOf
     });
 
     await aptitude.save();
@@ -303,7 +367,7 @@ exports.addAptitude = async (req, res) => {
 exports.addAssessment = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { studentId, attendanceStatus, date, assessmentType, score, status, feedback } = req.body;
+    const { studentId, attendanceStatus, date, assessmentType, score, status, feedback, outOf } = req.body;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -325,7 +389,8 @@ exports.addAssessment = async (req, res) => {
       assessmentType,
       score,
       status,
-      feedback
+      feedback,
+      outOf
     });
 
     await assessment.save();
@@ -357,7 +422,7 @@ exports.addAssessment = async (req, res) => {
 exports.addTraining = async (req, res) => {
   try {
     const trainerId = req.user.id;
-    const { studentId, date, attendance, skillImprovementNote, engagementLevel, trainerRemarks } = req.body;
+    const { studentId, date, attendance, skillImprovementNote, engagementLevel, trainerRemarks, score, outOf } = req.body;
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -378,7 +443,9 @@ exports.addTraining = async (req, res) => {
       attendance,
       skillImprovementNote,
       engagementLevel,
-      trainerRemarks
+      trainerRemarks,
+      score,
+      outOf
     });
 
     await training.save();
@@ -711,9 +778,10 @@ exports.getMyInterviews = async (req, res) => {
   try {
     const studentId = req.user.id; // This will be the intern's ID
 
-    const interviews = await Interview.find({ studentId })
+    const allInterviews = await Interview.find({ studentId })
       .populate('trainerId', 'name email')
       .sort({ date: -1 });
+    const interviews = filterEvaluatedInterviews(allInterviews);
 
     res.status(200).json({
       success: true,
@@ -990,102 +1058,55 @@ exports.updateMyProfile = async (req, res) => {
 exports.getMyNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const explicitRole = req.user.role; // 'intern' or 'trainer'
-
-    let notifications;
-    let userRole = explicitRole;
+    const userRole = await resolveNotificationUserRole(userId, req.user.role);
 
     if (!userRole) {
-      const [trainerExists, internExists] = await Promise.all([
-        Trainer.exists({ _id: userId }),
-        Intern.exists({ _id: userId })
-      ]);
-
-      if (trainerExists) {
-        userRole = 'trainer';
-      } else if (internExists) {
-        userRole = 'intern';
-      }
-    }
-
-    const trainerLikeRoles = new Set(['trainer', 'hr', 'other']);
-
-    if (userRole === 'intern') {
-      // Fetch intern details to filter notifications by creation date
-      const student = await Intern.findById(userId);
-      const studentCreatedAt = student ? student.createdAt : new Date(0);
-
-      // For interns (show only notifications created after their registration date)
-      notifications = await Notification.find({
-        createdAt: { $gte: studentCreatedAt },
-        $or: [
-          { sendTo: 'All' },
-          { 
-            sendTo: 'Group',
-            recipientModel: 'Intern',
-            recipientIds: userId
-          },
-          {
-            sendTo: 'Individual',
-            recipientModel: 'Intern',
-            recipientIds: userId
-          }
-        ]
-      })
-      .populate('createdBy', 'name email')
-      .populate('activityId')
-      .sort({ createdAt: -1 });
-    } else if (trainerLikeRoles.has(String(userRole || '').toLowerCase()) || await Trainer.exists({ _id: userId })) {
-      // For trainers
-      notifications = await Notification.find({
-        $or: [
-          { sendTo: 'All' },
-          { 
-            sendTo: 'Group',
-            recipientModel: 'Trainer',
-            recipientIds: userId
-          },
-          {
-            sendTo: 'Individual',
-            recipientModel: 'Trainer',
-            recipientIds: userId
-          }
-        ]
-      })
-      .populate('createdBy', 'name email')
-      .populate('activityId')
-      .sort({ createdAt: -1 });
-    } else {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user role'
+        message: 'Invalid user role',
       });
     }
 
-    const mappedNotifications = notifications.map(n => {
-      const nObj = n.toObject();
-      nObj.isRead = n.readBy && n.readBy.some(r => String(r.userId) === String(userId));
-      return nObj;
+    const recipientFilter = buildNotificationRecipientFilter(userRole, userId);
+    let query = { ...recipientFilter };
+
+    if (userRole === 'intern') {
+      const student = await Intern.findById(userId).select('createdAt');
+      const studentCreatedAt = student ? student.createdAt : new Date(0);
+      query.createdAt = { $gte: studentCreatedAt };
+    }
+
+    const notifications = await Notification.find(query)
+      .populate('createdBy', 'name email')
+      .populate('activityId')
+      .sort({ createdAt: -1 });
+
+    const mappedNotifications = notifications.map((notification) => {
+      const notificationObj = notification.toObject();
+      notificationObj.isRead = Array.isArray(notification.readBy)
+        && notification.readBy.some((entry) => String(entry.userId) === String(userId));
+      return notificationObj;
     });
 
-    // unreadCount only counts notifications for the general panel (excludes activity-specific ones)
-    const generalPanelNotifs = mappedNotifications.filter(
-      n => n.notificationType !== 'Test/Assessment' && n.notificationType !== 'Interview'
-    );
-    const unreadCount = generalPanelNotifs.filter(n => !n.isRead).length;
+    const unreadCounts = {
+      general: countUnreadByTypes(mappedNotifications, NOTIFICATION_TYPE_GROUPS.general),
+      interview: countUnreadByTypes(mappedNotifications, NOTIFICATION_TYPE_GROUPS.interview),
+      assessment: countUnreadByTypes(mappedNotifications, NOTIFICATION_TYPE_GROUPS.assessment),
+      gd: countUnreadByTypes(mappedNotifications, NOTIFICATION_TYPE_GROUPS.gd),
+    };
 
     res.status(200).json({
       success: true,
       count: mappedNotifications.length,
-      unreadCount,
-      notifications: mappedNotifications
+      unreadCount: unreadCounts.general,
+      unreadCounts,
+      notifications: mappedNotifications,
     });
-
   } catch (error) {
     console.error('Get notifications error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };
@@ -1094,72 +1115,51 @@ exports.getMyNotifications = async (req, res) => {
 exports.markMyNotificationsRead = async (req, res) => {
   try {
     const userId = req.user.id;
-    const explicitRole = req.user.role; // 'intern' or 'trainer'
-    let userRole = explicitRole;
+    const userRole = await resolveNotificationUserRole(userId, req.user.role);
 
     if (!userRole) {
-      const [trainerExists, internExists] = await Promise.all([
-        Trainer.exists({ _id: userId }),
-        Intern.exists({ _id: userId })
-      ]);
-
-      if (trainerExists) {
-        userRole = 'trainer';
-      } else if (internExists) {
-        userRole = 'intern';
-      }
-    }
-
-    const trainerLikeRoles = new Set(['trainer', 'hr', 'other']);
-    const objUserId = new mongoose.Types.ObjectId(userId);
-
-    let filter = {};
-    if (userRole === 'intern') {
-      filter = {
-        $or: [
-          { sendTo: 'All' },
-          { sendTo: 'Group', recipientModel: 'Intern', recipientIds: objUserId },
-          { sendTo: 'Individual', recipientModel: 'Intern', recipientIds: objUserId }
-        ]
-      };
-    } else if (trainerLikeRoles.has(String(userRole || '').toLowerCase()) || await Trainer.exists({ _id: userId })) {
-      filter = {
-        $or: [
-          { sendTo: 'All' },
-          { sendTo: 'Group', recipientModel: 'Trainer', recipientIds: objUserId },
-          { sendTo: 'Individual', recipientModel: 'Trainer', recipientIds: objUserId }
-        ]
-      };
-    } else {
       return res.status(400).json({
         success: false,
-        message: 'Invalid user role'
+        message: 'Invalid user role',
       });
     }
 
-    const result = await Notification.updateMany(
-      {
-        ...filter,
-        'readBy.userId': { $ne: objUserId }
+    const objUserId = new mongoose.Types.ObjectId(userId);
+    const requestedTypes = Array.isArray(req.body?.notificationTypes)
+      ? req.body.notificationTypes.filter(Boolean)
+      : null;
+
+    const filter = {
+      ...buildNotificationRecipientFilter(userRole, userId),
+      'readBy.userId': { $ne: objUserId },
+    };
+
+    if (requestedTypes && requestedTypes.length > 0) {
+      filter.notificationType = { $in: requestedTypes };
+    }
+
+    if (userRole === 'intern') {
+      const student = await Intern.findById(userId).select('createdAt');
+      const studentCreatedAt = student ? student.createdAt : new Date(0);
+      filter.createdAt = { $gte: studentCreatedAt };
+    }
+
+    const result = await Notification.updateMany(filter, {
+      $push: {
+        readBy: { userId: objUserId, readAt: new Date() },
       },
-      {
-        $push: {
-          readBy: { userId: objUserId, readAt: new Date() }
-        }
-      }
-    );
+    });
 
     res.status(200).json({
       success: true,
       message: 'Notifications marked as read',
-      updatedCount: result.modifiedCount ?? result.nModified ?? 0
+      updatedCount: result.modifiedCount ?? result.nModified ?? 0,
     });
-
   } catch (error) {
     console.error('Mark notifications read error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error',
     });
   }
 };

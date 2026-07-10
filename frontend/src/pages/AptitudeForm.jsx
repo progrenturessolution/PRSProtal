@@ -11,6 +11,7 @@ function AptitudeForm() {
   const [formData, setFormData] = useState({
     roundNumber: 1,
     score: "",
+    outOf: "",
     result: "Pass",
     remarks: "",
     date: new Date().toISOString().split("T")[0],
@@ -50,16 +51,20 @@ function AptitudeForm() {
     setSuccess("");
 
     try {
-      const response = await trainerAPI.addAptitude({
+      const cleanedData = {
         studentId,
         ...formData,
-      });
+      };
+      if (cleanedData.score) cleanedData.score = parseFloat(cleanedData.score);
+      if (cleanedData.outOf) cleanedData.outOf = parseFloat(cleanedData.outOf);
+      const response = await trainerAPI.addAptitude(cleanedData);
 
       if (response.data.success) {
         setSuccess("Aptitude record added successfully!");
         setFormData({
           roundNumber: 1,
           score: "",
+          outOf: "",
           result: "Pass",
           remarks: "",
           date: new Date().toISOString().split("T")[0],
@@ -174,6 +179,18 @@ function AptitudeForm() {
               </div>
 
               <div className="form-group">
+                <label>Out Of</label>
+                <input
+                  type="number"
+                  name="outOf"
+                  value={formData.outOf}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder="Out Of"
+                />
+              </div>
+
+              <div className="form-group">
                 <label>Result *</label>
                 <select
                   name="result"
@@ -260,7 +277,7 @@ function AptitudeForm() {
                     filteredAptitudes.map((apt, index) => (
                       <tr key={index}>
                         <td>{apt.roundNumber}</td>
-                        <td>{apt.score}</td>
+                        <td>{apt.score}{apt.outOf ? '/' + apt.outOf : ''}</td>
                         <td>
                           <span
                             className={`status-badge ${apt.result === "Pass" ? "status-completed" : "status-pending"}`}

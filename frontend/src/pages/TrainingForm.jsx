@@ -14,6 +14,8 @@ function TrainingForm() {
     skillImprovementNote: "",
     engagementLevel: "Medium",
     trainerRemarks: "",
+    score: "",
+    outOf: "",
   });
   const [trainings, setTrainings] = useState([]);
   const [historySearch, setHistorySearch] = useState("");
@@ -50,10 +52,13 @@ function TrainingForm() {
     setSuccess("");
 
     try {
-      const response = await trainerAPI.addTraining({
+      const cleanedData = {
         studentId,
         ...formData,
-      });
+      };
+      if (cleanedData.score) cleanedData.score = parseFloat(cleanedData.score);
+      if (cleanedData.outOf) cleanedData.outOf = parseFloat(cleanedData.outOf);
+      const response = await trainerAPI.addTraining(cleanedData);
 
       if (response.data.success) {
         setSuccess("Training record added successfully!");
@@ -63,6 +68,8 @@ function TrainingForm() {
           skillImprovementNote: "",
           engagementLevel: "Medium",
           trainerRemarks: "",
+          score: "",
+          outOf: "",
         });
         fetchTrainings();
       }
@@ -176,6 +183,30 @@ function TrainingForm() {
                 </select>
               </div>
 
+              <div className="form-group">
+                <label>Score</label>
+                <input
+                  type="number"
+                  name="score"
+                  value={formData.score}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder="Score"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Out Of</label>
+                <input
+                  type="number"
+                  name="outOf"
+                  value={formData.outOf}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder="Out Of"
+                />
+              </div>
+
               <div className="form-group full-width">
                 <label>Skill Improvement Note</label>
                 <textarea
@@ -248,6 +279,7 @@ function TrainingForm() {
                     <th>Date</th>
                     <th>Attendance</th>
                     <th>Engagement Level</th>
+                    <th>Score</th>
                     <th>Skill Improvement</th>
                     <th>Remarks</th>
                   </tr>
@@ -275,6 +307,7 @@ function TrainingForm() {
                           </span>
                         </td>
                         <td>{training.engagementLevel}</td>
+                        <td>{training.score !== undefined && training.score !== null ? `${training.score}${training.outOf ? '/' + training.outOf : ''}` : "-"}</td>
                         <td>{training.skillImprovementNote || "-"}</td>
                         <td>{training.trainerRemarks || "-"}</td>
                       </tr>

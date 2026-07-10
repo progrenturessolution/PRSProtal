@@ -33,6 +33,12 @@ const trainingSchema = new mongoose.Schema({
   trainerRemarks: {
     type: String,
     trim: true
+  },
+  score: {
+    type: Number
+  },
+  outOf: {
+    type: Number
   }
 }, {
   timestamps: true

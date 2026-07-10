@@ -11,6 +11,7 @@ function AssessmentForm() {
   const [formData, setFormData] = useState({
     assessmentType: "Domain",
     score: "",
+    outOf: "",
     status: "Pending",
     feedback: "",
     date: new Date().toISOString().split("T")[0],
@@ -50,16 +51,20 @@ function AssessmentForm() {
     setSuccess("");
 
     try {
-      const response = await trainerAPI.addAssessment({
+      const cleanedData = {
         studentId,
         ...formData,
-      });
+      };
+      if (cleanedData.score) cleanedData.score = parseFloat(cleanedData.score);
+      if (cleanedData.outOf) cleanedData.outOf = parseFloat(cleanedData.outOf);
+      const response = await trainerAPI.addAssessment(cleanedData);
 
       if (response.data.success) {
         setSuccess("Assessment record added successfully!");
         setFormData({
           assessmentType: "Domain",
           score: "",
+          outOf: "",
           status: "Pending",
           feedback: "",
           date: new Date().toISOString().split("T")[0],
@@ -176,6 +181,18 @@ function AssessmentForm() {
               </div>
 
               <div className="form-group">
+                <label>Out Of</label>
+                <input
+                  type="number"
+                  name="outOf"
+                  value={formData.outOf}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder="Out Of"
+                />
+              </div>
+
+              <div className="form-group">
                 <label>Status *</label>
                 <select
                   name="status"
@@ -264,7 +281,7 @@ function AssessmentForm() {
                     filteredAssessments.map((assessment, index) => (
                       <tr key={index}>
                         <td>{assessment.assessmentType}</td>
-                        <td>{assessment.score || "-"}</td>
+                        <td>{assessment.score !== undefined && assessment.score !== null ? `${assessment.score}${assessment.outOf ? '/' + assessment.outOf : ''}` : "-"}</td>
                         <td>
                           <span
                             className={`status-badge ${

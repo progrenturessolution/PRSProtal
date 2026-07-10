@@ -2745,7 +2745,7 @@ exports.updateActivity = async (req, res) => {
         }
       }
 
-      const assessmentMode = groupId || studentIds.length > 1 ? 'Group' : 'Individual';
+      const assessmentMode = groupId ? 'Group' : 'Individual';
       let groupName = '';
       if (groupId) {
         try {
@@ -2753,9 +2753,19 @@ exports.updateActivity = async (req, res) => {
           groupName = group?.groupName || '';
         } catch (e) {}
       }
-      const assignedLabels = assessmentMode === 'Group'
-        ? [groupName || `Group ${groupId || ''}`.trim()].filter(Boolean)
-        : studentIds.map(String);
+      let assignedLabels = [];
+      if (assessmentMode === 'Group') {
+        assignedLabels = [groupName || `Group ${groupId || ''}`.trim()].filter(Boolean);
+      } else {
+        try {
+          const interns = await Intern.find({ _id: { $in: studentIds } }).select('name').lean();
+          const internMap = {};
+          interns.forEach(i => { internMap[String(i._id)] = i.name; });
+          assignedLabels = studentIds.map(id => internMap[String(id)] || String(id));
+        } catch (e) {
+          assignedLabels = studentIds.map(String);
+        }
+      }
 
       const when = date ? `${date}${time ? ' ' + time : ''}` : (time || '');
       const baseMessage = `${description || ''}${when ? '\nWhen: ' + when : ''}${link ? '\nLink: ' + link : ''}`;
@@ -2971,7 +2981,7 @@ exports.scheduleAssessment = async (req, res) => {
     // Deduplicate
     studentIds = Array.from(new Set((studentIds || []).map(String)));
 
-    const assessmentMode = groupId || studentIds.length > 1 ? 'Group' : 'Individual';
+    const assessmentMode = groupId ? 'Group' : 'Individual';
     let groupName = '';
 
     if (groupId) {
@@ -2981,9 +2991,19 @@ exports.scheduleAssessment = async (req, res) => {
       } catch (e) { /* ignore */ }
     }
 
-    const assignedLabels = assessmentMode === 'Group'
-      ? [groupName || `Group ${groupId || ''}`.trim()].filter(Boolean)
-      : studentIds.map(String);
+    let assignedLabels = [];
+    if (assessmentMode === 'Group') {
+      assignedLabels = [groupName || `Group ${groupId || ''}`.trim()].filter(Boolean);
+    } else {
+      try {
+        const interns = await Intern.find({ _id: { $in: studentIds } }).select('name').lean();
+        const internMap = {};
+        interns.forEach(i => { internMap[String(i._id)] = i.name; });
+        assignedLabels = studentIds.map(id => internMap[String(id)] || String(id));
+      } catch (e) {
+        assignedLabels = studentIds.map(String);
+      }
+    }
 
     // Validate trainer (optional)
     let trainer = null;

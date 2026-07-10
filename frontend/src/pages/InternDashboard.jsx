@@ -6,6 +6,15 @@ import TeamTasks from "./TeamTasks";
 import logo from "../assets/logo.png";
 import "./ActivityManagementNew.css";
 import { renderNotificationMessage } from "../utils/notificationMessageFormatter";
+import {
+  NOTIFICATION_TYPE_GROUPS,
+  getUserStorageKey,
+  getLatestTimestamp,
+  hasUnseenByTimestamp,
+  markSeenByTimestamp,
+  hasUnreadByType,
+  markNotificationsReadLocally,
+} from "../utils/notificationBadges";
 
 function InternDashboard() {
   const navigate = useNavigate();
@@ -15,6 +24,23 @@ function InternDashboard() {
   const scheduledInterviewsStorageKey = "intern-scheduled-interviews-last-seen";
   const scheduledGdsStorageKey = "intern-scheduled-gds-last-seen";
   const scheduledAssignmentsStorageKey = "intern-scheduled-assignments-last-seen";
+
+  const formatDate = (dateVal) => {
+    if (!dateVal) return "-";
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "-";
+    return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+  };
+
+  const formatDateTime = (dateVal) => {
+    if (!dateVal) return "-";
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "-";
+    const datePart = `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+    const timePart = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return `${datePart}, ${timePart}`;
+  };
+
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -263,14 +289,14 @@ function InternDashboard() {
                     ) : (
                       filteredInterviews.map((interview) => (
                         <tr key={interview._id}>
-                          <td>{interview.date ? new Date(interview.date).toLocaleDateString() : "-"}</td>
+                          <td>{formatDate(interview.date)}</td>
                           <td>{interview.interviewType || "-"}</td>
                           <td>{interview.attendanceStatus || "-"}</td>
                           <td>{interview.attemptNumber || "-"}</td>
                           <td>{getInterviewScore(interview)}</td>
-                          <td>{interviewLevelTextMap[interview.communicationLevel] || interview.communicationLevel || "-"}</td>
-                          <td>{interviewLevelTextMap[interview.confidenceLevel] || interview.confidenceLevel || "-"}</td>
-                          <td>{interviewLevelTextMap[interview.clarityLevel || interview.clarityOfAnswer] || interview.clarityLevel || interview.clarityOfAnswer || "-"}</td>
+                          <td>{interview.interviewType === "Technical" ? (interviewLevelTextMap[interview.technicalKnowledge] || interview.technicalKnowledge || "-") : (interviewLevelTextMap[interview.communicationLevel] || interview.communicationLevel || "-")}</td>
+                          <td>{interview.interviewType === "Technical" ? (interviewLevelTextMap[interview.problemSolving] || interview.problemSolving || "-") : (interviewLevelTextMap[interview.confidenceLevel] || interview.confidenceLevel || "-")}</td>
+                          <td>{interview.interviewType === "Technical" ? (interviewLevelTextMap[interview.codingAbility || interview.logicAndApproach] || interview.codingAbility || interview.logicAndApproach || "-") : (interviewLevelTextMap[interview.clarityLevel || interview.clarityOfAnswer] || interview.clarityLevel || interview.clarityOfAnswer || "-")}</td>
                           <td>{(() => {
                             const overall = interview.overallLevel || (interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel);
                             return interviewLevelTextMap[overall] || overall || "-";
@@ -322,7 +348,7 @@ function InternDashboard() {
                 <tbody>
                   {scheduledInterviews.map((interview, idx) => (
                     <tr key={interview._id || interview.title || idx}>
-                      <td>{(interview.date || interview.dateTime || interview.details?.form?.date) ? new Date(interview.date || interview.dateTime || interview.details?.form?.date).toLocaleDateString() : "-"}</td>
+                      <td>{formatDate(interview.date || interview.dateTime || interview.details?.form?.date)}</td>
                       <td>{interview.startTime || interview.details?.form?.startTime || interview.dateTime?.split(' ')[1] || "-"}</td>
                       <td>{interview.interviewType || interview.type || "-"}</td>
                       <td>{getScheduledInterviewMode(interview)}</td>
@@ -378,7 +404,7 @@ function InternDashboard() {
                   {scheduledGds.map((gd, idx) => (
                     <tr key={gd._id || gd.title || idx}>
                       <td>{gd.title || gd.details?.form?.title || 'Group Discussion'}</td>
-                      <td>{(gd.date || gd.dateTime || gd.details?.form?.date) ? new Date(gd.date || gd.dateTime || gd.details?.form?.date).toLocaleDateString() : '-'}</td>
+                      <td>{formatDate(gd.date || gd.dateTime || gd.details?.form?.date)}</td>
                       <td>{gd.startTime || gd.details?.form?.startTime || '-'}</td>
                       <td>{getGdGroupLabelForUser(gd)}</td>
                       <td>{getGdInterviewer(gd)}</td>
@@ -428,8 +454,8 @@ function InternDashboard() {
                   {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => (
                     <tr key={a._id || a.title || idx}>
                       <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                      <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
-                      <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                      <td>{formatDate(a.dateTime || a.details?.form?.date)}</td>
+                      <td>{(a.details?.form?.dueDate) ? formatDateTime(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')) : formatDateTime(a.dateTime)}</td>
                       <td>{a.createdBy || '-'}</td>
                       <td><span className={`status-badge ${
                         String(a.status).toLowerCase() === 'completed'
@@ -466,8 +492,8 @@ function InternDashboard() {
                   {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => (
                     <tr key={a._id || a.title || idx}>
                       <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                      <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
-                      <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                      <td>{formatDate(a.dateTime || a.details?.form?.date)}</td>
+                      <td>{(a.details?.form?.dueDate) ? formatDateTime(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')) : formatDateTime(a.dateTime)}</td>
                       <td>{a.createdBy || '-'}</td>
                       <td><span className={`status-badge ${
                         String(a.status).toLowerCase() === 'completed'
@@ -556,7 +582,7 @@ function InternDashboard() {
                             </span>
                           </td>
                           <td>{apt.remarks || "-"}</td>
-                          <td>{apt.date ? new Date(apt.date).toLocaleDateString() : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString() : "-"}</td>
+                          <td>{formatDate(apt.date || apt.createdAt)}</td>
                         </tr>
                       ))
                     )}
@@ -646,7 +672,7 @@ function InternDashboard() {
                             </span>
                           </td>
                           <td>{assessment.feedback || "-"}</td>
-                          <td>{assessment.date ? new Date(assessment.date).toLocaleDateString() : assessment.createdAt ? new Date(assessment.createdAt).toLocaleDateString() : "-"}</td>
+                          <td>{formatDate(assessment.date || assessment.createdAt)}</td>
                         </tr>
                       ))
                     )}
@@ -720,7 +746,7 @@ function InternDashboard() {
                     ) : (
                       filteredTrainings.map((training) => (
                         <tr key={training._id}>
-                          <td>{training.date ? new Date(training.date).toLocaleDateString() : "-"}</td>
+                          <td>{formatDate(training.date)}</td>
                           <td>{getTrainingScore(training)}</td>
                           <td>
                             <span
@@ -825,16 +851,18 @@ function InternDashboard() {
     refreshActivityBadges(parsedUser);
   }, [navigate]);
 
-  // Periodic refresh for job postings, activity badges, and tasks
+  // Periodic refresh for badges and tasks
   useEffect(() => {
+    refreshNotificationBadge();
     refreshJobPostingsBadge();
     refreshActivityBadges();
     fetchTasks();
     const interval = setInterval(() => {
+      refreshNotificationBadge();
       refreshJobPostingsBadge();
       refreshActivityBadges();
       fetchTasks();
-    }, 15000); // Refresh every 15 seconds for near real-time notifications
+    }, 15000);
     return () => clearInterval(interval);
   }, [activeSection, user]);
 
@@ -855,13 +883,17 @@ function InternDashboard() {
   const refreshNotificationBadge = async (currentUser = user) => {
     try {
       const response = await internAPI.getMyNotifications();
-      const unreadCount = response.data?.unreadCount || 0;
-      setHasUnreadNotifications(unreadCount > 0);
+      const unreadCount = response.data?.unreadCount ?? response.data?.unreadCounts?.general ?? 0;
+      const shouldMarkGeneralRead = currentUser && activeSection === "notifications";
 
-      if (currentUser && activeSection === "notifications") {
-        await internAPI.markNotificationsRead();
+      if (shouldMarkGeneralRead) {
+        await internAPI.markNotificationsRead(NOTIFICATION_TYPE_GROUPS.GENERAL);
         setHasUnreadNotifications(false);
+        setNotifications((prev) => markNotificationsReadLocally(prev, NOTIFICATION_TYPE_GROUPS.GENERAL));
+        return;
       }
+
+      setHasUnreadNotifications(unreadCount > 0);
     } catch (err) {
       console.error("Failed to refresh notification badge:", err);
     }
@@ -869,10 +901,22 @@ function InternDashboard() {
 
   const markNotificationsAsSeen = async () => {
     try {
-      await internAPI.markNotificationsRead();
+      await internAPI.markNotificationsRead(NOTIFICATION_TYPE_GROUPS.GENERAL);
       setHasUnreadNotifications(false);
+      setNotifications((prev) => markNotificationsReadLocally(prev, NOTIFICATION_TYPE_GROUPS.GENERAL));
     } catch (err) {
       console.error("Failed to mark notifications as read:", err);
+    }
+  };
+
+  const markActivityNotificationsAsSeen = async (types, items, storageKey) => {
+    try {
+      await internAPI.markNotificationsRead(types);
+      markSeenByTimestamp(items, storageKey);
+      setNotifications((prev) => markNotificationsReadLocally(prev, types));
+    } catch (err) {
+      console.error("Failed to mark activity notifications as read:", err);
+      markSeenByTimestamp(items, storageKey);
     }
   };
 
@@ -917,7 +961,6 @@ function InternDashboard() {
 
   const refreshActivityBadges = async (currentUser = user) => {
     if (!currentUser) return;
-    const uid = currentUser?._id || currentUser?.id || 'anon';
     try {
       // Fetch all three in parallel
       const [intResp, gdResp, notifResp] = await Promise.allSettled([
@@ -931,22 +974,30 @@ function InternDashboard() {
         ? (notifResp.value.data.notifications || [])
         : [];
 
-      // Helper: get latest timestamp from a list of items
-      const latestOf = (items) => getLatestActivityTimestamp(items);
-
       // --- 1. Scheduled Interviews ---
       {
         const interviewsList = (intResp.status === 'fulfilled' && intResp.value?.data?.success)
           ? (intResp.value.data.interviews || []) : [];
-        // Also include Interview-type notifications (from reschedule/complete/delete)
-        const intNotifs = allNotes
-          .filter(n => n.notificationType === 'Interview')
-          .map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt }));
+        const intNotifs = allNotes.filter(n => NOTIFICATION_TYPE_GROUPS.INTERVIEW.includes(n.notificationType));
+        const interviewStorageKey = getUserStorageKey(scheduledInterviewsStorageKey, currentUser);
+        const mergedInterviewItems = [
+          ...interviewsList,
+          ...intNotifs.map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt })),
+        ];
 
-        const latestTimestamp = Math.max(latestOf(interviewsList), latestOf(intNotifs));
-        const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledInterviewsStorageKey}-${uid}`) || 0);
-        if (latestTimestamp > lastSeenTimestamp) {
-          setHasUnreadScheduledInterviews(true);
+        const hasUnreadInterviewNotifs = hasUnreadByType(allNotes, NOTIFICATION_TYPE_GROUPS.INTERVIEW);
+        const hasUnseenInterviewItems = hasUnseenByTimestamp(mergedInterviewItems, interviewStorageKey);
+        const isViewingInterviews = activeSection === "scheduled-interviews";
+
+        if (isViewingInterviews) {
+          await markActivityNotificationsAsSeen(
+            NOTIFICATION_TYPE_GROUPS.INTERVIEW,
+            mergedInterviewItems,
+            interviewStorageKey
+          );
+          setHasUnreadScheduledInterviews(false);
+        } else {
+          setHasUnreadScheduledInterviews(hasUnreadInterviewNotifs || hasUnseenInterviewItems);
         }
       }
 
@@ -954,22 +1005,33 @@ function InternDashboard() {
       {
         const gdList = (gdResp.status === 'fulfilled' && gdResp.value?.data?.success)
           ? (gdResp.value.data.activities || []) : [];
-        // Also include GD-type notifications (from reschedule/complete/delete)
-        const gdNotifs = allNotes
-          .filter(n => n.notificationType === 'GD')
-          .map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt }));
+        const gdNotifs = allNotes.filter(n => NOTIFICATION_TYPE_GROUPS.GD.includes(n.notificationType));
+        const gdStorageKey = getUserStorageKey(scheduledGdsStorageKey, currentUser);
+        const mergedGdItems = [
+          ...gdList,
+          ...gdNotifs.map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt })),
+        ];
 
-        const latestTimestamp = Math.max(latestOf(gdList), latestOf(gdNotifs));
-        const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledGdsStorageKey}-${uid}`) || 0);
-        if (latestTimestamp > lastSeenTimestamp) {
-          setHasUnreadScheduledGds(true);
+        const hasUnreadGdNotifs = hasUnreadByType(allNotes, NOTIFICATION_TYPE_GROUPS.GD);
+        const hasUnseenGdItems = hasUnseenByTimestamp(mergedGdItems, gdStorageKey);
+        const isViewingGds = activeSection === "scheduled-gds";
+
+        if (isViewingGds) {
+          await markActivityNotificationsAsSeen(
+            NOTIFICATION_TYPE_GROUPS.GD,
+            mergedGdItems,
+            gdStorageKey
+          );
+          setHasUnreadScheduledGds(false);
+        } else {
+          setHasUnreadScheduledGds(hasUnreadGdNotifs || hasUnseenGdItems);
         }
       }
 
       // --- 3. Scheduled Assessments ---
       try {
         const assessNotes = allNotes
-          .filter((note) => note.notificationType === 'Test/Assessment')
+          .filter((note) => NOTIFICATION_TYPE_GROUPS.ASSESSMENT.includes(note.notificationType))
           .map((note) => ({
             _id: note._id,
             type: 'Assessment',
@@ -1001,10 +1063,20 @@ function InternDashboard() {
           return true;
         });
 
-        const latestTimestamp = getLatestActivityTimestamp(merged);
-        const lastSeenTimestamp = Number(localStorage.getItem(`${scheduledAssignmentsStorageKey}-${uid}`) || 0);
-        if (latestTimestamp > lastSeenTimestamp) {
-          setHasUnreadScheduledAssignments(true);
+        const assessmentStorageKey = getUserStorageKey(scheduledAssignmentsStorageKey, currentUser);
+        const hasUnreadAssessmentNotifs = hasUnreadByType(allNotes, NOTIFICATION_TYPE_GROUPS.ASSESSMENT);
+        const hasUnseenAssessmentItems = hasUnseenByTimestamp(merged, assessmentStorageKey);
+        const isViewingAssessments = activeSection === "scheduled-assignments";
+
+        if (isViewingAssessments) {
+          await markActivityNotificationsAsSeen(
+            NOTIFICATION_TYPE_GROUPS.ASSESSMENT,
+            merged,
+            assessmentStorageKey
+          );
+          setHasUnreadScheduledAssignments(false);
+        } else {
+          setHasUnreadScheduledAssignments(hasUnreadAssessmentNotifs || hasUnseenAssessmentItems);
         }
       } catch (err) {
         console.error("Failed to check assessment badge:", err);
@@ -1441,19 +1513,32 @@ function InternDashboard() {
                 <tr>
                   <th>Date</th>
                   <th>Type</th>
+                  <th>Communication</th>
+                  <th>Confidence</th>
+                  <th>Clarity</th>
                   <th>Overall</th>
                   <th>Level Crossed</th>
+                  <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 ${allInterviews.map(interview => {
-          const overallLevel = interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel;
+          const isTech = interview.interviewType === "Technical";
+          const comm = isTech ? interview.technicalKnowledge : interview.communicationLevel;
+          const conf = isTech ? interview.problemSolving : interview.confidenceLevel;
+          const clarity = isTech ? (interview.codingAbility || interview.logicAndApproach) : (interview.clarityLevel || interview.clarityOfAnswer);
+          const overallLevel = isTech ? interview.overallTechnicalLevel : interview.overallHRLevel;
+          const remarksVal = interview.remarks || (isTech ? interview.technicalRemarks : interview.hrRemarks) || "";
           return `
                   <tr>
-                    <td>${interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(interview.date)}</td>
                     <td>${interview.interviewType}</td>
+                    <td>${interviewLevelTextMap[comm] || comm || "-"}</td>
+                    <td>${interviewLevelTextMap[conf] || conf || "-"}</td>
+                    <td>${interviewLevelTextMap[clarity] || clarity || "-"}</td>
                     <td>${interviewLevelTextMap[overallLevel] || overallLevel || "-"}</td>
                     <td>${interview.levelCrossed ? 'Yes' : 'No'}</td>
+                    <td>${remarksVal || '-'}</td>
                   </tr>
                 `;
         }).join('')}
@@ -1474,15 +1559,17 @@ function InternDashboard() {
                   <th>Round</th>
                   <th>Score</th>
                   <th>Result</th>
+                  <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 ${allAptitudes.map(apt => `
                   <tr>
-                    <td>${apt.date ? new Date(apt.date).toLocaleDateString('en-IN') : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(apt.date || apt.createdAt)}</td>
                     <td>Round ${apt.roundNumber}</td>
                     <td>${apt.score}</td>
                     <td>${apt.result}</td>
+                    <td>${apt.remarks || '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1502,15 +1589,17 @@ function InternDashboard() {
                   <th>Type</th>
                   <th>Score</th>
                   <th>Status</th>
+                  <th>Feedback</th>
                 </tr>
               </thead>
               <tbody>
                 ${allAssessments.map(assess => `
                   <tr>
-                    <td>${assess.date ? new Date(assess.date).toLocaleDateString('en-IN') : assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(assess.date || assess.createdAt)}</td>
                     <td>${assess.assessmentType}</td>
                     <td>${assess.score || '-'}</td>
                     <td>${assess.status}</td>
+                    <td>${assess.feedback || '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1529,14 +1618,18 @@ function InternDashboard() {
                   <th>Date</th>
                   <th>Attendance</th>
                   <th>Engagement</th>
+                  <th>Skill Improvement</th>
+                  <th>Trainer Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 ${allTrainings.map(training => `
                   <tr>
-                    <td>${training.date ? new Date(training.date).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(training.date)}</td>
                     <td>${training.attendance}</td>
                     <td>${training.engagementLevel}</td>
+                    <td>${training.skillImprovementNote || '-'}</td>
+                    <td>${training.trainerRemarks || '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -1628,16 +1721,23 @@ function InternDashboard() {
           if (schedResp.data && schedResp.data.success) {
             const list = schedResp.data.interviews || [];
             setScheduledInterviews(list);
-            // Also fetch Interview-type notifications (reschedule/complete/delete) to sync lastSeen
-            let intNotifTimestamp = 0;
+            let intNotifItems = [];
             try {
               const nResp = await internAPI.getMyNotifications();
-              const intNotes = (nResp.data?.notifications || []).filter(n => n.notificationType === 'Interview');
-              intNotifTimestamp = getLatestActivityTimestamp(intNotes.map(n => ({ createdAt: n.createdAt })));
+              intNotifItems = (nResp.data?.notifications || []).filter(n =>
+                NOTIFICATION_TYPE_GROUPS.INTERVIEW.includes(n.notificationType)
+              );
             } catch (e) { /* ignore */ }
-            const latestTimestamp = Math.max(getLatestActivityTimestamp(list), intNotifTimestamp);
-            const _uid = user?._id || user?.id || 'anon';
-            localStorage.setItem(`${scheduledInterviewsStorageKey}-${_uid}`, String(latestTimestamp || Date.now()));
+            const interviewStorageKey = getUserStorageKey(scheduledInterviewsStorageKey, user);
+            const mergedInterviewItems = [
+              ...list,
+              ...intNotifItems.map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt })),
+            ];
+            await markActivityNotificationsAsSeen(
+              NOTIFICATION_TYPE_GROUPS.INTERVIEW,
+              mergedInterviewItems,
+              interviewStorageKey
+            );
             setHasUnreadScheduledInterviews(false);
           }
           await loadScheduledAssessments();
@@ -1708,24 +1808,35 @@ function InternDashboard() {
               setScheduledGds(finalGds || []);
             } catch (e2) { setScheduledGds([]); }
           }
-          // Also fetch GD-type notifications (reschedule/complete/delete) to sync lastSeen
-          let gdNotifTimestamp = 0;
+          // Mark GD notifications and activity items as seen
+          let gdNotifItems = [];
           try {
             const nResp = await internAPI.getMyNotifications();
-            const gdNotes = (nResp.data?.notifications || []).filter(n => n.notificationType === 'GD');
-            gdNotifTimestamp = getLatestActivityTimestamp(gdNotes.map(n => ({ createdAt: n.createdAt })));
+            gdNotifItems = (nResp.data?.notifications || []).filter(n =>
+              NOTIFICATION_TYPE_GROUPS.GD.includes(n.notificationType)
+            );
           } catch (e) { /* ignore */ }
-          const latestGdTimestamp = Math.max(getLatestActivityTimestamp(finalGds), gdNotifTimestamp);
-          const _uidGd = user?._id || user?.id || 'anon';
-          localStorage.setItem(`${scheduledGdsStorageKey}-${_uidGd}`, String(latestGdTimestamp || Date.now()));
+          const gdStorageKey = getUserStorageKey(scheduledGdsStorageKey, user);
+          const mergedGdItems = [
+            ...finalGds,
+            ...gdNotifItems.map(n => ({ createdAt: n.createdAt, updatedAt: n.updatedAt })),
+          ];
+          await markActivityNotificationsAsSeen(
+            NOTIFICATION_TYPE_GROUPS.GD,
+            mergedGdItems,
+            gdStorageKey
+          );
           setHasUnreadScheduledGds(false);
           await loadScheduledAssessments();
           break;
         case "scheduled-assignments":
           const assessList = await loadScheduledAssessments();
-          const latestAssessTimestamp = getLatestActivityTimestamp(assessList);
-          const _uidAs = user?._id || user?.id || 'anon';
-          localStorage.setItem(`${scheduledAssignmentsStorageKey}-${_uidAs}`, String(latestAssessTimestamp || Date.now()));
+          const assessmentStorageKey = getUserStorageKey(scheduledAssignmentsStorageKey, user);
+          await markActivityNotificationsAsSeen(
+            NOTIFICATION_TYPE_GROUPS.ASSESSMENT,
+            assessList,
+            assessmentStorageKey
+          );
           setHasUnreadScheduledAssignments(false);
           break;
         case "aptitude":
@@ -1750,7 +1861,11 @@ function InternDashboard() {
           const notifResp = await internAPI.getMyNotifications();
           if (notifResp.data && notifResp.data.success) {
             setNotifications(notifResp.data.notifications || []);
-            markNotificationsAsSeen();
+            await markNotificationsAsSeen();
+            const refreshed = await internAPI.getMyNotifications();
+            if (refreshed.data?.success) {
+              setNotifications(refreshed.data.notifications || []);
+            }
           }
           break;
         case "groups":
@@ -1832,11 +1947,14 @@ function InternDashboard() {
   };
 
   const getInterviewScore = (interview) => {
-    const clarity = interview?.clarityLevel || interview?.clarityOfAnswer;
-    const overall = interview?.overallLevel || (interview?.interviewType === "Technical" ? interview?.overallTechnicalLevel : interview?.overallHRLevel);
+    const isTech = interview?.interviewType === "Technical";
+    const comm = isTech ? interview?.technicalKnowledge : interview?.communicationLevel;
+    const conf = isTech ? interview?.problemSolving : interview?.confidenceLevel;
+    const clarity = isTech ? (interview?.codingAbility || interview?.logicAndApproach) : (interview?.clarityLevel || interview?.clarityOfAnswer);
+    const overall = interview?.overallLevel || (isTech ? interview?.overallTechnicalLevel : interview?.overallHRLevel);
     const scoreValues = [
-      levelScoreMap[interview?.communicationLevel],
-      levelScoreMap[interview?.confidenceLevel],
+      levelScoreMap[comm],
+      levelScoreMap[conf],
       levelScoreMap[clarity],
       levelScoreMap[overall],
     ].filter((value) => typeof value === "number");
@@ -1884,8 +2002,11 @@ function InternDashboard() {
   };
 
   const getScheduledAssessmentMode = (assessment) => {
-    const rawMode = assessment?.details?.notification?.assessmentMeta?.assessmentMode || assessment?.details?.form?.mode || assessment?.mode || (Array.isArray(assessment?.details?.assigned) && assessment.details.assigned.length > 1 ? "Group" : "Individual");
-    return String(rawMode).toLowerCase() === "group" ? "Group" : "Individual";
+    const hasGroupId = assessment?.details?.notification?.assessmentMeta?.groupId || 
+                       assessment?.details?.groupId || 
+                       assessment?.details?.form?.groupId || 
+                       assessment?.groupId;
+    return hasGroupId ? "Group" : "Individual";
   };
 
   const getGdInterviewer = (gd) => {
@@ -2023,10 +2144,7 @@ function InternDashboard() {
   };
 
   const formatDeadline = (deadline) => {
-    return new Date(deadline).toLocaleString("en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
+    return formatDateTime(deadline);
   };
 
   const isOverdue = (deadline) => {
@@ -2104,7 +2222,7 @@ function InternDashboard() {
   const formatPostingDate = (value) => {
     if (!value) return null;
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString();
+    return Number.isNaN(date.getTime()) ? null : formatDate(date);
   };
 
   if (!user) {
@@ -3668,14 +3786,14 @@ function InternDashboard() {
             </div>
 
             <div className="card">
-              {notifications.filter(n => n.notificationType !== 'Test/Assessment' && n.notificationType !== 'Interview').length === 0 ? (
+              {notifications.filter(n => NOTIFICATION_TYPE_GROUPS.GENERAL.includes(n.notificationType)).length === 0 ? (
                 <div className="empty-state">
                   <p>No notifications at this time.</p>
                 </div>
               ) : (
                 <div className="notification-list">
                   {notifications
-                    .filter(notif => notif.notificationType !== 'Test/Assessment' && notif.notificationType !== 'Interview')
+                    .filter(notif => NOTIFICATION_TYPE_GROUPS.GENERAL.includes(notif.notificationType))
                     .map((notif) => {
                       const createdAt = notif.createdAt || notif.updatedAt;
                       return (

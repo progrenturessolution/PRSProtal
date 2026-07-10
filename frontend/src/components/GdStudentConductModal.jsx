@@ -20,6 +20,8 @@ export default function GdStudentConductModal({ gd, student, onClose, onSave }) 
     overallRemark: "",
     strengths: "",
     improvementAreas: "",
+    score: "",
+    outOf: "",
   });
 
   const gdTitle = gd?.title || gd?.details?.form?.title || "Group Discussion";
@@ -147,7 +149,14 @@ export default function GdStudentConductModal({ gd, student, onClose, onSave }) 
                 {ratingOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
             </div>
-            <div />
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Score</label>
+              <input type="number" value={form.score} onChange={(e) => handleChange("score", e.target.value)} style={inputStyle} placeholder="Score" />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Out Of</label>
+              <input type="number" value={form.outOf} onChange={(e) => handleChange("outOf", e.target.value)} style={inputStyle} placeholder="Out Of" />
+            </div>
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#334155", marginBottom: 6 }}>Strengths</label>
               <textarea value={form.strengths} onChange={(e) => handleChange("strengths", e.target.value)} rows={3} style={textareaStyle} placeholder="What did this student do well?" />

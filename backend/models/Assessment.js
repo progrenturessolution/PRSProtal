@@ -36,6 +36,9 @@ const assessmentSchema = new mongoose.Schema({
   feedback: {
     type: String,
     trim: true
+  },
+  outOf: {
+    type: Number
   }
 }, {
   timestamps: true

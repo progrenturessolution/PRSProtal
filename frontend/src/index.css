@@ -1119,9 +1119,11 @@ button, a, input, select, textarea {
 
   .login-left {
     min-height: auto;
-    padding: 34px 22px;
+    padding: 24px 16px;
     box-shadow: none;
-    background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    background:
+      radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 34%),
+      linear-gradient(180deg, rgba(14, 27, 51, 0.98) 0%, rgba(23, 35, 59, 0.98) 100%);
     position: relative;
     overflow: hidden;
   }
@@ -1129,121 +1131,117 @@ button, a, input, select, textarea {
   .login-left::before {
     content: '';
     position: absolute;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-    border-radius: 50%;
-    top: -50px;
-    right: -50px;
+    inset: 0;
+    background-image:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.055) 25%, transparent 25%),
+      linear-gradient(225deg, rgba(255, 255, 255, 0.055) 25%, transparent 25%),
+      linear-gradient(45deg, rgba(255, 255, 255, 0.055) 25%, transparent 25%),
+      linear-gradient(315deg, rgba(255, 255, 255, 0.055) 25%, transparent 25%);
+    background-position: 18px 0, 18px 0, 0 0, 0 0;
+    background-size: 44px 44px;
+    opacity: 0.65;
     pointer-events: none;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    top: 0;
+    right: 0;
   }
 
   .login-left::after {
-    content: '';
-    position: absolute;
-    width: 150px;
-    height: 150px;
-    background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
-    border-radius: 50%;
-    bottom: -40px;
-    left: -40px;
-    pointer-events: none;
+    display: none;
   }
 
-  .brand-section {
-    max-width: 620px;
-    position: relative;
-    z-index: 1;
-    gap: 16px;
+  .login-left-content {
+    min-height: auto;
+    padding: 0;
+    gap: 12px;
+    align-items: flex-start;
+    text-align: left;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .login-brand-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    margin-top: 0;
+  }
+
+  .login-brand-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    padding: 4px;
+  }
+
+  .login-brand-copy {
     align-items: flex-start;
     text-align: left;
   }
 
-  .logo-container {
+  .login-brand-copy h2 {
+    font-size: 15px;
+  }
+
+  .login-brand-copy p {
+    font-size: 10px;
+  }
+
+  .login-hero-copy {
+    text-align: left;
+    max-width: 100%;
     margin: 0;
-    align-self: flex-start;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 102px;
-    height: 102px;
-    padding: 0;
-    border-radius: 18px;
   }
 
-  .logo-container::before {
-    inset: 10px;
-    border-radius: 16px;
-  }
-
-  .company-logo {
-    width: 72px;
-    height: auto;
-    max-width: 76px;
-    max-height: 76px;
-    padding: 0;
-    box-shadow: none;
-  }
-
-  .company-name {
-    font-size: 32px;
-    font-weight: 500;
+  .login-hero-copy h1 {
+    font-size: 20px;
+    white-space: normal;
     margin: 0;
-    color: white;
-    letter-spacing: -0.4px;
-    gap: 0;
   }
 
-  .company-subtitle {
-    font-size: 12px;
-    padding: 6px 10px;
-    margin: 0;
-    color: rgba(255, 255, 255, 0.86);
-    letter-spacing: 2.2px;
-    font-weight: 600;
-  }
-
-  .brand-copy {
-    gap: 16px;
-  }
-
-  .features-list {
-    margin-top: 10px;
-    gap: 10px;
-    grid-template-columns: 1fr;
-  }
-
-  .feature-item {
-    padding: 12px 14px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
-    min-height: 54px;
-  }
-
-  .feature-item:nth-child(1),
-  .feature-item:nth-child(2),
-  .feature-item:nth-child(3),
-  .feature-item:nth-child(4) {
-    background: white;
-    border: 1px solid #e5e7eb;
-  }
-
-  .feature-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .feature-icon {
-    display: none;
-  }
-
-  .feature-item span {
+  .login-hero-copy p {
+    display: block;
     font-size: 13px;
-    font-weight: 600;
-    background-color: white;
-    color: #000000;
-    padding: 4px 8px;
-    border-radius: 4px;
+    color: rgba(226, 232, 240, 0.92);
+    margin-top: 8px;
+  }
+
+  .login-feature-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .login-feature-item {
+    font-size: 13px;
+    padding-left: 16px;
+  }
+
+  .login-feature-item::before {
+    width: 6px;
+    height: 6px;
+  }
+
+  .login-footer-copy {
+    display: block;
+    margin-top: 16px;
+    padding-top: 12px;
+  }
+
+  .login-footer-copy p {
+    font-size: 11px;
+  }
+
+  .login-footer-brand {
+    font-size: 12px;
+  }
+
+  .login-footer-rights {
+    font-size: 10px;
   }
 
   .login-right {
@@ -1279,25 +1277,26 @@ button, a, input, select, textarea {
   }
 
   .login-tabs {
-    gap: 0;
-    padding: 0;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
     margin-bottom: 20px;
-    background: transparent;
-    grid-template-columns: repeat(4, 1fr);
+    border-bottom: none;
   }
 
   .tab-btn {
-    padding: 12px 6px 14px;
+    padding: 10px 6px;
     font-size: 13px;
-    border-radius: 0;
+    border-radius: 6px;
     color: #64748b;
-    background: transparent;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     transition: all 0.3s ease;
-    border-bottom: 3px solid transparent;
+    border-bottom: 1px solid #e2e8f0;
   }
 
   .tab-btn:hover {
     color: #0f172a;
+    background: #f1f5f9;
   }
 
   .tab-btn.active {
@@ -1305,6 +1304,8 @@ button, a, input, select, textarea {
     background: transparent;
     box-shadow: none;
     border-bottom-color: #0f172a;
+    border: 1px solid #e5e7eb;
+    border-bottom: 3px solid #0f172a;
   }
 
   .form-group {
@@ -1331,8 +1332,8 @@ button, a, input, select, textarea {
 
   .form-group input:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    border-color: #64748b;
+    box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.12);
     background: #ffffff;
   }
 
@@ -1344,7 +1345,7 @@ button, a, input, select, textarea {
   .login-submit-btn {
     width: 100%;
     padding: 13px 20px;
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #4f5e7a 0%, #344158 100%);
     color: white;
     border: none;
     border-radius: 10px;
@@ -1353,7 +1354,7 @@ button, a, input, select, textarea {
     cursor: pointer;
     margin-top: 8px;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 8px 20px rgba(52, 65, 88, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1379,14 +1380,14 @@ button, a, input, select, textarea {
   }
 
   .login-submit-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #5c6d8d 0%, #43536f 100%);
+    box-shadow: 0 10px 24px rgba(52, 65, 88, 0.26);
     transform: translateY(-2px);
   }
 
   .login-submit-btn:active:not(:disabled) {
     transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
   }
 
   .login-submit-btn:disabled {
@@ -1416,17 +1417,6 @@ button, a, input, select, textarea {
     font-size: 13px;
     animation: slideDown 0.3s ease-out;
   }
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 }
 
 /* Enhanced Mobile Login for Small Screens */
@@ -1439,62 +1429,35 @@ button, a, input, select, textarea {
   }
 
   .login-left {
-    padding: 24px 16px;
-    min-height: 30vh;
+    padding: 20px 12px;
+    min-height: auto;
   }
 
-  .logo-container {
-    margin: 0 0 16px 0;
+  .login-left-content {
+    min-height: auto;
+    padding: 0;
   }
 
-  .logo-container::before {
-    width: 80px;
-    height: 80px;
+  .login-brand-row {
+    margin-bottom: 0;
   }
 
-  .company-logo {
-    width: 70px;
-    height: 70px;
-    padding: 10px;
+  .login-brand-copy h2 {
+    font-size: 14px;
   }
 
-  .company-name {
-    font-size: 24px;
-    font-weight: 500;
-    margin-bottom: 6px;
-    gap: 6px;
-  }
-
-  .company-subtitle {
-    font-size: 12px;
-    margin-bottom: 16px;
-  }
-
-  .features-list {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .feature-item {
-    min-height: 54px;
-  }
-
-  .feature-item:nth-child(1),
-  .feature-item:nth-child(2),
-  .feature-item:nth-child(3),
-  .feature-item:nth-child(4) {
-    background: white;
-    border: 1px solid #e5e7eb;
+  .login-hero-copy h1 {
+    font-size: 18px;
   }
 
   .login-right {
-    padding: 20px 16px;
+    padding: 16px 12px;
     min-height: auto;
   }
 
   .login-card {
-    padding: 20px 16px;
-    border-radius: 14px;
+    padding: 20px 14px;
+    border-radius: 12px;
   }
 
   .login-header h2 {
@@ -1502,12 +1465,13 @@ button, a, input, select, textarea {
   }
 
   .login-tabs {
-    grid-template-columns: repeat(4, 1fr);
-    margin-bottom: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 14px;
+    gap: 6px;
   }
 
   .tab-btn {
-    padding: 8px 6px;
+    padding: 8px 4px;
     font-size: 11px;
   }
 
@@ -1521,16 +1485,16 @@ button, a, input, select, textarea {
   }
 
   .form-group input {
-    padding: 11px 12px;
-    font-size: 15px;
+    padding: 10px 12px;
+    font-size: 14px;
     border-radius: 8px;
   }
 
   .login-submit-btn {
-    padding: 12px 16px;
+    padding: 11px 14px;
     font-size: 13px;
     border-radius: 8px;
-    min-height: 44px;
+    min-height: 42px;
   }
 }
 

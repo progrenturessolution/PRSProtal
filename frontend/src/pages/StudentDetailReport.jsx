@@ -20,6 +20,22 @@ function StudentDetailReport() {
   const [downloading, setDownloading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState("");
 
+  const formatDate = (dateVal) => {
+    if (!dateVal) return "N/A";
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "N/A";
+    return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+  };
+
+  const formatDateTime = (dateVal) => {
+    if (!dateVal) return "N/A";
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "N/A";
+    const datePart = `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+    const timePart = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return `${datePart}, ${timePart}`;
+  };
+
   const getRecordDate = (record) => record?.date || record?.createdAt || record?.updatedAt || null;
 
   const getMonthKey = (dateValue) => {
@@ -224,7 +240,7 @@ function StudentDetailReport() {
             <div class="header">
               <div class="company">Progrentures Solution Pvt. Ltd.</div>
               <h1>PRS Portal Aspirant Report</h1>
-              <p>Month: <strong>${selectedMonth ? formatMonthLabel(selectedMonth) : "Overall"}</strong> &nbsp;|&nbsp; Generated on: <strong>${new Date().toLocaleDateString('en-IN')}</strong></p>
+              <p>Month: <strong>${selectedMonth ? formatMonthLabel(selectedMonth) : "Overall"}</strong> &nbsp;|&nbsp; Generated on: <strong>${formatDate(new Date())}</strong></p>
             </div>
 
             <div class="section">
@@ -252,7 +268,7 @@ function StudentDetailReport() {
                 </div>
                 <div class="info-item">
                   <div class="info-label">Joining Date</div>
-                  <div class="info-value">${student.joiningDate ? new Date(student.joiningDate).toLocaleDateString('en-IN') : 'N/A'}</div>
+                  <div class="info-value">${formatDate(student.joiningDate)}</div>
                 </div>
               </div>
             </div>
@@ -294,21 +310,26 @@ function StudentDetailReport() {
                   <th>Clarity</th>
                   <th>Overall</th>
                   <th>Level Crossed</th>
+                  <th>Score</th>
+                  <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 ${filteredRecords.interviews.map(interview => {
           const scoreColumns = getInterviewScoreColumns(interview);
           const overallLevel = getInterviewOverallLevel(interview);
+          const remarksVal = interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "";
           return `
                   <tr>
-                    <td>${interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(interview.date)}</td>
                     <td>${interview.interviewType}</td>
                     <td>${scoreColumns.communication}</td>
                     <td>${scoreColumns.confidence}</td>
                     <td>${scoreColumns.clarity}</td>
                     <td>${formatInterviewLevel(overallLevel)}</td>
                     <td>${interview.levelCrossed ? 'Yes' : 'No'}</td>
+                    <td>${interview.score !== undefined && interview.score !== null ? `${interview.score}${interview.outOf ? '/' + interview.outOf : ''}` : '-'}</td>
+                    <td>${remarksVal || '-'}</td>
                   </tr>
                 `;
         }).join('')}
@@ -329,15 +350,17 @@ function StudentDetailReport() {
                   <th>Round</th>
                   <th>Score</th>
                   <th>Result</th>
+                  <th>Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 ${filteredRecords.aptitudes.map(apt => `
                   <tr>
-                    <td>${apt.date ? new Date(apt.date).toLocaleDateString('en-IN') : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(apt.date || apt.createdAt)}</td>
                     <td>Round ${apt.roundNumber}</td>
-                    <td>${apt.score}</td>
+                    <td>${apt.score}${apt.outOf ? '/' + apt.outOf : ''}</td>
                     <td>${apt.result}</td>
+                    <td>${apt.remarks || '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -357,15 +380,17 @@ function StudentDetailReport() {
                   <th>Type</th>
                   <th>Score</th>
                   <th>Status</th>
+                  <th>Feedback</th>
                 </tr>
               </thead>
               <tbody>
                 ${filteredRecords.assessments.map(assess => `
                   <tr>
-                    <td>${assess.date ? new Date(assess.date).toLocaleDateString('en-IN') : assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(assess.date || assess.createdAt)}</td>
                     <td>${assess.assessmentType}</td>
-                    <td>${assess.score || '-'}</td>
+                    <td>${assess.score !== undefined && assess.score !== null ? `${assess.score}${assess.outOf ? '/' + assess.outOf : ''}` : '-'}</td>
                     <td>${assess.status}</td>
+                    <td>${assess.feedback || '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -384,14 +409,20 @@ function StudentDetailReport() {
                   <th>Date</th>
                   <th>Attendance</th>
                   <th>Engagement</th>
+                  <th>Score</th>
+                  <th>Skill Improvement</th>
+                  <th>Trainer Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 ${filteredRecords.trainings.map(training => `
                   <tr>
-                    <td>${training.date ? new Date(training.date).toLocaleDateString('en-IN') : 'N/A'}</td>
+                    <td>${formatDate(training.date)}</td>
                     <td>${training.attendance}</td>
                     <td>${training.engagementLevel}</td>
+                    <td>${training.score !== undefined && training.score !== null ? `${training.score}${training.outOf ? '/' + training.outOf : ''}` : '-'}</td>
+                    <td>${training.skillImprovementNote || '-'}</td>
+                    <td>${training.trainerRemarks || '-'}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -402,7 +433,7 @@ function StudentDetailReport() {
 
       htmlContent += `
         <div class="footer">
-          <p>Thank you. This report was generated on ${new Date().toLocaleString('en-IN')} by PRS Portal</p>
+          <p>Thank you. This report was generated on ${formatDateTime(new Date())} by PRS Portal</p>
         </div>
           </body>
         </html>
@@ -437,7 +468,7 @@ function StudentDetailReport() {
       const ws_data = [
         ["PRS Portal Aspirant Report"],
         ["Company", "Progrentures Solution Pvt. Ltd."],
-        ["Generated on", new Date().toLocaleDateString('en-IN')],
+        ["Generated on", formatDate(new Date())],
         ["Month", selectedMonth ? formatMonthLabel(selectedMonth) : "Overall"],
         [],
         ["Student Information"],
@@ -446,7 +477,7 @@ function StudentDetailReport() {
         ["Email", student.email],
         ["Type", student.studentType],
         ["Status", student.status],
-        ["Joining Date", student.joiningDate ? new Date(student.joiningDate).toLocaleDateString('en-IN') : 'N/A'],
+        ["Joining Date", formatDate(student.joiningDate)],
         [],
         ["Assessment Summary"],
         ["Interviews", records.interviews?.length || 0],
@@ -457,56 +488,64 @@ function StudentDetailReport() {
 
       if (filteredRecords.interviews?.length > 0) {
         ws_data.push([], ["Interview Records"]);
-        ws_data.push(["Date", "Type", "Communication", "Confidence", "Clarity", "Overall", "Level Crossed"]);
+        ws_data.push(["Date", "Type", "Communication", "Confidence", "Clarity", "Overall", "Level Crossed", "Score", "Remarks"]);
         filteredRecords.interviews.forEach(interview => {
           const scoreColumns = getInterviewScoreColumns(interview);
           const overallLevel = getInterviewOverallLevel(interview);
+          const remarksVal = interview.remarks || (interview.interviewType === "Technical" ? interview.technicalRemarks : interview.hrRemarks) || "";
           ws_data.push([
-            interview.date ? new Date(interview.date).toLocaleDateString('en-IN') : 'N/A',
+            formatDate(interview.date),
             interview.interviewType,
             scoreColumns.communication,
             scoreColumns.confidence,
             scoreColumns.clarity,
             formatInterviewLevel(overallLevel),
-            interview.levelCrossed ? 'Yes' : 'No'
+            interview.levelCrossed ? 'Yes' : 'No',
+            interview.score !== undefined && interview.score !== null ? `${interview.score}${interview.outOf ? '/' + interview.outOf : ''}` : '-',
+            remarksVal || '-'
           ]);
         });
       }
 
       if (filteredRecords.aptitudes?.length > 0) {
         ws_data.push([], ["Aptitude Test Records"]);
-        ws_data.push(["Date", "Round", "Score", "Result"]);
+        ws_data.push(["Date", "Round", "Score", "Result", "Remarks"]);
         filteredRecords.aptitudes.forEach(apt => {
           ws_data.push([
-            apt.date ? new Date(apt.date).toLocaleDateString('en-IN') : apt.createdAt ? new Date(apt.createdAt).toLocaleDateString('en-IN') : 'N/A',
+            formatDate(apt.date || apt.createdAt),
             `Round ${apt.roundNumber}`,
-            apt.score,
-            apt.result
+            apt.score !== undefined && apt.score !== null ? `${apt.score}${apt.outOf ? '/' + apt.outOf : ''}` : '-',
+            apt.result,
+            apt.remarks || '-'
           ]);
         });
       }
 
       if (filteredRecords.assessments?.length > 0) {
         ws_data.push([], ["Assessment Records"]);
-        ws_data.push(["Date", "Type", "Score", "Status"]);
+        ws_data.push(["Date", "Type", "Score", "Status", "Feedback"]);
         filteredRecords.assessments.forEach(assess => {
           ws_data.push([
-            assess.date ? new Date(assess.date).toLocaleDateString('en-IN') : assess.createdAt ? new Date(assess.createdAt).toLocaleDateString('en-IN') : 'N/A',
+            formatDate(assess.date || assess.createdAt),
             assess.assessmentType,
-            assess.score || '-',
-            assess.status
+            assess.score !== undefined && assess.score !== null ? `${assess.score}${assess.outOf ? '/' + assess.outOf : ''}` : '-',
+            assess.status,
+            assess.feedback || '-'
           ]);
         });
       }
 
       if (filteredRecords.trainings?.length > 0) {
         ws_data.push([], ["Training Records"]);
-        ws_data.push(["Date", "Attendance", "Engagement"]);
+        ws_data.push(["Date", "Attendance", "Engagement", "Score", "Skill Improvement", "Trainer Remarks"]);
         filteredRecords.trainings.forEach(training => {
           ws_data.push([
-            training.date ? new Date(training.date).toLocaleDateString('en-IN') : 'N/A',
+            formatDate(training.date),
             training.attendance,
-            training.engagementLevel
+            training.engagementLevel,
+            training.score !== undefined && training.score !== null ? `${training.score}${training.outOf ? '/' + training.outOf : ''}` : '-',
+            training.skillImprovementNote || '-',
+            training.trainerRemarks || '-'
           ]);
         });
       }
@@ -704,7 +743,7 @@ function StudentDetailReport() {
             <p className="student-id">{student.internId}</p>
           </div>
           <div className="student-status">
-            <span className={`status-badge status-${student.status.toLowerCase()}`}>
+            <span className={`status-badge status-${(student.status || "").toLowerCase()}`}>
               {student.status}
             </span>
           </div>
@@ -722,9 +761,7 @@ function StudentDetailReport() {
           <div className="detail-item">
             <span className="detail-label">Joining Date</span>
             <span className="detail-value">
-              {student.joiningDate
-                ? new Date(student.joiningDate).toLocaleDateString("en-IN")
-                : "N/A"}
+              {formatDate(student.joiningDate)}
             </span>
           </div>
           <div className="detail-item">
@@ -797,6 +834,7 @@ function StudentDetailReport() {
                       <th>Clarity</th>
                       <th>Overall</th>
                       <th>Level Crossed</th>
+                      <th>Score</th>
                       <th>Remarks</th>
                     </tr>
                   </thead>
@@ -809,9 +847,7 @@ function StudentDetailReport() {
                       return (
                       <tr key={idx} className="table-row">
                         <td className="date-cell">
-                          {interview.date
-                            ? new Date(interview.date).toLocaleDateString("en-IN")
-                            : "N/A"}
+                          {formatDate(interview.date)}
                         </td>
                         <td>
                           <span className="type-badge">{interview.interviewType}</span>
@@ -841,6 +877,13 @@ function StudentDetailReport() {
                           >
                             {interview.levelCrossed ? "✓ Yes" : "✗ No"}
                           </span>
+                        </td>
+                        <td>
+                          {interview.score !== undefined && interview.score !== null ? (
+                            <strong>{interview.score}{interview.outOf ? '/' + interview.outOf : ''}</strong>
+                          ) : (
+                            "-"
+                          )}
                         </td>
                         <td className="remarks-cell" title={remarksVal}>
                           {remarksVal ? (remarksVal.length > 30 ? remarksVal.substring(0, 30) + "..." : remarksVal) : "-"}
@@ -880,16 +923,12 @@ function StudentDetailReport() {
                     {filteredRecords.aptitudes.map((aptitude, idx) => (
                       <tr key={idx} className="table-row">
                         <td className="date-cell">
-                          {aptitude.date
-                            ? new Date(aptitude.date).toLocaleDateString("en-IN")
-                            : aptitude.createdAt
-                              ? new Date(aptitude.createdAt).toLocaleDateString("en-IN")
-                              : "N/A"}
+                          {formatDate(aptitude.date || aptitude.createdAt)}
                         </td>
                         <td className="round-cell">Round {aptitude.roundNumber}</td>
-                        <td className="score-cell">{aptitude.score}</td>
+                        <td className="score-cell">{aptitude.score}{aptitude.outOf ? '/' + aptitude.outOf : ''}</td>
                         <td>
-                          <span className={`result-badge result-${aptitude.result.toLowerCase()}`}>
+                          <span className={`result-badge result-${(aptitude.result || "").toLowerCase()}`}>
                             {aptitude.result}
                           </span>
                         </td>
@@ -930,21 +969,17 @@ function StudentDetailReport() {
                     {filteredRecords.assessments.map((assessment, idx) => (
                       <tr key={idx} className="table-row">
                         <td className="date-cell">
-                          {assessment.date
-                            ? new Date(assessment.date).toLocaleDateString("en-IN")
-                            : assessment.createdAt
-                              ? new Date(assessment.createdAt).toLocaleDateString("en-IN")
-                              : "N/A"}
+                          {formatDate(assessment.date || assessment.createdAt)}
                         </td>
                         <td>
                           <span className="type-badge">{assessment.assessmentType}</span>
                         </td>
                         <td className="score-cell">
-                          {assessment.score ? assessment.score : "-"}
+                          {assessment.score !== undefined && assessment.score !== null ? `${assessment.score}${assessment.outOf ? '/' + assessment.outOf : ''}` : "-"}
                         </td>
                         <td>
                           <span
-                            className={`result-badge result-${assessment.status.toLowerCase().replace(" ", "-")}`}
+                            className={`result-badge result-${(assessment.status || "").toLowerCase().replace(" ", "-")}`}
                           >
                             {assessment.status}
                           </span>
@@ -978,6 +1013,7 @@ function StudentDetailReport() {
                       <th>Date</th>
                       <th>Attendance</th>
                       <th>Engagement</th>
+                      <th>Score</th>
                       <th>Skill Note</th>
                       <th>Trainer Remarks</th>
                     </tr>
@@ -986,19 +1022,24 @@ function StudentDetailReport() {
                     {filteredRecords.trainings.map((training, idx) => (
                       <tr key={idx} className="table-row">
                         <td className="date-cell">
-                          {training.date
-                            ? new Date(training.date).toLocaleDateString("en-IN")
-                            : "N/A"}
+                          {formatDate(training.date)}
                         </td>
                         <td>
                           <span
-                            className={`attendance-badge attendance-${training.attendance.toLowerCase()}`}
+                            className={`attendance-badge attendance-${(training.attendance || "").toLowerCase()}`}
                           >
                             {training.attendance}
                           </span>
                         </td>
                         <td>
                           <span className="engagement-badge">{training.engagementLevel}</span>
+                        </td>
+                        <td>
+                          {training.score !== undefined && training.score !== null ? (
+                            <strong>{training.score}{training.outOf ? '/' + training.outOf : ''}</strong>
+                          ) : (
+                            "-"
+                          )}
                         </td>
                         <td className="remarks-cell" title={training.skillImprovementNote}>
                           {training.skillImprovementNote

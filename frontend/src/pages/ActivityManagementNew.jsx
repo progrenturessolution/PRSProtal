@@ -43,7 +43,7 @@ export default function ActivityManagementNew() {
   const [selectedStudents, setSelectedStudents] = useState([]);
 
   // Interview form
-  const [interviewForm, setInterviewForm] = useState({ interviewType: 'HR', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '' });
+  const [interviewForm, setInterviewForm] = useState({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '' });
   const [interviewSelectedStudents, setInterviewSelectedStudents] = useState([]);
   const [activeInterviewGroupId, setActiveInterviewGroupId] = useState('');
   const [activeGdGroupId, setActiveGdGroupId] = useState('');
@@ -251,6 +251,7 @@ export default function ActivityManagementNew() {
   }
 
   function generateInterviewSlots() {
+    if (!interviewForm.interviewType) { alert('Please select an Interview Type'); return; }
     if (!interviewForm.date || !interviewForm.startTime) { alert('Select date and start time'); return; }
     if (!interviewSelectedStudents.length) { alert('Select at least one student'); return; }
     const [h,m] = interviewForm.startTime.split(':').map(Number);
@@ -297,6 +298,10 @@ export default function ActivityManagementNew() {
 
   async function saveInterviewSchedule() {
     try {
+      if (!interviewForm.interviewType) {
+        alert('Please select an Interview Type');
+        return;
+      }
       if (interviewForm.mode === 'Group' && !activeInterviewGroupId) {
         alert('Select a group first');
         return;
@@ -1452,7 +1457,7 @@ export default function ActivityManagementNew() {
         <IconCard title="Assign Task" onClick={() => { window.location.hash = '#create-task'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'create-task' } })); }} />
         <IconCard title="Manage Task" onClick={() => { window.location.hash = '#manage-tasks'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'manage-tasks' } })); }} />
         <IconCard title="Pending Approval" onClick={() => { window.location.hash = '#pending-approvals'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'pending-approvals' } })); }} hasBadge={hasUnseenPendingApprovals} />
-        <IconCard title="Schedule Interviews" onClick={() => { setEditingInterviewActivityId(null); setShowInterviewModal(true); }} />
+        <IconCard title="Schedule Interviews" onClick={() => { setEditingInterviewActivityId(null); setInterviewForm({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '' }); setShowInterviewModal(true); }} />
         <IconCard title="Schedule GD Round" onClick={() => { setEditingGdActivityId(null); setShowGDModal(true); }} />
         <IconCard title="Schedule Assessment" onClick={() => { setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); setShowAssessmentModal(true); }} />
       </div>
@@ -1760,9 +1765,10 @@ export default function ActivityManagementNew() {
                   <div className="am-field">
                     <label>Interview Type</label>
                     <select value={interviewForm.interviewType} onChange={e => setInterviewForm(f => ({ ...f, interviewType: e.target.value }))}>
-                      <option>HR</option>
-                      <option>PI</option>
-                      <option>Technical</option>
+                      <option value="" disabled>Select Interview Type</option>
+                      <option value="HR">HR</option>
+                      <option value="PI">PI</option>
+                      <option value="Technical">Technical</option>
                     </select>
                   </div>
 

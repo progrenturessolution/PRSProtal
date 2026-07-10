@@ -11,7 +11,7 @@ function InterviewForm() {
   const today = new Date().toISOString().split("T")[0];
   const [studentInfo, setStudentInfo] = useState(null);
   const [formData, setFormData] = useState({
-    interviewType: "HR",
+    interviewType: "",
     attendanceStatus: "Present",
     date: today,
     attemptNumber: "",
@@ -28,6 +28,8 @@ function InterviewForm() {
     levelCrossed: false,
     hrRemarks: "",
     technicalRemarks: "",
+    score: "",
+    outOf: "",
   });
   const [interviews, setInterviews] = useState([]);
   const [historySearch, setHistorySearch] = useState("");
@@ -78,15 +80,18 @@ function InterviewForm() {
     setSuccess("");
 
     try {
-      const response = await trainerAPI.addInterview({
+      const cleanedData = {
         studentId,
         ...formData,
-      });
+      };
+      if (cleanedData.score) cleanedData.score = parseFloat(cleanedData.score);
+      if (cleanedData.outOf) cleanedData.outOf = parseFloat(cleanedData.outOf);
+      const response = await trainerAPI.addInterview(cleanedData);
 
       if (response.data.success) {
         setSuccess("Interview record added successfully!");
         setFormData({
-          interviewType: "HR",
+          interviewType: "",
           attendanceStatus: "Present",
           date: today,
           attemptNumber: "",
@@ -103,6 +108,8 @@ function InterviewForm() {
           levelCrossed: false,
           hrRemarks: "",
           technicalRemarks: "",
+          score: "",
+          outOf: "",
         });
         fetchInterviews();
       }
@@ -230,6 +237,7 @@ function InterviewForm() {
                   }}
                   required
                 >
+                  <option value="" disabled>Select Interview Type</option>
                   <option value="HR">HR</option>
                   <option value="Technical">Technical</option>
                 </select>
@@ -272,7 +280,29 @@ function InterviewForm() {
                 />
               </div>
 
-              {formData.interviewType === "HR" ? (
+              <div className="form-group">
+                <label>Score</label>
+                <input
+                  type="number"
+                  name="score"
+                  value={formData.score}
+                  onChange={handleChange}
+                  placeholder="Score"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Out Of</label>
+                <input
+                  type="number"
+                  name="outOf"
+                  value={formData.outOf}
+                  onChange={handleChange}
+                  placeholder="Out Of"
+                />
+              </div>
+
+              {formData.interviewType === "HR" && (
                 <>
                   <div className="form-group">
                     <label>Communication Level (B/I/A/E) *</label>
@@ -372,7 +402,8 @@ function InterviewForm() {
                     />
                   </div>
                 </>
-              ) : (
+              )}
+              {formData.interviewType === "Technical" && (
                 <>
                   <div className="form-group">
                     <label>Technical Knowledge (B/I/A/E) *</label>
@@ -529,6 +560,7 @@ function InterviewForm() {
                     <th>Clarity</th>
                     <th>Overall</th>
                     <th>Level Crossed</th>
+                    <th>Score</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -547,6 +579,7 @@ function InterviewForm() {
                         <td>{interview.clarityLevel || interview.clarityOfAnswer || "-"}</td>
                         <td>{interview.overallLevel || (interview.interviewType === "Technical" ? interview.overallTechnicalLevel : interview.overallHRLevel) || "-"}</td>
                         <td>{interview.levelCrossed ? "Crossed" : "Not Crossed"}</td>
+                        <td>{interview.score !== undefined && interview.score !== null ? `${interview.score}${interview.outOf ? '/' + interview.outOf : ''}` : "-"}</td>
                       </tr>
                     ))
                   )}

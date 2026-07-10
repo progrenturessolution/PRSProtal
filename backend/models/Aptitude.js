@@ -37,6 +37,9 @@ const aptitudeSchema = new mongoose.Schema({
   remarks: {
     type: String,
     trim: true
+  },
+  outOf: {
+    type: Number
   }
 }, {
   timestamps: true

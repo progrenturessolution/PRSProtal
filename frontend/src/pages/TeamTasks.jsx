@@ -125,11 +125,14 @@ function TeamTasks({
     }
   };
 
-  const formatDate = (d) =>
-    new Date(d).toLocaleString("en-US", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
+  const formatDate = (d) => {
+    if (!d) return "-";
+    const dateObj = new Date(d);
+    if (isNaN(dateObj.getTime())) return "-";
+    const datePart = `${dateObj.getDate()}-${dateObj.getMonth() + 1}-${dateObj.getFullYear()}`;
+    const timePart = dateObj.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return `${datePart}, ${timePart}`;
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
