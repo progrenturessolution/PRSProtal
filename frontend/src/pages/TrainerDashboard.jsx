@@ -904,6 +904,16 @@ function TrainerDashboard() {
     }));
   };
 
+  const handleToggleSingleGroup = (groupId) => {
+    setExpandedGroups((prev) => (prev[groupId] ? {} : { [groupId]: true }));
+  };
+
+  const getScheduledGdGroupKey = (gd, group, groupIdx) => {
+    const gdKey = gd?._id || gd?.id || gd?.title || gd?.details?.form?.title || "gd";
+    const groupKey = group?._id || group?.id || group?.groupNumber || group?.groupName || groupIdx;
+    return `scheduled-gd-${String(gdKey)}-group-${String(groupKey)}-${groupIdx}`;
+  };
+
   const openStudentRecords = (student, sourceMenuSetter, options = {}) => {
     try {
     // openStudentRecords called
@@ -2593,7 +2603,7 @@ function TrainerDashboard() {
                           (rawGroups || []).forEach((group, groupIdx) => {
                           if (Array.isArray(group)) {
                             allScheduledGdGroups.push({
-                              id: `gd-${gd._id || gd.title || groupIdx}-group-${groupIdx}`,
+                              id: getScheduledGdGroupKey(gd, group, groupIdx),
                               groupName: gd.title || gd.details?.form?.title || `GD Group ${groupIdx + 1}`,
                               groupNumber: groupIdx + 1,
                               students: group,
@@ -2601,7 +2611,7 @@ function TrainerDashboard() {
                             });
                           } else if (group && typeof group === 'object') {
                             allScheduledGdGroups.push({
-                              id: group._id || `gd-${gd._id || gd.title || groupIdx}-group-${groupIdx}`,
+                              id: getScheduledGdGroupKey(gd, group, groupIdx),
                               groupName: group.groupName || gd.title || `GD Group ${groupIdx + 1}`,
                               groupNumber: group.groupNumber || groupIdx + 1,
                               students: Array.isArray(group.students) ? group.students : (Array.isArray(group.members) ? group.members : []),
@@ -2650,7 +2660,7 @@ function TrainerDashboard() {
                                   borderBottom: isExpanded ? "1px solid #e5e7eb" : "none",
                                   cursor: "pointer",
                                 }}
-                                onClick={() => handleToggleGroup(groupId)}
+                                onClick={() => handleToggleSingleGroup(groupId)}
                               >
                                 <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
                                   <div>
@@ -2736,7 +2746,7 @@ function TrainerDashboard() {
                                                 <td>{studentMobile || "-"}</td>
                                                 <td>{studentType}</td>
                                                 <td>
-                                                  <span className={`status-badge ${(studentStatus || "").toLowerCase() === "active" ? "status-active" : (studentStatus || "").toLowerCase() === "completed" ? "status-completed" : "status-inactive"}`}>
+                                                  <span style={{ color: "#374151", fontWeight: 500 }}>
                                                     {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : "-"}
                                                   </span>
                                                 </td>
@@ -2848,7 +2858,7 @@ function TrainerDashboard() {
                         const gdGroups = (rawGroups || []).map((group, index) => {
                           if (Array.isArray(group)) {
                             return {
-                              id: `gd-group-${index}`,
+                              id: getScheduledGdGroupKey(selectedGd, group, index),
                               groupName: `GD Group ${index + 1}`,
                               groupNumber: index + 1,
                               students: group,
@@ -2857,7 +2867,7 @@ function TrainerDashboard() {
 
                           if (group && typeof group === 'object') {
                             return {
-                              id: group._id || `gd-group-${index}`,
+                              id: getScheduledGdGroupKey(selectedGd, group, index),
                               groupName: group.groupName || `GD Group ${index + 1}`,
                               groupNumber: group.groupNumber || index + 1,
                               students: Array.isArray(group.students)
@@ -2869,7 +2879,7 @@ function TrainerDashboard() {
                           }
 
                           return {
-                            id: `gd-group-${index}`,
+                            id: getScheduledGdGroupKey(selectedGd, group, index),
                             groupName: `GD Group ${index + 1}`,
                             groupNumber: index + 1,
                             students: [],
@@ -2931,7 +2941,7 @@ function TrainerDashboard() {
                                       borderBottom: isExpanded ? '1px solid #e5e7eb' : 'none',
                                       cursor: 'pointer',
                                     }}
-                                    onClick={() => handleToggleGroup(groupId)}
+                                    onClick={() => handleToggleSingleGroup(groupId)}
                                   >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
                                       <div>
@@ -3016,7 +3026,7 @@ function TrainerDashboard() {
                                                     <td>{studentMobile || '-'}</td>
                                                     <td>{studentType}</td>
                                                     <td>
-                                                      <span className={`status-badge ${(studentStatus || '').toLowerCase() === 'active' ? 'status-active' : (studentStatus || '').toLowerCase() === 'completed' ? 'status-completed' : 'status-inactive'}`}>
+                                                      <span style={{ color: '#374151', fontWeight: 500 }}>
                                                         {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : '-'}
                                                       </span>
                                                     </td>
