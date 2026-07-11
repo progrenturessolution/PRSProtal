@@ -13,7 +13,7 @@ import StudentDetailReport from './pages/StudentDetailReport';
 import VerifyIdentity from './pages/VerifyIdentity';
 import MaintenancePage from './pages/MaintenancePage';
 
-const IS_MAINTENANCE = true;
+const IS_MAINTENANCE = false;
 
 function App() {
   if (IS_MAINTENANCE) {
