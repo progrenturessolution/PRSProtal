@@ -82,8 +82,6 @@ function Reports({ initialReportType = "tasks" }) {
     try {
       if (format === "PDF") {
         await exportToPDF();
-      } else if (format === "Excel") {
-        await exportToExcel();
       }
     } catch (error) {
       console.error(`Error exporting to ${format}:`, error);
@@ -513,91 +511,7 @@ function Reports({ initialReportType = "tasks" }) {
     }
   };
 
-  const exportToExcel = async () => {
-    try {
-      // Dynamically import xlsx
-      const XLSX =
-        await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
 
-      let data = [];
-      let sheetName = "";
-
-      if (reportType === "overview") {
-        sheetName = "Overview";
-        data = [
-          ["Internship Management System - Report"],
-          ["Report Type", "Overview"],
-          ["Generated on", new Date().toLocaleDateString()],
-          [],
-          ["Statistics", "Value"],
-          ["Total Students", stats.totalInterns],
-          ["Active Students", stats.activeInterns],
-          ["Completed Students", stats.completedInterns],
-          ["Internship Students", stats.internshipStudents],
-          ["SMS Students", stats.smsStudents],
-          [],
-          ["Task Statistics", "Value"],
-          ["Total Tasks", taskStats.totalTasks],
-          ["Assigned Tasks", taskStats.assignedTasks],
-          ["In Progress Tasks", taskStats.inProgressTasks],
-          ["Completed Tasks", taskStats.completedTasks],
-        ];
-      } else if (reportType === "students") {
-        sheetName = "Students";
-        const sourceStudents = customReportGenerated
-          ? filteredData.students
-          : students;
-        data = [
-          ["ID", "Name", "Type", "Email", "Status", "Join Date"],
-          ...sourceStudents
-            .slice(0, 100)
-            .map((student) => [
-              student.internId,
-              student.name,
-              student.studentType,
-              student.email,
-              student.status,
-              student.joiningDate
-                ? new Date(student.joiningDate).toLocaleDateString()
-                : "N/A",
-            ]),
-        ];
-      } else if (reportType === "tasks") {
-        sheetName = "Tasks";
-        const sourceStats = customReportGenerated
-          ? filteredData.stats
-          : taskStats;
-        data = [
-          ["Task Statistics", "Value"],
-          ["Total Tasks Created", sourceStats.totalTasks],
-          ["Tasks Assigned", sourceStats.assignedTasks || 0],
-          ["Tasks In Progress", sourceStats.inProgressTasks || 0],
-          ["Tasks Completed", sourceStats.completedTasks || 0],
-          [
-            "Completion Rate",
-            `${sourceStats.totalTasks > 0 ? ((sourceStats.completedTasks / sourceStats.totalTasks) * 100).toFixed(1) : 0}%`,
-          ],
-        ];
-      }
-
-      // Create workbook
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, sheetName);
-
-      // Save file
-      XLSX.writeFile(
-        wb,
-        `report-${reportType}-${new Date().toISOString().split("T")[0]}.xlsx`,
-      );
-      setInfoMessage("Excel exported successfully!");
-      setTimeout(() => setInfoMessage(""), 4000);
-    } catch (error) {
-      console.error("Error exporting to Excel:", error);
-      setInfoMessage("Failed to export as Excel. Please try again.");
-      setTimeout(() => setInfoMessage(""), 4000);
-    }
-  };
 
   const renderOverviewReport = () => (
     <>
@@ -1587,21 +1501,6 @@ function Reports({ initialReportType = "tasks" }) {
           }}
         >
           Export as PDF
-        </button>
-        <button
-          onClick={() => handleExport("Excel")}
-          style={{
-            padding: "10px 20px",
-            background: "#344158",
-            color: "white",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-            fontSize: "14px",
-            fontWeight: 600,
-          }}
-        >
-          Export as Excel
         </button>
       </div>
 
