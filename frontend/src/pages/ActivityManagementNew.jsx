@@ -109,6 +109,16 @@ export default function ActivityManagementNew() {
     }
 
     return true;
+  }).sort((a, b) => {
+    const statusA = String(a.status || 'Scheduled').toLowerCase();
+    const statusB = String(b.status || 'Scheduled').toLowerCase();
+    
+    if (statusA === 'completed' && statusB !== 'completed') return 1;
+    if (statusA !== 'completed' && statusB === 'completed') return -1;
+    
+    const dateA = new Date(a.dateTime || a.date || a.createdAt || 0).getTime();
+    const dateB = new Date(b.dateTime || b.date || b.createdAt || 0).getTime();
+    return dateA - dateB; // Ascending
   });
 
   useEffect(() => {

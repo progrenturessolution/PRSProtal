@@ -1550,7 +1550,17 @@ function TrainerDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {scheduledInterviews.filter((s) => getScheduledInterviewMode(s) === 'Individual').map((interview) => (
+                        {scheduledInterviews.filter((s) => getScheduledInterviewMode(s) === 'Individual').sort((a, b) => {
+                          const statusA = String(a.status || 'Scheduled').toLowerCase();
+                          const statusB = String(b.status || 'Scheduled').toLowerCase();
+                          
+                          if (statusA === 'completed' && statusB !== 'completed') return 1;
+                          if (statusA !== 'completed' && statusB === 'completed') return -1;
+                          
+                          const dateA = new Date(a.date || a.dateTime || a.createdAt || 0).getTime();
+                          const dateB = new Date(b.date || b.dateTime || b.createdAt || 0).getTime();
+                          return dateA - dateB; // Ascending
+                        }).map((interview) => (
                           <tr key={interview._id}>
                             <td>{interview.studentId?.name || '-'}</td>
                             <td>{interview.date ? new Date(interview.date).toLocaleDateString() : '-'}</td>
@@ -1680,7 +1690,30 @@ function TrainerDashboard() {
                     return acc;
                   }, {});
 
-                  const scheduledGroupCards = Object.values(groupedScheduledInterviews);
+                  // Sort the groups by earliest interview date in ascending order
+                  const scheduledGroupCards = Object.values(groupedScheduledInterviews).map(group => {
+                    // Sort interviews inside each group by date ascending
+                    const sortedInterviews = [...group.interviews].sort((a, b) => {
+                      const statusA = String(a.status || 'Scheduled').toLowerCase();
+                      const statusB = String(b.status || 'Scheduled').toLowerCase();
+                      if (statusA === 'completed' && statusB !== 'completed') return 1;
+                      if (statusA !== 'completed' && statusB === 'completed') return -1;
+                      const dateA = new Date(a.date || a.dateTime || a.createdAt || 0).getTime();
+                      const dateB = new Date(b.date || b.dateTime || b.createdAt || 0).getTime();
+                      return dateA - dateB;
+                    });
+                    return { ...group, interviews: sortedInterviews };
+                  }).sort((groupA, groupB) => {
+                    // Get earliest interview date for each group
+                    const getEarliestDate = (group) => {
+                      if (!group.interviews.length) return Infinity;
+                      const dates = group.interviews.map(i => 
+                        new Date(i.date || i.dateTime || i.createdAt || 0).getTime()
+                      );
+                      return Math.min(...dates);
+                    };
+                    return getEarliestDate(groupA) - getEarliestDate(groupB);
+                  });
 
                   const scheduledGroupQuery = groupSearchQuery.trim().toLowerCase();
                   const filteredScheduledGroupCards = scheduledGroupCards.filter((group) => {
@@ -2671,7 +2704,7 @@ function TrainerDashboard() {
                         
                         const dateA = new Date(a.parentGd?.dateTime || a.parentGd?.date || a.parentGd?.details?.form?.date || a.parentGd?.createdAt || 0).getTime();
                         const dateB = new Date(b.parentGd?.dateTime || b.parentGd?.date || b.parentGd?.details?.form?.date || b.parentGd?.createdAt || 0).getTime();
-                        return dateB - dateA; // Descending (newest first)
+                        return dateA - dateB; // Ascending (oldest/upcoming first)
                       });
 
                       if (allScheduledGdGroups.length === 0) {
