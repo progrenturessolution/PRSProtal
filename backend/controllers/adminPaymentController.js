@@ -37,6 +37,7 @@ const createPayment = async (req, res) => {
       role,
       paymentGoal,
       connectedBy,
+      paymentType,
       totalPayment,
       firstPayment,
       firstPaymentSendDate,
@@ -72,6 +73,7 @@ const createPayment = async (req, res) => {
       receiveDate: firstPaymentReceiveDate || null,
       sendDate: firstPaymentSendDate || null,
       connectedBy: connectedBy || '',
+      paymentType: paymentType || 'Receive',
       totalPayment: totPay,
       firstPayment: fPay,
       firstPaymentSendDate: firstPaymentSendDate || null,
@@ -108,6 +110,7 @@ const updatePayment = async (req, res) => {
       role,
       paymentGoal,
       connectedBy,
+      paymentType,
       totalPayment,
       firstPayment,
       firstPaymentSendDate,
@@ -133,6 +136,7 @@ const updatePayment = async (req, res) => {
     if (role !== undefined) paymentRecord.role = role;
     if (paymentGoal !== undefined) paymentRecord.paymentGoal = paymentGoal;
     if (connectedBy !== undefined) paymentRecord.connectedBy = connectedBy;
+    if (paymentType !== undefined) paymentRecord.paymentType = paymentType;
 
     if (totalPayment !== undefined) paymentRecord.totalPayment = Number(totalPayment) || 0;
     if (firstPayment !== undefined) paymentRecord.firstPayment = Number(firstPayment) || 0;

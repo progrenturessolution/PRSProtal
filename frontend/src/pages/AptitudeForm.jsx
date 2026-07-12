@@ -9,7 +9,7 @@ function AptitudeForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
-    roundNumber: 1,
+    roundNumber: "",
     score: "",
     outOf: "",
     result: "Pass",
@@ -21,10 +21,24 @@ function AptitudeForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [studentInfo, setStudentInfo] = useState(null);
 
   useEffect(() => {
+    fetchStudentInfo();
     fetchAptitudes();
   }, [studentId]);
+
+  const fetchStudentInfo = async () => {
+    try {
+      const response = await trainerAPI.getAssignedStudents();
+      if (response.data.success) {
+        const student = (response.data.students || []).find((item) => item._id === studentId);
+        setStudentInfo(student || null);
+      }
+    } catch (error) {
+      console.error("Error fetching student info:", error);
+    }
+  };
 
   const fetchAptitudes = async () => {
     try {
@@ -62,7 +76,7 @@ function AptitudeForm() {
       if (response.data.success) {
         setSuccess("Aptitude record added successfully!");
         setFormData({
-          roundNumber: 1,
+          roundNumber: "",
           score: "",
           outOf: "",
           result: "Pass",
@@ -121,7 +135,6 @@ function AptitudeForm() {
             <p>Capture aptitude performance in a structured format and keep every round easy to review.</p>
           </div>
           <div className="record-spotlight-chips">
-            <span className="record-chip">Round: {formData.roundNumber}</span>
             <span className="record-chip">Result: {formData.result}</span>
             <span className="record-chip">Score: {formData.score || "-"}</span>
           </div>
@@ -142,24 +155,21 @@ function AptitudeForm() {
 
             <div className="record-form-grid">
               <div className="form-group">
+                <label>PSMS ID</label>
+                <input type="text" value={studentInfo?.internId || ""} readOnly />
+              </div>
+
+              <div className="form-group">
+                <label>Student Name</label>
+                <input type="text" value={studentInfo?.name || ""} readOnly />
+              </div>
+              <div className="form-group">
                 <label>Date *</label>
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Aptitude Round Number *</label>
-                <input
-                  type="number"
-                  name="roundNumber"
-                  value={formData.roundNumber}
-                  onChange={handleChange}
-                  min="1"
                   required
                 />
               </div>

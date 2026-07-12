@@ -61,6 +61,7 @@ function RepresentativePayoutManagement() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [selectedRepDetails, setSelectedRepDetails] = useState(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState("all");
 
   useEffect(() => {
     if (formData.representativeId && representatives.length > 0) {
@@ -210,6 +211,7 @@ function RepresentativePayoutManagement() {
     if (!representativeId) return;
     setError("");
     setStudentSearchQuery("");
+    setSelectedMonthFilter("all");
     setDetailsLoading(true);
     try {
       const response = await adminRepAPI.getRepresentativeDetails(representativeId);
@@ -710,96 +712,136 @@ function RepresentativePayoutManagement() {
         document.body
       )}
 
-      {selectedRepDetails && createPortal(
-        <div
-          onClick={() => setSelectedRepDetails(null)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 12500,
-            background: "rgba(15, 23, 42, 0.45)",
-            backdropFilter: "blur(8px)",
-            padding: "24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflowY: "auto",
-          }}
-        >
+      {selectedRepDetails && (() => {
+        // Date and Month Formatting helper
+        const getMonthYearLabel = (dateStr) => {
+          if (!dateStr) return "Unknown";
+          try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return "Unknown";
+            return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+          } catch (e) {
+            return "Unknown";
+          }
+        };
+
+        const uniqueMonths = (() => {
+          if (!selectedRepDetails || !Array.isArray(selectedRepDetails.enrolledStudents)) return [];
+          const monthsSet = new Set();
+          selectedRepDetails.enrolledStudents.forEach(student => {
+            const dateStr = student.createdAt || student.joiningDate || student.enrolmentDate;
+            if (dateStr) {
+              const monthLabel = getMonthYearLabel(dateStr);
+              if (monthLabel && monthLabel !== "Unknown") {
+                monthsSet.add(monthLabel);
+              }
+            }
+          });
+          return Array.from(monthsSet).sort((a, b) => new Date(a) - new Date(b));
+        })();
+
+        const filteredStudentsList = (selectedRepDetails.enrolledStudents || []).filter((student) => {
+          // 1. Month Filter
+          if (selectedMonthFilter !== "all") {
+            const dateStr = student.createdAt || student.joiningDate || student.enrolmentDate;
+            if (getMonthYearLabel(dateStr) !== selectedMonthFilter) return false;
+          }
+          // 2. Text Search Query
+          const query = studentSearchQuery.trim().toLowerCase();
+          if (!query) return true;
+          return [student.name, student.email, student.mobile, student.internId, student.studentType, student.domain, student.currentDesignation, student.collegeName, student.instituteName].filter(Boolean).join(" ").toLowerCase().includes(query);
+        });
+
+        return createPortal(
           <div
-            onClick={(e) => e.stopPropagation()}
+            onClick={() => setSelectedRepDetails(null)}
             style={{
-              width: "min(1280px, 100%)",
-              maxHeight: "90vh",
-              background: "#ffffff",
-              borderRadius: "24px",
-              overflow: "hidden",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+              position: "fixed",
+              inset: 0,
+              zIndex: 12500,
+              background: "rgba(15, 23, 42, 0.45)",
+              backdropFilter: "blur(8px)",
+              padding: "24px",
               display: "flex",
-              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              overflowY: "auto",
             }}
           >
-            {/* Modal Header */}
             <div
+              onClick={(e) => e.stopPropagation()}
               style={{
-                background: "#324158",
-                color: "#ffffff",
-                padding: "16px 28px",
-                borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                width: "min(1280px, 100%)",
+                maxHeight: "90vh",
+                background: "#ffffff",
+                borderRadius: "24px",
+                overflow: "hidden",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              {/* Top Row: Label & Close Button */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <div style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.7)", fontWeight: 700 }}>
-                  Representative Performance Hub
+              {/* Modal Header */}
+              <div
+                style={{
+                  background: "#324158",
+                  color: "#ffffff",
+                  padding: "16px 28px",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                }}
+              >
+                {/* Top Row: Label & Close Button */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                  <div style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.7)", fontWeight: 700 }}>
+                    Representative Performance Hub
+                  </div>
+                  {/* Circular Close Button */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRepDetails(null)}
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      background: "rgba(255,255,255,0.1)",
+                      color: "#ffffff",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.2s ease-in-out",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.2)";
+                      e.currentTarget.style.transform = "scale(1.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(255,255,255,0.1)";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" style={{ width: "12px", height: "12px" }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-                {/* Circular Close Button */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedRepDetails(null)}
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "50%",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    background: "rgba(255,255,255,0.1)",
-                    color: "#ffffff",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "all 0.2s ease-in-out",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.2)";
-                    e.currentTarget.style.transform = "scale(1.08)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.1)";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" style={{ width: "12px", height: "12px" }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Main Content Row */}
-              <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff" }}>{selectedRepDetails.representative?.name || "Representative"}</h2>
-                  <div style={{ marginTop: "6px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                    <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
-                      PGIR ID: {selectedRepDetails.representative?.pgirId || "-"}
-                    </span>
-                    <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
-                      Total Enrolled: {selectedRepDetails.stats?.totalStudents || 0}
-                    </span>
+  
+                {/* Main Content Row */}
+                <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff" }}>{selectedRepDetails.representative?.name || "Representative"}</h2>
+                    <div style={{ marginTop: "6px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                      <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
+                        PGIR ID: {selectedRepDetails.representative?.pgirId || "-"}
+                      </span>
+                      <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
+                        Showing Enrolled: {filteredStudentsList.length} of {selectedRepDetails.stats?.totalStudents || 0}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
             {/* Scrollable Content Container */}
             <div style={{ padding: "32px", overflowY: "auto", flex: 1, backgroundColor: "#ffffff" }}>
@@ -877,10 +919,10 @@ function RepresentativePayoutManagement() {
                     }}
                   >
                     <div>
-                      <div style={{ color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700, marginBottom: "4px" }}>
+                      <div style={{ color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 500, marginBottom: "4px" }}>
                         {card.label}
                       </div>
-                      <div style={{ fontSize: "28px", fontWeight: 800, color: "#324158", lineHeight: 1.1 }}>
+                      <div style={{ fontSize: "28px", fontWeight: 500, color: "#324158", lineHeight: 1.1 }}>
                         {card.value}
                       </div>
                     </div>
@@ -898,36 +940,65 @@ function RepresentativePayoutManagement() {
                   <div>
                     <h3 style={{ margin: 0, color: "#324158", fontSize: "18px", fontWeight: 700 }}>Enrolled Students List</h3>
                   </div>
-                  <div style={{ position: "relative", minWidth: "280px", maxWidth: "420px", width: "100%" }}>
-                    <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", display: "flex", alignItems: "center" }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: "18px", height: "18px" }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      placeholder="Search student name, email, mobile, ID..."
-                      value={studentSearchQuery}
-                      onChange={(e) => setStudentSearchQuery(e.target.value)}
-                      style={{
-                        width: "100%",
-                        border: "1px solid #cbd5e1",
-                        borderRadius: "12px",
-                        padding: "12px 14px 12px 42px",
-                        background: "#ffffff",
-                        fontSize: "14px",
-                        outline: "none",
-                        transition: "all 0.2s",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = "#324158";
-                        e.target.style.boxShadow = "0 0 0 3px rgba(50, 65, 88, 0.15)";
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = "#cbd5e1";
-                        e.target.style.boxShadow = "none";
-                      }}
-                    />
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", minWidth: "280px", maxWidth: "600px", width: "100%", justifyContent: "flex-end" }}>
+                    {/* Month Filter Dropdown */}
+                    <div style={{ minWidth: "180px", position: "relative" }}>
+                      <select
+                        value={selectedMonthFilter}
+                        onChange={(e) => setSelectedMonthFilter(e.target.value)}
+                        style={{
+                          width: "100%",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "12px",
+                          padding: "12px 14px",
+                          background: "#ffffff",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#324158",
+                          outline: "none",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <option value="all">All Months</option>
+                        {uniqueMonths.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Search Bar */}
+                    <div style={{ position: "relative", minWidth: "280px", flex: 1 }}>
+                      <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8", display: "flex", alignItems: "center" }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: "18px", height: "18px" }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                        </svg>
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search student name, email, mobile, ID..."
+                        value={studentSearchQuery}
+                        onChange={(e) => setStudentSearchQuery(e.target.value)}
+                        style={{
+                          width: "100%",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "12px",
+                          padding: "12px 14px 12px 42px",
+                          background: "#ffffff",
+                          fontSize: "14px",
+                          outline: "none",
+                          transition: "all 0.2s",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#324158";
+                          e.target.style.boxShadow = "0 0 0 3px rgba(50, 65, 88, 0.15)";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#cbd5e1";
+                          e.target.style.boxShadow = "none";
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -944,23 +1015,15 @@ function RepresentativePayoutManagement() {
                       </tr>
                     </thead>
                     <tbody>
-                      {(selectedRepDetails.enrolledStudents || []).filter((student) => {
-                        const query = studentSearchQuery.trim().toLowerCase();
-                        if (!query) return true;
-                        return [student.name, student.email, student.mobile, student.internId, student.studentType, student.domain, student.currentDesignation, student.collegeName, student.instituteName].filter(Boolean).join(" ").toLowerCase().includes(query);
-                      }).length === 0 ? (
+                      {filteredStudentsList.length === 0 ? (
                         <tr>
                           <td colSpan={8} style={{ textAlign: "center", padding: "48px 16px", color: "#64748b" }}>
                             <div style={{ fontSize: "15px", fontWeight: 600, marginBottom: "4px" }}>No Enrolled Students Found</div>
-                            <div style={{ fontSize: "13px", color: "#94a3b8" }}>Search term match nahi hua ya representative ne koi student add nahi kiya.</div>
+                            <div style={{ fontSize: "13px", color: "#94a3b8" }}>Search term match nahi hua ya filter requirements fully satisfy nahi ho rahi.</div>
                           </td>
                         </tr>
                       ) : (
-                        (selectedRepDetails.enrolledStudents || []).filter((student) => {
-                          const query = studentSearchQuery.trim().toLowerCase();
-                          if (!query) return true;
-                          return [student.name, student.email, student.mobile, student.internId, student.studentType, student.domain, student.currentDesignation, student.collegeName, student.instituteName].filter(Boolean).join(" ").toLowerCase().includes(query);
-                        }).map((student) => {
+                        filteredStudentsList.map((student) => {
                           const isSMS = student.studentType === "SMS Program";
                           const isCompleted = student.status === "completed";
                           const isActive = student.status === "active";
@@ -1110,7 +1173,8 @@ function RepresentativePayoutManagement() {
           </div>
         </div>,
         document.body
-      )}
+      );
+    })()}
     </div>
   );
 }

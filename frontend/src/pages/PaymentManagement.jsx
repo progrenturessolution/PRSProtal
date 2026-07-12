@@ -287,6 +287,7 @@ const emptyForm = {
   receiveDate: "",
   sendDate: "",
   connectedBy: "",
+  paymentType: "Receive",
   totalPayment: "0",
   firstPayment: "0",
   firstPaymentSendDate: "",
@@ -316,6 +317,7 @@ function PaymentManagement() {
   const [maxAmountFilter, setMaxAmountFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
   const [selectedPaymentDetails, setSelectedPaymentDetails] = useState(null);
+  const [isCustomPayType, setIsCustomPayType] = useState(false);
 
   useEffect(() => {
     const total = Number(formData.totalPayment) || 0;
@@ -1052,17 +1054,19 @@ function PaymentManagement() {
   const getFilteredPayments = () => {
     let filtered = payments;
 
-    // 1. Text Search Filter (Name / Role / Connected By)
+    // 1. Text Search Filter (Name / Role / Connected By / Payment Type)
     const query = searchQuery.trim().toLowerCase();
     if (query) {
       filtered = filtered.filter((item) => {
         const name = item.name || "";
         const role = item.role || "";
         const connectedBy = item.connectedBy || "";
+        const paymentType = item.paymentType || "";
         return (
           name.toLowerCase().includes(query) ||
           role.toLowerCase().includes(query) ||
-          connectedBy.toLowerCase().includes(query)
+          connectedBy.toLowerCase().includes(query) ||
+          paymentType.toLowerCase().includes(query)
         );
       });
     }
@@ -1107,6 +1111,8 @@ function PaymentManagement() {
 
   const editEntry = (entry) => {
     const goalVal = entry.paymentGoal || "Pending";
+    const payType = entry.paymentType || "Receive";
+    setIsCustomPayType(payType !== "Send" && payType !== "Receive");
 
     setFormData({
       id: entry._id,
@@ -1118,6 +1124,7 @@ function PaymentManagement() {
       receiveDate: entry.receiveDate ? new Date(entry.receiveDate).toISOString().slice(0, 10) : "",
       sendDate: entry.sendDate ? new Date(entry.sendDate).toISOString().slice(0, 10) : "",
       connectedBy: entry.connectedBy || "",
+      paymentType: entry.paymentType || "Receive",
       totalPayment: String(entry.totalPayment || 0),
       firstPayment: String(entry.firstPayment || 0),
       firstPaymentSendDate: entry.firstPaymentSendDate ? new Date(entry.firstPaymentSendDate).toISOString().slice(0, 10) : "",
@@ -1174,6 +1181,7 @@ function PaymentManagement() {
         role: formData.role,
         paymentGoal: formData.paymentGoal,
         connectedBy: formData.connectedBy,
+        paymentType: formData.paymentType,
         totalPayment: Number(formData.totalPayment) || 0,
         firstPayment: Number(formData.firstPayment) || 0,
         firstPaymentSendDate: formData.firstPaymentSendDate || null,
@@ -1377,8 +1385,8 @@ function PaymentManagement() {
                             </td>
                           </tr>
                         ))}
-                        {/* Total Row - No Background/Text Colors, just Bolded */}
-                        <tr style={{ fontWeight: "800" }}>
+                        {/* Total Row - Simple background styling, no bold */}
+                        <tr style={{ backgroundColor: "#e2e8f0", color: "#1f2937" }}>
                           <td>TOTAL</td>
                           <td style={{ textAlign: "right" }}>₹{displayRevenue.toLocaleString("en-IN")}</td>
                           <td style={{ textAlign: "right" }}>₹{displayBurnRate.toLocaleString("en-IN")}</td>
@@ -1437,6 +1445,46 @@ function PaymentManagement() {
                   placeholder="Connected by"
                 />
               </div>
+              <div className="form-group">
+                <label>Payment Type *</label>
+                <select
+                  name="paymentType"
+                  value={
+                    formData.paymentType === "Send" || formData.paymentType === "Receive" || formData.paymentType === ""
+                      ? formData.paymentType
+                      : "Other"
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "Other") {
+                      setIsCustomPayType(true);
+                      setFormData((prev) => ({ ...prev, paymentType: "" }));
+                    } else {
+                      setIsCustomPayType(false);
+                      setFormData((prev) => ({ ...prev, paymentType: val }));
+                    }
+                  }}
+                  required
+                >
+                  <option value="Receive">Receive</option>
+                  <option value="Send">Send</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {isCustomPayType && (
+                <div className="form-group">
+                  <label>Specify Custom Payment Type *</label>
+                  <input
+                    type="text"
+                    name="paymentType"
+                    value={formData.paymentType}
+                    onChange={handleInput}
+                    placeholder="Enter custom payment type"
+                    required
+                  />
+                </div>
+              )}
               <div className="form-group">
                 <label>Total Payment (₹)</label>
                 <input
@@ -1698,7 +1746,7 @@ function PaymentManagement() {
                     <tr>
                       <th>Name</th>
                       <th>Role</th>
-                      <th>Connected By</th>
+                      <th>Payment Type</th>
                       <th>Total Payment</th>
                       <th>Total Paid</th>
                       <th>Pending Payment</th>
@@ -1716,7 +1764,18 @@ function PaymentManagement() {
                         <tr key={item._id}>
                           <td style={{ fontWeight: "600" }}>{item.name}</td>
                           <td>{item.role}</td>
-                          <td>{item.connectedBy || "-"}</td>
+                          <td>
+                            <span style={{
+                              padding: "4px 8px",
+                              borderRadius: "6px",
+                              backgroundColor: item.paymentType === "Send" ? "#fee2e2" : item.paymentType === "Receive" ? "#dcfce7" : "#f1f5f9",
+                              color: item.paymentType === "Send" ? "#991b1b" : item.paymentType === "Receive" ? "#166534" : "#475569",
+                              fontWeight: "600",
+                              fontSize: "12px"
+                            }}>
+                              {item.paymentType || "Receive"}
+                            </span>
+                          </td>
                           <td>₹{item.totalPayment || 0}</td>
                           <td>₹{item.payment || 0}</td>
                           <td style={{ color: (item.pendingPayment > 0) ? "#ef4444" : "#10b981", fontWeight: "600" }}>
@@ -1913,7 +1972,7 @@ function PaymentManagement() {
              {/* Content */}
              <div style={{ padding: "24px", overflowY: "auto" }}>
                {/* Quick Info Grid */}
-               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
                  <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px" }}>
                    <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Role / Designation</div>
                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#324158", marginTop: "4px" }}>{selectedPaymentDetails.role}</div>
@@ -1921,6 +1980,10 @@ function PaymentManagement() {
                  <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px" }}>
                    <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Connected By</div>
                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#324158", marginTop: "4px" }}>{selectedPaymentDetails.connectedBy || "-"}</div>
+                 </div>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px" }}>
+                   <div style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>Payment Type</div>
+                   <div style={{ fontSize: "14px", fontWeight: 700, color: "#324158", marginTop: "4px" }}>{selectedPaymentDetails.paymentType || "Receive"}</div>
                  </div>
                </div>
 

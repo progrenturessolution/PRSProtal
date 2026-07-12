@@ -36,6 +36,7 @@ function InterviewForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isCustomType, setIsCustomType] = useState(false);
 
   useEffect(() => {
     fetchStudentInfo();
@@ -90,6 +91,7 @@ function InterviewForm() {
 
       if (response.data.success) {
         setSuccess("Interview record added successfully!");
+        setIsCustomType(false);
         setFormData({
           interviewType: "",
           attendanceStatus: "Present",
@@ -179,7 +181,6 @@ function InterviewForm() {
           </div>
           <div className="record-spotlight-chips">
             <span className="record-chip">Type: {formData.interviewType}</span>
-            <span className="record-chip">Attempt: {formData.attemptNumber || "Not set"}</span>
             <span className={`record-chip ${formData.levelCrossed ? "passed" : "pending"}`}>
               Level: {formData.levelCrossed ? "Crossed" : "Pending"}
             </span>
@@ -214,34 +215,74 @@ function InterviewForm() {
                 <label>Interview Type *</label>
                 <select
                   name="interviewType"
-                  value={formData.interviewType}
+                  value={
+                    formData.interviewType === "HR" || formData.interviewType === "Technical" || formData.interviewType === ""
+                      ? formData.interviewType
+                      : "Other"
+                  }
                   onChange={(e) => {
-                    const interviewType = e.target.value;
-                    setFormData((prev) => ({
-                      ...prev,
-                      interviewType,
-                      communicationLevel: "",
-                      confidenceLevel: "",
-                      bodyLanguage: "",
-                      clarityOfAnswer: "",
-                      technicalKnowledge: "",
-                      problemSolving: "",
-                      codingAbility: "",
-                      logicAndApproach: "",
-                      overallHRLevel: "",
-                      overallTechnicalLevel: "",
-                      levelCrossed: false,
-                      hrRemarks: "",
-                      technicalRemarks: "",
-                    }));
+                    const val = e.target.value;
+                    if (val === "Other") {
+                      setIsCustomType(true);
+                      setFormData((prev) => ({
+                        ...prev,
+                        interviewType: "",
+                        communicationLevel: "",
+                        confidenceLevel: "",
+                        bodyLanguage: "",
+                        clarityOfAnswer: "",
+                        technicalKnowledge: "",
+                        problemSolving: "",
+                        codingAbility: "",
+                        logicAndApproach: "",
+                        overallHRLevel: "",
+                        overallTechnicalLevel: "",
+                        levelCrossed: false,
+                        hrRemarks: "",
+                        technicalRemarks: "",
+                      }));
+                    } else {
+                      setIsCustomType(false);
+                      setFormData((prev) => ({
+                        ...prev,
+                        interviewType: val,
+                        communicationLevel: "",
+                        confidenceLevel: "",
+                        bodyLanguage: "",
+                        clarityOfAnswer: "",
+                        technicalKnowledge: "",
+                        problemSolving: "",
+                        codingAbility: "",
+                        logicAndApproach: "",
+                        overallHRLevel: "",
+                        overallTechnicalLevel: "",
+                        levelCrossed: false,
+                        hrRemarks: "",
+                        technicalRemarks: "",
+                      }));
+                    }
                   }}
                   required
                 >
                   <option value="" disabled>Select Interview Type</option>
                   <option value="HR">HR</option>
                   <option value="Technical">Technical</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
+
+              {isCustomType && (
+                <div className="form-group">
+                  <label>Specify Custom Interview Type *</label>
+                  <input
+                    type="text"
+                    value={formData.interviewType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, interviewType: e.target.value }))}
+                    placeholder="Enter custom interview type"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Attendance *</label>
@@ -255,18 +296,6 @@ function InterviewForm() {
                   <option value="Absent">Absent</option>
                   <option value="Late">Late</option>
                 </select>
-              </div>
-
-              <div className="form-group">
-                <label>Interview Attempt (ex. 4/24) *</label>
-                <input
-                  type="text"
-                  name="attemptNumber"
-                  value={formData.attemptNumber}
-                  onChange={handleChange}
-                  placeholder="4/24"
-                  required
-                />
               </div>
 
               <div className="form-group">

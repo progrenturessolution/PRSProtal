@@ -125,6 +125,10 @@ const interviewSchema = new mongoose.Schema({
   },
   outOf: {
     type: Number
+  },
+  link: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true

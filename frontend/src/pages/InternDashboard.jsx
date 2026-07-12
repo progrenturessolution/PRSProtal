@@ -342,6 +342,7 @@ function InternDashboard() {
                     <th>Interview Type</th>
                     <th>Mode</th>
                     <th>Interviewer</th>
+                    <th>Link</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -353,6 +354,23 @@ function InternDashboard() {
                       <td>{interview.interviewType || interview.type || "-"}</td>
                       <td>{getScheduledInterviewMode(interview)}</td>
                       <td>{interview.trainerId?.name || interview.details?.form?.interviewerName || interview.details?.form?.trainerId || "-"}</td>
+                      <td>
+                        {interview.link ? (
+                          <a href={interview.link} target="_blank" rel="noreferrer" className="am-link-btn" style={{ color: "#3b82f6", textDecoration: "underline", fontWeight: 600 }}>
+                            Join
+                          </a>
+                        ) : interview.details?.form?.link ? (
+                          <a href={interview.details.form.link} target="_blank" rel="noreferrer" className="am-link-btn" style={{ color: "#3b82f6", textDecoration: "underline", fontWeight: 600 }}>
+                            Join
+                          </a>
+                        ) : interview.details?.link ? (
+                          <a href={interview.details.link} target="_blank" rel="noreferrer" className="am-link-btn" style={{ color: "#3b82f6", textDecoration: "underline", fontWeight: 600 }}>
+                            Join
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
                       <td>
                         <span className={`status-badge ${
                           String(interview.status).toLowerCase() === 'completed'
@@ -397,6 +415,7 @@ function InternDashboard() {
                     <th>Time</th>
                     <th>Groups</th>
                     <th>Interviewer</th>
+                    <th>Link</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -408,6 +427,19 @@ function InternDashboard() {
                       <td>{gd.startTime || gd.details?.form?.startTime || '-'}</td>
                       <td>{getGdGroupLabelForUser(gd)}</td>
                       <td>{getGdInterviewer(gd)}</td>
+                      <td>
+                        {gd.details?.form?.link ? (
+                          <a href={gd.details.form.link} target="_blank" rel="noreferrer" className="am-link-btn" style={{ color: "#3b82f6", textDecoration: "underline", fontWeight: 600 }}>
+                            Join
+                          </a>
+                        ) : gd.details?.link ? (
+                          <a href={gd.details.link} target="_blank" rel="noreferrer" className="am-link-btn" style={{ color: "#3b82f6", textDecoration: "underline", fontWeight: 600 }}>
+                            Join
+                          </a>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
                       <td><span className={`status-badge ${
                         String(gd.status).toLowerCase() === 'completed'
                           ? 'status-completed'
@@ -447,25 +479,38 @@ function InternDashboard() {
                     <th>Assigned On</th>
                     <th>Due</th>
                     <th>Assigned By</th>
+                    <th>Link</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => (
-                    <tr key={a._id || a.title || idx}>
-                      <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                      <td>{formatDate(a.dateTime || a.details?.form?.date)}</td>
-                      <td>{(a.details?.form?.dueDate) ? formatDateTime(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')) : formatDateTime(a.dateTime)}</td>
-                      <td>{a.createdBy || '-'}</td>
-                      <td><span className={`status-badge ${
-                        String(a.status).toLowerCase() === 'completed'
-                          ? 'status-completed'
-                          : String(a.status).toLowerCase() === 'cancelled'
-                            ? 'status-inactive'
-                            : 'status-pending'
-                      }`}>{a.status || 'Scheduled'}</span></td>
-                    </tr>
-                  ))}
+                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => {
+                    const assessLink = a.details?.notification?.activityId?.details?.link || a.details?.notification?.activityId?.details?.form?.link || a.details?.link || a.details?.form?.link || '';
+                    return (
+                      <tr key={a._id || a.title || idx}>
+                        <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                        <td>{formatDate(a.dateTime || a.details?.form?.date)}</td>
+                        <td>{(a.details?.form?.dueDate) ? formatDateTime(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')) : formatDateTime(a.dateTime)}</td>
+                        <td>{a.createdBy || '-'}</td>
+                        <td>
+                          {assessLink ? (
+                            <a href={assessLink} target="_blank" rel="noreferrer" className="am-link-btn" style={{ color: "#3b82f6", textDecoration: "underline", fontWeight: 600 }}>
+                              Join
+                            </a>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td><span className={`status-badge ${
+                          String(a.status).toLowerCase() === 'completed'
+                            ? 'status-completed'
+                            : String(a.status).toLowerCase() === 'cancelled'
+                              ? 'status-inactive'
+                              : 'status-pending'
+                        }`}>{a.status || 'Scheduled'}</span></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -485,25 +530,38 @@ function InternDashboard() {
                     <th>Assigned On</th>
                     <th>Due</th>
                     <th>Assigned By</th>
+                    <th>Link</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => (
-                    <tr key={a._id || a.title || idx}>
-                      <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                      <td>{formatDate(a.dateTime || a.details?.form?.date)}</td>
-                      <td>{(a.details?.form?.dueDate) ? formatDateTime(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')) : formatDateTime(a.dateTime)}</td>
-                      <td>{a.createdBy || '-'}</td>
-                      <td><span className={`status-badge ${
-                        String(a.status).toLowerCase() === 'completed'
-                          ? 'status-completed'
-                          : String(a.status).toLowerCase() === 'cancelled'
-                            ? 'status-inactive'
-                            : 'status-pending'
-                      }`}>{a.status || 'Scheduled'}</span></td>
-                    </tr>
-                  ))}
+                  {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => {
+                    const assessLink = a.details?.notification?.activityId?.details?.link || a.details?.notification?.activityId?.details?.form?.link || a.details?.link || a.details?.form?.link || '';
+                    return (
+                      <tr key={a._id || a.title || idx}>
+                        <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
+                        <td>{formatDate(a.dateTime || a.details?.form?.date)}</td>
+                        <td>{(a.details?.form?.dueDate) ? formatDateTime(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')) : formatDateTime(a.dateTime)}</td>
+                        <td>{a.createdBy || '-'}</td>
+                        <td>
+                          {assessLink ? (
+                            <a href={assessLink} target="_blank" rel="noreferrer" className="am-link-btn" style={{ color: "#3b82f6", textDecoration: "underline", fontWeight: 600 }}>
+                              Join
+                            </a>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                        <td><span className={`status-badge ${
+                          String(a.status).toLowerCase() === 'completed'
+                            ? 'status-completed'
+                            : String(a.status).toLowerCase() === 'cancelled'
+                              ? 'status-inactive'
+                              : 'status-pending'
+                        }`}>{a.status || 'Scheduled'}</span></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

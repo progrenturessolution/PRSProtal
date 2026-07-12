@@ -22,8 +22,7 @@ const assessmentSchema = new mongoose.Schema({
   },
   assessmentType: {
     type: String,
-    required: true,
-    enum: ['Domain', 'Coding']
+    required: true
   },
   score: {
     type: Number

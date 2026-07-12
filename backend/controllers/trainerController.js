@@ -232,16 +232,17 @@ exports.addInterview = async (req, res) => {
       score,
       outOf
     } = req.body;
-    const normalizedAttemptNumber = normalizeInterviewAttemptNumber(attemptNumber);
+    let normalizedAttemptNumber = attemptNumber ? String(attemptNumber).trim() : '';
+    if (!normalizedAttemptNumber) {
+      const lastInterview = await Interview.findOne({
+        studentId,
+        interviewType,
+        status: 'Completed'
+      }).sort({ attemptNumber: -1 });
+      normalizedAttemptNumber = lastInterview ? lastInterview.attemptNumber + 1 : 1;
+    }
     const normalizedLevelCrossed =
       levelCrossed === true || levelCrossed === 'true' || levelCrossed === '1' || levelCrossed === 1;
-
-    if (!normalizedAttemptNumber) {
-      return res.status(400).json({
-        success: false,
-        message: 'Interview attempt is required'
-      });
-    }
 
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
@@ -314,6 +315,12 @@ exports.addAptitude = async (req, res) => {
     const trainerId = req.user.id;
     const { studentId, attendanceStatus, date, roundNumber, score, result, remarks, outOf } = req.body;
 
+    let finalRoundNumber = roundNumber;
+    if (finalRoundNumber === undefined || finalRoundNumber === null || finalRoundNumber === "") {
+      const lastAptitude = await Aptitude.findOne({ studentId }).sort({ roundNumber: -1 });
+      finalRoundNumber = lastAptitude ? lastAptitude.roundNumber + 1 : 1;
+    }
+
     // Verify student is assigned to trainer
     const hasAccess = await isStudentAccessibleToTrainer(trainerId, studentId);
     if (!hasAccess) {
@@ -331,7 +338,7 @@ exports.addAptitude = async (req, res) => {
       trainerId,
       attendanceStatus,
       date,
-      roundNumber,
+      roundNumber: finalRoundNumber,
       score,
       result,
       remarks,

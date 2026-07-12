@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useLocation } from "react-router-dom";
 import { trainerAPI } from "../services/api";
 import logo from "../assets/logo.png";
@@ -44,6 +45,8 @@ function TrainerDashboard() {
   const [recordHistorySearch, setRecordHistorySearch] = useState("");
   const [recordSubmitting, setRecordSubmitting] = useState(false);
   const [recordsLoading, setRecordsLoading] = useState(false);
+  const [recordsSourceTab, setRecordsSourceTab] = useState("students");
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
   const [interviews, setInterviews] = useState([]);
   const [scheduledInterviews, setScheduledInterviews] = useState([]);
   const [scheduledGds, setScheduledGds] = useState([]);
@@ -107,6 +110,8 @@ function TrainerDashboard() {
     outOf: "",
   });
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isCustomInterviewType, setIsCustomInterviewType] = useState(false);
+  const [isCustomAssessmentType, setIsCustomAssessmentType] = useState(false);
   const [gdFormData, setGdFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     attendanceStatus: "Present",
@@ -603,6 +608,7 @@ function TrainerDashboard() {
       const response = await trainerAPI.addInterview(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Interview record added successfully!");
+        setIsCustomInterviewType(false);
         setInterviewFormData({
           interviewType: "",
           attendanceStatus: "Present",
@@ -668,7 +674,7 @@ function TrainerDashboard() {
         setAptitudeFormData({
           attendanceStatus: "Present",
           date: new Date().toISOString().split("T")[0],
-          roundNumber: 1,
+          roundNumber: "",
           score: "",
           outOf: "",
           result: "Pass",
@@ -710,6 +716,7 @@ function TrainerDashboard() {
       const response = await trainerAPI.addAssessment(cleanedData);
       if (response.data.success) {
         setRecordSuccess("Assessment record added successfully!");
+        setIsCustomAssessmentType(false);
         setAssessmentFormData({
           attendanceStatus: "Present",
           date: new Date().toISOString().split("T")[0],
@@ -916,7 +923,8 @@ function TrainerDashboard() {
 
   const openStudentRecords = (student, sourceMenuSetter, options = {}) => {
     try {
-    // openStudentRecords called
+      setRecordsSourceTab(activeTab);
+      // openStudentRecords called
       if (!student || typeof student !== "object" || !student._id) {
         console.warn("openStudentRecords: invalid student", student);
         setRecordError("Invalid student selected");
@@ -962,16 +970,42 @@ function TrainerDashboard() {
     }));
   };
 
+  const calculateMenuPosition = (event, width = 160) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const menuHeight = 150; 
+    const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+
+    setMenuPosition({
+      top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+      left: rect.right - width + window.scrollX,
+      openUpward,
+    });
+  };
+
   // Helper function to enrich student data with full details from the students array
   const enrichStudentData = (student) => {
-    if (!student || typeof student !== "object") return student;
+    let studentObj = student;
+    if (student && typeof student !== "object") {
+      // It's a string ID, username, or email. Search in students array!
+      const found = (students || []).find(s => String(s._id || s.id) === String(student) || String(s.internId) === String(student) || String(s.email) === String(student));
+      if (found) {
+        studentObj = found;
+      } else {
+        // Return a fallback object so isStudentObject is true and we can still conduct the activity!
+        return { _id: String(student), name: "Intern", internId: "-", email: "-", mobile: "-", studentType: "-", status: "-" };
+      }
+    }
     
+    if (!studentObj || typeof studentObj !== "object") return studentObj;
+
     // If student already has email, mobile, etc., return as-is
-    if (student.email || student.mobile || student.studentType) return student;
+    if (studentObj.email || studentObj.mobile || studentObj.studentType) return studentObj;
     
     // Try to find matching student by _id or internId in the students array
-    const studentId = student._id || student.id;
-    const internId = student.internId;
+    const studentId = studentObj._id || studentObj.id;
+    const internId = studentObj.internId;
     
     let matchedStudent = null;
     if (studentId) {
@@ -984,20 +1018,21 @@ function TrainerDashboard() {
     // If we found a match, merge the data
     if (matchedStudent) {
       return {
-        ...student,
-        email: student.email || matchedStudent.email || "-",
-        mobile: student.mobile || matchedStudent.mobile || "-",
-        studentType: student.studentType || matchedStudent.studentType || "-",
-        status: student.status || matchedStudent.status || "-",
+        ...studentObj,
+        ...matchedStudent,
+        email: studentObj.email || matchedStudent.email || "-",
+        mobile: studentObj.mobile || matchedStudent.mobile || "-",
+        studentType: studentObj.studentType || matchedStudent.studentType || "-",
+        status: studentObj.status || matchedStudent.status || "-",
       };
     }
     
     return {
-      ...student,
-      email: student.email || "-",
-      mobile: student.mobile || "-",
-      studentType: student.studentType || "-",
-      status: student.status || "-",
+      ...studentObj,
+      email: studentObj.email || "-",
+      mobile: studentObj.mobile || "-",
+      studentType: studentObj.studentType || "-",
+      status: studentObj.status || "-",
     };
   };
 
@@ -2489,9 +2524,13 @@ function TrainerDashboard() {
                                             <td>{studentMobile || "-"}</td>
                                             <td>{studentType}</td>
                                             <td>
-                                              <span className={`status-badge ${(studentStatus || "").toLowerCase() === "active" ? "status-active" : (studentStatus || "").toLowerCase() === "completed" ? "status-completed" : "status-inactive"}`}>
-                                                {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : "-"}
-                                              </span>
+                                              {studentStatus && studentStatus !== "-" ? (
+                                                <span className={`status-badge ${(studentStatus || "").toLowerCase() === "active" ? "status-active" : (studentStatus || "").toLowerCase() === "completed" ? "status-completed" : "status-inactive"}`}>
+                                                  {studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1)}
+                                                </span>
+                                              ) : (
+                                                "-"
+                                              )}
                                             </td>
                                             <td style={{ position: "relative" }}>
                                               <button
@@ -2730,7 +2769,7 @@ function TrainerDashboard() {
                                             const enrichedStudent = enrichStudentData(student);
                                             const isStudentObject = enrichedStudent && typeof enrichedStudent === "object";
                                             const studentId = isStudentObject ? enrichedStudent._id : String(enrichedStudent || "");
-                                            const menuId = `${group._id || "group"}-${studentId || index}`;
+                                            const menuId = `${group.id || group._id || "group"}-${studentId || index}`;
                                             const studentName = isStudentObject ? enrichedStudent.name : "Unknown";
                                             const internId = isStudentObject ? enrichedStudent.internId : "-";
                                             const studentEmail = isStudentObject ? enrichedStudent.email : "-";
@@ -2757,7 +2796,12 @@ function TrainerDashboard() {
                                                       e.stopPropagation();
 
                                                       if (!isStudentObject || !enrichedStudent._id) return;
-                                                      setOpenAssignmentMenuId((prev) => (prev === menuId ? null : menuId));
+                                                      if (openAssignmentMenuId === menuId) {
+                                                        setOpenAssignmentMenuId(null);
+                                                      } else {
+                                                        calculateMenuPosition(e, 160);
+                                                        setOpenAssignmentMenuId(menuId);
+                                                      }
                                                     }}
                                                     style={{
                                                       background: "transparent",
@@ -2778,45 +2822,50 @@ function TrainerDashboard() {
                                                     ⋮
                                                   </button>
 
-                                                  {openAssignmentMenuId === menuId && (
-                                                    <div
-                                                      data-assignment-menu
-                                                      style={{
-                                                        position: "absolute",
-                                                        right: 0,
-                                                        top: "42px",
-                                                        background: "white",
-                                                        border: "1px solid #e5e7eb",
-                                                        borderRadius: "12px",
-                                                        boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
-                                                        zIndex: 1000,
-                                                        minWidth: "160px",
-                                                        overflow: "hidden",
-                                                      }}
-                                                    >
-                                                      <button
-                                                        onClick={() => {
-                                                          // Open student records and select GD tab, providing GD context
-                                                          openStudentRecords(enrichedStudent, setOpenAssignmentMenuId, { defaultTab: 'gd', gd: group.parentGd || null, lockedTab: 'gd' });
-                                                        }}
+                                                  {openAssignmentMenuId === menuId &&
+                                                    createPortal(
+                                                      <div
+                                                        data-assignment-menu
+                                                        onClick={() => setOpenAssignmentMenuId(null)}
                                                         style={{
-                                                          width: "100%",
-                                                          padding: "12px 16px",
+                                                          position: "absolute",
+                                                          left: `${menuPosition.left}px`,
+                                                          top: `${menuPosition.top}px`,
+                                                          transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
                                                           background: "white",
-                                                          border: "none",
-                                                          textAlign: "left",
-                                                          cursor: "pointer",
-                                                          fontSize: "14px",
-                                                          fontWeight: "500",
-                                                          color: "#0f172a",
+                                                          border: "1px solid #e5e7eb",
+                                                          borderRadius: "12px",
+                                                          boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                                          zIndex: 11000,
+                                                          minWidth: "160px",
+                                                          overflow: "hidden",
                                                         }}
-                                                        onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
-                                                        onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
                                                       >
-                                                        Conduct GD
-                                                      </button>
-                                                    </div>
-                                                  )}
+                                                        <button
+                                                          onClick={() => {
+                                                            // Open student records and select GD tab, providing GD context
+                                                            openStudentRecords(enrichedStudent, setOpenAssignmentMenuId, { defaultTab: 'gd', gd: group.parentGd || null, lockedTab: 'gd' });
+                                                          }}
+                                                          style={{
+                                                            width: "100%",
+                                                            padding: "12px 16px",
+                                                            background: "white",
+                                                            border: "none",
+                                                            textAlign: "left",
+                                                            cursor: "pointer",
+                                                            fontSize: "14px",
+                                                            fontWeight: "500",
+                                                            color: "#0f172a",
+                                                          }}
+                                                          onMouseEnter={(e) => (e.currentTarget.style.background = "#f9fafb")}
+                                                          onMouseLeave={(e) => (e.currentTarget.style.background = "white")}
+                                                        >
+                                                          Conduct GD
+                                                        </button>
+                                                      </div>,
+                                                      document.body
+                                                    )
+                                                  }
                                                 </td>
                                               </tr>
                                             );
@@ -3327,19 +3376,21 @@ function TrainerDashboard() {
                                             {studentType}
                                           </td>
                                           <td>
-                                            <span
-                                              className={`status-badge ${
-                                                (studentStatus || "").toLowerCase() === "active"
-                                                  ? "status-active"
-                                                  : (studentStatus || "").toLowerCase() === "completed"
-                                                    ? "status-completed"
-                                                    : "status-inactive"
-                                              }`}
-                                            >
-                                              {studentStatus
-                                                ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1)
-                                                : "-"}
-                                            </span>
+                                            {studentStatus && studentStatus !== "-" ? (
+                                              <span
+                                                className={`status-badge ${
+                                                  (studentStatus || "").toLowerCase() === "active"
+                                                    ? "status-active"
+                                                    : (studentStatus || "").toLowerCase() === "completed"
+                                                      ? "status-completed"
+                                                      : "status-inactive"
+                                                }`}
+                                              >
+                                                {studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1)}
+                                              </span>
+                                            ) : (
+                                              "-"
+                                            )}
                                           </td>
                                           <td style={{ position: "relative" }}>
                                             <button
@@ -3867,11 +3918,11 @@ function TrainerDashboard() {
                       setSelectedStudent(null);
                       setSelectedStudentTab(null);
                       setRecordHistorySearch("");
-                      setActiveTab("students");
+                      setActiveTab(recordsSourceTab || "students");
                     }}
                     className="premium-btn-secondary"
                   >
-                    ← Back to Students
+                    ← Back
                   </button>
                 </div>
               </div>
@@ -4248,6 +4299,14 @@ function TrainerDashboard() {
                     </div>
                     <form onSubmit={handleAptitudeSubmit} className="record-form-grid">
                       <div className="form-group">
+                        <label>PSMS ID</label>
+                        <input type="text" value={selectedStudent?.internId || ""} readOnly />
+                      </div>
+                      <div className="form-group">
+                        <label>Student Name</label>
+                        <input type="text" value={selectedStudent?.name || ""} readOnly />
+                      </div>
+                      <div className="form-group">
                         <label>Date *</label>
                         <input
                           type="date"
@@ -4269,15 +4328,14 @@ function TrainerDashboard() {
                           <option value="Absent">Absent</option>
                         </select>
                       </div>
-                      <div className="form-group">
-                        <label>Aptitude Round Number *</label>
+                      <div className="form-group" style={{ display: 'none' }}>
+                        <label style={{ display: 'none' }}>Aptitude Round Number *</label>
                         <input
                           type="number"
                           name="roundNumber"
                           value={aptitudeFormData.roundNumber}
                           onChange={(e) => setAptitudeFormData({ ...aptitudeFormData, [e.target.name]: e.target.value })}
                           min="1"
-                          required
                         />
                       </div>
                       <div className="form-group">
@@ -4341,6 +4399,14 @@ function TrainerDashboard() {
                     </div>
                     <form onSubmit={handleAssessmentSubmit} className="record-form-grid">
                       <div className="form-group">
+                        <label>PSMS ID</label>
+                        <input type="text" value={selectedStudent?.internId || ""} readOnly />
+                      </div>
+                      <div className="form-group">
+                        <label>Student Name</label>
+                        <input type="text" value={selectedStudent?.name || ""} readOnly />
+                      </div>
+                      <div className="form-group">
                         <label>Date *</label>
                         <input
                           type="date"
@@ -4366,14 +4432,41 @@ function TrainerDashboard() {
                         <label>Assessment Type *</label>
                         <select
                           name="assessmentType"
-                          value={assessmentFormData.assessmentType}
-                          onChange={(e) => setAssessmentFormData({ ...assessmentFormData, [e.target.name]: e.target.value })}
+                          value={
+                            assessmentFormData.assessmentType === "Domain" || assessmentFormData.assessmentType === "Coding" || assessmentFormData.assessmentType === ""
+                              ? assessmentFormData.assessmentType
+                              : "Other"
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === "Other") {
+                              setIsCustomAssessmentType(true);
+                              setAssessmentFormData((prev) => ({ ...prev, assessmentType: "" }));
+                            } else {
+                              setIsCustomAssessmentType(false);
+                              setAssessmentFormData((prev) => ({ ...prev, assessmentType: val }));
+                            }
+                          }}
                           required
                         >
                           <option value="Domain">Domain</option>
                           <option value="Coding">Coding</option>
+                          <option value="Other">Other</option>
                         </select>
                       </div>
+
+                      {isCustomAssessmentType && (
+                        <div className="form-group">
+                          <label>Specify Custom Assessment Type *</label>
+                          <input
+                            type="text"
+                            value={assessmentFormData.assessmentType}
+                            onChange={(e) => setAssessmentFormData(prev => ({ ...prev, assessmentType: e.target.value }))}
+                            placeholder="Enter custom assessment type"
+                            required
+                          />
+                        </div>
+                      )}
                       <div className="form-group">
                         <label>Score</label>
                         <input
@@ -4435,6 +4528,14 @@ function TrainerDashboard() {
                       <p>Log attendance, engagement, improvement notes, and session remarks.</p>
                     </div>
                     <form onSubmit={handleTrainingSubmit} className="record-form-grid">
+                      <div className="form-group">
+                        <label>PSMS ID</label>
+                        <input type="text" value={selectedStudent?.internId || ""} readOnly />
+                      </div>
+                      <div className="form-group">
+                        <label>Student Name</label>
+                        <input type="text" value={selectedStudent?.name || ""} readOnly />
+                      </div>
                       <div className="form-group">
                         <label>Date *</label>
                         <input

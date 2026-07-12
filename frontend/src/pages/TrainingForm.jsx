@@ -22,10 +22,24 @@ function TrainingForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [studentInfo, setStudentInfo] = useState(null);
 
   useEffect(() => {
+    fetchStudentInfo();
     fetchTrainings();
   }, [studentId]);
+
+  const fetchStudentInfo = async () => {
+    try {
+      const response = await trainerAPI.getAssignedStudents();
+      if (response.data.success) {
+        const student = (response.data.students || []).find((item) => item._id === studentId);
+        setStudentInfo(student || null);
+      }
+    } catch (error) {
+      console.error("Error fetching student info:", error);
+    }
+  };
 
   const fetchTrainings = async () => {
     try {
@@ -143,6 +157,15 @@ function TrainingForm() {
             {success && <div className="success-message">{success}</div>}
 
             <div className="record-form-grid">
+              <div className="form-group">
+                <label>PSMS ID</label>
+                <input type="text" value={studentInfo?.internId || ""} readOnly />
+              </div>
+
+              <div className="form-group">
+                <label>Student Name</label>
+                <input type="text" value={studentInfo?.name || ""} readOnly />
+              </div>
               <div className="form-group">
                 <label>Date *</label>
                 <input

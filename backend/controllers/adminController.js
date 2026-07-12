@@ -2447,7 +2447,8 @@ exports.scheduleInterview = async (req, res) => {
       date,
       startTime,
       perGap,
-      groupId
+      groupId,
+      link
     } = req.body;
 
     if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
@@ -2491,7 +2492,8 @@ exports.scheduleInterview = async (req, res) => {
         interviewerId: resolvedTrainerId,
         interviewerName,
         studentIds,
-        assigned: studentIds
+        assigned: studentIds,
+        link: link || ''
       };
       if (groupId) activityDetails.groupId = groupId;
 
@@ -2541,7 +2543,8 @@ exports.scheduleInterview = async (req, res) => {
         startTime: slotTime.toTimeString().slice(0, 5),
         attemptNumber,
         levelCrossed: false,
-        activityId: savedActivity._id // Link to Activity!
+        activityId: savedActivity._id, // Link to Activity!
+        link: link || ''
       };
 
       // If this scheduling call provided a groupId (group mode), attach it to the interview
@@ -2572,6 +2575,50 @@ exports.scheduleInterview = async (req, res) => {
       console.error('Failed to update activity slots details', e);
     }
 
+    // Send notifications to students and trainer on creation
+    try {
+      const whenStr = date && startTime ? new Date(`${date}T${startTime}:00`).toLocaleString() : '';
+      const linkStr = link || '';
+
+      if (studentIds.length > 0) {
+        const adminId = req.user?.id || savedActivity.createdBy;
+        const typeStr = 'Interview';
+        const titleStr = `${interviewType} Interview (${mode})`;
+        const notifTitle = `New Scheduled ${typeStr}: ${titleStr}`;
+        const notifMessage = `A new ${typeStr} "${titleStr}" has been scheduled for you.${whenStr ? ' Schedule: ' + whenStr : ''}${linkStr ? '\nLink: ' + linkStr : ''}`;
+
+        await createActivityNotification({
+          title: notifTitle,
+          message: notifMessage,
+          type: typeStr,
+          studentIds,
+          adminId,
+          activityId: savedActivity._id
+        });
+      }
+
+      if (resolvedTrainerId) {
+        try {
+          const trainerNotification = new Notification({
+            title: `New Scheduled Activity: ${interviewType} Interview (${mode})`,
+            message: `You have been assigned to conduct a new activity "${interviewType} Interview (${mode})".${whenStr ? ' Schedule: ' + whenStr : ''}${linkStr ? '\nLink: ' + linkStr : ''}`,
+            notificationType: 'General/Announcement',
+            sendTo: 'Individual',
+            recipientIds: [resolvedTrainerId],
+            recipientModel: 'Trainer',
+            createdBy: req.user?.id || savedActivity.createdBy,
+            createdByModel: 'Admin',
+            activityId: savedActivity._id
+          });
+          await trainerNotification.save();
+        } catch (err) {
+          console.error('Failed to send trainer creation notification', err);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send creation notifications for interviews', e);
+    }
+
     return res.status(201).json({
       success: true,
       message: `${createdInterviews.length} interview(s) scheduled successfully`,
@@ -2593,7 +2640,71 @@ exports.createActivity = async (req, res) => {
     const activity = new Activity({ type, title, dateTime: dateTime ? new Date(dateTime) : undefined, createdBy, createdByModel, status: status || 'Scheduled', details: details || {} });
     const saved = await activity.save();
 
-    // GD red dot is triggered automatically via Activity model docs (getMyScheduledGDs)
+    // Send notifications to students and trainer on creation
+    try {
+      const rawStudentIds = [
+        ...(details?.studentIds || []),
+        ...(details?.assigned || []),
+      ];
+
+      const extractFromGroups = (det) => {
+        const members = [];
+        if (!Array.isArray(det?.groups)) return members;
+        det.groups.forEach(group => {
+          const groupMembers = Array.isArray(group) ? group : (group.members || []);
+          groupMembers.forEach(m => {
+            const mid = String(m?._id || m?.id || m?.studentId || m?.internId || m?.psmsId || m || '');
+            if (mid) members.push(mid);
+          });
+        });
+        return members;
+      };
+
+      const groupMembers = extractFromGroups(details || {});
+      const studentIds = Array.from(new Set([...rawStudentIds.map(String), ...groupMembers].filter(Boolean)));
+
+      const whenStr = dateTime ? new Date(dateTime).toLocaleString() : '';
+      const linkStr = details?.link || details?.form?.link || '';
+
+      if (studentIds.length > 0) {
+        const adminId = createdBy || saved.createdBy;
+        const typeStr = type;
+        const titleStr = title;
+        const notifTitle = `New Scheduled ${typeStr}: ${titleStr}`;
+        const notifMessage = `A new ${typeStr} "${titleStr}" has been scheduled for you.${whenStr ? ' Schedule: ' + whenStr : ''}${linkStr ? '\nLink: ' + linkStr : ''}`;
+        
+        await createActivityNotification({
+          title: notifTitle,
+          message: notifMessage,
+          type: typeStr,
+          studentIds,
+          adminId,
+          activityId: saved._id
+        });
+      }
+
+      const trainerId = details?.trainerId || details?.interviewerId || details?.form?.interviewer || details?.form?.interviewerId;
+      if (trainerId) {
+        try {
+          const trainerNotification = new Notification({
+            title: `New Scheduled Activity: ${title}`,
+            message: `You have been assigned to conduct a new activity "${title}".${whenStr ? ' Schedule: ' + whenStr : ''}${linkStr ? '\nLink: ' + linkStr : ''}`,
+            notificationType: 'General/Announcement',
+            sendTo: 'Individual',
+            recipientIds: [trainerId],
+            recipientModel: 'Trainer',
+            createdBy: createdBy || saved.createdBy,
+            createdByModel: 'Admin',
+            activityId: saved._id
+          });
+          await trainerNotification.save();
+        } catch (err) {
+          console.error('Failed to send trainer creation notification', err);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to send creation notifications', e);
+    }
 
     return res.status(201).json({ success: true, activity: saved });
   } catch (error) {
@@ -2686,7 +2797,8 @@ exports.updateActivity = async (req, res) => {
             startTime: slotTime.toTimeString().slice(0, 5),
             attemptNumber,
             levelCrossed: false,
-            activityId: id
+            activityId: id,
+            link: mergedDetails.link || mergedDetails.form?.link || ''
           };
 
           if (groupId) {
@@ -2877,7 +2989,8 @@ exports.updateActivity = async (req, res) => {
         } else if (isRescheduled) {
           const notifTitle = `Rescheduled ${typeStr}: ${titleStr}`;
           const whenStr = updates.dateTime ? new Date(updates.dateTime).toLocaleString() : '';
-          const notifMessage = `Your scheduled ${typeStr} "${titleStr}" has been rescheduled.${whenStr ? ' New Schedule: ' + whenStr : ''}`;
+          const linkStr = updates.details?.link || updates.details?.form?.link || originalActivity.details?.link || originalActivity.details?.form?.link || '';
+          const notifMessage = `Your scheduled ${typeStr} "${titleStr}" has been rescheduled.${whenStr ? ' New Schedule: ' + whenStr : ''}${linkStr ? '\nLink: ' + linkStr : ''}`;
           await createActivityNotification({
             title: notifTitle,
             message: notifMessage,

@@ -36,6 +36,11 @@ const AdminPaymentSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  paymentType: {
+    type: String,
+    trim: true,
+    default: 'Receive'
+  },
   totalPayment: {
     type: Number,
     default: 0

@@ -43,7 +43,7 @@ export default function ActivityManagementNew() {
   const [selectedStudents, setSelectedStudents] = useState([]);
 
   // Interview form
-  const [interviewForm, setInterviewForm] = useState({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '' });
+  const [interviewForm, setInterviewForm] = useState({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '', link: '' });
   const [interviewSelectedStudents, setInterviewSelectedStudents] = useState([]);
   const [activeInterviewGroupId, setActiveInterviewGroupId] = useState('');
   const [activeGdGroupId, setActiveGdGroupId] = useState('');
@@ -59,7 +59,7 @@ export default function ActivityManagementNew() {
   const [editingGdActivityId, setEditingGdActivityId] = useState(null);
 
   // GD form
-  const [gdForm, setGdForm] = useState({ title: '', date: '', startTime: '09:00', groupMode: 'Auto', groupSize: 5, interviewer: '' });
+  const [gdForm, setGdForm] = useState({ title: '', date: '', startTime: '09:00', groupMode: 'Auto', groupSize: 5, interviewer: '', link: '' });
   const [gdGroups, setGdGroups] = useState([]);
   const [isGdDropdownOpen, setIsGdDropdownOpen] = useState(false);
   const [gdDropdownSearchText, setGdDropdownSearchText] = useState('');
@@ -341,7 +341,7 @@ export default function ActivityManagementNew() {
       }
       const allowedInterviewTypes = ['HR', 'PI', 'Technical'];
       const interviewTypeToSend = allowedInterviewTypes.includes(interviewForm.interviewType) ? interviewForm.interviewType : 'HR';
-      const payload = { studentIds: interviewSelectedStudents, trainerId: interviewForm.interviewer || null, interviewerName: interviewForm.interviewer || '', interviewType: interviewTypeToSend, mode: interviewForm.mode, date: interviewForm.date, startTime: interviewForm.startTime, perGap: interviewForm.perGap };
+      const payload = { studentIds: interviewSelectedStudents, trainerId: interviewForm.interviewer || null, interviewerName: interviewForm.interviewer || '', interviewType: interviewTypeToSend, mode: interviewForm.mode, date: interviewForm.date, startTime: interviewForm.startTime, perGap: interviewForm.perGap, link: interviewForm.link || '' };
       if (interviewForm.mode === 'Group') {
         payload.groupId = activeInterviewGroupId;
         payload.groupIds = [activeInterviewGroupId];
@@ -365,6 +365,7 @@ export default function ActivityManagementNew() {
               startTime: payload.startTime,
               perGap: payload.perGap,
               groupId: payload.groupId || '',
+              link: payload.link || '',
             },
           })
         : await adminAPI.scheduleInterview(payload);
@@ -415,7 +416,7 @@ export default function ActivityManagementNew() {
         return;
       }
       const gdGroupsToSend = getGdGroupsPayload();
-      const payloadDetails = { form: gdForm, groups: gdGroupsToSend, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId || '' };
+      const payloadDetails = { form: gdForm, groups: gdGroupsToSend, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId || '', link: gdForm.link || '' };
       const activityPayload = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: gdForm.date ? `${gdForm.date}T${gdForm.startTime||'00:00'}:00` : undefined, status: Boolean(editingGdActivityId) ? 'Rescheduled' : 'Scheduled', details: payloadDetails };
       const isEditing = Boolean(editingGdActivityId);
       const res = isEditing
@@ -783,7 +784,8 @@ export default function ActivityManagementNew() {
         date: parsedDate ? parsedDate.toISOString().slice(0,10) : (pick('form.date') || ''),
         startTime: parsedDate ? parsedDate.toTimeString().slice(0,5) : (pick('form.startTime') || pick('startTime') || '09:00'),
         perGap: pick('form.perGap', 'perGap', 'gap') || 15,
-        interviewer: pick('form.interviewer', 'interviewer', 'trainerId', 'trainer') || ''
+        interviewer: pick('form.interviewer', 'interviewer', 'trainerId', 'trainer') || '',
+        link: pick('form.link', 'link', 'details.link') || ''
       };
       setInterviewForm(form);
 
@@ -879,7 +881,8 @@ export default function ActivityManagementNew() {
         startTime: parsedDate ? parsedDate.toTimeString().slice(0,5) : (pick('form.startTime') || '09:00'),
         groupMode: pick('form.groupMode', 'groupMode') || 'Auto',
         groupSize: pick('form.groupSize', 'groupSize') || 5,
-        interviewer: pick('form.interviewer', 'interviewer', 'trainerId') || ''
+        interviewer: pick('form.interviewer', 'interviewer', 'trainerId') || '',
+        link: pick('form.link', 'link', 'details.link') || ''
       };
 
       setGdForm(form);
@@ -1238,7 +1241,8 @@ export default function ActivityManagementNew() {
           { label: 'Date', value: formatReportDate(activityDate) },
           { label: 'Interviewer', value: interviewerName },
           { label: 'Mode', value: getActivityModeLabel(activity) },
-          ...(isGroupInterview ? [{ label: 'Group', value: groupRecord?.groupName || groupRecord?.groupNumber || details.groupId || 'Group schedule' }] : [])
+          ...(isGroupInterview ? [{ label: 'Group', value: groupRecord?.groupName || groupRecord?.groupNumber || details.groupId || 'Group schedule' }] : []),
+          ...(details.link || details.form?.link ? [{ label: 'Link', value: details.link || details.form.link, isLink: true }] : [])
         ],
         columns: isGroupInterview ? ['Slot No.', 'Time Slot', 'Student Name', 'PSMS ID'] : ['Slot No.', 'Time Slot', 'Student Name', 'PSMS ID'],
         rows: (isGroupInterview ? groupMembers : slots).map((entry, index) => {
@@ -1296,7 +1300,8 @@ export default function ActivityManagementNew() {
           { label: 'GD Title', value: activity?.title || details.form?.title || 'Group Discussion' },
           { label: 'Date', value: formatReportDate(activityDate) },
           { label: 'Interviewer', value: interviewerName },
-          { label: 'Group Mode', value: details.form?.groupMode || details.groupMode || 'Auto' }
+          { label: 'Group Mode', value: details.form?.groupMode || details.groupMode || 'Auto' },
+          ...(details.link || details.form?.link ? [{ label: 'Link', value: details.link || details.form.link, isLink: true }] : [])
         ],
         columns: ['Slot No.', 'Student Name', 'PSMS ID', 'Interviewer', 'Date & Time'],
         rows: gdAssignedIds.length ? gdAssignedIds.map((studentId, index) => {
@@ -1311,7 +1316,7 @@ export default function ActivityManagementNew() {
         }) : []
       };
     }
-
+ 
     return {
       kind: 'assessment',
       title: 'Assessment Schedule - SMS Program',
@@ -1320,7 +1325,8 @@ export default function ActivityManagementNew() {
         { label: 'Assessment Type', value: details.form?.type || activity?.type || 'Assessment' },
         { label: 'Date', value: formatReportDate(activityDate) },
         ...(interviewerName && interviewerName !== '-' ? [{ label: 'Interviewer', value: interviewerName }] : []),
-        { label: 'Duration', value: `${details.form?.duration || details.duration || '-'} mins` }
+        { label: 'Duration', value: `${details.form?.duration || details.duration || '-'} mins` },
+        ...(details.link || details.form?.link ? [{ label: 'Link', value: details.link || details.form.link, isLink: true }] : [])
       ],
       columns: ['Slot No.', 'Student Name', 'PSMS ID', 'Date & Time'],
       rows: assignedIds.length ? assignedIds.map((studentId, index) => {
@@ -1410,7 +1416,13 @@ export default function ActivityManagementNew() {
                     {report.meta.map((item) => (
                       <div key={item.label} className="am-report-meta-line">
                         <strong>{item.label}:</strong>
-                        <span>{item.value}</span>
+                        {item.isLink ? (
+                          <a href={item.value} target="_blank" rel="noreferrer" style={{ color: "#2563eb", textDecoration: "underline", wordBreak: "break-all" }}>
+                            {item.value}
+                          </a>
+                        ) : (
+                          <span>{item.value}</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1490,8 +1502,8 @@ export default function ActivityManagementNew() {
         <IconCard title="Assign Task" onClick={() => { window.location.hash = '#create-task'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'create-task' } })); }} />
         <IconCard title="Manage Task" onClick={() => { window.location.hash = '#manage-tasks'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'manage-tasks' } })); }} />
         <IconCard title="Pending Approval" onClick={() => { window.location.hash = '#pending-approvals'; window.dispatchEvent(new CustomEvent('openAdminMenu', { detail: { menu: 'pending-approvals' } })); }} hasBadge={hasUnseenPendingApprovals} />
-        <IconCard title="Schedule Interviews" onClick={() => { setEditingInterviewActivityId(null); setInterviewForm({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '' }); setShowInterviewModal(true); }} />
-        <IconCard title="Schedule GD Round" onClick={() => { setEditingGdActivityId(null); setShowGDModal(true); }} />
+        <IconCard title="Schedule Interviews" onClick={() => { setEditingInterviewActivityId(null); setInterviewForm({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '', link: '' }); setShowInterviewModal(true); }} />
+        <IconCard title="Schedule GD Round" onClick={() => { setEditingGdActivityId(null); setGdForm({ title: '', date: '', startTime: '09:00', groupMode: 'Auto', groupSize: 5, interviewer: '', link: '' }); setShowGDModal(true); }} />
         <IconCard title="Schedule Assessment" onClick={() => { setEditingAssessActivityId(null); setActiveAssessGroupId(''); setGeneratedSlots([]); setShowAssessmentModal(true); }} />
       </div>
 
@@ -1968,6 +1980,11 @@ export default function ActivityManagementNew() {
                   <div className="am-field am-span-2">
                     <label>Per Interview (mins)</label>
                     <input type="number" value={interviewForm.perGap} onChange={e => setInterviewForm(f => ({ ...f, perGap: Number(e.target.value) }))} />
+                  </div>
+
+                  <div className="am-field am-span-2">
+                    <label>Link</label>
+                    <input value={interviewForm.link || ''} onChange={e => setInterviewForm(f => ({ ...f, link: e.target.value }))} placeholder="Enter interview join link" />
                   </div>
                 </div>
               </section>
@@ -2465,6 +2482,11 @@ export default function ActivityManagementNew() {
                   <div className="am-field">
                     <label>Group Size (auto)</label>
                     <input type="number" value={gdForm.groupSize} onChange={e => setGdForm(f => ({ ...f, groupSize: Number(e.target.value) }))} />
+                  </div>
+
+                  <div className="am-field am-span-2">
+                    <label>Link</label>
+                    <input value={gdForm.link || ''} onChange={e => setGdForm(f => ({ ...f, link: e.target.value }))} placeholder="Enter GD join link" />
                   </div>
                 </div>
               </section>
