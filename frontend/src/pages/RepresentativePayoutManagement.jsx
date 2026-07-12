@@ -848,7 +848,7 @@ function RepresentativePayoutManagement() {
               >
                 {/* Top Row: Label & Close Button */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <div style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.7)", fontWeight: 700 }}>
+                  <div style={{ fontSize: "11px", letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255, 255, 255, 0.7)", fontWeight: "normal" }}>
                     Representative Performance Hub
                   </div>
                   {/* Circular Close Button */}
@@ -886,12 +886,12 @@ function RepresentativePayoutManagement() {
                 {/* Main Content Row */}
                 <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
                   <div>
-                    <h2 style={{ margin: 0, fontSize: "22px", fontWeight: 800, letterSpacing: "-0.02em", color: "#ffffff" }}>{selectedRepDetails.representative?.name || "Representative"}</h2>
+                    <h2 style={{ margin: 0, fontSize: "22px", fontWeight: "normal", letterSpacing: "-0.02em", color: "#ffffff" }}>{selectedRepDetails.representative?.name || "Representative"}</h2>
                     <div style={{ marginTop: "6px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
+                      <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", fontSize: "11px", fontWeight: "normal", color: "#ffffff" }}>
                         PGIR ID: {selectedRepDetails.representative?.pgirId || "-"}
                       </span>
-                      <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", fontSize: "11px", fontWeight: 600, color: "#ffffff" }}>
+                      <span style={{ padding: "4px 10px", borderRadius: "999px", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", fontSize: "11px", fontWeight: "normal", color: "#ffffff" }}>
                         Showing Enrolled: {filteredStudentsList.length} of {selectedRepDetails.stats?.totalStudents || 0}
                       </span>
                     </div>
@@ -975,10 +975,10 @@ function RepresentativePayoutManagement() {
                     }}
                   >
                     <div>
-                      <div style={{ color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 500, marginBottom: "4px" }}>
+                      <div style={{ color: "#64748b", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: "normal", marginBottom: "4px" }}>
                         {card.label}
                       </div>
-                      <div style={{ fontSize: "28px", fontWeight: 500, color: "#324158", lineHeight: 1.1 }}>
+                      <div style={{ fontSize: "28px", fontWeight: "normal", color: "#324158", lineHeight: 1.1 }}>
                         {card.value}
                       </div>
                     </div>
@@ -994,7 +994,7 @@ function RepresentativePayoutManagement() {
                 {/* Search Header */}
                 <div style={{ padding: "20px 24px", borderBottom: "1px solid #cbd5e1", display: "flex", justifyContent: "space-between", gap: "16px", flexWrap: "wrap", alignItems: "center", backgroundColor: "#ffffff" }}>
                   <div>
-                    <h3 style={{ margin: 0, color: "#324158", fontSize: "18px", fontWeight: 700 }}>Enrolled Students List</h3>
+                    <h3 style={{ margin: 0, color: "#324158", fontSize: "18px", fontWeight: "normal" }}>Enrolled Students List</h3>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", minWidth: "280px", maxWidth: "800px", width: "100%", justifyContent: "flex-end" }}>
                     {/* Month Filter Dropdown */}
@@ -1009,7 +1009,7 @@ function RepresentativePayoutManagement() {
                           padding: "12px 14px",
                           background: "#ffffff",
                           fontSize: "14px",
-                          fontWeight: "600",
+                          fontWeight: "normal",
                           color: "#324158",
                           outline: "none",
                           cursor: "pointer",
@@ -1034,7 +1034,7 @@ function RepresentativePayoutManagement() {
                           padding: "12px 14px",
                           background: "#ffffff",
                           fontSize: "14px",
-                          fontWeight: "600",
+                          fontWeight: "normal",
                           color: "#324158",
                           outline: "none",
                           cursor: "pointer",
@@ -1089,7 +1089,7 @@ function RepresentativePayoutManagement() {
                     <thead>
                       <tr style={{ background: "#324158", borderBottom: "1px solid #cbd5e1" }}>
                         {['Student Info', 'Program Type', 'Contact Info', 'College / Institute', 'Course Details', 'Payment Summary', 'Key Dates', 'Status'].map((heading) => (
-                          <th key={heading} style={{ textAlign: "left", padding: "16px 20px", fontSize: "11px", color: "#ffffff", backgroundColor: "#324158", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+                          <th key={heading} style={{ textAlign: "left", padding: "16px 20px", fontSize: "11px", color: "#ffffff", backgroundColor: "#324158", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: "normal" }}>
                             {heading}
                           </th>
                         ))}
@@ -1099,7 +1099,7 @@ function RepresentativePayoutManagement() {
                       {filteredStudentsList.length === 0 ? (
                         <tr>
                           <td colSpan={8} style={{ textAlign: "center", padding: "48px 16px", color: "#64748b" }}>
-                            <div style={{ fontSize: "15px", fontWeight: 600, marginBottom: "4px" }}>No Enrolled Students Found</div>
+                            <div style={{ fontSize: "15px", fontWeight: "normal", marginBottom: "4px" }}>No Enrolled Students Found</div>
                             <div style={{ fontSize: "13px", color: "#94a3b8" }}>Search term match nahi hua ya filter requirements fully satisfy nahi ho rahi.</div>
                           </td>
                         </tr>
@@ -1122,7 +1122,7 @@ function RepresentativePayoutManagement() {
                             >
                               {/* Student Info */}
                               <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
-                                <div style={{ fontSize: "14px", fontWeight: 700, color: "#324158" }}>{student.name || "-"}</div>
+                                <div style={{ fontSize: "14px", fontWeight: "normal", color: "#324158" }}>{student.name || "-"}</div>
                                 <div style={{ marginTop: "6px", display: "inline-block", fontFamily: "monospace", fontSize: "12px", background: "rgba(50, 65, 88, 0.06)", padding: "2px 6px", borderRadius: "4px", color: "#324158" }}>
                                   ID: {student.internId || "-"}
                                 </div>
@@ -1144,20 +1144,20 @@ function RepresentativePayoutManagement() {
                                     color: isSMS ? "#324158" : "#ffffff",
                                     border: isSMS ? "1px solid #324158" : "none",
                                     fontSize: "12px",
-                                    fontWeight: 700,
+                                    fontWeight: "normal",
                                   }}
                                 >
                                   <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: isSMS ? "#324158" : "#ffffff" }}></span>
                                   {student.studentType || "-"}
                                 </div>
-                                <div style={{ marginTop: "8px", fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+                                <div style={{ marginTop: "8px", fontSize: "12px", color: "#64748b", fontWeight: "normal" }}>
                                   Role: {student.currentDesignation || "Student"}
                                 </div>
                               </td>
 
                               {/* Contact Info */}
                               <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
-                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 500, wordBreak: "break-all" }}>{student.email || "-"}</div>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: "normal", wordBreak: "break-all" }}>{student.email || "-"}</div>
                                 <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#64748b" }}>
                                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" style={{ width: "14px", height: "14px" }}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
@@ -1168,7 +1168,7 @@ function RepresentativePayoutManagement() {
 
                               {/* College / Institute */}
                               <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
-                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 600, lineHeight: 1.4, maxWidth: "220px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={student.instituteName || student.collegeName}>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: "normal", lineHeight: 1.4, maxWidth: "220px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={student.instituteName || student.collegeName}>
                                   {student.instituteName || student.collegeName || "-"}
                                 </div>
                                 <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b" }}>
@@ -1178,8 +1178,8 @@ function RepresentativePayoutManagement() {
 
                               {/* Course Details */}
                               <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
-                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 500 }}>
-                                  Domain: <span style={{ fontWeight: 600, color: "#324158" }}>{student.domain || "-"}</span>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: "normal" }}>
+                                  Domain: <span style={{ fontWeight: "normal", color: "#324158" }}>{student.domain || "-"}</span>
                                 </div>
                                 <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b" }}>
                                   Duration: {student.duration || "-"}
@@ -1191,15 +1191,15 @@ function RepresentativePayoutManagement() {
 
                               {/* Payment Summary */}
                               <td style={{ padding: "18px 20px", verticalAlign: "top" }}>
-                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: 700 }}>
+                                <div style={{ fontSize: "13px", color: "#324158", fontWeight: "normal" }}>
                                   Paid: Rs {completedFeesVal}
                                 </div>
                                 {pendingFeesVal > 0 ? (
-                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "#324158", fontWeight: 700 }}>
+                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "#324158", fontWeight: "normal" }}>
                                     Pending: Rs {pendingFeesVal}
                                   </div>
                                 ) : (
-                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b", fontWeight: 500 }}>
+                                  <div style={{ marginTop: "6px", fontSize: "12px", color: "#64748b", fontWeight: "normal" }}>
                                     Fully Paid
                                   </div>
                                 )}
@@ -1235,7 +1235,7 @@ function RepresentativePayoutManagement() {
                                     color: isActive ? "#ffffff" : "#324158",
                                     border: isActive ? "none" : "1px solid #324158",
                                     fontSize: "12px",
-                                    fontWeight: 700,
+                                    fontWeight: "normal",
                                     textTransform: "capitalize",
                                   }}
                                 >
