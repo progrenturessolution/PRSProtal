@@ -62,6 +62,7 @@ function RepresentativePayoutManagement() {
   const [selectedRepDetails, setSelectedRepDetails] = useState(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
   const [selectedMonthFilter, setSelectedMonthFilter] = useState("all");
+  const [selectedWeekStartDate, setSelectedWeekStartDate] = useState("all");
 
   useEffect(() => {
     if (formData.representativeId && representatives.length > 0) {
@@ -212,6 +213,7 @@ function RepresentativePayoutManagement() {
     setError("");
     setStudentSearchQuery("");
     setSelectedMonthFilter("all");
+    setSelectedWeekStartDate("all");
     setDetailsLoading(true);
     try {
       const response = await adminRepAPI.getRepresentativeDetails(representativeId);
@@ -724,6 +726,40 @@ function RepresentativePayoutManagement() {
             return "Unknown";
           }
         };
+        
+        // Helper to get week start date (Monday)
+        const getWeekStartDate = (dateStr) => {
+          if (!dateStr) return null;
+          try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return null;
+            // Get Monday as start of week
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            const weekStart = new Date(date.setDate(diff));
+            weekStart.setHours(0,0,0,0);
+            return weekStart.toISOString().split('T')[0];
+          } catch (e) {
+            return null;
+          }
+        };
+        
+        // Helper to format week label
+        const getWeekLabel = (dateStr) => {
+          if (!dateStr) return "Unknown";
+          try {
+            const startDate = new Date(dateStr);
+            if (isNaN(startDate.getTime())) return "Unknown";
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            
+            const formatShort = (d) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+            
+            return `${formatShort(startDate)} - ${formatShort(endDate)}, ${startDate.getFullYear()}`;
+          } catch (e) {
+            return "Unknown";
+          }
+        };
 
         const uniqueMonths = (() => {
           if (!selectedRepDetails || !Array.isArray(selectedRepDetails.enrolledStudents)) return [];
@@ -739,6 +775,21 @@ function RepresentativePayoutManagement() {
           });
           return Array.from(monthsSet).sort((a, b) => new Date(a) - new Date(b));
         })();
+        
+        const uniqueWeeks = (() => {
+          if (!selectedRepDetails || !Array.isArray(selectedRepDetails.enrolledStudents)) return [];
+          const weeksSet = new Set();
+          selectedRepDetails.enrolledStudents.forEach(student => {
+            const dateStr = student.createdAt || student.joiningDate || student.enrolmentDate;
+            if (dateStr) {
+              const weekStart = getWeekStartDate(dateStr);
+              if (weekStart) {
+                weeksSet.add(weekStart);
+              }
+            }
+          });
+          return Array.from(weeksSet).sort((a, b) => new Date(a) - new Date(b));
+        })();
 
         const filteredStudentsList = (selectedRepDetails.enrolledStudents || []).filter((student) => {
           // 1. Month Filter
@@ -746,7 +797,12 @@ function RepresentativePayoutManagement() {
             const dateStr = student.createdAt || student.joiningDate || student.enrolmentDate;
             if (getMonthYearLabel(dateStr) !== selectedMonthFilter) return false;
           }
-          // 2. Text Search Query
+          // 2. Week Filter
+          if (selectedWeekStartDate !== "all") {
+            const dateStr = student.createdAt || student.joiningDate || student.enrolmentDate;
+            if (getWeekStartDate(dateStr) !== selectedWeekStartDate) return false;
+          }
+          // 3. Text Search Query
           const query = studentSearchQuery.trim().toLowerCase();
           if (!query) return true;
           return [student.name, student.email, student.mobile, student.internId, student.studentType, student.domain, student.currentDesignation, student.collegeName, student.instituteName].filter(Boolean).join(" ").toLowerCase().includes(query);
@@ -940,7 +996,7 @@ function RepresentativePayoutManagement() {
                   <div>
                     <h3 style={{ margin: 0, color: "#324158", fontSize: "18px", fontWeight: 700 }}>Enrolled Students List</h3>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", minWidth: "280px", maxWidth: "600px", width: "100%", justifyContent: "flex-end" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", minWidth: "280px", maxWidth: "800px", width: "100%", justifyContent: "flex-end" }}>
                     {/* Month Filter Dropdown */}
                     <div style={{ minWidth: "180px", position: "relative" }}>
                       <select
@@ -963,6 +1019,31 @@ function RepresentativePayoutManagement() {
                         <option value="all">All Months</option>
                         {uniqueMonths.map((m) => (
                           <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* Week Filter Dropdown */}
+                    <div style={{ minWidth: "220px", position: "relative" }}>
+                      <select
+                        value={selectedWeekStartDate}
+                        onChange={(e) => setSelectedWeekStartDate(e.target.value)}
+                        style={{
+                          width: "100%",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "12px",
+                          padding: "12px 14px",
+                          background: "#ffffff",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#324158",
+                          outline: "none",
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <option value="all">All Weeks</option>
+                        {uniqueWeeks.map((weekStart) => (
+                          <option key={weekStart} value={weekStart}>{getWeekLabel(weekStart)}</option>
                         ))}
                       </select>
                     </div>

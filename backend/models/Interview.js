@@ -25,8 +25,7 @@ const interviewSchema = new mongoose.Schema({
   },
   interviewType: {
     type: String,
-    required: true,
-    enum: ['HR', 'PI', 'Technical']
+    required: true
   },
   status: {
     type: String,

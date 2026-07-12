@@ -2939,7 +2939,7 @@ exports.updateActivity = async (req, res) => {
 
     const activity = await Activity.findByIdAndUpdate(id, updates, { new: true }).lean();
 
-    // Send notifications to students on reschedule or completion
+    // Send notifications to students and trainer on reschedule or completion
     try {
       // Collect student IDs from multiple possible fields (covers Interview, Assessment, GD)
       const rawStudentIds = [
@@ -2969,11 +2969,16 @@ exports.updateActivity = async (req, res) => {
       ];
 
       const studentIds = Array.from(new Set([...rawStudentIds.map(String), ...groupMembers].filter(Boolean)));
+      
+      // Collect trainer ID
+      const trainerId = updates.details?.trainerId || updates.details?.interviewerId || updates.details?.form?.interviewer || updates.details?.form?.interviewerId || originalActivity.details?.trainerId || originalActivity.details?.interviewerId || originalActivity.details?.form?.interviewer || originalActivity.details?.form?.interviewerId;
 
       if (studentIds.length > 0) {
         const adminId = req.user.id;
         const typeStr = updates.type || originalActivity.type;
         const titleStr = updates.title || originalActivity.title;
+        const whenStr = updates.dateTime ? new Date(updates.dateTime).toLocaleString() : '';
+        const linkStr = updates.details?.link || updates.details?.form?.link || originalActivity.details?.link || originalActivity.details?.form?.link || '';
 
         if (isCompletedNow) {
           const notifTitle = `Completed ${typeStr}: ${titleStr}`;
@@ -2986,10 +2991,29 @@ exports.updateActivity = async (req, res) => {
             adminId,
             activityId: id
           });
+
+          // Send trainer notification for completion
+          if (trainerId) {
+            try {
+              const trainerNotification = new Notification({
+                title: `Completed Activity: ${titleStr}`,
+                message: `The activity "${titleStr}" has been marked as Completed.`,
+                notificationType: 'General/Announcement',
+                sendTo: 'Individual',
+                recipientIds: [trainerId],
+                recipientModel: 'Trainer',
+                createdBy: adminId,
+                createdByModel: 'Admin',
+                activityId: id
+              });
+              await trainerNotification.save();
+            } catch (err) {
+              console.error('Failed to send trainer completion notification', err);
+            }
+          }
+
         } else if (isRescheduled) {
           const notifTitle = `Rescheduled ${typeStr}: ${titleStr}`;
-          const whenStr = updates.dateTime ? new Date(updates.dateTime).toLocaleString() : '';
-          const linkStr = updates.details?.link || updates.details?.form?.link || originalActivity.details?.link || originalActivity.details?.form?.link || '';
           const notifMessage = `Your scheduled ${typeStr} "${titleStr}" has been rescheduled.${whenStr ? ' New Schedule: ' + whenStr : ''}${linkStr ? '\nLink: ' + linkStr : ''}`;
           await createActivityNotification({
             title: notifTitle,
@@ -2999,6 +3023,26 @@ exports.updateActivity = async (req, res) => {
             adminId,
             activityId: id
           });
+
+          // Send trainer notification for reschedule
+          if (trainerId) {
+            try {
+              const trainerNotification = new Notification({
+                title: `Rescheduled Activity: ${titleStr}`,
+                message: `The activity "${titleStr}" has been rescheduled.${whenStr ? ' New Schedule: ' + whenStr : ''}${linkStr ? '\nLink: ' + linkStr : ''}`,
+                notificationType: 'General/Announcement',
+                sendTo: 'Individual',
+                recipientIds: [trainerId],
+                recipientModel: 'Trainer',
+                createdBy: adminId,
+                createdByModel: 'Admin',
+                activityId: id
+              });
+              await trainerNotification.save();
+            } catch (err) {
+              console.error('Failed to send trainer reschedule notification', err);
+            }
+          }
         }
       }
     } catch (e) {

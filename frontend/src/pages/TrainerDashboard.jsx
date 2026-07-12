@@ -994,14 +994,14 @@ function TrainerDashboard() {
         studentObj = found;
       } else {
         // Return a fallback object so isStudentObject is true and we can still conduct the activity!
-        return { _id: String(student), name: "Intern", internId: "-", email: "-", mobile: "-", studentType: "-", status: "-" };
+        return { _id: String(student), name: "Intern", internId: "-", email: "-", mobile: "-", studentType: "-", status: "Active" };
       }
     }
     
     if (!studentObj || typeof studentObj !== "object") return studentObj;
 
-    // If student already has email, mobile, etc., return as-is
-    if (studentObj.email || studentObj.mobile || studentObj.studentType) return studentObj;
+    // If student already has email, mobile, studentType, and status, return as-is
+    if (studentObj.email && studentObj.mobile && studentObj.studentType && studentObj.status) return studentObj;
     
     // Try to find matching student by _id or internId in the students array
     const studentId = studentObj._id || studentObj.id;
@@ -1023,7 +1023,7 @@ function TrainerDashboard() {
         email: studentObj.email || matchedStudent.email || "-",
         mobile: studentObj.mobile || matchedStudent.mobile || "-",
         studentType: studentObj.studentType || matchedStudent.studentType || "-",
-        status: studentObj.status || matchedStudent.status || "-",
+        status: studentObj.status || matchedStudent.status || "Active",
       };
     }
     
@@ -1032,7 +1032,7 @@ function TrainerDashboard() {
       email: studentObj.email || "-",
       mobile: studentObj.mobile || "-",
       studentType: studentObj.studentType || "-",
-      status: studentObj.status || "-",
+      status: studentObj.status || "Active",
     };
   };
 
@@ -2660,6 +2660,20 @@ function TrainerDashboard() {
                         });
                       });
 
+                      // Sort groups: Scheduled/Active first, Completed last.
+                      // Within each status, sort by parentGd date/dateTime/createdAt descending (newest on top).
+                      allScheduledGdGroups.sort((a, b) => {
+                        const statusA = String(a.parentGd?.status || 'Scheduled').toLowerCase();
+                        const statusB = String(b.parentGd?.status || 'Scheduled').toLowerCase();
+                        
+                        if (statusA === 'completed' && statusB !== 'completed') return 1;
+                        if (statusA !== 'completed' && statusB === 'completed') return -1;
+                        
+                        const dateA = new Date(a.parentGd?.dateTime || a.parentGd?.date || a.parentGd?.details?.form?.date || a.parentGd?.createdAt || 0).getTime();
+                        const dateB = new Date(b.parentGd?.dateTime || b.parentGd?.date || b.parentGd?.details?.form?.date || b.parentGd?.createdAt || 0).getTime();
+                        return dateB - dateA; // Descending (newest first)
+                      });
+
                       if (allScheduledGdGroups.length === 0) {
                         return <p className="record-history-empty">No GD groups scheduled for you</p>;
                       }
@@ -2706,8 +2720,18 @@ function TrainerDashboard() {
                                     <div style={{ fontWeight: "600", color: "#1f2937", fontSize: "15px" }}>
                                       {group.groupName || "Unnamed Group"}
                                     </div>
-                                    <div style={{ fontSize: "13px", color: "#9ca3af", marginTop: "2px" }}>
-                                      Group #: {group.groupNumber || "-"}
+                                    <div style={{ fontSize: "13px", color: "#9ca3af", marginTop: "2px", display: "flex", alignItems: "center", gap: "8px" }}>
+                                      <span>Group #: {group.groupNumber || "-"}</span>
+                                      <span style={{ color: "#cbd5e1" }}>|</span>
+                                      <span className={`status-badge ${
+                                        String(group.parentGd?.status).toLowerCase() === 'completed'
+                                          ? 'status-completed'
+                                          : String(group.parentGd?.status).toLowerCase() === 'cancelled'
+                                            ? 'status-inactive'
+                                            : 'status-pending'
+                                      }`} style={{ fontSize: "11px", padding: "2px 8px", margin: 0, textTransform: "capitalize" }}>
+                                        {group.parentGd?.status || 'Scheduled'}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
@@ -2785,9 +2809,13 @@ function TrainerDashboard() {
                                                 <td>{studentMobile || "-"}</td>
                                                 <td>{studentType}</td>
                                                 <td>
-                                                  <span style={{ color: "#374151", fontWeight: 500 }}>
-                                                    {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : "-"}
-                                                  </span>
+                                                  {studentStatus && studentStatus !== "-" ? (
+                                                    <span className={`status-badge ${(studentStatus || "").toLowerCase() === "active" ? "status-active" : (studentStatus || "").toLowerCase() === "completed" ? "status-completed" : "status-inactive"}`}>
+                                                      {studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1)}
+                                                    </span>
+                                                  ) : (
+                                                    "-"
+                                                  )}
                                                 </td>
                                                 <td style={{ position: "relative" }}>
                                                   <button
@@ -2997,9 +3025,19 @@ function TrainerDashboard() {
                                         <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '15px' }}>
                                           {group.groupName || 'GD Group'}
                                         </div>
-                                        <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '2px' }}>
-                                          Group #: {group.groupNumber || '-'}
-                                        </div>
+                                         <div style={{ fontSize: '13px', color: '#9ca3af', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                           <span>Group #: {group.groupNumber || '-'}</span>
+                                           <span style={{ color: '#cbd5e1' }}>|</span>
+                                           <span className={`status-badge ${
+                                             String(selectedGd?.status).toLowerCase() === 'completed'
+                                               ? 'status-completed'
+                                               : String(selectedGd?.status).toLowerCase() === 'cancelled'
+                                                 ? 'status-inactive'
+                                                 : 'status-pending'
+                                           }`} style={{ fontSize: '11px', padding: '2px 8px', margin: 0, textTransform: 'capitalize' }}>
+                                             {selectedGd?.status || 'Scheduled'}
+                                           </span>
+                                         </div>
                                       </div>
                                     </div>
 
@@ -3075,9 +3113,13 @@ function TrainerDashboard() {
                                                     <td>{studentMobile || '-'}</td>
                                                     <td>{studentType}</td>
                                                     <td>
-                                                      <span style={{ color: '#374151', fontWeight: 500 }}>
-                                                        {studentStatus ? studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1) : '-'}
-                                                      </span>
+                                                      {studentStatus && studentStatus !== '-' ? (
+                                                        <span className={`status-badge ${(studentStatus || '').toLowerCase() === 'active' ? 'status-active' : (studentStatus || '').toLowerCase() === 'completed' ? 'status-completed' : 'status-inactive'}`}>
+                                                          {studentStatus.charAt(0).toUpperCase() + studentStatus.slice(1)}
+                                                        </span>
+                                                      ) : (
+                                                        '-'
+                                                      )}
                                                     </td>
                                                     <td style={{ position: 'relative' }}>
                                                       <button
@@ -3981,46 +4023,74 @@ function TrainerDashboard() {
                         <label>Interview Type *</label>
                         <select
                           name="interviewType"
-                          value={interviewFormData.interviewType}
+                          value={
+                            interviewFormData.interviewType === "HR" || interviewFormData.interviewType === "Technical" || interviewFormData.interviewType === ""
+                              ? interviewFormData.interviewType
+                              : "Other"
+                          }
                           onChange={(e) => {
-                            const interviewType = e.target.value;
-                            setInterviewFormData((prev) => ({
-                              ...prev,
-                              interviewType,
-                              communicationLevel: "",
-                              confidenceLevel: "",
-                              bodyLanguage: "",
-                              clarityOfAnswer: "",
-                              technicalKnowledge: "",
-                              problemSolving: "",
-                              codingAbility: "",
-                              logicAndApproach: "",
-                              overallHRLevel: "",
-                              overallTechnicalLevel: "",
-                              levelCrossed: false,
-                              hrRemarks: "",
-                              technicalRemarks: "",
-                            }));
+                            const val = e.target.value;
+                            if (val === "Other") {
+                              setIsCustomInterviewType(true);
+                              setInterviewFormData((prev) => ({
+                                ...prev,
+                                interviewType: "",
+                                communicationLevel: "",
+                                confidenceLevel: "",
+                                bodyLanguage: "",
+                                clarityOfAnswer: "",
+                                technicalKnowledge: "",
+                                problemSolving: "",
+                                codingAbility: "",
+                                logicAndApproach: "",
+                                overallHRLevel: "",
+                                overallTechnicalLevel: "",
+                                levelCrossed: false,
+                                hrRemarks: "",
+                                technicalRemarks: "",
+                              }));
+                            } else {
+                              setIsCustomInterviewType(false);
+                              setInterviewFormData((prev) => ({
+                                ...prev,
+                                interviewType: val,
+                                communicationLevel: "",
+                                confidenceLevel: "",
+                                bodyLanguage: "",
+                                clarityOfAnswer: "",
+                                technicalKnowledge: "",
+                                problemSolving: "",
+                                codingAbility: "",
+                                logicAndApproach: "",
+                                overallHRLevel: "",
+                                overallTechnicalLevel: "",
+                                levelCrossed: false,
+                                hrRemarks: "",
+                                technicalRemarks: "",
+                              }));
+                            }
                           }}
                           required
                         >
                           <option value="" disabled>Select Interview Type</option>
                           <option value="HR">HR</option>
                           <option value="Technical">Technical</option>
+                          <option value="Other">Other</option>
                         </select>
                       </div>
 
-                      <div className="form-group">
-                        <label>Interview Attempt (ex. 4/24) *</label>
-                        <input
-                          type="text"
-                          name="attemptNumber"
-                          value={interviewFormData.attemptNumber}
-                          onChange={(e) => setInterviewFormData({ ...interviewFormData, [e.target.name]: e.target.value })}
-                          placeholder="4/24"
-                          required
-                        />
-                      </div>
+                      {isCustomInterviewType && (
+                        <div className="form-group">
+                          <label>Specify Custom Interview Type *</label>
+                          <input
+                            type="text"
+                            value={interviewFormData.interviewType}
+                            onChange={(e) => setInterviewFormData(prev => ({ ...prev, interviewType: e.target.value }))}
+                            placeholder="Enter custom interview type"
+                            required
+                          />
+                        </div>
+                      )}
 
                       <div className="form-group">
                         <label>Attendance *</label>
