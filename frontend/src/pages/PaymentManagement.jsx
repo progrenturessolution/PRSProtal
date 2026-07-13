@@ -319,6 +319,80 @@ function PaymentManagement() {
   const [selectedPaymentDetails, setSelectedPaymentDetails] = useState(null);
   const [isCustomPayType, setIsCustomPayType] = useState(false);
 
+  const [notes, setNotes] = useState(() => {
+    try {
+      const savedNotes = localStorage.getItem("payment_management_notes");
+      return savedNotes ? JSON.parse(savedNotes) : [];
+    } catch (e) {
+      console.error("Failed to load notes", e);
+      return [];
+    }
+  });
+  const [showNotesDrawer, setShowNotesDrawer] = useState(false);
+  const [searchTermNotes, setSearchTermNotes] = useState("");
+
+  const NOTE_COLORS = [
+    { name: "Theme", bg: "#324158", border: "#1f2937", text: "#ffffff" },
+    { name: "Yellow", bg: "#fef08a", border: "#facc15", text: "#854d0e" },
+    { name: "Pink", bg: "#fbcfe8", border: "#f472b6", text: "#9d174d" },
+    { name: "Green", bg: "#bbf7d0", border: "#4ade80", text: "#166534" },
+    { name: "Blue", bg: "#bfdbfe", border: "#60a5fa", text: "#1e40af" },
+    { name: "Orange", bg: "#fed7aa", border: "#fb923c", text: "#9a3412" },
+    { name: "Purple", bg: "#e9d5ff", border: "#c084fc", text: "#6b21a8" },
+    { name: "Red", bg: "#fee2e2", border: "#fca5a5", text: "#991b1b" },
+    { name: "Teal", bg: "#ccfbf1", border: "#5eead4", text: "#115e59" },
+    { name: "Indigo", bg: "#e0e7ff", border: "#a5b4fc", text: "#3730a3" },
+    { name: "Slate", bg: "#e2e8f0", border: "#cbd5e1", text: "#1e293b" }
+  ];
+
+  const handleAddNote = () => {
+    const newNote = {
+      id: Date.now(),
+      text: "",
+      color: NOTE_COLORS[0].bg,
+      textColor: NOTE_COLORS[0].text,
+      borderColor: NOTE_COLORS[0].border,
+      createdAt: new Date().toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }),
+      isPinned: false
+    };
+    setNotes([newNote, ...notes]);
+  };
+
+  const handleUpdateNote = (id, field, value) => {
+    setNotes((prevNotes) =>
+      prevNotes.map((note) => {
+        if (note.id === id) {
+          const updatedNote = { ...note, [field]: value };
+          if (field === "color") {
+            const matchedColor = NOTE_COLORS.find(c => c.bg === value);
+            if (matchedColor) {
+              updatedNote.textColor = matchedColor.text;
+              updatedNote.borderColor = matchedColor.border;
+            }
+          }
+          return updatedNote;
+        }
+        return note;
+      })
+    );
+  };
+
+  const handleDeleteNote = (id) => {
+    if (window.confirm("Are you sure you want to delete this note?")) {
+      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id));
+    }
+  };
+
+  useEffect(() => {
+    localStorage.setItem("payment_management_notes", JSON.stringify(notes));
+  }, [notes]);
+
   useEffect(() => {
     const total = Number(formData.totalPayment) || 0;
     const first = Number(formData.firstPayment) || 0;
@@ -1293,6 +1367,28 @@ function PaymentManagement() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowNotesDrawer(true)}
+                style={{
+                  padding: "10px 18px",
+                  border: "none",
+                  borderRadius: "10px",
+                  background: "#324158",
+                  color: "#fff",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                </svg>
+                Note {notes.length > 0 && <span style={{ background: "#ffffff", color: "#324158", borderRadius: "50%", padding: "2px 6px", fontSize: "11px", fontWeight: "bold" }}>{notes.length}</span>}
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   setActiveTab("form");
                   setFormData(emptyForm);
@@ -2030,25 +2126,383 @@ function PaymentManagement() {
                  </tbody>
                </table>
 
-               {/* Goal/Status Badge */}
-               <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
-                 <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 600 }}>Payment Status:</span>
-                 <span style={{
-                   padding: "6px 16px",
-                   borderRadius: "999px",
-                   backgroundColor: "#324158",
-                   color: "#ffffff",
-                   fontSize: "12px",
-                   fontWeight: 700,
-                   textTransform: "capitalize",
-                 }}>
-                   {selectedPaymentDetails.paymentGoal}
-                 </span>
-               </div>
-             </div>
-           </div>
-         </div>,
-         document.body
+                {/* Goal/Status Badge */}
+                <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
+                  <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 600 }}>Payment Status:</span>
+                  <span style={{
+                    padding: "6px 16px",
+                    borderRadius: "999px",
+                    backgroundColor: "#324158",
+                    color: "#ffffff",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    textTransform: "capitalize",
+                  }}>
+                    {selectedPaymentDetails.paymentGoal}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+       )}
+
+      {showNotesDrawer && createPortal(
+        <>
+          {/* Backdrop Overlay */}
+          <div 
+            className="notes-drawer-overlay"
+            onClick={() => setShowNotesDrawer(false)}
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(15, 23, 42, 0.4)",
+              backdropFilter: "blur(4px)",
+              zIndex: 9999,
+              animation: "fadeIn 0.2s ease-out"
+            }}
+          />
+
+          {/* Style Injection */}
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes slideIn {
+              from { transform: translateX(100%); }
+              to { transform: translateX(0); }
+            }
+            .notes-drawer-container {
+              position: fixed;
+              right: 0;
+              top: 0;
+              bottom: 0;
+              width: 420px;
+              background-color: #f8fafc;
+              box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
+              z-index: 10000;
+              display: flex;
+              flex-direction: column;
+              font-family: 'Inter', system-ui, -apple-system, sans-serif;
+              animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            @media (max-width: 480px) {
+              .notes-drawer-container {
+                width: 100%;
+              }
+            }
+            .notes-drawer-header {
+              padding: 20px;
+              border-bottom: 1px solid #e2e8f0;
+              background-color: #ffffff;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+            }
+            .notes-drawer-header h2 {
+              margin: 0;
+              font-size: 18px;
+              font-weight: 700;
+              color: #0f172a;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+            .notes-drawer-close {
+              background: none;
+              border: none;
+              color: #64748b;
+              cursor: pointer;
+              padding: 4px;
+              border-radius: 6px;
+              transition: background-color 0.2s;
+            }
+            .notes-drawer-close:hover {
+              background-color: #f1f5f9;
+              color: #0f172a;
+            }
+            .notes-drawer-body {
+              flex: 1;
+              overflow-y: auto;
+              padding: 20px;
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+            }
+            .add-note-bar {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 4px;
+            }
+            .sticky-note-card {
+              border-radius: 12px;
+              padding: 16px;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+              position: relative;
+              transition: transform 0.2s, box-shadow 0.2s;
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+            }
+            .sticky-note-card:hover {
+              transform: translateY(-2px);
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .note-card-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            .note-date {
+              font-size: 11px;
+              font-weight: 500;
+              opacity: 0.8;
+            }
+            .note-pin-btn {
+              background: none;
+              border: none;
+              cursor: pointer;
+              opacity: 0.6;
+              padding: 2px;
+              transition: opacity 0.2s;
+            }
+            .note-pin-btn:hover {
+              opacity: 1;
+            }
+            .note-textarea {
+              width: 100%;
+              min-height: 100px;
+              border: none;
+              background: transparent;
+              resize: vertical;
+              font-family: inherit;
+              font-size: 14px;
+              line-height: 1.5;
+              color: inherit;
+              padding: 0;
+            }
+            .note-textarea:focus {
+              outline: none;
+            }
+            .note-card-footer {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-top: 1px solid rgba(0,0,0,0.06);
+              padding-top: 10px;
+            }
+            .color-picker-row {
+              display: flex;
+              gap: 6px;
+            }
+            .color-dot {
+              width: 18px;
+              height: 18px;
+              border-radius: 50%;
+              cursor: pointer;
+              border: 1px solid rgba(0, 0, 0, 0.15);
+              transition: transform 0.1s;
+            }
+            .color-dot:hover {
+              transform: scale(1.2);
+            }
+            .color-dot.active {
+              box-shadow: 0 0 0 2px #324158;
+            }
+            .note-delete-btn {
+              background: none;
+              border: none;
+              cursor: pointer;
+              color: #dc2626;
+              opacity: 0.7;
+              padding: 4px;
+              border-radius: 6px;
+              transition: all 0.2s;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .note-delete-btn:hover {
+              opacity: 1;
+              background-color: rgba(220, 38, 38, 0.1);
+            }
+          `}</style>
+
+          {/* Drawer Wrapper */}
+          <div className="notes-drawer-container">
+            {/* Header */}
+            <div className="notes-drawer-header">
+              <h2>
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                </svg>
+                Sticky Notes
+              </h2>
+              <button 
+                type="button" 
+                className="notes-drawer-close"
+                onClick={() => setShowNotesDrawer(false)}
+                title="Close notes"
+              >
+                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="notes-drawer-body">
+              {/* Controls */}
+              <div className="add-note-bar">
+                <input 
+                  type="text" 
+                  placeholder="Search notes..." 
+                  value={searchTermNotes}
+                  onChange={(e) => setSearchTermNotes(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "13px",
+                    width: "60%",
+                    outline: "none"
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddNote}
+                  style={{
+                    padding: "8px 16px",
+                    border: "none",
+                    borderRadius: "8px",
+                    background: "#324158",
+                    color: "#fff",
+                    fontWeight: "600",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px"
+                  }}
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  New Note
+                </button>
+              </div>
+
+              {/* Note Cards List */}
+              {notes.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}>
+                  <svg width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1" viewBox="0 0 24 24" style={{ margin: "0 auto 12px", opacity: 0.5 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                  </svg>
+                  <p style={{ margin: 0, fontSize: "14px", fontWeight: 500 }}>No notes saved yet.</p>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "12px", opacity: 0.8 }}>Create a sticky note to write down payment logs or reminders.</p>
+                </div>
+              ) : (
+                (() => {
+                  const filteredNotes = notes.filter(n => 
+                    n.text.toLowerCase().includes(searchTermNotes.toLowerCase())
+                  );
+
+                  const sortedNotes = [...filteredNotes].sort((a, b) => {
+                    if (a.isPinned && !b.isPinned) return -1;
+                    if (!a.isPinned && b.isPinned) return 1;
+                    return 0;
+                  });
+
+                  if (sortedNotes.length === 0) {
+                    return (
+                      <div style={{ textAlign: "center", padding: "20px", color: "#64748b", fontSize: "13px" }}>
+                        No matching notes found.
+                      </div>
+                    );
+                  }
+
+                  return sortedNotes.map((note) => (
+                    <div 
+                      key={note.id}
+                      className="sticky-note-card"
+                      style={{ 
+                        backgroundColor: note.color, 
+                        color: note.textColor || "#1e293b",
+                        borderLeftColor: note.borderColor || "rgba(0,0,0,0.15)"
+                      }}
+                    >
+                      {/* Note Header */}
+                      <div className="note-card-header">
+                        <span className="note-date">{note.createdAt}</span>
+                        <button
+                          type="button"
+                          className="note-pin-btn"
+                          onClick={() => handleUpdateNote(note.id, "isPinned", !note.isPinned)}
+                          title={note.isPinned ? "Unpin Note" : "Pin Note"}
+                          style={{ color: note.textColor }}
+                        >
+                          <svg 
+                            width="14" 
+                            height="14" 
+                            fill={note.isPinned ? "currentColor" : "none"} 
+                            stroke="currentColor" 
+                            strokeWidth="2" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Text Input */}
+                      <textarea
+                        className="note-textarea"
+                        placeholder="Write something..."
+                        value={note.text}
+                        onChange={(e) => handleUpdateNote(note.id, "text", e.target.value)}
+                        style={{ color: note.textColor }}
+                      />
+
+                      {/* Note Footer */}
+                      <div className="note-card-footer">
+                        {/* Color Picker */}
+                        <div className="color-picker-row">
+                          {NOTE_COLORS.map((c) => (
+                            <div 
+                              key={c.name}
+                              className={`color-dot ${note.color === c.bg ? "active" : ""}`}
+                              style={{ backgroundColor: c.bg }}
+                              onClick={() => handleUpdateNote(note.id, "color", c.bg)}
+                              title={c.name}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          className="note-delete-btn"
+                          onClick={() => handleDeleteNote(note.id)}
+                          title="Delete note"
+                        >
+                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ));
+                })()
+              )}
+            </div>
+          </div>
+        </>,
+        document.body
       )}
     </div>
   );
