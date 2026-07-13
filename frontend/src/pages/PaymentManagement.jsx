@@ -2689,7 +2689,7 @@ function PaymentManagement() {
                           </div>
                         ) : (
                           <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "800", letterSpacing: "-0.2px" }}>{note.title}</h4>
+                            <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "800", letterSpacing: "-0.2px", color: "inherit" }}>{note.title}</h4>
                             <p style={{ margin: 0, fontSize: "13px", whiteSpace: "pre-wrap", opacity: 0.95, lineHeight: 1.5 }}>{note.text}</p>
                           </div>
                         )}
