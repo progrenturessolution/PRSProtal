@@ -265,5 +265,11 @@ router.post('/payments', verifyToken, verifyAdmin, adminPaymentController.create
 router.patch('/payments/:id', verifyToken, verifyAdmin, adminPaymentController.updatePayment);
 router.delete('/payments/:id', verifyToken, verifyAdmin, adminPaymentController.deletePayment);
 
+// ========== PAYMENT NOTES (STICKY NOTES) ==========
+router.get('/payment-notes', verifyToken, verifyAdmin, adminPaymentController.getPaymentNotes);
+router.post('/payment-notes', verifyToken, verifyAdmin, adminPaymentController.createPaymentNote);
+router.patch('/payment-notes/:id', verifyToken, verifyAdmin, adminPaymentController.updatePaymentNote);
+router.delete('/payment-notes/:id', verifyToken, verifyAdmin, adminPaymentController.deletePaymentNote);
+
 module.exports = router;
 

@@ -1,4 +1,5 @@
 const AdminPayment = require('../models/AdminPayment');
+const PaymentNote = require('../models/PaymentNote');
 
 // Get all payments
 const getPayments = async (req, res) => {
@@ -205,9 +206,125 @@ const deletePayment = async (req, res) => {
   }
 };
 
+// Get all payment notes
+const getPaymentNotes = async (req, res) => {
+  try {
+    const notes = await PaymentNote.find({}).sort({ isPinned: -1, createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      notes
+    });
+  } catch (error) {
+    console.error('Error in getPaymentNotes:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching payment notes'
+    });
+  }
+};
+
+// Create a payment note
+const createPaymentNote = async (req, res) => {
+  try {
+    const { title, text, color, textColor, borderColor, isPinned } = req.body;
+
+    const newNote = new PaymentNote({
+      title: title || 'Untitled Note',
+      text: text || '',
+      color: color || '#324158',
+      textColor: textColor || '#ffffff',
+      borderColor: borderColor || '#1f293b',
+      isPinned: isPinned || false
+    });
+
+    await newNote.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Payment note created successfully',
+      note: newNote
+    });
+  } catch (error) {
+    console.error('Error in createPaymentNote:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while creating payment note'
+    });
+  }
+};
+
+// Update a payment note
+const updatePaymentNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, text, color, textColor, borderColor, isPinned } = req.body;
+
+    const note = await PaymentNote.findById(id);
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment note not found'
+      });
+    }
+
+    if (title !== undefined) note.title = title;
+    if (text !== undefined) note.text = text;
+    if (color !== undefined) note.color = color;
+    if (textColor !== undefined) note.textColor = textColor;
+    if (borderColor !== undefined) note.borderColor = borderColor;
+    if (isPinned !== undefined) note.isPinned = isPinned;
+
+    await note.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment note updated successfully',
+      note
+    });
+  } catch (error) {
+    console.error('Error in updatePaymentNote:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating payment note'
+    });
+  }
+};
+
+// Delete a payment note
+const deletePaymentNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const note = await PaymentNote.findById(id);
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment note not found'
+      });
+    }
+
+    await PaymentNote.deleteOne({ _id: id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment note deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error in deletePaymentNote:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting payment note'
+    });
+  }
+};
+
 module.exports = {
   getPayments,
   createPayment,
   updatePayment,
-  deletePayment
+  deletePayment,
+  getPaymentNotes,
+  createPaymentNote,
+  updatePaymentNote,
+  deletePaymentNote
 };

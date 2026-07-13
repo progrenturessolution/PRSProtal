@@ -143,6 +143,12 @@ export const adminAPI = {
   createAdminPayment: (data) => api.post("/admin/payments", data),
   updateAdminPayment: (id, data) => api.patch(`/admin/payments/${id}`, data),
   deleteAdminPayment: (id) => api.delete(`/admin/payments/${id}`),
+
+  // Payment Notes (Sticky Notes)
+  getPaymentNotes: () => api.get("/admin/payment-notes"),
+  createPaymentNote: (data) => api.post("/admin/payment-notes", data),
+  updatePaymentNote: (id, data) => api.patch(`/admin/payment-notes/${id}`, data),
+  deletePaymentNote: (id) => api.delete(`/admin/payment-notes/${id}`),
 };
 
 // Trainer APIs

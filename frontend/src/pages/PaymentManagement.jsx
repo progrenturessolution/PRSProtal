@@ -319,17 +319,19 @@ function PaymentManagement() {
   const [selectedPaymentDetails, setSelectedPaymentDetails] = useState(null);
   const [isCustomPayType, setIsCustomPayType] = useState(false);
 
-  const [notes, setNotes] = useState(() => {
-    try {
-      const savedNotes = localStorage.getItem("payment_management_notes");
-      return savedNotes ? JSON.parse(savedNotes) : [];
-    } catch (e) {
-      console.error("Failed to load notes", e);
-      return [];
-    }
-  });
+  const [notes, setNotes] = useState([]);
   const [showNotesDrawer, setShowNotesDrawer] = useState(false);
   const [searchTermNotes, setSearchTermNotes] = useState("");
+
+  // New note form states
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [newNoteText, setNewNoteText] = useState("");
+  const [newNoteColor, setNewNoteColor] = useState("#324158");
+
+  // Editing notes state
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [editingText, setEditingText] = useState("");
 
   const NOTE_COLORS = [
     { name: "Theme", bg: "#324158", border: "#1f2937", text: "#ffffff" },
@@ -345,53 +347,118 @@ function PaymentManagement() {
     { name: "Slate", bg: "#e2e8f0", border: "#cbd5e1", text: "#1e293b" }
   ];
 
-  const handleAddNote = () => {
-    const newNote = {
-      id: Date.now(),
-      text: "",
-      color: NOTE_COLORS[0].bg,
-      textColor: NOTE_COLORS[0].text,
-      borderColor: NOTE_COLORS[0].border,
-      createdAt: new Date().toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      }),
-      isPinned: false
-    };
-    setNotes([newNote, ...notes]);
-  };
-
-  const handleUpdateNote = (id, field, value) => {
-    setNotes((prevNotes) =>
-      prevNotes.map((note) => {
-        if (note.id === id) {
-          const updatedNote = { ...note, [field]: value };
-          if (field === "color") {
-            const matchedColor = NOTE_COLORS.find(c => c.bg === value);
-            if (matchedColor) {
-              updatedNote.textColor = matchedColor.text;
-              updatedNote.borderColor = matchedColor.border;
-            }
-          }
-          return updatedNote;
-        }
-        return note;
-      })
-    );
-  };
-
-  const handleDeleteNote = (id) => {
-    if (window.confirm("Are you sure you want to delete this note?")) {
-      setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id));
+  const fetchNotes = async () => {
+    try {
+      const res = await adminAPI.getPaymentNotes();
+      if (res.data.success) {
+        setNotes(res.data.notes);
+      }
+    } catch (err) {
+      console.error("Failed to fetch payment notes:", err);
     }
   };
 
-  useEffect(() => {
-    localStorage.setItem("payment_management_notes", JSON.stringify(notes));
-  }, [notes]);
+  const handleCreateNote = async (e) => {
+    e.preventDefault();
+    if (!newNoteTitle.trim() && !newNoteText.trim()) {
+      alert("Please enter a title or text content for the note.");
+      return;
+    }
+    
+    const matchedColor = NOTE_COLORS.find(c => c.bg === newNoteColor) || NOTE_COLORS[0];
+    
+    try {
+      const res = await adminAPI.createPaymentNote({
+        title: newNoteTitle.trim() || "Untitled Note",
+        text: newNoteText,
+        color: matchedColor.bg,
+        textColor: matchedColor.text,
+        borderColor: matchedColor.border,
+        isPinned: false
+      });
+      
+      if (res.data.success) {
+        setNotes([res.data.note, ...notes]);
+        setNewNoteTitle("");
+        setNewNoteText("");
+        setNewNoteColor(NOTE_COLORS[0].bg);
+      }
+    } catch (err) {
+      console.error("Failed to create note:", err);
+      alert("Failed to save note. Please try again.");
+    }
+  };
+
+  const handleUpdateNoteColor = async (id, colorBg) => {
+    const matchedColor = NOTE_COLORS.find(c => c.bg === colorBg) || NOTE_COLORS[0];
+    try {
+      const res = await adminAPI.updatePaymentNote(id, {
+        color: matchedColor.bg,
+        textColor: matchedColor.text,
+        borderColor: matchedColor.border
+      });
+      if (res.data.success) {
+        setNotes((prevNotes) =>
+          prevNotes.map((n) => (n._id === id ? res.data.note : n))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update note color:", err);
+    }
+  };
+
+  const handleTogglePin = async (note) => {
+    try {
+      const res = await adminAPI.updatePaymentNote(note._id, {
+        isPinned: !note.isPinned
+      });
+      if (res.data.success) {
+        setNotes((prevNotes) =>
+          prevNotes.map((n) => (n._id === note._id ? res.data.note : n))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to toggle pin:", err);
+    }
+  };
+
+  const startEditing = (note) => {
+    setEditingNoteId(note._id);
+    setEditingTitle(note.title);
+    setEditingText(note.text);
+  };
+
+  const handleSaveEdit = async (id) => {
+    try {
+      const res = await adminAPI.updatePaymentNote(id, {
+        title: editingTitle.trim() || "Untitled Note",
+        text: editingText
+      });
+      if (res.data.success) {
+        setNotes((prevNotes) =>
+          prevNotes.map((n) => (n._id === id ? res.data.note : n))
+        );
+        setEditingNoteId(null);
+      }
+    } catch (err) {
+      console.error("Failed to update note:", err);
+      alert("Failed to save changes. Please try again.");
+    }
+  };
+
+  const handleDeleteNote = async (id) => {
+    if (window.confirm("Are you sure you want to delete this note?")) {
+      try {
+        const res = await adminAPI.deletePaymentNote(id);
+        if (res.data.success) {
+          setNotes((prevNotes) => prevNotes.filter((note) => note._id !== id));
+        }
+      } catch (err) {
+        console.error("Failed to delete note:", err);
+        alert("Failed to delete note. Please try again.");
+      }
+    }
+  };
 
   useEffect(() => {
     const total = Number(formData.totalPayment) || 0;
@@ -1087,6 +1154,7 @@ function PaymentManagement() {
 
   useEffect(() => {
     fetchPayments();
+    fetchNotes();
   }, []);
 
   useEffect(() => {
@@ -2334,6 +2402,7 @@ function PaymentManagement() {
           `}</style>
 
           {/* Drawer Wrapper */}
+          {/* Drawer Wrapper */}
           <div className="notes-drawer-container">
             {/* Header */}
             <div className="notes-drawer-header">
@@ -2357,7 +2426,89 @@ function PaymentManagement() {
 
             {/* Body */}
             <div className="notes-drawer-body">
-              {/* Controls */}
+              {/* Form to Add New Note */}
+              <form onSubmit={handleCreateNote} style={{
+                background: "#ffffff",
+                padding: "16px",
+                borderRadius: "12px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                border: "1px solid #e2e8f0"
+              }}>
+                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#324158" }}>Create Sticky Note</h3>
+                <input 
+                  type="text" 
+                  placeholder="Note Title..."
+                  value={newNoteTitle}
+                  onChange={(e) => setNewNoteTitle(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "13px",
+                    outline: "none",
+                    color: "#1e293b"
+                  }}
+                />
+                <textarea 
+                  placeholder="Note content..."
+                  value={newNoteText}
+                  onChange={(e) => setNewNoteText(e.target.value)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5e1",
+                    fontSize: "13px",
+                    minHeight: "60px",
+                    resize: "vertical",
+                    outline: "none",
+                    fontFamily: "inherit",
+                    color: "#1e293b"
+                  }}
+                />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  {/* Color Selector for New Note */}
+                  <div className="color-picker-row">
+                    {NOTE_COLORS.map((c) => (
+                      <div 
+                        key={c.name}
+                        className={`color-dot ${newNoteColor === c.bg ? "active" : ""}`}
+                        style={{ backgroundColor: c.bg, width: "16px", height: "16px" }}
+                        onClick={() => setNewNoteColor(c.bg)}
+                        title={c.name}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    type="submit"
+                    style={{
+                      padding: "6px 14px",
+                      border: "none",
+                      borderRadius: "8px",
+                      background: "#324158",
+                      color: "#fff",
+                      fontWeight: "600",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}
+                  >
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add
+                  </button>
+                </div>
+              </form>
+
+              <hr style={{ border: 0, borderTop: "1px solid #e2e8f0", margin: "8px 0" }} />
+
+              {/* Search bar for existing notes */}
               <div className="add-note-bar">
                 <input 
                   type="text" 
@@ -2369,32 +2520,11 @@ function PaymentManagement() {
                     borderRadius: "8px",
                     border: "1px solid #cbd5e1",
                     fontSize: "13px",
-                    width: "60%",
-                    outline: "none"
+                    width: "100%",
+                    outline: "none",
+                    color: "#1e293b"
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={handleAddNote}
-                  style={{
-                    padding: "8px 16px",
-                    border: "none",
-                    borderRadius: "8px",
-                    background: "#324158",
-                    color: "#fff",
-                    fontWeight: "600",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px"
-                  }}
-                >
-                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  New Note
-                </button>
               </div>
 
               {/* Note Cards List */}
@@ -2404,12 +2534,13 @@ function PaymentManagement() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                   </svg>
                   <p style={{ margin: 0, fontSize: "14px", fontWeight: 500 }}>No notes saved yet.</p>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "12px", opacity: 0.8 }}>Create a sticky note to write down payment logs or reminders.</p>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "12px", opacity: 0.8 }}>Use the form above to add a note that will sync across devices.</p>
                 </div>
               ) : (
                 (() => {
                   const filteredNotes = notes.filter(n => 
-                    n.text.toLowerCase().includes(searchTermNotes.toLowerCase())
+                    (n.title && n.title.toLowerCase().includes(searchTermNotes.toLowerCase())) ||
+                    (n.text && n.text.toLowerCase().includes(searchTermNotes.toLowerCase()))
                   );
 
                   const sortedNotes = [...filteredNotes].sort((a, b) => {
@@ -2426,77 +2557,173 @@ function PaymentManagement() {
                     );
                   }
 
-                  return sortedNotes.map((note) => (
-                    <div 
-                      key={note.id}
-                      className="sticky-note-card"
-                      style={{ 
-                        backgroundColor: note.color, 
-                        color: note.textColor || "#1e293b",
-                        borderLeftColor: note.borderColor || "rgba(0,0,0,0.15)"
-                      }}
-                    >
-                      {/* Note Header */}
-                      <div className="note-card-header">
-                        <span className="note-date">{note.createdAt}</span>
-                        <button
-                          type="button"
-                          className="note-pin-btn"
-                          onClick={() => handleUpdateNote(note.id, "isPinned", !note.isPinned)}
-                          title={note.isPinned ? "Unpin Note" : "Pin Note"}
-                          style={{ color: note.textColor }}
-                        >
-                          <svg 
-                            width="14" 
-                            height="14" 
-                            fill={note.isPinned ? "currentColor" : "none"} 
-                            stroke="currentColor" 
-                            strokeWidth="2" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-                          </svg>
-                        </button>
-                      </div>
+                  return sortedNotes.map((note) => {
+                    const isEditing = editingNoteId === note._id;
+                    const displayDate = note.updatedAt 
+                      ? new Date(note.updatedAt).toLocaleDateString("en-IN", {
+                          day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+                        })
+                      : "Just now";
 
-                      {/* Text Input */}
-                      <textarea
-                        className="note-textarea"
-                        placeholder="Write something..."
-                        value={note.text}
-                        onChange={(e) => handleUpdateNote(note.id, "text", e.target.value)}
-                        style={{ color: note.textColor }}
-                      />
+                    return (
+                      <div 
+                        key={note._id}
+                        className="sticky-note-card"
+                        style={{ 
+                          backgroundColor: note.color, 
+                          color: note.textColor || "#1e293b",
+                          borderLeftColor: note.borderColor || "rgba(0,0,0,0.15)"
+                        }}
+                      >
+                        {/* Header: Date, Pin & Edit Toggle */}
+                        <div className="note-card-header">
+                          <span className="note-date">{displayDate}</span>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            {/* Pin */}
+                            <button
+                              type="button"
+                              className="note-pin-btn"
+                              onClick={() => handleTogglePin(note)}
+                              title={note.isPinned ? "Unpin Note" : "Pin Note"}
+                              style={{ color: note.textColor }}
+                            >
+                              <svg 
+                                width="14" 
+                                height="14" 
+                                fill={note.isPinned ? "currentColor" : "none"} 
+                                stroke="currentColor" 
+                                strokeWidth="2" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                              </svg>
+                            </button>
 
-                      {/* Note Footer */}
-                      <div className="note-card-footer">
-                        {/* Color Picker */}
-                        <div className="color-picker-row">
-                          {NOTE_COLORS.map((c) => (
-                            <div 
-                              key={c.name}
-                              className={`color-dot ${note.color === c.bg ? "active" : ""}`}
-                              style={{ backgroundColor: c.bg }}
-                              onClick={() => handleUpdateNote(note.id, "color", c.bg)}
-                              title={c.name}
-                            />
-                          ))}
+                            {/* Edit Icon */}
+                            {!isEditing && (
+                              <button
+                                type="button"
+                                className="note-pin-btn"
+                                onClick={() => startEditing(note)}
+                                title="Edit Note"
+                                style={{ color: note.textColor }}
+                              >
+                                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          className="note-delete-btn"
-                          onClick={() => handleDeleteNote(note.id)}
-                          title="Delete note"
-                        >
-                          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        {/* Title and Text Content */}
+                        {isEditing ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            <input 
+                              type="text"
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              style={{
+                                width: "100%",
+                                padding: "6px 8px",
+                                borderRadius: "6px",
+                                border: "1px solid rgba(0,0,0,0.15)",
+                                fontSize: "14px",
+                                fontWeight: "bold",
+                                backgroundColor: "rgba(255,255,255,0.8)",
+                                color: "#1e293b",
+                                outline: "none"
+                              }}
+                            />
+                            <textarea
+                              value={editingText}
+                              onChange={(e) => setEditingText(e.target.value)}
+                              style={{
+                                width: "100%",
+                                padding: "6px 8px",
+                                borderRadius: "6px",
+                                border: "1px solid rgba(0,0,0,0.15)",
+                                fontSize: "13px",
+                                minHeight: "80px",
+                                backgroundColor: "rgba(255,255,255,0.8)",
+                                color: "#1e293b",
+                                outline: "none",
+                                fontFamily: "inherit",
+                                resize: "vertical"
+                              }}
+                            />
+                            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "4px" }}>
+                              <button
+                                type="button"
+                                onClick={() => setEditingNoteId(null)}
+                                style={{
+                                  padding: "4px 10px",
+                                  borderRadius: "6px",
+                                  border: "1px solid rgba(0,0,0,0.15)",
+                                  background: "rgba(255,255,255,0.5)",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  cursor: "pointer",
+                                  color: note.textColor
+                                }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEdit(note._id)}
+                                style={{
+                                  padding: "4px 10px",
+                                  borderRadius: "6px",
+                                  border: "none",
+                                  background: "#324158",
+                                  color: "#fff",
+                                  fontSize: "12px",
+                                  fontWeight: "700",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "800", letterSpacing: "-0.2px" }}>{note.title}</h4>
+                            <p style={{ margin: 0, fontSize: "13px", whiteSpace: "pre-wrap", opacity: 0.95, lineHeight: 1.5 }}>{note.text}</p>
+                          </div>
+                        )}
+
+                        {/* Note Footer: Color Dots & Delete */}
+                        <div className="note-card-footer">
+                          {/* Color Picker */}
+                          <div className="color-picker-row">
+                            {NOTE_COLORS.map((c) => (
+                              <div 
+                                key={c.name}
+                                className={`color-dot ${note.color === c.bg ? "active" : ""}`}
+                                style={{ backgroundColor: c.bg }}
+                                onClick={() => handleUpdateNoteColor(note._id, c.bg)}
+                                title={c.name}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            className="note-delete-btn"
+                            onClick={() => handleDeleteNote(note._id)}
+                            title="Delete note"
+                          >
+                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ));
+                    );
+                  });
                 })()
               )}
             </div>
