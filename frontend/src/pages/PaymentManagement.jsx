@@ -300,6 +300,8 @@ const emptyForm = {
   finalPaymentReceiveDate: "",
 };
 
+
+
 function PaymentManagement() {
   const [activeTab, setActiveTab] = useState("list");
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -323,10 +325,7 @@ function PaymentManagement() {
   const [showNotesDrawer, setShowNotesDrawer] = useState(false);
   const [searchTermNotes, setSearchTermNotes] = useState("");
 
-  // New note form states
-  const [newNoteTitle, setNewNoteTitle] = useState("");
-  const [newNoteText, setNewNoteText] = useState("");
-  const [newNoteColor, setNewNoteColor] = useState("#324158");
+
 
   // Editing notes state
   const [editingNoteId, setEditingNoteId] = useState(null);
@@ -358,36 +357,7 @@ function PaymentManagement() {
     }
   };
 
-  const handleCreateNote = async (e) => {
-    e.preventDefault();
-    if (!newNoteTitle.trim() && !newNoteText.trim()) {
-      alert("Please enter a title or text content for the note.");
-      return;
-    }
-    
-    const matchedColor = NOTE_COLORS.find(c => c.bg === newNoteColor) || NOTE_COLORS[0];
-    
-    try {
-      const res = await adminAPI.createPaymentNote({
-        title: newNoteTitle.trim() || "Untitled Note",
-        text: newNoteText,
-        color: matchedColor.bg,
-        textColor: matchedColor.text,
-        borderColor: matchedColor.border,
-        isPinned: false
-      });
-      
-      if (res.data.success) {
-        setNotes([res.data.note, ...notes]);
-        setNewNoteTitle("");
-        setNewNoteText("");
-        setNewNoteColor(NOTE_COLORS[0].bg);
-      }
-    } catch (err) {
-      console.error("Failed to create note:", err);
-      alert("Failed to save note. Please try again.");
-    }
-  };
+
 
   const handleUpdateNoteColor = async (id, colorBg) => {
     const matchedColor = NOTE_COLORS.find(c => c.bg === colorBg) || NOTE_COLORS[0];
@@ -429,10 +399,12 @@ function PaymentManagement() {
   };
 
   const handleSaveEdit = async (id) => {
+    const editor = document.getElementById(`note-editor-${id}`);
+    const content = editor ? editor.innerHTML : "";
     try {
       const res = await adminAPI.updatePaymentNote(id, {
         title: editingTitle.trim() || "Untitled Note",
-        text: editingText
+        text: content
       });
       if (res.data.success) {
         setNotes((prevNotes) =>
@@ -2399,6 +2371,37 @@ function PaymentManagement() {
               opacity: 1;
               background-color: rgba(220, 38, 38, 0.1);
             }
+            .sticky-note-card ul {
+              margin: 4px 0;
+              padding-left: 18px;
+              list-style-type: disc;
+            }
+            .sticky-note-card li {
+              margin-bottom: 2px;
+            }
+            .note-content-editor {
+              width: 100%;
+              padding: 8px;
+              border-radius: 6px;
+              border: 1px solid rgba(0,0,0,0.15);
+              font-size: 13px;
+              min-height: 95px;
+              background-color: rgba(255,255,255,0.8);
+              color: #1e293b;
+              outline: none;
+              overflow-y: auto;
+              font-family: inherit;
+              line-height: 1.5;
+            }
+            .note-content-editor:focus {
+              border-color: rgba(0,0,0,0.3);
+            }
+            .note-content-editor[contenteditable]:empty::before {
+              content: attr(placeholder);
+              color: #94a3b8;
+              font-style: italic;
+              cursor: text;
+            }
           `}</style>
 
           {/* Drawer Wrapper */}
@@ -2426,85 +2429,52 @@ function PaymentManagement() {
 
             {/* Body */}
             <div className="notes-drawer-body">
-              {/* Form to Add New Note */}
-              <form onSubmit={handleCreateNote} style={{
-                background: "#ffffff",
-                padding: "16px",
-                borderRadius: "12px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                border: "1px solid #e2e8f0"
-              }}>
-                <h3 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#324158" }}>Create Sticky Note</h3>
-                <input 
-                  type="text" 
-                  placeholder="Note Title..."
-                  value={newNoteTitle}
-                  onChange={(e) => setNewNoteTitle(e.target.value)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    outline: "none",
-                    color: "#1e293b"
-                  }}
-                />
-                <textarea 
-                  placeholder="Note content..."
-                  value={newNoteText}
-                  onChange={(e) => setNewNoteText(e.target.value)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    minHeight: "60px",
-                    resize: "vertical",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    color: "#1e293b"
-                  }}
-                />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  {/* Color Selector for New Note */}
-                  <div className="color-picker-row">
-                    {NOTE_COLORS.map((c) => (
-                      <div 
-                        key={c.name}
-                        className={`color-dot ${newNoteColor === c.bg ? "active" : ""}`}
-                        style={{ backgroundColor: c.bg, width: "16px", height: "16px" }}
-                        onClick={() => setNewNoteColor(c.bg)}
-                        title={c.name}
-                      />
-                    ))}
-                  </div>
-
-                  <button
-                    type="submit"
-                    style={{
-                      padding: "6px 14px",
-                      border: "none",
-                      borderRadius: "8px",
-                      background: "#324158",
-                      color: "#fff",
-                      fontWeight: "600",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px"
-                    }}
-                  >
-                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Add
-                  </button>
-                </div>
-              </form>
+              {/* Button to Create New Note */}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await adminAPI.createPaymentNote({
+                      title: "New Note",
+                      text: "",
+                      color: "#324158"
+                    });
+                    if (res.data.success) {
+                      const createdNote = res.data.note;
+                      setNotes([createdNote, ...notes]);
+                      // Automatically select and edit this new note
+                      startEditing(createdNote);
+                    }
+                  } catch (err) {
+                    console.error("Failed to create note:", err);
+                    alert("Failed to create note. Please try again.");
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "#324158",
+                  color: "#fff",
+                  fontWeight: "700",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  boxShadow: "0 2px 4px rgba(50, 65, 88, 0.15)",
+                  transition: "background 0.2s"
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = "#243042"}
+                onMouseOut={(e) => e.currentTarget.style.background = "#324158"}
+              >
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Create Sticky Note
+              </button>
 
               <hr style={{ border: 0, borderTop: "1px solid #e2e8f0", margin: "8px 0" }} />
 
@@ -2634,24 +2604,126 @@ function PaymentManagement() {
                                 color: "#1e293b",
                                 outline: "none"
                               }}
+                              placeholder="Title..."
                             />
-                            <textarea
-                              value={editingText}
-                              onChange={(e) => setEditingText(e.target.value)}
-                              style={{
-                                width: "100%",
-                                padding: "6px 8px",
-                                borderRadius: "6px",
-                                border: "1px solid rgba(0,0,0,0.15)",
-                                fontSize: "13px",
-                                minHeight: "80px",
-                                backgroundColor: "rgba(255,255,255,0.8)",
-                                color: "#1e293b",
-                                outline: "none",
-                                fontFamily: "inherit",
-                                resize: "vertical"
-                              }}
+
+                            {/* Formatting Toolbar */}
+                            <div style={{ 
+                              display: "flex", 
+                              gap: "6px", 
+                              background: "rgba(255,255,255,0.5)", 
+                              padding: "4px 8px", 
+                              borderRadius: "6px", 
+                              border: "1px solid rgba(0,0,0,0.1)",
+                              alignItems: "center"
+                            }}>
+                              <button
+                                type="button"
+                                title="Bold"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  const sel = window.getSelection();
+                                  if (sel && sel.rangeCount > 0) {
+                                    e.currentTarget._savedRange = sel.getRangeAt(0).cloneRange();
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  const saved = e.currentTarget._savedRange;
+                                  if (saved) {
+                                    const sel = window.getSelection();
+                                    sel.removeAllRanges();
+                                    sel.addRange(saved);
+                                  }
+                                  document.execCommand('bold', false, null);
+                                }}
+                                style={{
+                                  background: "rgba(255,255,255,0.8)",
+                                  border: "1px solid rgba(0,0,0,0.1)",
+                                  borderRadius: "4px",
+                                  padding: "2px 6px",
+                                  fontSize: "11px",
+                                  fontWeight: "bold",
+                                  cursor: "pointer",
+                                  color: "#1e293b"
+                                }}
+                              >
+                                B
+                              </button>
+                              <button
+                                type="button"
+                                title="Italic"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  const sel = window.getSelection();
+                                  if (sel && sel.rangeCount > 0) {
+                                    e.currentTarget._savedRange = sel.getRangeAt(0).cloneRange();
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  const saved = e.currentTarget._savedRange;
+                                  if (saved) {
+                                    const sel = window.getSelection();
+                                    sel.removeAllRanges();
+                                    sel.addRange(saved);
+                                  }
+                                  document.execCommand('italic', false, null);
+                                }}
+                                style={{
+                                  background: "rgba(255,255,255,0.8)",
+                                  border: "1px solid rgba(0,0,0,0.1)",
+                                  borderRadius: "4px",
+                                  padding: "2px 6px",
+                                  fontSize: "11px",
+                                  fontStyle: "italic",
+                                  cursor: "pointer",
+                                  color: "#1e293b"
+                                }}
+                              >
+                                I
+                              </button>
+                              <button
+                                type="button"
+                                title="Bullet List"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  const sel = window.getSelection();
+                                  if (sel && sel.rangeCount > 0) {
+                                    e.currentTarget._savedRange = sel.getRangeAt(0).cloneRange();
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  const saved = e.currentTarget._savedRange;
+                                  if (saved) {
+                                    const sel = window.getSelection();
+                                    sel.removeAllRanges();
+                                    sel.addRange(saved);
+                                  }
+                                  document.execCommand('insertUnorderedList', false, null);
+                                }}
+                                style={{
+                                  background: "rgba(255,255,255,0.8)",
+                                  border: "1px solid rgba(0,0,0,0.1)",
+                                  borderRadius: "4px",
+                                  padding: "2px 6px",
+                                  fontSize: "11px",
+                                  cursor: "pointer",
+                                  color: "#1e293b"
+                                }}
+                              >
+                                • List
+                              </button>
+
+                            </div>
+
+                            {/* Uncontrolled WYSIWYG ContentEditor */}
+                            <div
+                              id={`note-editor-${note._id}`}
+                              contentEditable
+                              placeholder="Type note content here..."
+                              dangerouslySetInnerHTML={{ __html: note.text || "" }}
+                              className="note-content-editor"
                             />
+
                             <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "4px" }}>
                               <button
                                 type="button"
@@ -2688,9 +2760,16 @@ function PaymentManagement() {
                             </div>
                           </div>
                         ) : (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                          <div 
+                            onClick={() => startEditing(note)}
+                            style={{ display: "flex", flexDirection: "column", gap: "4px", cursor: "pointer" }}
+                            title="Click to edit note"
+                          >
                             <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "800", letterSpacing: "-0.2px", color: "inherit" }}>{note.title}</h4>
-                            <p style={{ margin: 0, fontSize: "13px", whiteSpace: "pre-wrap", opacity: 0.95, lineHeight: 1.5 }}>{note.text}</p>
+                            <div 
+                              style={{ margin: 0, fontSize: "13px", opacity: 0.95, lineHeight: 1.5 }}
+                              dangerouslySetInnerHTML={{ __html: note.text || "<p style='font-style: italic; opacity: 0.6;'>Click to add details...</p>" }}
+                            />
                           </div>
                         )}
 

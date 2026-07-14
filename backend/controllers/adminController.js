@@ -378,7 +378,8 @@ exports.getAllInterns = async (req, res) => {
     const interns = await Intern.find({ isDeleted: { $ne: true } })
       .select('-password')
       .populate('assignedTrainer', 'name email')
-      .populate('addedByRepresentative', 'name');
+      .populate('addedByRepresentative', 'name')
+      .sort({ createdAt: -1 });
     
     res.status(200).json({
       success: true,
