@@ -679,25 +679,31 @@ function SMSProgramManagement({ onAddStudentClick }) {
       </div>
 
       {/* Filters */}
-      <div className="card">
-
-
+      <div
+        style={{
+          background: "white",
+          padding: "20px",
+          borderRadius: "12px",
+          marginBottom: "24px",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+          border: "1px solid #e2e8f0",
+        }}
+      >
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.5fr) minmax(180px, 1fr) minmax(180px, 1fr) minmax(180px, 1fr)',
-            gap: '12px',
-            marginBottom: '20px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '16px',
             alignItems: 'end'
           }}
         >
-          <div data-sms-search-dropdown>
+          <div style={{ gridColumn: '1 / -1' }} data-sms-search-dropdown>
             <label
               style={{
                 display: 'block',
-                marginBottom: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
+                marginBottom: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
                 color: '#0f172a'
               }}
             >
@@ -709,10 +715,10 @@ function SMSProgramManagement({ onAddStudentClick }) {
                 onClick={() => setIsSmsSearchDropdownOpen(!isSmsSearchDropdownOpen)}
                 style={{
                   width: '100%',
-                  padding: '12px 14px',
-                  border: `2px solid ${isSmsSearchDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                  padding: '12px 16px',
+                  border: `2px solid ${isSmsSearchDropdownOpen ? '#3b82f6' : '#e2e8f0'}`,
                   borderRadius: '10px',
-                  background: 'white',
+                  background: '#f8fafc',
                   cursor: 'pointer',
                   fontSize: '14px',
                   display: 'flex',
@@ -827,9 +833,9 @@ function SMSProgramManagement({ onAddStudentClick }) {
             <label
               style={{
                 display: 'block',
-                marginBottom: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
+                marginBottom: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
                 color: '#0f172a'
               }}
             >
@@ -840,12 +846,13 @@ function SMSProgramManagement({ onAddStudentClick }) {
               onChange={(e) => setFilter(e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px 14px',
-                border: '1px solid #cbd5e1',
+                padding: '12px 16px',
+                border: '2px solid #e2e8f0',
                 borderRadius: '10px',
-                fontSize: '14px',
-                background: 'white',
-                cursor: 'pointer'
+                fontSize: '15px',
+                background: '#f8fafc',
+                cursor: 'pointer',
+                fontWeight: '500'
               }}
             >
               <option value="all">All Status</option>
@@ -858,9 +865,9 @@ function SMSProgramManagement({ onAddStudentClick }) {
             <label
               style={{
                 display: 'block',
-                marginBottom: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
+                marginBottom: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
                 color: '#0f172a'
               }}
             >
@@ -871,12 +878,13 @@ function SMSProgramManagement({ onAddStudentClick }) {
               onChange={(e) => setFilterAddedBy(e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px 14px',
-                border: '1px solid #cbd5e1',
+                padding: '12px 16px',
+                border: '2px solid #e2e8f0',
                 borderRadius: '10px',
-                fontSize: '14px',
-                background: 'white',
-                cursor: 'pointer'
+                fontSize: '15px',
+                background: '#f8fafc',
+                cursor: 'pointer',
+                fontWeight: '500'
               }}
             >
               <option value="All">All</option>
@@ -889,9 +897,9 @@ function SMSProgramManagement({ onAddStudentClick }) {
             <label
               style={{
                 display: 'block',
-                marginBottom: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
+                marginBottom: '8px',
+                fontSize: '14px',
+                fontWeight: '600',
                 color: '#0f172a'
               }}
             >
@@ -902,12 +910,13 @@ function SMSProgramManagement({ onAddStudentClick }) {
               onChange={(e) => setFeeFilter(e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px 14px',
-                border: '1px solid #cbd5e1',
+                padding: '12px 16px',
+                border: '2px solid #e2e8f0',
                 borderRadius: '10px',
-                fontSize: '14px',
-                background: 'white',
-                cursor: 'pointer'
+                fontSize: '15px',
+                background: '#f8fafc',
+                cursor: 'pointer',
+                fontWeight: '500'
               }}
             >
               <option value="all">All Fees</option>
@@ -916,22 +925,35 @@ function SMSProgramManagement({ onAddStudentClick }) {
             </select>
           </div>
         </div>
+      </div>
 
-        {/* Students Table */}
+      {/* Students List */}
+      <div className="card">
         {loading ? (
           <p>Loading...</p>
         ) : filteredStudents.length === 0 ? (
-          <p>{searchQuery ? `No students found matching "${searchQuery}". Try another search.` : 'No SMS program students found.'}</p>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "60px 20px",
+              color: "#64748b",
+            }}
+          >
+            <h3 style={{ color: "#0f172a", marginBottom: "8px" }}>
+              {searchQuery ? `No students found matching "${searchQuery}".` : "No SMS program students found."}
+            </h3>
+            <p>Try adjusting your filters or search query</p>
+          </div>
         ) : (
-          <div className="table-container">
-            <table className="data-table sms-students-table">
+          <div style={{ overflowX: "auto" }}>
+            <table className="data-table view-students-table" style={{ minWidth: "1100px" }}>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
                   <th>Domain</th>
                   <th>Duration</th>
-                  <th>Batch Start Month and Year</th>
+                  <th>Batch Start Month</th>
                   <th>Added By</th>
                   <th>Total Fees</th>
                   <th>Pending Fees</th>
@@ -940,57 +962,56 @@ function SMSProgramManagement({ onAddStudentClick }) {
               </thead>
               <tbody>
                 {filteredStudents.map((student) => (
-                  <Fragment key={student._id}>
-                    <tr>
-                      <td>{student.internId}</td>
-                      <td>{student.name}</td>
-                      <td>{student.suggestedDomain || student.domain || student.currentDesignation || 'N/A'}</td>
-                      <td>{student.duration || 'N/A'}</td>
-                      <td>{getBatchStartMonthYear(student)}</td>
-                      <td>
-                        {student.addedByRepresentative
-                          ? `Representative: ${student.addedByRepresentative.name}`
-                          : 'Admin'}
-                      </td>
-                      <td>{getTotalFeesDisplay(student)}</td>
-                      <td>{getPendingFeesDisplay(student)}</td>
-                      <td style={{ position: 'relative' }}>
-                        <button
-                          data-menu-toggle
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (openMenuId === student._id) {
-                              setOpenMenuId(null);
-                            } else {
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const spaceBelow = window.innerHeight - rect.bottom;
-                              const spaceAbove = rect.top;
-                              const menuHeight = 300;
-                              const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
-                              setMenuPosition({
-                                top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
-                                left: rect.right - 160 + window.scrollX,
-                                openUpward
-                              });
-                              setOpenMenuId(student._id);
-                            }
-                          }}
-                          style={{
-                            background: "transparent",
-                            color: "#0f172a",
-                            border: "1px solid #d1d5db",
-                            borderRadius: "8px",
-                            width: "36px",
-                            height: "36px",
-                            cursor: "pointer",
-                            fontSize: "20px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          ⋮
-                        </button>
+                  <tr key={student._id}>
+                    <td>{student.internId || '—'}</td>
+                    <td>{student.name || '—'}</td>
+                    <td>{student.suggestedDomain || student.domain || student.currentDesignation || '—'}</td>
+                    <td>{student.duration || '—'}</td>
+                    <td>{getBatchStartMonthYear(student)}</td>
+                    <td>
+                      {student.addedByRepresentative
+                        ? `Representative: ${student.addedByRepresentative.name}`
+                        : 'Admin'}
+                    </td>
+                    <td>{getTotalFeesDisplay(student)}</td>
+                    <td>{getPendingFeesDisplay(student)}</td>
+                    <td style={{ position: 'relative' }}>
+                      <button
+                        data-menu-toggle
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (openMenuId === student._id) {
+                            setOpenMenuId(null);
+                          } else {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const spaceBelow = window.innerHeight - rect.bottom;
+                            const spaceAbove = rect.top;
+                            const menuHeight = 300;
+                            const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+                            setMenuPosition({
+                              top: openUpward ? rect.top + window.scrollY - 4 : rect.bottom + window.scrollY + 4,
+                              left: rect.right - 160 + window.scrollX,
+                              openUpward
+                            });
+                            setOpenMenuId(student._id);
+                          }
+                        }}
+                        style={{
+                          background: "transparent",
+                          color: "#0f172a",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          width: "36px",
+                          height: "36px",
+                          cursor: "pointer",
+                          fontSize: "20px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        ⋮
+                      </button>
 
                         {openMenuId === student._id &&
                           createPortal(
@@ -1152,7 +1173,6 @@ function SMSProgramManagement({ onAddStudentClick }) {
                           )}
                       </td>
                     </tr>
-                  </Fragment>
                 ))}
               </tbody>
             </table>
