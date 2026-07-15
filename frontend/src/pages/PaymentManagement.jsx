@@ -1112,7 +1112,18 @@ function PaymentManagement() {
       setError("");
       const res = await adminAPI.getAdminPayments();
       if (res.data.success) {
-        setPayments(res.data.payments || []);
+        const sortedPayments = [...(res.data.payments || [])].sort((a, b) => {
+          const createdAtA = new Date(a?.createdAt || 0).getTime();
+          const createdAtB = new Date(b?.createdAt || 0).getTime();
+
+          if (createdAtA !== createdAtB) {
+            return createdAtB - createdAtA;
+          }
+
+          return String(b?._id || "").localeCompare(String(a?._id || ""));
+        });
+
+        setPayments(sortedPayments);
       } else {
         setError("Failed to load payment records");
       }
@@ -1885,8 +1896,8 @@ function PaymentManagement() {
                       <th>Payment Type</th>
                       <th>Total Payment</th>
                       <th>Total Paid</th>
-                      <th>Pending Payment</th>
-                      <th>Status</th>
+                      <th style={{ textAlign: "center" }}>Pending Payment</th>
+                      <th style={{ textAlign: "center" }}>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -1914,17 +1925,23 @@ function PaymentManagement() {
                           </td>
                           <td>₹{item.totalPayment || 0}</td>
                           <td>₹{item.payment || 0}</td>
-                          <td style={{ color: (item.pendingPayment > 0) ? "#ef4444" : "#10b981", fontWeight: "600" }}>
+                          <td style={{ textAlign: "center", color: (item.pendingPayment > 0) ? "#ef4444" : "#10b981", fontWeight: "600" }}>
                             ₹{item.pendingPayment || 0}
                           </td>
-                          <td>
+                          <td style={{ textAlign: "center" }}>
                             <span style={{
-                              padding: "4px 10px",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              minWidth: "96px",
+                              padding: "6px 12px",
                               borderRadius: "999px",
                               backgroundColor: "#324158",
                               color: "#ffffff",
                               fontSize: "11px",
                               fontWeight: 700,
+                              lineHeight: 1,
+                              whiteSpace: "nowrap",
                               textTransform: "capitalize"
                             }}>
                               {item.paymentGoal || "Pending"}

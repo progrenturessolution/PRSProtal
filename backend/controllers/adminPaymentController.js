@@ -16,7 +16,8 @@ const getPayments = async (req, res) => {
       };
     }
 
-    const payments = await AdminPayment.find(query).sort({ updatedAt: -1 });
+    // Keep payment rows ordered by creation time so edits do not move them.
+    const payments = await AdminPayment.find(query).sort({ createdAt: -1, _id: -1 });
     res.status(200).json({
       success: true,
       payments
