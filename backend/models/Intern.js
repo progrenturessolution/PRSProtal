@@ -69,7 +69,7 @@ const internSchema = new mongoose.Schema({
   stipendType: {
     type: String,
     trim: true,
-    default: 'Unstipend'
+    default: 'Unpaid'
   },
   stipendAmount: {
     type: String,

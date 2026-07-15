@@ -37,7 +37,7 @@ const initialStudentForm = {
   completedFees: '',
   pendingFees: '',
   currentDesignation: '',
-  stipendType: 'Unstipend',
+  stipendType: 'Unpaid',
   stipendAmount: '',
 };
 
@@ -1194,8 +1194,9 @@ function RepresentativeDashboard() {
                         <div className="form-group" style={{ marginBottom: 0 }}>
                           <label>Stipend Type</label>
                           <select name="stipendType" value={studentForm.stipendType} onChange={handleStudentChange}>
-                            <option value="Unstipend">Unstipend</option>
+                            <option value="Unpaid">Unpaid</option>
                             <option value="Stipend">Stipend</option>
+                            <option value="Performance Based">Performance Based</option>
                           </select>
                         </div>
                         {studentForm.stipendType === 'Stipend' && (

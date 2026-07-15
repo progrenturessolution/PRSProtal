@@ -62,6 +62,53 @@ export default function VerifyIdentity() {
     }
   };
 
+  const getDisplayValue = (value, fallback = '—') => {
+    if (value === undefined || value === null) return fallback;
+    const normalizedValue = String(value).trim();
+    return normalizedValue || fallback;
+  };
+
+  const getStatusClass = (statusValue) => {
+    const normalizedStatus = String(statusValue || '').toLowerCase();
+    if (normalizedStatus === 'active') return 'status-active';
+    if (normalizedStatus === 'completed') return 'status-completed';
+    return 'status-other';
+  };
+
+  const verificationSections = studentData
+    ? (studentData.studentType === 'SMS Program'
+        ? [{
+            title: 'SMS Student Verification',
+            chipLabel: 'SMS Program',
+            fields: [
+              { label: 'Name', value: studentData.smsStudentVerification?.name },
+              { label: 'Email', value: studentData.smsStudentVerification?.email, wrap: true },
+              { label: 'PSMS ID', value: studentData.smsStudentVerification?.psmsId },
+              { label: 'Mobile Number', value: studentData.smsStudentVerification?.mobile },
+              { label: 'Domain', value: studentData.smsStudentVerification?.domain },
+              { label: 'Duration', value: studentData.smsStudentVerification?.duration },
+              { label: 'Start Month', value: studentData.smsStudentVerification?.startMonth },
+              { label: 'Designation', value: studentData.smsStudentVerification?.designation },
+              { label: 'Status', value: studentData.smsStudentVerification?.status, isStatus: true }
+            ]
+          }]
+        : [{
+            title: 'Intern Verification',
+            chipLabel: 'Internship',
+            fields: [
+              { label: 'Name', value: studentData.internshipVerification?.name },
+              { label: 'Email', value: studentData.internshipVerification?.email, wrap: true },
+              { label: 'PIID', value: studentData.internshipVerification?.piid },
+              { label: 'Mobile Number', value: studentData.internshipVerification?.mobile },
+              { label: 'Domain of Internship', value: studentData.internshipVerification?.domainOfInternship },
+              { label: 'Duration', value: studentData.internshipVerification?.duration },
+              { label: 'Internship Start Month', value: studentData.internshipVerification?.internshipStartMonth },
+              { label: 'Internship Type', value: studentData.internshipVerification?.internshipType },
+              { label: 'Status', value: studentData.internshipVerification?.status, isStatus: true }
+            ]
+          }])
+    : [];
+
   return (
     <div className="verify-container">
       {/* CSS Styling */}
@@ -161,7 +208,49 @@ export default function VerifyIdentity() {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 12px 20px;
-          margin-bottom: 16px;
+        }
+
+        .verification-section {
+          padding: 18px 0;
+          border-top: 1px solid #f1f5f9;
+        }
+
+        .verification-section:first-of-type {
+          border-top: none;
+          padding-top: 0;
+        }
+
+        .verification-section:last-of-type {
+          padding-bottom: 0;
+        }
+
+        .verification-section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .verification-section-header h5 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 700;
+          color: #0f172a;
+          letter-spacing: -0.01em;
+        }
+
+        .verify-section-chip {
+          display: inline-flex;
+          align-items: center;
+          padding: 4px 10px;
+          border-radius: 999px;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          color: #475569;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
         }
 
         .grid-span-full {
@@ -574,7 +663,7 @@ export default function VerifyIdentity() {
             <p>
               Only registered candidates with valid credentials can access their verification details.
             </p>
-            <div className="login-footer-brand">Official Verification Portal</div>
+            <div className="login-footer-brand">Progrentures Verification Portal</div>
             <div className="login-footer-rights">Progrentures Solution Pvt. Ltd.</div>
           </div>
         </div>
@@ -594,7 +683,7 @@ export default function VerifyIdentity() {
 
               <form onSubmit={handleVerify} className="login-form">
                 <div className="form-group">
-                  <label htmlFor="internId">Aspirant ID (Intern ID / SMS ID)</label>
+                  <label htmlFor="internId">Aspirant ID (PIID / PSMS ID)</label>
                   <input
                     id="internId"
                     type="text"
@@ -659,66 +748,38 @@ export default function VerifyIdentity() {
                   </div>
                 </div>
 
-                <div className="verify-results-grid">
-                  <div className="detail-item">
-                    <span className="detail-label">Aspirant Name</span>
-                    <span className="detail-value">{studentData.name}</span>
-                  </div>
+                {verificationSections.map((section) => (
+                  <div className="verification-section" key={section.title}>
+                    <div className="verification-section-header">
+                      <h5>{section.title}</h5>
+                      <span className="verify-section-chip">{section.chipLabel}</span>
+                    </div>
 
-                  <div className="detail-item">
-                    <span className="detail-label">Aspirant ID</span>
-                    <span className="detail-value">{studentData.internId}</span>
+                    <div className="verify-results-grid">
+                      {section.fields.map((field) => (
+                        <div className="detail-item" key={`${section.title}-${field.label}`}>
+                          <span className="detail-label">{field.label}</span>
+                          {field.isStatus ? (
+                            <span className={`detail-status-pill ${getStatusClass(field.value)}`}>
+                              {getDisplayValue(field.value)}
+                            </span>
+                          ) : (
+                            <span
+                              className="detail-value"
+                              style={field.wrap ? { wordBreak: 'break-all' } : undefined}
+                            >
+                              {getDisplayValue(field.value)}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-
-                  <div className="detail-item">
-                    <span className="detail-label">Email Address</span>
-                    <span className="detail-value" style={{ wordBreak: 'break-all' }}>{studentData.email}</span>
-                  </div>
-
-                  <div className="detail-item">
-                    <span className="detail-label">Mobile Number</span>
-                    <span className="detail-value">{studentData.mobile}</span>
-                  </div>
-
-                  <div className="detail-item">
-                    <span className="detail-label">Program Type</span>
-                    <span className="detail-value">{studentData.studentType}</span>
-                  </div>
-
-                  <div className="detail-item">
-                    <span className="detail-label">Assigned Domain</span>
-                    <span className="detail-value-highlight">{studentData.domain}</span>
-                  </div>
-
-                  <div className="detail-item">
-                    <span className="detail-label">Batch Start</span>
-                    <span className="detail-value">{studentData.joiningDate}</span>
-                  </div>
-
-                  <div className="detail-item">
-                    <span className="detail-label">Duration</span>
-                    <span className="detail-value">{studentData.duration}</span>
-                  </div>
-
-                  <div className="detail-item grid-span-full">
-                    <span className="detail-label">College / Institution</span>
-                    <span className="detail-value">{studentData.collegeName}</span>
-                  </div>
-
-                  <div className="detail-item">
-                    <span className="detail-label">Status Badge</span>
-                    <span className={`detail-status-pill ${
-                      studentData.status?.toLowerCase() === 'active' ? 'status-active' :
-                      studentData.status?.toLowerCase() === 'completed' ? 'status-completed' : 'status-other'
-                    }`}>
-                      {studentData.status}
-                    </span>
-                  </div>
-                </div>
+                ))}
 
                 <div className="verify-results-footer">
                   <div className="verify-company-tag">
-                    Verified Company: <strong>{studentData.companyName || 'Progrentures Solution'}</strong>
+                    Verified By: <strong>{studentData.companyName || 'Progrentures Solution'}</strong>
                   </div>
                 </div>
               </div>
@@ -771,4 +832,3 @@ export default function VerifyIdentity() {
     </div>
   );
 }
-

@@ -18,6 +18,8 @@ const normalizeCredentialValue = (value) => {
   return trimmed;
 };
 
+const escapeRegex = (value = '') => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Admin Login
 exports.adminLogin = async (req, res) => {
   try {
@@ -189,10 +191,11 @@ exports.verifyIdentity = async (req, res) => {
     const normalizedInternId = String(internId).trim();
     const normalizedEmail = String(email).toLowerCase().trim();
 
-    // Query database for the student. Should not be soft deleted.
+    // Query database for the student. Keep matching case-insensitive so
+    // PSMS/PIID values still verify when users type them with different casing.
     const intern = await Intern.findOne({
-      internId: normalizedInternId,
-      email: normalizedEmail,
+      internId: { $regex: `^${escapeRegex(normalizedInternId)}$`, $options: 'i' },
+      email: { $regex: `^${escapeRegex(normalizedEmail)}$`, $options: 'i' },
       isDeleted: { $ne: true }
     }).lean();
 
@@ -203,34 +206,88 @@ exports.verifyIdentity = async (req, res) => {
       });
     }
 
-    // Format dates nicely for displaying
+    // Format month-year values in a consistent way for verification cards.
     const formatBatchDate = (dateVal) => {
-      if (!dateVal) return '-';
+      if (!dateVal) return '—';
       try {
         return new Date(dateVal).toLocaleDateString("en-US", {
           month: "short",
           year: "numeric",
         });
       } catch (e) {
-        return '-';
+        return '—';
       }
     };
+
+    const formatStatus = (statusVal) => {
+      const normalizedStatus = String(statusVal || '').trim().toLowerCase();
+      if (!normalizedStatus) return '—';
+      return normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1);
+    };
+
+    const getSafeValue = (value, fallback = '—') => {
+      if (value === undefined || value === null) return fallback;
+      const normalizedValue = String(value).trim();
+      return normalizedValue || fallback;
+    };
+
+    const formattedStatus = formatStatus(intern.status);
+    const formattedDuration = getSafeValue(intern.duration, 'N/A');
+    const formattedInternshipType = getSafeValue(intern.stipendType, 'Unpaid');
+    const internshipDomain =
+      intern.studentType === 'SMS Program'
+        ? getSafeValue(intern.suggestedDomain)
+        : getSafeValue(intern.domain);
+    const internshipStartMonth =
+      intern.studentType === 'SMS Program'
+        ? formatBatchDate(intern.enrolmentDate)
+        : formatBatchDate(intern.joiningDate);
 
     // Return profile-like details of the student
     res.status(200).json({
       success: true,
       message: 'Identity Verified Successfully',
       student: {
-        name: intern.name,
-        email: intern.email,
-        mobile: intern.mobile,
-        internId: intern.internId,
+        name: getSafeValue(intern.name),
+        email: getSafeValue(intern.email),
+        mobile: getSafeValue(intern.mobile),
+        internId: getSafeValue(intern.internId),
         studentType: intern.studentType,
-        domain: intern.studentType === 'SMS Program' ? (intern.suggestedDomain || '-') : (intern.domain || '-'),
-        joiningDate: intern.studentType === 'SMS Program' ? formatBatchDate(intern.enrolmentDate) : formatBatchDate(intern.joiningDate),
-        duration: intern.duration || 'N/A',
-        collegeName: intern.studentType === 'SMS Program' ? intern.instituteName : intern.collegeName,
-        status: intern.status,
+        domain: internshipDomain,
+        joiningDate: internshipStartMonth,
+        duration: formattedDuration,
+        collegeName:
+          intern.studentType === 'SMS Program'
+            ? getSafeValue(intern.instituteName)
+            : getSafeValue(intern.collegeName),
+        stipendType: formattedInternshipType,
+        currentDesignation: getSafeValue(intern.currentDesignation),
+        status: formattedStatus,
+        internshipVerification: {
+          name: getSafeValue(intern.name),
+          email: getSafeValue(intern.email),
+          piid: getSafeValue(intern.internId),
+          mobile: getSafeValue(intern.mobile),
+          domainOfInternship: internshipDomain,
+          duration: formattedDuration,
+          internshipStartMonth,
+          internshipType: formattedInternshipType,
+          status: formattedStatus
+        },
+        smsStudentVerification:
+          intern.studentType === 'SMS Program'
+            ? {
+                name: getSafeValue(intern.name),
+                email: getSafeValue(intern.email),
+                psmsId: getSafeValue(intern.internId),
+                mobile: getSafeValue(intern.mobile),
+                domain: getSafeValue(intern.suggestedDomain),
+                duration: formattedDuration,
+                startMonth: formatBatchDate(intern.enrolmentDate),
+                designation: getSafeValue(intern.currentDesignation),
+                status: formattedStatus
+              }
+            : null,
         companyName: 'Progrentures Solution Pvt. Ltd.'
       }
     });

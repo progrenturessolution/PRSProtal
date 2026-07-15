@@ -2525,7 +2525,7 @@ function InternDashboard() {
                   {hasDisplayValue(user.duration) && <div className="field-col"><label>Duration</label><div className="field-value">{user.duration}</div></div>}
                   {hasDisplayValue(user.joiningDate) && <div className="field-col"><label>Joining Date</label><div className="field-value">{new Date(user.joiningDate).toLocaleDateString()}</div></div>}
                   {hasDisplayValue(user.endingDate) && <div className="field-col"><label>Ending Date</label><div className="field-value">{new Date(user.endingDate).toLocaleDateString()}</div></div>}
-                  {hasDisplayValue(user.stipendType) && <div className="field-col"><label>Stipend Type</label><div className="field-value">{user.stipendType}</div></div>}
+                  {hasDisplayValue(user.stipendType) && <div className="field-col"><label>Stipend Type</label><div className="field-value">{user.stipendType === 'Stipend' ? 'Stipend' : user.stipendType === 'Performance Based' ? 'Performance Based' : 'Unpaid'}</div></div>}
                   {hasDisplayValue(user.stipendAmount) && <div className="field-col"><label>Stipend Amount</label><div className="field-value">{`Rs. ${user.stipendAmount}`}</div></div>}
                 </div>
               </div>

@@ -38,7 +38,7 @@ function AddIntern({ onInternAdded, onBack, defaultStudentType }) {
     pendingFees: "",
     lastPaymentDate: "",
     currentDesignation: "",
-    stipendType: "Unstipend",
+    stipendType: "Unpaid",
     stipendAmount: "",
   });
   const [welcomeFile, setWelcomeFile] = useState(null);
@@ -173,7 +173,7 @@ function AddIntern({ onInternAdded, onBack, defaultStudentType }) {
         submitData.collegeName = formData.collegeName;
         submitData.branch = formData.branch;
         submitData.yearOfStudy = formData.yearOfStudy;
-        submitData.stipendType = formData.stipendType || 'Unstipend';
+        submitData.stipendType = formData.stipendType || 'Unpaid';
         if (formData.stipendType === 'Stipend') submitData.stipendAmount = formData.stipendAmount || '';
 
         console.log("Internship data being sent:", {
@@ -283,7 +283,7 @@ function AddIntern({ onInternAdded, onBack, defaultStudentType }) {
           pendingFees: "",
           lastPaymentDate: "",
           currentDesignation: "",
-          stipendType: "Unstipend",
+          stipendType: "Unpaid",
           stipendAmount: "",
         });
 
@@ -623,8 +623,9 @@ function AddIntern({ onInternAdded, onBack, defaultStudentType }) {
                 <div className="form-group">
                   <label>Stipend Type</label>
                   <select name="stipendType" value={formData.stipendType} onChange={handleChange}>
-                    <option value="Unstipend">Unstipend</option>
+                    <option value="Unpaid">Unpaid</option>
                     <option value="Stipend">Stipend</option>
+                    <option value="Performance Based">Performance Based</option>
                   </select>
                 </div>
                 {formData.stipendType === 'Stipend' && (

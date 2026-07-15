@@ -294,7 +294,7 @@ function ViewInterns({
       lastPaymentDate: student.lastPaymentDate
         ? new Date(student.lastPaymentDate).toISOString().slice(0, 10)
         : "",
-      stipendType: student.stipendType || 'Unstipend',
+      stipendType: student.stipendType === 'Stipend' || student.stipendType === 'Performance Based' ? student.stipendType : 'Unpaid',
       stipendAmount: student.stipendAmount || '',
       password: student.plainPassword || '',
     });
@@ -1234,7 +1234,7 @@ function ViewInterns({
                     {selectedStudent.studentType === "Internship" ? (
                       <>
                         <div className="profile-field"><label>Domain</label><div className="field-value">{selectedStudent.domain || "Not set"}</div></div>
-                        <div className="profile-field"><label>Stipend</label><div className="field-value">{(selectedStudent.stipendType === 'Stipend') ? `Stipend — Rs. ${selectedStudent.stipendAmount || '0'}` : (selectedStudent.stipendType || 'Unstipend')}</div></div>
+                        <div className="profile-field"><label>Stipend</label><div className="field-value">{(selectedStudent.stipendType === 'Stipend') ? `Stipend — Rs. ${selectedStudent.stipendAmount || '0'}` : (selectedStudent.stipendType === 'Performance Based' ? 'Performance Based' : 'Unpaid')}</div></div>
                         <div className="profile-field"><label>College Name</label><div className="field-value">{selectedStudent.collegeName || "Not set"}</div></div>
                         <div className="profile-field"><label>Branch</label><div className="field-value">{selectedStudent.branch || "Not set"}</div></div>
                         <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || "Not set"}</div></div>
@@ -1582,8 +1582,9 @@ function ViewInterns({
                     <div className="profile-field">
                       <label>Stipend Type</label>
                       <select value={editForm.stipendType} onChange={(e) => handleEditChange('stipendType', e.target.value)}>
-                        <option value="Unstipend">Unstipend</option>
+                        <option value="Unpaid">Unpaid</option>
                         <option value="Stipend">Stipend</option>
+                        <option value="Performance Based">Performance Based</option>
                       </select>
                     </div>
                     {editForm.stipendType === 'Stipend' && (

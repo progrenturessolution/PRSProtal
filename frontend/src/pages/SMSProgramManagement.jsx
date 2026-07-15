@@ -386,7 +386,9 @@ function SMSProgramManagement({ onAddStudentClick }) {
       pendingFees: String(pending),
       dateOfPayment: selectedStudent.dateOfPayment ? selectedStudent.dateOfPayment.split('T')[0] : '',
       lastPaymentDate: selectedStudent.lastPaymentDate ? selectedStudent.lastPaymentDate.split('T')[0] : '',
-      status: selectedStudent.status || 'active'
+      status: selectedStudent.status || 'active',
+      stipendType: selectedStudent.stipendType === 'Stipend' || selectedStudent.stipendType === 'Performance Based' ? selectedStudent.stipendType : 'Unpaid',
+      stipendAmount: selectedStudent.stipendAmount || ''
     });
     setIsEditing(true);
   };
@@ -420,7 +422,9 @@ function SMSProgramManagement({ onAddStudentClick }) {
       pendingFees: '',
       dateOfPayment: '',
       lastPaymentDate: '',
-      status: ''
+      status: '',
+      stipendType: 'Unpaid',
+      stipendAmount: ''
     });
   };
 
@@ -1565,7 +1569,7 @@ function SMSProgramManagement({ onAddStudentClick }) {
                       {selectedStudent.studentType === "Internship" ? (
                         <>
                           <div className="profile-field"><label>Domain</label><div className="field-value">{selectedStudent.domain || "Not set"}</div></div>
-                          <div className="profile-field"><label>Stipend</label><div className="field-value">{(selectedStudent.stipendType === 'Stipend') ? `Stipend — Rs. ${selectedStudent.stipendAmount || '0'}` : (selectedStudent.stipendType || 'Unstipend')}</div></div>
+                          <div className="profile-field"><label>Stipend</label><div className="field-value">{(selectedStudent.stipendType === 'Stipend') ? `Stipend — Rs. ${selectedStudent.stipendAmount || '0'}` : (selectedStudent.stipendType === 'Performance Based' ? 'Performance Based' : 'Unpaid')}</div></div>
                           <div className="profile-field"><label>College Name</label><div className="field-value">{selectedStudent.collegeName || "Not set"}</div></div>
                           <div className="profile-field"><label>Branch</label><div className="field-value">{selectedStudent.branch || "Not set"}</div></div>
                           <div className="profile-field"><label>Year of Study</label><div className="field-value">{selectedStudent.yearOfStudy || "Not set"}</div></div>
@@ -1804,8 +1808,9 @@ function SMSProgramManagement({ onAddStudentClick }) {
                       <div className="profile-field">
                         <label>Stipend Type</label>
                         <select name="stipendType" value={editForm.stipendType} onChange={handleInputChange}>
-                          <option value="Unstipend">Unstipend</option>
+                          <option value="Unpaid">Unpaid</option>
                           <option value="Stipend">Stipend</option>
+                          <option value="Performance Based">Performance Based</option>
                         </select>
                       </div>
                       {editForm.stipendType === 'Stipend' && (

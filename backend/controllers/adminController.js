@@ -266,7 +266,7 @@ exports.addIntern = async (req, res) => {
       internData.collegeName = collegeName;
       internData.branch = branch;
       internData.yearOfStudy = yearOfStudy;
-      internData.stipendType = req.body.stipendType || 'Unstipend';
+      internData.stipendType = ['Stipend', 'Performance Based'].includes(req.body.stipendType) ? req.body.stipendType : 'Unpaid';
       if (req.body.stipendType === 'Stipend' && req.body.stipendAmount) internData.stipendAmount = String(req.body.stipendAmount);
       // endingDate is optional, can be calculated later if needed
       if (endingDate) {
@@ -666,6 +666,10 @@ exports.updateIntern = async (req, res) => {
     const updates = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined && key !== 'password') updates[key] = req.body[key];
+    }
+
+    if (updates.stipendType !== undefined) {
+      updates.stipendType = ['Stipend', 'Performance Based'].includes(updates.stipendType) ? updates.stipendType : 'Unpaid';
     }
 
     if (req.body.password !== undefined && String(req.body.password).trim() !== '') {

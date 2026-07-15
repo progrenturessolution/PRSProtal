@@ -281,7 +281,7 @@ exports.addStudent = async (req, res) => {
       internData.collegeName = collegeName;
       internData.branch = branch;
       internData.yearOfStudy = yearOfStudy;
-      internData.stipendType = req.body.stipendType || 'Unstipend';
+      internData.stipendType = ['Stipend', 'Performance Based'].includes(req.body.stipendType) ? req.body.stipendType : 'Unpaid';
       if (req.body.stipendType === 'Stipend' && req.body.stipendAmount) internData.stipendAmount = String(req.body.stipendAmount);
       if (endingDate) {
         internData.endingDate = endingDate;
@@ -452,6 +452,10 @@ exports.updateStudent = async (req, res) => {
         updates[field] = req.body[field];
       }
     });
+
+    if (updates.stipendType !== undefined) {
+      updates.stipendType = ['Stipend', 'Performance Based'].includes(updates.stipendType) ? updates.stipendType : 'Unpaid';
+    }
 
     const student = await Intern.findOneAndUpdate(
       {
