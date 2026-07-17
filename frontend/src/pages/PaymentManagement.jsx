@@ -447,6 +447,16 @@ function PaymentManagement() {
     }));
   }, [formData.totalPayment, formData.firstPayment, formData.secondPayment, formData.finalPayment]);
 
+  // Helper function to parse date strings (YYYY-MM-DD) correctly in local time
+  const parseDateLocal = (dateStr) => {
+    if (!dateStr) return null;
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+    // Note: month is 0-indexed in Date
+    const date = new Date(year, month - 1, day);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
   const getUniquePaymentMonths = () => {
     const months = {};
     payments.forEach((item) => {
@@ -461,8 +471,8 @@ function PaymentManagement() {
         item.finalPaymentSendDate
       ].filter(Boolean);
       datesToCheck.forEach((dStr) => {
-        const d = new Date(dStr);
-        if (!isNaN(d.getTime())) {
+        const d = parseDateLocal(dStr);
+        if (d) {
           const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
           const label = d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
           months[key] = { key, label, year: d.getFullYear(), monthIndex: d.getMonth() };
@@ -479,8 +489,8 @@ function PaymentManagement() {
     const monthlyGroups = {};
 
     const getMonthGroup = (dateStr) => {
-      const dateObj = new Date(dateStr);
-      if (isNaN(dateObj.getTime())) return null;
+      const dateObj = parseDateLocal(dateStr);
+      if (!dateObj) return null;
       const year = dateObj.getFullYear();
       const monthIndex = dateObj.getMonth();
       const monthKey = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
@@ -588,8 +598,8 @@ function PaymentManagement() {
       ].filter(Boolean);
 
       datesToCheck.forEach((dStr) => {
-        const d = new Date(dStr);
-        if (!isNaN(d.getTime())) {
+        const d = parseDateLocal(dStr);
+        if (d) {
           const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
           if (key === monthKey) match = true;
         }
@@ -1263,12 +1273,12 @@ function PaymentManagement() {
           item.finalPaymentSendDate
         ].filter(Boolean);
         datesToCheck.forEach((dStr) => {
-          const d = new Date(dStr);
-          if (!isNaN(d.getTime())) {
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-            if (key === monthFilter) match = true;
-          }
-        });
+            const d = parseDateLocal(dStr);
+            if (d) {
+              const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+              if (key === monthFilter) match = true;
+            }
+          });
         return match;
       });
     }
@@ -1291,8 +1301,15 @@ function PaymentManagement() {
 
     if (allDates.length === 0) return null;
 
-    // Sort by date descending (newest first)
-    allDates.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Sort by date descending (newest first) using local parsing to avoid UTC month shifts
+    allDates.sort((a, b) => {
+      const dateA = parseDateLocal(a.date);
+      const dateB = parseDateLocal(b.date);
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateB - dateA;
+    });
     
     // If payment type is Receive, prioritize receive dates; if Send, prioritize send dates
     if (item.paymentType === 'Receive') {
