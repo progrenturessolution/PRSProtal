@@ -261,9 +261,12 @@ router.delete('/activities/:id', verifyToken, verifyAdmin, adminController.delet
 
 // ========== PAYMENT MANAGEMENT ==========
 router.get('/payments', verifyToken, verifyAdmin, adminPaymentController.getPayments);
+router.get('/payments/deleted', verifyToken, verifyAdmin, adminPaymentController.getDeletedPayments);
 router.post('/payments', verifyToken, verifyAdmin, adminPaymentController.createPayment);
 router.patch('/payments/:id', verifyToken, verifyAdmin, adminPaymentController.updatePayment);
 router.delete('/payments/:id', verifyToken, verifyAdmin, adminPaymentController.deletePayment);
+router.patch('/payments/:id/restore', verifyToken, verifyAdmin, adminPaymentController.restorePayment);
+router.delete('/payments/:id/permanent', verifyToken, verifyAdmin, adminPaymentController.permanentDeletePayment);
 
 // ========== PAYMENT NOTES (STICKY NOTES) ==========
 router.get('/payment-notes', verifyToken, verifyAdmin, adminPaymentController.getPaymentNotes);

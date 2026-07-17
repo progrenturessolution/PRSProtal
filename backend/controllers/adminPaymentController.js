@@ -1,14 +1,25 @@
 const AdminPayment = require('../models/AdminPayment');
 const PaymentNote = require('../models/PaymentNote');
 
-// Get all payments
+const RECYCLE_BIN_RETENTION_DAYS = 5;
+
+const purgeExpiredDeletedPayments = async () => {
+  const expiryDate = new Date(Date.now() - RECYCLE_BIN_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  await AdminPayment.deleteMany({
+    deletedAt: { $ne: null, $lte: expiryDate }
+  });
+};
+
+// Get all non-deleted payments
 const getPayments = async (req, res) => {
   try {
+    await purgeExpiredDeletedPayments();
     const { search } = req.query;
-    let query = {};
+    let query = { deletedAt: null };
     
     if (search) {
       query = {
+        deletedAt: null,
         $or: [
           { name: { $regex: search, $options: 'i' } },
           { role: { $regex: search, $options: 'i' } }
@@ -27,6 +38,142 @@ const getPayments = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while fetching payments'
+    });
+  }
+};
+
+// Get all deleted payments (recycle bin)
+const getDeletedPayments = async (req, res) => {
+  try {
+    await purgeExpiredDeletedPayments();
+    const { search } = req.query;
+    let query = { deletedAt: { $ne: null } };
+    
+    if (search) {
+      query = {
+        deletedAt: { $ne: null },
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { role: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    const payments = await AdminPayment.find(query).sort({ deletedAt: -1, _id: -1 });
+    res.status(200).json({
+      success: true,
+      payments
+    });
+  } catch (error) {
+    console.error('Error in getDeletedPayments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching deleted payments'
+    });
+  }
+};
+
+// Soft delete a payment (move to recycle bin)
+const softDeletePayment = async (req, res) => {
+  try {
+    await purgeExpiredDeletedPayments();
+    const { id } = req.params;
+    const paymentRecord = await AdminPayment.findById(id);
+    
+    if (!paymentRecord) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+    }
+
+    if (paymentRecord.deletedAt) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment is already in recycle bin'
+      });
+    }
+
+    paymentRecord.deletedAt = new Date();
+    await paymentRecord.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment moved to recycle bin successfully',
+      payment: paymentRecord
+    });
+  } catch (error) {
+    console.error('Error in softDeletePayment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting payment'
+    });
+  }
+};
+
+// Restore a soft-deleted payment
+const restorePayment = async (req, res) => {
+  try {
+    await purgeExpiredDeletedPayments();
+    const { id } = req.params;
+    const paymentRecord = await AdminPayment.findById(id);
+    
+    if (!paymentRecord) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+    }
+
+    if (!paymentRecord.deletedAt) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment is not in recycle bin'
+      });
+    }
+
+    paymentRecord.deletedAt = null;
+    await paymentRecord.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment restored successfully',
+      payment: paymentRecord
+    });
+  } catch (error) {
+    console.error('Error in restorePayment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while restoring payment'
+    });
+  }
+};
+
+// Permanently delete a payment
+const permanentDeletePayment = async (req, res) => {
+  try {
+    await purgeExpiredDeletedPayments();
+    const { id } = req.params;
+    const paymentRecord = await AdminPayment.findById(id);
+    
+    if (!paymentRecord) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment record not found'
+      });
+    }
+
+    await AdminPayment.deleteOne({ _id: id });
+
+    res.status(200).json({
+      success: true,
+      message: 'Payment permanently deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error in permanentDeletePayment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while permanently deleting payment'
     });
   }
 };
@@ -179,9 +326,10 @@ const updatePayment = async (req, res) => {
   }
 };
 
-// Delete a payment record
+// Delete a payment record (soft delete to recycle bin)
 const deletePayment = async (req, res) => {
   try {
+    await purgeExpiredDeletedPayments();
     const { id } = req.params;
 
     const paymentRecord = await AdminPayment.findById(id);
@@ -192,11 +340,20 @@ const deletePayment = async (req, res) => {
       });
     }
 
-    await AdminPayment.deleteOne({ _id: id });
+    if (paymentRecord.deletedAt) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment is already in recycle bin'
+      });
+    }
+
+    paymentRecord.deletedAt = new Date();
+    await paymentRecord.save();
 
     res.status(200).json({
       success: true,
-      message: 'Payment record deleted successfully'
+      message: 'Payment moved to recycle bin successfully',
+      payment: paymentRecord
     });
   } catch (error) {
     console.error('Error in deletePayment:', error);
@@ -321,9 +478,13 @@ const deletePaymentNote = async (req, res) => {
 
 module.exports = {
   getPayments,
+  getDeletedPayments,
   createPayment,
   updatePayment,
   deletePayment,
+  softDeletePayment,
+  restorePayment,
+  permanentDeletePayment,
   getPaymentNotes,
   createPaymentNote,
   updatePaymentNote,

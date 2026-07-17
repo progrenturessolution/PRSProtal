@@ -307,9 +307,11 @@ function PaymentManagement() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, openUpward: false });
   const [payments, setPayments] = useState([]);
+  const [deletedPayments, setDeletedPayments] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
+  const [loadingDeletedPayments, setLoadingDeletedPayments] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -1147,8 +1149,27 @@ function PaymentManagement() {
     }
   };
 
+  const fetchDeletedPayments = async () => {
+    try {
+      setLoadingDeletedPayments(true);
+      const res = await adminAPI.getDeletedAdminPayments();
+      if (res.data.success) {
+        setDeletedPayments(res.data.payments || []);
+      }
+    } catch (err) {
+      console.error("Deleted payment fetch error:", err);
+    } finally {
+      setLoadingDeletedPayments(false);
+    }
+  };
+
+  const refreshPaymentViews = async () => {
+    await Promise.all([fetchPayments(), fetchDeletedPayments()]);
+  };
+
   useEffect(() => {
     fetchPayments();
+    fetchDeletedPayments();
     fetchNotes();
   }, []);
 
@@ -1318,7 +1339,7 @@ function PaymentManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this payment record?")) {
+    if (!window.confirm("Are you sure you want to move this payment record to recycle bin?")) {
       return;
     }
 
@@ -1328,8 +1349,8 @@ function PaymentManagement() {
       setSuccess("");
       const res = await adminAPI.deleteAdminPayment(id);
       if (res.data.success) {
-        setSuccess("Payment record deleted successfully");
-        fetchPayments();
+        setSuccess("Payment record moved to recycle bin successfully");
+        await refreshPaymentViews();
       } else {
         setError("Failed to delete payment record");
       }
@@ -1339,6 +1360,60 @@ function PaymentManagement() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRestorePayment = async (id) => {
+    try {
+      setLoadingDeletedPayments(true);
+      setError("");
+      setSuccess("");
+      const res = await adminAPI.restoreAdminPayment(id);
+      if (res.data.success) {
+        setSuccess("Payment record restored successfully");
+        await refreshPaymentViews();
+      } else {
+        setError("Failed to restore payment record");
+      }
+    } catch (err) {
+      console.error("Restore payment error:", err);
+      setError(err.response?.data?.message || "Failed to restore payment record");
+    } finally {
+      setLoadingDeletedPayments(false);
+    }
+  };
+
+  const handlePermanentDelete = async (id) => {
+    if (!window.confirm("This payment will be permanently deleted. Do you want to continue?")) {
+      return;
+    }
+
+    try {
+      setLoadingDeletedPayments(true);
+      setError("");
+      setSuccess("");
+      const res = await adminAPI.permanentlyDeleteAdminPayment(id);
+      if (res.data.success) {
+        setSuccess("Payment record permanently deleted");
+        await refreshPaymentViews();
+      } else {
+        setError("Failed to permanently delete payment record");
+      }
+    } catch (err) {
+      console.error("Permanent delete payment error:", err);
+      setError(err.response?.data?.message || "Failed to permanently delete payment record");
+    } finally {
+      setLoadingDeletedPayments(false);
+    }
+  };
+
+  const getRecycleBinDaysLeft = (deletedAt) => {
+    if (!deletedAt) return 0;
+    const deletedTime = new Date(deletedAt).getTime();
+    if (Number.isNaN(deletedTime)) return 0;
+    const expiresAt = deletedTime + 5 * 24 * 60 * 60 * 1000;
+    const remainingMs = expiresAt - Date.now();
+    if (remainingMs <= 0) return 0;
+    return Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
   };
 
   const handleSubmit = async (e) => {
@@ -1407,31 +1482,12 @@ function PaymentManagement() {
           <h1>Payment Management</h1>
           <p className="header-subtitle">Manage payment goals, amounts received, pending payments, and dates.</p>
         </div>
-        <div className="header-right" style={{ display: "flex", gap: "10px" }}>
-          {activeTab === "form" ? (
+        <div className="header-right" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          {activeTab === "form" || activeTab === "report" || activeTab === "recycleBin" ? (
             <button
               type="button"
               onClick={() => {
                 setFormData(emptyForm);
-                setActiveTab("list");
-              }}
-              style={{
-                padding: "10px 18px",
-                border: "none",
-                borderRadius: "10px",
-                background: "#344158",
-                color: "#fff",
-                fontWeight: "600",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              Back
-            </button>
-          ) : activeTab === "report" ? (
-            <button
-              type="button"
-              onClick={() => {
                 setActiveTab("list");
               }}
               style={{
@@ -1467,6 +1523,33 @@ function PaymentManagement() {
                 }}
               >
                 View Monthly Report
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("recycleBin");
+                  fetchDeletedPayments();
+                }}
+                style={{
+                  padding: "10px 18px",
+                  border: "none",
+                  borderRadius: "10px",
+                  background: "#475569",
+                  color: "#fff",
+                  fontWeight: "600",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                Recycle Bin
+                {deletedPayments.length > 0 && (
+                  <span style={{ background: "#ffffff", color: "#475569", borderRadius: "999px", padding: "2px 8px", fontSize: "11px", fontWeight: "700" }}>
+                    {deletedPayments.length}
+                  </span>
+                )}
               </button>
               <button
                 type="button"
@@ -1841,6 +1924,208 @@ function PaymentManagement() {
               </button>
             </div>
           </form>
+        </div>
+      ) : activeTab === "recycleBin" ? (
+        <div className="premium-card" style={{ padding: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "18px", color: "#0f172a" }}>Recycle Bin</h2>
+              <p style={{ margin: "6px 0 0", fontSize: "13px", color: "#64748b" }}>
+                Deleted payments stay here for 5 days, then they are removed automatically.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchDeletedPayments}
+              style={{
+                padding: "8px 14px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "8px",
+                background: "#ffffff",
+                color: "#334155",
+                fontWeight: "600",
+                fontSize: "13px",
+                cursor: "pointer"
+              }}
+            >
+              Refresh
+            </button>
+          </div>
+
+          {loadingDeletedPayments ? (
+            <div style={{ padding: "36px", textAlign: "center" }}>Loading recycle bin...</div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="data-table view-students-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Payment Type</th>
+                    <th>Date</th>
+                    <th>Total Payment</th>
+                    <th>Total Paid</th>
+                    <th style={{ textAlign: "center" }}>Pending Payment</th>
+                    <th style={{ textAlign: "center" }}>Status</th>
+                    <th>Deleted On</th>
+                    <th>Days Left</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {deletedPayments.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} style={{ textAlign: "center" }}>Recycle bin is empty</td>
+                    </tr>
+                  ) : (
+                    deletedPayments.map((item) => {
+                      const relevantDate = getRelevantDate(item);
+                      return (
+                      <tr key={item._id}>
+                        <td style={{ fontWeight: "600" }}>{item.name}</td>
+                        <td>{item.role}</td>
+                        <td>
+                          <span style={{
+                            padding: "4px 8px",
+                            borderRadius: "6px",
+                            backgroundColor: item.paymentType === "Send" ? "#fee2e2" : item.paymentType === "Receive" ? "#dcfce7" : "#f1f5f9",
+                            color: item.paymentType === "Send" ? "#991b1b" : item.paymentType === "Receive" ? "#166534" : "#475569",
+                            fontWeight: "600",
+                            fontSize: "12px"
+                          }}>
+                            {item.paymentType || "Receive"}
+                          </span>
+                        </td>
+                        <td>{relevantDate ? new Date(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
+                        <td>₹{item.totalPayment || 0}</td>
+                        <td>₹{item.payment || 0}</td>
+                        <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
+                          ₹{(item.paymentGoal === "Cancel" || item.paymentGoal === "Completed") ? 0 : (item.pendingPayment || 0)}
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <span style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minWidth: "96px",
+                            padding: "6px 12px",
+                            borderRadius: "999px",
+                            backgroundColor: "#324158",
+                            color: "#ffffff",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            whiteSpace: "nowrap",
+                            textTransform: "capitalize"
+                          }}>
+                            {item.paymentGoal || "Pending"}
+                          </span>
+                        </td>
+                        <td>{item.deletedAt ? new Date(item.deletedAt).toLocaleDateString("en-IN") : "-"}</td>
+                        <td>{getRecycleBinDaysLeft(item.deletedAt)} day(s)</td>
+                        <td style={{ position: "relative" }}>
+                          <button
+                            data-menu-toggle
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMenu(item._id, e);
+                            }}
+                            style={{
+                              background: "transparent",
+                              color: "#0f172a",
+                              border: "1px solid #d1d5db",
+                              borderRadius: "8px",
+                              width: "36px",
+                              height: "36px",
+                              cursor: "pointer",
+                              fontSize: "20px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            ⋮
+                          </button>
+
+                          {openMenuId === item._id &&
+                            createPortal(
+                              <div
+                                data-menu
+                                style={{
+                                  position: "absolute",
+                                  left: `${menuPosition.left}px`,
+                                  top: `${menuPosition.top}px`,
+                                  transform: menuPosition.openUpward ? "translateY(-100%)" : "none",
+                                  background: "white",
+                                  border: "1px solid #e5e7eb",
+                                  borderRadius: "12px",
+                                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.15)",
+                                  zIndex: 11000,
+                                  width: "160px",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleRestorePayment(item._id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#16a34a",
+                                    display: "block",
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#dcfce7")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Restore
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handlePermanentDelete(item._id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  style={{
+                                    width: "100%",
+                                    padding: "12px 16px",
+                                    background: "white",
+                                    border: "none",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                    color: "#ef4444",
+                                    display: "block",
+                                    borderTop: "1px solid #f1f5f9"
+                                  }}
+                                  onMouseEnter={(e) => (e.target.style.background = "#fee2e2")}
+                                  onMouseLeave={(e) => (e.target.style.background = "white")}
+                                >
+                                  Delete Permanently
+                                </button>
+                              </div>,
+                              document.body
+                            )
+                          }
+                        </td>
+                      </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ) : (
         <>

@@ -74,6 +74,10 @@ const AdminPaymentSchema = new mongoose.Schema({
   },
   finalPaymentReceiveDate: {
     type: Date
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

@@ -140,9 +140,12 @@ export const adminAPI = {
 
   // Payment Management (New)
   getAdminPayments: (params) => api.get("/admin/payments", { params }),
+  getDeletedAdminPayments: (params) => api.get("/admin/payments/deleted", { params }),
   createAdminPayment: (data) => api.post("/admin/payments", data),
   updateAdminPayment: (id, data) => api.patch(`/admin/payments/${id}`, data),
   deleteAdminPayment: (id) => api.delete(`/admin/payments/${id}`),
+  restoreAdminPayment: (id) => api.patch(`/admin/payments/${id}/restore`),
+  permanentlyDeleteAdminPayment: (id) => api.delete(`/admin/payments/${id}/permanent`),
 
   // Payment Notes (Sticky Notes)
   getPaymentNotes: () => api.get("/admin/payment-notes"),
