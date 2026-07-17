@@ -447,16 +447,6 @@ function PaymentManagement() {
     }));
   }, [formData.totalPayment, formData.firstPayment, formData.secondPayment, formData.finalPayment]);
 
-  // Helper function to parse date strings (YYYY-MM-DD) correctly in local time
-  const parseDateLocal = (dateStr) => {
-    if (!dateStr) return null;
-    const [year, month, day] = dateStr.split('-').map(Number);
-    if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
-    // Note: month is 0-indexed in Date
-    const date = new Date(year, month - 1, day);
-    return isNaN(date.getTime()) ? null : date;
-  };
-
   const getUniquePaymentMonths = () => {
     const months = {};
     payments.forEach((item) => {
@@ -483,6 +473,28 @@ function PaymentManagement() {
       if (a.year !== b.year) return b.year - a.year;
       return b.monthIndex - a.monthIndex;
     });
+  };
+
+  const parseDateLocal = (dateStr) => {
+    if (!dateStr) return null;
+    // Parse date in YYYY-MM-DD format as local time instead of UTC
+    const parts = dateStr.split(/[-T]/); // Split on - or T to handle both date-only and datetime strings
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1; // month is 0-indexed
+    const day = parseInt(parts[2], 10) || 1;
+    const dateObj = new Date(year, month, day);
+    if (isNaN(dateObj.getTime())) return null;
+    return dateObj;
+  };
+
+  const formatDateLocal = (dateStr) => {
+    const dateObj = parseDateLocal(dateStr);
+    if (!dateObj) return "";
+    // Format as YYYY-MM-DD in local time
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
   const calculateMonthlyData = () => {
@@ -1273,12 +1285,12 @@ function PaymentManagement() {
           item.finalPaymentSendDate
         ].filter(Boolean);
         datesToCheck.forEach((dStr) => {
-            const d = parseDateLocal(dStr);
-            if (d) {
-              const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-              if (key === monthFilter) match = true;
-            }
-          });
+          const d = parseDateLocal(dStr);
+          if (d) {
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            if (key === monthFilter) match = true;
+          }
+        });
         return match;
       });
     }
@@ -1287,41 +1299,37 @@ function PaymentManagement() {
   };
 
   const getRelevantDate = (item) => {
-    // Collect all possible dates
+    // Collect all possible dates with parsed date objects
     const allDates = [
-      { date: item.finalPaymentReceiveDate, type: 'receive' },
-      { date: item.finalPaymentSendDate, type: 'send' },
-      { date: item.secondPaymentReceiveDate, type: 'receive' },
-      { date: item.secondPaymentSendDate, type: 'send' },
-      { date: item.firstPaymentReceiveDate, type: 'receive' },
-      { date: item.firstPaymentSendDate, type: 'send' },
-      { date: item.receiveDate, type: 'receive' },
-      { date: item.sendDate, type: 'send' },
-    ].filter(x => x.date);
+      { dateStr: item.finalPaymentReceiveDate, type: 'receive' },
+      { dateStr: item.finalPaymentSendDate, type: 'send' },
+      { dateStr: item.secondPaymentReceiveDate, type: 'receive' },
+      { dateStr: item.secondPaymentSendDate, type: 'send' },
+      { dateStr: item.firstPaymentReceiveDate, type: 'receive' },
+      { dateStr: item.firstPaymentSendDate, type: 'send' },
+      { dateStr: item.receiveDate, type: 'receive' },
+      { dateStr: item.sendDate, type: 'send' },
+    ]
+      .filter(x => x.dateStr)
+      .map(x => ({ ...x, dateObj: parseDateLocal(x.dateStr) }))
+      .filter(x => x.dateObj);
 
     if (allDates.length === 0) return null;
 
-    // Sort by date descending (newest first) using local parsing to avoid UTC month shifts
-    allDates.sort((a, b) => {
-      const dateA = parseDateLocal(a.date);
-      const dateB = parseDateLocal(b.date);
-      if (!dateA && !dateB) return 0;
-      if (!dateA) return 1;
-      if (!dateB) return -1;
-      return dateB - dateA;
-    });
+    // Sort by date descending (newest first)
+    allDates.sort((a, b) => b.dateObj - a.dateObj);
     
     // If payment type is Receive, prioritize receive dates; if Send, prioritize send dates
     if (item.paymentType === 'Receive') {
       const receiveDate = allDates.find(d => d.type === 'receive');
-      return receiveDate ? receiveDate.date : allDates[0].date;
+      return receiveDate ? receiveDate.dateStr : allDates[0].dateStr;
     } else if (item.paymentType === 'Send') {
       const sendDate = allDates.find(d => d.type === 'send');
-      return sendDate ? sendDate.date : allDates[0].date;
+      return sendDate ? sendDate.dateStr : allDates[0].dateStr;
     }
 
-    // Otherwise, just return the newest date
-    return allDates[0].date;
+    // Otherwise, just return the newest date string
+    return allDates[0].dateStr;
   };
 
   const editEntry = (entry) => {
@@ -1336,20 +1344,20 @@ function PaymentManagement() {
       paymentGoal: String(goalVal),
       payment: String(entry.payment || 0),
       pendingPayment: String(entry.pendingPayment || 0),
-      receiveDate: entry.receiveDate ? new Date(entry.receiveDate).toISOString().slice(0, 10) : "",
-      sendDate: entry.sendDate ? new Date(entry.sendDate).toISOString().slice(0, 10) : "",
+      receiveDate: formatDateLocal(entry.receiveDate),
+      sendDate: formatDateLocal(entry.sendDate),
       connectedBy: entry.connectedBy || "",
       paymentType: entry.paymentType || "Receive",
       totalPayment: String(entry.totalPayment || 0),
       firstPayment: String(entry.firstPayment || 0),
-      firstPaymentSendDate: entry.firstPaymentSendDate ? new Date(entry.firstPaymentSendDate).toISOString().slice(0, 10) : "",
-      firstPaymentReceiveDate: entry.firstPaymentReceiveDate ? new Date(entry.firstPaymentReceiveDate).toISOString().slice(0, 10) : "",
+      firstPaymentSendDate: formatDateLocal(entry.firstPaymentSendDate),
+      firstPaymentReceiveDate: formatDateLocal(entry.firstPaymentReceiveDate),
       secondPayment: String(entry.secondPayment || 0),
-      secondPaymentSendDate: entry.secondPaymentSendDate ? new Date(entry.secondPaymentSendDate).toISOString().slice(0, 10) : "",
-      secondPaymentReceiveDate: entry.secondPaymentReceiveDate ? new Date(entry.secondPaymentReceiveDate).toISOString().slice(0, 10) : "",
+      secondPaymentSendDate: formatDateLocal(entry.secondPaymentSendDate),
+      secondPaymentReceiveDate: formatDateLocal(entry.secondPaymentReceiveDate),
       finalPayment: String(entry.finalPayment || 0),
-      finalPaymentSendDate: entry.finalPaymentSendDate ? new Date(entry.finalPaymentSendDate).toISOString().slice(0, 10) : "",
-      finalPaymentReceiveDate: entry.finalPaymentReceiveDate ? new Date(entry.finalPaymentReceiveDate).toISOString().slice(0, 10) : "",
+      finalPaymentSendDate: formatDateLocal(entry.finalPaymentSendDate),
+      finalPaymentReceiveDate: formatDateLocal(entry.finalPaymentReceiveDate),
     });
     setActiveTab("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1425,8 +1433,9 @@ function PaymentManagement() {
 
   const getRecycleBinDaysLeft = (deletedAt) => {
     if (!deletedAt) return 0;
-    const deletedTime = new Date(deletedAt).getTime();
-    if (Number.isNaN(deletedTime)) return 0;
+    const deletedDateObj = parseDateLocal(deletedAt);
+    if (!deletedDateObj) return 0;
+    const deletedTime = deletedDateObj.getTime();
     const expiresAt = deletedTime + 5 * 24 * 60 * 60 * 1000;
     const remainingMs = expiresAt - Date.now();
     if (remainingMs <= 0) return 0;
@@ -2013,7 +2022,7 @@ function PaymentManagement() {
                             {item.paymentType || "Receive"}
                           </span>
                         </td>
-                        <td>{relevantDate ? new Date(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
+                        <td>{relevantDate ? parseDateLocal(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
                         <td>₹{item.totalPayment || 0}</td>
                         <td>₹{item.payment || 0}</td>
                         <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
@@ -2038,7 +2047,7 @@ function PaymentManagement() {
                             {item.paymentGoal || "Pending"}
                           </span>
                         </td>
-                        <td>{item.deletedAt ? new Date(item.deletedAt).toLocaleDateString("en-IN") : "-"}</td>
+                        <td>{item.deletedAt ? parseDateLocal(item.deletedAt).toLocaleDateString("en-IN") : "-"}</td>
                         <td>{getRecycleBinDaysLeft(item.deletedAt)} day(s)</td>
                         <td style={{ position: "relative" }}>
                           <button
@@ -2280,7 +2289,7 @@ function PaymentManagement() {
                               {item.paymentType || "Receive"}
                             </span>
                           </td>
-                          <td>{relevantDate ? new Date(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
+                          <td>{relevantDate ? parseDateLocal(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
                           <td>₹{item.totalPayment || 0}</td>
                           <td>₹{item.payment || 0}</td>
                           <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
