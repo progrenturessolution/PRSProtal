@@ -320,6 +320,7 @@ function PaymentManagement() {
   const [minAmountFilter, setMinAmountFilter] = useState("");
   const [maxAmountFilter, setMaxAmountFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState("all");
   const [selectedPaymentDetails, setSelectedPaymentDetails] = useState(null);
   const [isCustomPayType, setIsCustomPayType] = useState(false);
 
@@ -1266,6 +1267,11 @@ function PaymentManagement() {
       });
     }
 
+    // 5. Payment Type Filter (Send/Receive)
+    if (paymentTypeFilter !== "all") {
+      filtered = filtered.filter((item) => item.paymentType === paymentTypeFilter);
+    }
+
     return filtered;
   };
 
@@ -2197,6 +2203,19 @@ function PaymentManagement() {
                   ))}
                 </select>
               </div>
+              {/* Payment Type selector (Send/Receive) */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Payment Type</label>
+                <select
+                  value={paymentTypeFilter}
+                  onChange={(e) => setPaymentTypeFilter(e.target.value)}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "white" }}
+                >
+                  <option value="all">All Types</option>
+                  <option value="Receive">Receive</option>
+                  <option value="Send">Send</option>
+                </select>
+              </div>
             </div>
             
             {/* Reset Filters button */}
@@ -2209,6 +2228,7 @@ function PaymentManagement() {
                   setMinAmountFilter("");
                   setMaxAmountFilter("");
                   setMonthFilter("all");
+                  setPaymentTypeFilter("all");
                 }}
                 style={{ padding: "6px 14px", border: "1px solid #324158", borderRadius: "6px", background: "transparent", color: "#324158", fontWeight: "600", fontSize: "12px", cursor: "pointer" }}
               >
