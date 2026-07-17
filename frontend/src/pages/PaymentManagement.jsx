@@ -498,6 +498,9 @@ function PaymentManagement() {
     return `${year}-${month}-${day}`;
   };
 
+  const normalizePaymentType = (paymentType) =>
+    String(paymentType || "").trim().toLowerCase();
+
   const calculateMonthlyData = () => {
     const monthlyGroups = {};
 
@@ -507,7 +510,7 @@ function PaymentManagement() {
       const year = dateObj.getFullYear();
       const monthIndex = dateObj.getMonth();
       const monthKey = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-      
+
       if (!monthlyGroups[monthKey]) {
         monthlyGroups[monthKey] = {
           monthKey,
@@ -523,29 +526,73 @@ function PaymentManagement() {
     };
 
     payments.forEach((item) => {
-      const transactionDate = getRelevantDate(item);
-      const group = getMonthGroup(transactionDate);
-      if (!group) return;
-
-      const totalPaid = Number(item.payment) || 0;
-      const pendingAmount = Number(item.pendingPayment) || 0;
-      const normalizedPaymentType = String(item.paymentType || "Receive").trim().toLowerCase();
-
-      // Monthly summary must classify each payment record exactly once
-      // using its payment type and total paid amount.
-      if (normalizedPaymentType === "send") {
-        group.burnRate += totalPaid;
-      } else {
-        group.revenue += totalPaid;
+      const normalizedPaymentType = normalizePaymentType(item.paymentType);
+      if (normalizedPaymentType !== "receive" && normalizedPaymentType !== "send") {
+        return;
       }
 
-      // Preserve production rule: pending becomes 0 for Cancel/Completed.
+      // Build per-instalment list: each instalment has its own amount and its own date.
+      // Receive transactions use receive dates; Send transactions use send dates.
+      const instalments = [];
+      if (normalizedPaymentType === "receive") {
+        if (Number(item.firstPayment) > 0 && item.firstPaymentReceiveDate) {
+          instalments.push({ amount: Number(item.firstPayment), dateStr: item.firstPaymentReceiveDate });
+        }
+        if (Number(item.secondPayment) > 0 && item.secondPaymentReceiveDate) {
+          instalments.push({ amount: Number(item.secondPayment), dateStr: item.secondPaymentReceiveDate });
+        }
+        if (Number(item.finalPayment) > 0 && item.finalPaymentReceiveDate) {
+          instalments.push({ amount: Number(item.finalPayment), dateStr: item.finalPaymentReceiveDate });
+        }
+        // Fallback: if no per-instalment dates exist, use legacy receiveDate with total payment
+        if (instalments.length === 0 && Number(item.payment) > 0 && item.receiveDate) {
+          instalments.push({ amount: Number(item.payment), dateStr: item.receiveDate });
+        }
+      } else {
+        // send
+        if (Number(item.firstPayment) > 0 && item.firstPaymentSendDate) {
+          instalments.push({ amount: Number(item.firstPayment), dateStr: item.firstPaymentSendDate });
+        }
+        if (Number(item.secondPayment) > 0 && item.secondPaymentSendDate) {
+          instalments.push({ amount: Number(item.secondPayment), dateStr: item.secondPaymentSendDate });
+        }
+        if (Number(item.finalPayment) > 0 && item.finalPaymentSendDate) {
+          instalments.push({ amount: Number(item.finalPayment), dateStr: item.finalPaymentSendDate });
+        }
+        // Fallback: if no per-instalment dates exist, use legacy sendDate with total payment
+        if (instalments.length === 0 && Number(item.payment) > 0 && item.sendDate) {
+          instalments.push({ amount: Number(item.payment), dateStr: item.sendDate });
+        }
+      }
+
+      // Attribute each instalment's amount to its own month
+      instalments.forEach(({ amount, dateStr }) => {
+        const group = getMonthGroup(dateStr);
+        if (!group) return;
+        if (normalizedPaymentType === "send") {
+          group.burnRate += amount;
+        } else {
+          group.revenue += amount;
+        }
+      });
+
+      // Attribute pending to the month of the most recent instalment date
+      const pendingAmount = Number(item.pendingPayment) || 0;
       if (
         item.paymentGoal !== "Cancel" &&
         item.paymentGoal !== "Completed" &&
-        pendingAmount > 0
+        pendingAmount > 0 &&
+        instalments.length > 0
       ) {
-        group.pending += pendingAmount;
+        const latestInstalment = instalments.reduce((latest, inst) => {
+          const d = parseDateLocal(inst.dateStr);
+          const ld = parseDateLocal(latest.dateStr);
+          return d && ld && d > ld ? inst : latest;
+        });
+        const pendingGroup = getMonthGroup(latestInstalment.dateStr);
+        if (pendingGroup) {
+          pendingGroup.pending += pendingAmount;
+        }
       }
     });
 
