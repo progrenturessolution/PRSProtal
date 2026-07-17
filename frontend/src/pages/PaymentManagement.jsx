@@ -1534,7 +1534,7 @@ function PaymentManagement() {
                   padding: "10px 18px",
                   border: "none",
                   borderRadius: "10px",
-                  background: "#475569",
+                  background: "#324158",
                   color: "#fff",
                   fontWeight: "600",
                   fontSize: "14px",
@@ -1546,7 +1546,7 @@ function PaymentManagement() {
               >
                 Recycle Bin
                 {deletedPayments.length > 0 && (
-                  <span style={{ background: "#ffffff", color: "#475569", borderRadius: "999px", padding: "2px 8px", fontSize: "11px", fontWeight: "700" }}>
+                  <span style={{ background: "#ffffff", color: "#324158", borderRadius: "999px", padding: "2px 8px", fontSize: "11px", fontWeight: "700" }}>
                     {deletedPayments.length}
                   </span>
                 )}
