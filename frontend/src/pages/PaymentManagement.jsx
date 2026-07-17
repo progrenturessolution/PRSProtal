@@ -588,11 +588,11 @@ function PaymentManagement() {
 
       // Attribute pending to the month of the most recent instalment date
       const pendingAmount = Number(item.pendingPayment) || 0;
-      const isSohan = String(item.name || '').toLowerCase().includes('sohan borkar');
       if (
         pendingAmount > 0 &&
         instalments.length > 0 &&
-        (isSohan || (item.paymentGoal !== "Cancel" && item.paymentGoal !== "Completed"))
+        item.paymentGoal !== "Cancel" &&
+        item.paymentGoal !== "Completed"
       ) {
         const latestInstalment = instalments.reduce((latest, inst) => {
           const d = parseDateLocal(inst.dateStr);
