@@ -448,7 +448,16 @@ function PaymentManagement() {
   const getUniquePaymentMonths = () => {
     const months = {};
     payments.forEach((item) => {
-      const datesToCheck = [item.receiveDate, item.firstPaymentReceiveDate, item.secondPaymentReceiveDate, item.finalPaymentReceiveDate].filter(Boolean);
+      const datesToCheck = [
+        item.receiveDate, 
+        item.sendDate,
+        item.firstPaymentReceiveDate, 
+        item.firstPaymentSendDate,
+        item.secondPaymentReceiveDate,
+        item.secondPaymentSendDate,
+        item.finalPaymentReceiveDate,
+        item.finalPaymentSendDate
+      ].filter(Boolean);
       datesToCheck.forEach((dStr) => {
         const d = new Date(dStr);
         if (!isNaN(d.getTime())) {
@@ -534,10 +543,13 @@ function PaymentManagement() {
       }
 
       // 5. Attribute Pending Amount (to the month of firstPaymentReceiveDate or general receiveDate)
-      const pendingDate = item.firstPaymentReceiveDate || item.receiveDate;
-      if (pendingDate && (Number(item.pendingPayment) > 0)) {
-        const group = getMonthGroup(pendingDate);
-        if (group) group.pending += Number(item.pendingPayment) || 0;
+      // Skip pending amount for payments with status "Cancel"
+      if (item.paymentGoal !== "Cancel") {
+        const pendingDate = item.firstPaymentReceiveDate || item.receiveDate;
+        if (pendingDate && (Number(item.pendingPayment) > 0)) {
+          const group = getMonthGroup(pendingDate);
+          if (group) group.pending += Number(item.pendingPayment) || 0;
+        }
       }
     });
 
@@ -1219,7 +1231,16 @@ function PaymentManagement() {
     if (monthFilter !== "all") {
       filtered = filtered.filter((item) => {
         let match = false;
-        const datesToCheck = [item.receiveDate, item.firstPaymentReceiveDate, item.secondPaymentReceiveDate, item.finalPaymentReceiveDate].filter(Boolean);
+        const datesToCheck = [
+          item.receiveDate, 
+          item.sendDate,
+          item.firstPaymentReceiveDate, 
+          item.firstPaymentSendDate,
+          item.secondPaymentReceiveDate,
+          item.secondPaymentSendDate,
+          item.finalPaymentReceiveDate,
+          item.finalPaymentSendDate
+        ].filter(Boolean);
         datesToCheck.forEach((dStr) => {
           const d = new Date(dStr);
           if (!isNaN(d.getTime())) {
@@ -1232,6 +1253,37 @@ function PaymentManagement() {
     }
 
     return filtered;
+  };
+
+  const getRelevantDate = (item) => {
+    // Collect all possible dates
+    const allDates = [
+      { date: item.finalPaymentReceiveDate, type: 'receive' },
+      { date: item.finalPaymentSendDate, type: 'send' },
+      { date: item.secondPaymentReceiveDate, type: 'receive' },
+      { date: item.secondPaymentSendDate, type: 'send' },
+      { date: item.firstPaymentReceiveDate, type: 'receive' },
+      { date: item.firstPaymentSendDate, type: 'send' },
+      { date: item.receiveDate, type: 'receive' },
+      { date: item.sendDate, type: 'send' },
+    ].filter(x => x.date);
+
+    if (allDates.length === 0) return null;
+
+    // Sort by date descending (newest first)
+    allDates.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // If payment type is Receive, prioritize receive dates; if Send, prioritize send dates
+    if (item.paymentType === 'Receive') {
+      const receiveDate = allDates.find(d => d.type === 'receive');
+      return receiveDate ? receiveDate.date : allDates[0].date;
+    } else if (item.paymentType === 'Send') {
+      const sendDate = allDates.find(d => d.type === 'send');
+      return sendDate ? sendDate.date : allDates[0].date;
+    }
+
+    // Otherwise, just return the newest date
+    return allDates[0].date;
   };
 
   const editEntry = (entry) => {
@@ -1894,6 +1946,7 @@ function PaymentManagement() {
                       <th>Name</th>
                       <th>Role</th>
                       <th>Payment Type</th>
+                      <th>Date</th>
                       <th>Total Payment</th>
                       <th>Total Paid</th>
                       <th style={{ textAlign: "center" }}>Pending Payment</th>
@@ -1904,10 +1957,12 @@ function PaymentManagement() {
                   <tbody>
                     {getFilteredPayments().length === 0 ? (
                       <tr>
-                        <td colSpan={8} style={{ textAlign: "center" }}>No payment records found</td>
+                        <td colSpan={9} style={{ textAlign: "center" }}>No payment records found</td>
                       </tr>
                     ) : (
-                      getFilteredPayments().map((item) => (
+                      getFilteredPayments().map((item) => {
+                        const relevantDate = getRelevantDate(item);
+                        return (
                         <tr key={item._id}>
                           <td style={{ fontWeight: "600" }}>{item.name}</td>
                           <td>{item.role}</td>
@@ -1923,10 +1978,11 @@ function PaymentManagement() {
                               {item.paymentType || "Receive"}
                             </span>
                           </td>
+                          <td>{relevantDate ? new Date(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
                           <td>₹{item.totalPayment || 0}</td>
                           <td>₹{item.payment || 0}</td>
-                          <td style={{ textAlign: "center", color: (item.pendingPayment > 0) ? "#ef4444" : "#10b981", fontWeight: "600" }}>
-                            ₹{item.pendingPayment || 0}
+                          <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
+                            ₹{item.paymentGoal === "Cancel" ? 0 : (item.pendingPayment || 0)}
                           </td>
                           <td style={{ textAlign: "center" }}>
                             <span style={{
@@ -2091,7 +2147,8 @@ function PaymentManagement() {
                             }
                           </td>
                         </tr>
-                      ))
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -2150,9 +2207,9 @@ function PaymentManagement() {
                    <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Total Paid</div>
                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>₹{selectedPaymentDetails.payment || 0}</div>
                  </div>
-                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: "4px solid #dc2626" }}>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: `4px solid ${selectedPaymentDetails.paymentGoal === "Cancel" ? "#16a34a" : "#dc2626"}` }}>
                    <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Pending Amount</div>
-                   <div style={{ fontSize: "18px", fontWeight: 800, color: "#dc2626", marginTop: "4px" }}>₹{selectedPaymentDetails.pendingPayment || 0}</div>
+                   <div style={{ fontSize: "18px", fontWeight: 800, color: `${selectedPaymentDetails.paymentGoal === "Cancel" ? "#16a34a" : "#dc2626"}`, marginTop: "4px" }}>₹{selectedPaymentDetails.paymentGoal === "Cancel" ? 0 : (selectedPaymentDetails.pendingPayment || 0)}</div>
                  </div>
                </div>
 

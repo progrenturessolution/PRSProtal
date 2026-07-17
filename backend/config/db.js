@@ -1,18 +1,35 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
 
 const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      family: 4 // Force IPv4
-    });
-    console.log('MongoDB Connected Successfully to database: progrentures');
+  const mongoUri = process.env.MONGO_URI;
 
-    // Create or sync default admin accounts after connection
-    await syncDefaultAdmins();
+  if (!mongoUri) {
+    throw new Error('MONGO_URI is not configured');
+  }
+
+  // Some local DNS resolvers refuse MongoDB Atlas SRV lookups. Use reliable
+  // resolvers only for mongodb+srv connections; this does not affect local MongoDB.
+  if (mongoUri.startsWith('mongodb+srv://')) {
+    const dnsServers = (process.env.MONGODB_DNS_SERVERS || '1.1.1.1,8.8.8.8')
+      .split(',')
+      .map((server) => server.trim())
+      .filter(Boolean);
+
+    dns.setServers(dnsServers);
+    console.log(`MongoDB Atlas DNS servers: ${dnsServers.join(', ')}`);
+  }
+
+  try {
+    await mongoose.connect(mongoUri, { family: 4, serverSelectionTimeoutMS: 10000 });
+    console.log('MongoDB Connected Successfully to database: progrentures');
   } catch (error) {
     console.error('MongoDB Connection Error:', error.message);
     throw error;
   }
+
+  // Create or sync default admin accounts after connection
+  await syncDefaultAdmins();
 };
 
 const syncDefaultAdmins = async () => {
