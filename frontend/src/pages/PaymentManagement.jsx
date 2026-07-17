@@ -522,58 +522,29 @@ function PaymentManagement() {
     };
 
     payments.forEach((item) => {
-      // 1. Process 1st Installment
-      if (item.firstPaymentReceiveDate) {
-        const group = getMonthGroup(item.firstPaymentReceiveDate);
-        if (group) group.revenue += Number(item.firstPayment) || 0;
-      }
-      if (item.firstPaymentSendDate) {
-        const group = getMonthGroup(item.firstPaymentSendDate);
-        if (group) group.burnRate += Number(item.firstPayment) || 0;
+      const transactionDate = getRelevantDate(item);
+      const group = getMonthGroup(transactionDate);
+      if (!group) return;
+
+      const totalPaid = Number(item.payment) || 0;
+      const pendingAmount = Number(item.pendingPayment) || 0;
+      const normalizedPaymentType = String(item.paymentType || "Receive").trim().toLowerCase();
+
+      // Monthly summary must classify each payment record exactly once
+      // using its payment type and total paid amount.
+      if (normalizedPaymentType === "send") {
+        group.burnRate += totalPaid;
+      } else {
+        group.revenue += totalPaid;
       }
 
-      // 2. Process 2nd Installment
-      if (item.secondPaymentReceiveDate) {
-        const group = getMonthGroup(item.secondPaymentReceiveDate);
-        if (group) group.revenue += Number(item.secondPayment) || 0;
-      }
-      if (item.secondPaymentSendDate) {
-        const group = getMonthGroup(item.secondPaymentSendDate);
-        if (group) group.burnRate += Number(item.secondPayment) || 0;
-      }
-
-      // 3. Process Final Installment
-      if (item.finalPaymentReceiveDate) {
-        const group = getMonthGroup(item.finalPaymentReceiveDate);
-        if (group) group.revenue += Number(item.finalPayment) || 0;
-      }
-      if (item.finalPaymentSendDate) {
-        const group = getMonthGroup(item.finalPaymentSendDate);
-        if (group) group.burnRate += Number(item.finalPayment) || 0;
-      }
-
-      // 4. Process Fallback Dates (existing simple payment records)
-      if (!item.firstPaymentReceiveDate && !item.secondPaymentReceiveDate && !item.finalPaymentReceiveDate) {
-        if (item.receiveDate) {
-          const group = getMonthGroup(item.receiveDate);
-          if (group) group.revenue += Number(item.payment) || 0;
-        }
-      }
-      if (!item.firstPaymentSendDate && !item.secondPaymentSendDate && !item.finalPaymentSendDate) {
-        if (item.sendDate) {
-          const group = getMonthGroup(item.sendDate);
-          if (group) group.burnRate += Number(item.payment) || 0;
-        }
-      }
-
-      // 5. Attribute Pending Amount (to the month of firstPaymentReceiveDate or general receiveDate)
-      // Skip pending amount for payments with status "Cancel" or "Completed"
-      if (item.paymentGoal !== "Cancel" && item.paymentGoal !== "Completed") {
-        const pendingDate = item.firstPaymentReceiveDate || item.receiveDate;
-        if (pendingDate && (Number(item.pendingPayment) > 0)) {
-          const group = getMonthGroup(pendingDate);
-          if (group) group.pending += Number(item.pendingPayment) || 0;
-        }
+      // Preserve production rule: pending becomes 0 for Cancel/Completed.
+      if (
+        item.paymentGoal !== "Cancel" &&
+        item.paymentGoal !== "Completed" &&
+        pendingAmount > 0
+      ) {
+        group.pending += pendingAmount;
       }
     });
 
