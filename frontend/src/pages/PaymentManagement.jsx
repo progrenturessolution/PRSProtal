@@ -543,8 +543,8 @@ function PaymentManagement() {
       }
 
       // 5. Attribute Pending Amount (to the month of firstPaymentReceiveDate or general receiveDate)
-      // Skip pending amount for payments with status "Cancel"
-      if (item.paymentGoal !== "Cancel") {
+      // Skip pending amount for payments with status "Cancel" or "Completed"
+      if (item.paymentGoal !== "Cancel" && item.paymentGoal !== "Completed") {
         const pendingDate = item.firstPaymentReceiveDate || item.receiveDate;
         if (pendingDate && (Number(item.pendingPayment) > 0)) {
           const group = getMonthGroup(pendingDate);
@@ -1981,9 +1981,9 @@ function PaymentManagement() {
                           <td>{relevantDate ? new Date(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
                           <td>₹{item.totalPayment || 0}</td>
                           <td>₹{item.payment || 0}</td>
-                          <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
-                            ₹{item.paymentGoal === "Cancel" ? 0 : (item.pendingPayment || 0)}
-                          </td>
+                          <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
+                    ₹{(item.paymentGoal === "Cancel" || item.paymentGoal === "Completed") ? 0 : (item.pendingPayment || 0)}
+                  </td>
                           <td style={{ textAlign: "center" }}>
                             <span style={{
                               display: "inline-flex",
@@ -2207,9 +2207,9 @@ function PaymentManagement() {
                    <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Total Paid</div>
                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>₹{selectedPaymentDetails.payment || 0}</div>
                  </div>
-                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: `4px solid ${selectedPaymentDetails.paymentGoal === "Cancel" ? "#16a34a" : "#dc2626"}` }}>
+                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: `4px solid ${(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? "#16a34a" : "#dc2626"}` }}>
                    <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Pending Amount</div>
-                   <div style={{ fontSize: "18px", fontWeight: 800, color: `${selectedPaymentDetails.paymentGoal === "Cancel" ? "#16a34a" : "#dc2626"}`, marginTop: "4px" }}>₹{selectedPaymentDetails.paymentGoal === "Cancel" ? 0 : (selectedPaymentDetails.pendingPayment || 0)}</div>
+                   <div style={{ fontSize: "18px", fontWeight: 800, color: `${(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? "#16a34a" : "#dc2626"}`, marginTop: "4px" }}>₹{(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? 0 : (selectedPaymentDetails.pendingPayment || 0)}</div>
                  </div>
                </div>
 
