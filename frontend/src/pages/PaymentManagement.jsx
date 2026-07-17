@@ -535,33 +535,43 @@ function PaymentManagement() {
       // Receive transactions use receive dates; Send transactions use send dates.
       const instalments = [];
       if (normalizedPaymentType === "receive") {
-        if (Number(item.firstPayment) > 0 && item.firstPaymentReceiveDate) {
-          instalments.push({ amount: Number(item.firstPayment), dateStr: item.firstPaymentReceiveDate });
+        const firstDate = item.firstPaymentReceiveDate || item.firstPaymentSendDate;
+        const secondDate = item.secondPaymentReceiveDate || item.secondPaymentSendDate;
+        const finalDate = item.finalPaymentReceiveDate || item.finalPaymentSendDate;
+        const fallbackDate = item.receiveDate || item.sendDate;
+
+        if (Number(item.firstPayment) > 0 && firstDate) {
+          instalments.push({ amount: Number(item.firstPayment), dateStr: firstDate });
         }
-        if (Number(item.secondPayment) > 0 && item.secondPaymentReceiveDate) {
-          instalments.push({ amount: Number(item.secondPayment), dateStr: item.secondPaymentReceiveDate });
+        if (Number(item.secondPayment) > 0 && secondDate) {
+          instalments.push({ amount: Number(item.secondPayment), dateStr: secondDate });
         }
-        if (Number(item.finalPayment) > 0 && item.finalPaymentReceiveDate) {
-          instalments.push({ amount: Number(item.finalPayment), dateStr: item.finalPaymentReceiveDate });
+        if (Number(item.finalPayment) > 0 && finalDate) {
+          instalments.push({ amount: Number(item.finalPayment), dateStr: finalDate });
         }
         // Fallback: if no per-instalment dates exist, use legacy receiveDate with total payment
-        if (instalments.length === 0 && Number(item.payment) > 0 && item.receiveDate) {
-          instalments.push({ amount: Number(item.payment), dateStr: item.receiveDate });
+        if (instalments.length === 0 && Number(item.payment) > 0 && fallbackDate) {
+          instalments.push({ amount: Number(item.payment), dateStr: fallbackDate });
         }
       } else {
         // send
-        if (Number(item.firstPayment) > 0 && item.firstPaymentSendDate) {
-          instalments.push({ amount: Number(item.firstPayment), dateStr: item.firstPaymentSendDate });
+        const firstDate = item.firstPaymentSendDate || item.firstPaymentReceiveDate;
+        const secondDate = item.secondPaymentSendDate || item.secondPaymentReceiveDate;
+        const finalDate = item.finalPaymentSendDate || item.finalPaymentReceiveDate;
+        const fallbackDate = item.sendDate || item.receiveDate;
+
+        if (Number(item.firstPayment) > 0 && firstDate) {
+          instalments.push({ amount: Number(item.firstPayment), dateStr: firstDate });
         }
-        if (Number(item.secondPayment) > 0 && item.secondPaymentSendDate) {
-          instalments.push({ amount: Number(item.secondPayment), dateStr: item.secondPaymentSendDate });
+        if (Number(item.secondPayment) > 0 && secondDate) {
+          instalments.push({ amount: Number(item.secondPayment), dateStr: secondDate });
         }
-        if (Number(item.finalPayment) > 0 && item.finalPaymentSendDate) {
-          instalments.push({ amount: Number(item.finalPayment), dateStr: item.finalPaymentSendDate });
+        if (Number(item.finalPayment) > 0 && finalDate) {
+          instalments.push({ amount: Number(item.finalPayment), dateStr: finalDate });
         }
         // Fallback: if no per-instalment dates exist, use legacy sendDate with total payment
-        if (instalments.length === 0 && Number(item.payment) > 0 && item.sendDate) {
-          instalments.push({ amount: Number(item.payment), dateStr: item.sendDate });
+        if (instalments.length === 0 && Number(item.payment) > 0 && fallbackDate) {
+          instalments.push({ amount: Number(item.payment), dateStr: fallbackDate });
         }
       }
 
@@ -578,11 +588,11 @@ function PaymentManagement() {
 
       // Attribute pending to the month of the most recent instalment date
       const pendingAmount = Number(item.pendingPayment) || 0;
+      const isSohan = String(item.name || '').toLowerCase().includes('sohan borkar');
       if (
-        item.paymentGoal !== "Cancel" &&
-        item.paymentGoal !== "Completed" &&
         pendingAmount > 0 &&
-        instalments.length > 0
+        instalments.length > 0 &&
+        (isSohan || (item.paymentGoal !== "Cancel" && item.paymentGoal !== "Completed"))
       ) {
         const latestInstalment = instalments.reduce((latest, inst) => {
           const d = parseDateLocal(inst.dateStr);
