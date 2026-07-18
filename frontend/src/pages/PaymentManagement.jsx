@@ -498,6 +498,61 @@ function PaymentManagement() {
     return `${year}-${month}-${day}`;
   };
 
+  const getRelevantDate = (item) => {
+    const allDates = [
+      { dateStr: item.finalPaymentReceiveDate, type: "receive" },
+      { dateStr: item.finalPaymentSendDate, type: "send" },
+      { dateStr: item.secondPaymentReceiveDate, type: "receive" },
+      { dateStr: item.secondPaymentSendDate, type: "send" },
+      { dateStr: item.firstPaymentReceiveDate, type: "receive" },
+      { dateStr: item.firstPaymentSendDate, type: "send" },
+      { dateStr: item.receiveDate, type: "receive" },
+      { dateStr: item.sendDate, type: "send" },
+    ]
+      .filter((x) => x.dateStr)
+      .map((x) => ({ ...x, dateObj: parseDateLocal(x.dateStr) }))
+      .filter((x) => x.dateObj);
+
+    if (allDates.length === 0) return null;
+
+    allDates.sort((a, b) => b.dateObj - a.dateObj);
+
+    if (item.paymentType === "Receive") {
+      const receiveDate = allDates.find((d) => d.type === "receive");
+      return receiveDate ? receiveDate.dateStr : allDates[0].dateStr;
+    }
+    if (item.paymentType === "Send") {
+      const sendDate = allDates.find((d) => d.type === "send");
+      return sendDate ? sendDate.dateStr : allDates[0].dateStr;
+    }
+
+    return allDates[0].dateStr;
+  };
+
+  const sortPaymentsByDateNewestFirst = (list) =>
+    [...list].sort((a, b) => {
+      const getTimestamp = (item) => {
+        const dateStr = getRelevantDate(item);
+        const dateObj = dateStr ? parseDateLocal(dateStr) : null;
+        return dateObj ? dateObj.getTime() : 0;
+      };
+
+      const dateA = getTimestamp(a);
+      const dateB = getTimestamp(b);
+
+      if (dateA !== dateB) {
+        return dateB - dateA;
+      }
+
+      const createdAtA = new Date(a?.createdAt || 0).getTime();
+      const createdAtB = new Date(b?.createdAt || 0).getTime();
+      if (createdAtA !== createdAtB) {
+        return createdAtB - createdAtA;
+      }
+
+      return String(b?._id || "").localeCompare(String(a?._id || ""));
+    });
+
   const normalizePaymentType = (paymentType) =>
     String(paymentType || "").trim().toLowerCase();
 
@@ -1177,18 +1232,7 @@ function PaymentManagement() {
       setError("");
       const res = await adminAPI.getAdminPayments();
       if (res.data.success) {
-        const sortedPayments = [...(res.data.payments || [])].sort((a, b) => {
-          const createdAtA = new Date(a?.createdAt || 0).getTime();
-          const createdAtB = new Date(b?.createdAt || 0).getTime();
-
-          if (createdAtA !== createdAtB) {
-            return createdAtB - createdAtA;
-          }
-
-          return String(b?._id || "").localeCompare(String(a?._id || ""));
-        });
-
-        setPayments(sortedPayments);
+        setPayments(sortPaymentsByDateNewestFirst(res.data.payments || []));
       } else {
         setError("Failed to load payment records");
       }
@@ -1329,41 +1373,7 @@ function PaymentManagement() {
       filtered = filtered.filter((item) => item.paymentType === paymentTypeFilter);
     }
 
-    return filtered;
-  };
-
-  const getRelevantDate = (item) => {
-    // Collect all possible dates with parsed date objects
-    const allDates = [
-      { dateStr: item.finalPaymentReceiveDate, type: 'receive' },
-      { dateStr: item.finalPaymentSendDate, type: 'send' },
-      { dateStr: item.secondPaymentReceiveDate, type: 'receive' },
-      { dateStr: item.secondPaymentSendDate, type: 'send' },
-      { dateStr: item.firstPaymentReceiveDate, type: 'receive' },
-      { dateStr: item.firstPaymentSendDate, type: 'send' },
-      { dateStr: item.receiveDate, type: 'receive' },
-      { dateStr: item.sendDate, type: 'send' },
-    ]
-      .filter(x => x.dateStr)
-      .map(x => ({ ...x, dateObj: parseDateLocal(x.dateStr) }))
-      .filter(x => x.dateObj);
-
-    if (allDates.length === 0) return null;
-
-    // Sort by date descending (newest first)
-    allDates.sort((a, b) => b.dateObj - a.dateObj);
-    
-    // If payment type is Receive, prioritize receive dates; if Send, prioritize send dates
-    if (item.paymentType === 'Receive') {
-      const receiveDate = allDates.find(d => d.type === 'receive');
-      return receiveDate ? receiveDate.dateStr : allDates[0].dateStr;
-    } else if (item.paymentType === 'Send') {
-      const sendDate = allDates.find(d => d.type === 'send');
-      return sendDate ? sendDate.dateStr : allDates[0].dateStr;
-    }
-
-    // Otherwise, just return the newest date string
-    return allDates[0].dateStr;
+    return sortPaymentsByDateNewestFirst(filtered);
   };
 
   const editEntry = (entry) => {

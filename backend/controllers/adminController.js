@@ -2314,6 +2314,33 @@ exports.getStudentGroupDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Group not found' });
     }
 
+    // Batch query: find all other groups that contain ANY of the students in one shot
+    // This replaces the N+1 pattern (one query per student) with a single query.
+    const studentIds = (group.students || []).filter(Boolean).map(s => s._id);
+    const otherGroupDocs = studentIds.length > 0
+      ? await StudentGroup.find({
+          _id: { $ne: group._id },
+          students: { $in: studentIds }
+        }).select('groupName students').lean()
+      : [];
+
+    // Build a map: studentId (string) -> array of group names
+    const studentOtherGroupsMap = {};
+    for (const g of otherGroupDocs) {
+      for (const sid of (g.students || [])) {
+        const key = String(sid);
+        if (!studentOtherGroupsMap[key]) studentOtherGroupsMap[key] = [];
+        studentOtherGroupsMap[key].push(g.groupName);
+      }
+    }
+
+    const studentsWithOtherGroups = (group.students || []).map((student) => {
+      if (!student) return null;
+      const studentObj = student.toObject ? student.toObject() : student;
+      studentObj.otherGroups = studentOtherGroupsMap[String(student._id)] || [];
+      return studentObj;
+    });
+
     // Derive assigned employees from trainer-to-group assignment mapping as fallback.
     const assignedTrainers = await Trainer.find({ assignedGroups: group._id })
       .select('name email role customRole')
@@ -2328,6 +2355,7 @@ exports.getStudentGroupDetails = async (req, res) => {
 
     const mergedAssignedEmployees = [...new Set([...assignedFromGroup, ...assignedFromTrainer])];
     const groupPayload = group.toObject();
+    groupPayload.students = studentsWithOtherGroups.filter(Boolean);
     groupPayload.assignedEmployees = mergedAssignedEmployees;
     groupPayload.assignedEmployeeDetails = assignedTrainers;
 

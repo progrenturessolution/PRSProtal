@@ -62,6 +62,25 @@ function GroupManagement() {
     };
   }, [activeGroupMenuId]);
 
+  // Build a map of studentId -> array of group names the student already belongs to
+  // When editing a group, exclude the current group from the map so we don't show it as "previous"
+  const studentGroupMap = useMemo(() => {
+    const map = {};
+    groups.forEach((group) => {
+      (group.students || []).forEach((studentRef) => {
+        const sid = typeof studentRef === "object" ? studentRef._id || studentRef : studentRef;
+        if (!sid) return;
+        const key = String(sid);
+        if (!map[key]) map[key] = [];
+        // Exclude the group currently being edited so it doesn't show as "already in"
+        if (!form.id || String(group._id) !== String(form.id)) {
+          map[key].push(group.groupName);
+        }
+      });
+    });
+    return map;
+  }, [groups, form.id]);
+
   const filteredStudents = useMemo(() => {
     if (form.studentType === "All") return students;
     return students.filter((item) => item.studentType === form.studentType);
@@ -231,6 +250,10 @@ function GroupManagement() {
   };
 
   const openDetails = async (groupId) => {
+    // Show modal immediately with the data we already have (optimistic open)
+    const localGroup = groups.find((g) => g._id === groupId) || null;
+    if (localGroup) setDetailsGroup(localGroup);
+
     try {
       const response = await adminRepAPI.getGroupDetails(groupId);
       if (response.data.success) {
@@ -487,6 +510,7 @@ function GroupManagement() {
                       ) : (
                         visibleStudents.map((student) => {
                           const selected = form.selectedStudents.includes(student._id);
+                          const existingGroups = studentGroupMap[student._id] || [];
                           return (
                             <button
                               key={student._id}
@@ -538,7 +562,14 @@ function GroupManagement() {
                                 <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                                   {student.internId || student.studentId || "No ID"} • {student.email}
                                 </small>
-                                <span className="gm-type-chip">{student.studentType}</span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px', alignItems: 'center' }}>
+                                  <span className="gm-type-chip">{student.studentType}</span>
+                                  {existingGroups.length > 0 && existingGroups.map((gName, gi) => (
+                                    <span key={gi} className="gm-type-chip" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 600 }}>
+                                      Already in: {gName}
+                                    </span>
+                                  ))}
+                                </div>
                               </span>
                             </button>
                           );
@@ -720,7 +751,7 @@ function GroupManagement() {
             <div className="gm-modal-body gm-detail-body">
               <h3 className="gm-detail-section-title">Student Details</h3>
               <div style={{ overflowX: "auto", marginTop: "12px" }}>
-                <table className="data-table view-students-table">
+                <table className="data-table view-students-table" style={{ minWidth: "750px", width: "100%" }}>
                   <thead>
                     <tr>
                       <th>Name</th>
@@ -728,19 +759,33 @@ function GroupManagement() {
                       <th>Type</th>
                       <th>Email</th>
                       <th>Mobile</th>
+                      <th style={{ textAlign: 'center' }}>Previous Groups</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(detailsGroup.students || []).length === 0 ? (
-                      <tr><td colSpan={5} style={{ textAlign: "center" }}>No students in group</td></tr>
+                      <tr><td colSpan={6} style={{ textAlign: "center" }}>No students in group</td></tr>
                     ) : (
                       detailsGroup.students.map((student) => (
                         <tr key={student._id}>
-                          <td>{student.name}</td>
-                          <td>{student.internId}</td>
+                          <td style={{ wordBreak: 'break-word' }}>{student.name}</td>
+                          <td style={{ wordBreak: 'break-word' }}>{student.internId}</td>
                           <td>{student.studentType}</td>
-                          <td>{student.email}</td>
+                          <td style={{ wordBreak: 'break-word' }}>{student.email}</td>
                           <td>{student.mobile || "-"}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            {student.otherGroups && student.otherGroups.length > 0 ? (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
+                                {student.otherGroups.map((g, idx) => (
+                                  <span key={idx} className="gm-type-chip" style={{ background: '#e0f2fe', color: '#0369a1', wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                                    {g}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span style={{ color: '#64748b' }}>No</span>
+                            )}
+                          </td>
                         </tr>
                       ))
                     )}
