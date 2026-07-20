@@ -41,6 +41,7 @@ export default function ActivityManagementNew() {
   const [trainers, setTrainers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [inactiveWarning, setInactiveWarning] = useState(''); // global inactive warning for group selects
 
   // Interview form
   const [interviewForm, setInterviewForm] = useState({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '', link: '' });
@@ -279,18 +280,53 @@ export default function ActivityManagementNew() {
 
   function handleInterviewGroupSelect(group) {
     const groupId = String(group._id || group.id || group.groupNumber || group.groupName);
-    const memberIds = getGroupMemberList(group).map((member) => getGroupMemberId(member));
+    const allMembers = getGroupMemberList(group);
+    const activeMembers = [];
+    const inactiveCount = { count: 0 };
+    allMembers.forEach((member) => {
+      const memberId = getGroupMemberId(member);
+      // Try to find the full student record to check status
+      const fullStudent = students.find(s => String(s._id || s.id) === memberId);
+      const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : false;
+      if (isInactive) {
+        inactiveCount.count++;
+      } else {
+        activeMembers.push(memberId);
+      }
+    });
     setActiveInterviewGroupId(groupId);
-    setInterviewSelectedStudents(memberIds);
+    setInterviewSelectedStudents(activeMembers);
     setGeneratedSlots([]);
+    if (inactiveCount.count > 0) {
+      setInactiveWarning(`${inactiveCount.count} inactive student(s) from this group were automatically excluded from selection.`);
+    } else {
+      setInactiveWarning('');
+    }
   }
 
   function handleGdGroupSelect(group) {
     const groupId = String(group._id || group.id || group.groupNumber || group.groupName);
-    const memberIds = getGroupMemberList(group).map((member) => getGroupMemberId(member));
+    const allMembers = getGroupMemberList(group);
+    const activeMembers = [];
+    let inactiveCount = 0;
+    allMembers.forEach((member) => {
+      const memberId = getGroupMemberId(member);
+      const fullStudent = students.find(s => String(s._id || s.id) === memberId);
+      const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : false;
+      if (isInactive) {
+        inactiveCount++;
+      } else {
+        activeMembers.push(memberId);
+      }
+    });
     setActiveGdGroupId(groupId);
-    setSelectedStudents(memberIds);
+    setSelectedStudents(activeMembers);
     setGdGroups([]);
+    if (inactiveCount > 0) {
+      setInactiveWarning(`${inactiveCount} inactive student(s) from this group were automatically excluded from selection.`);
+    } else {
+      setInactiveWarning('');
+    }
   }
 
   function generateInterviewSlots() {
@@ -500,7 +536,8 @@ export default function ActivityManagementNew() {
     if (!activity) return;
     try {
       const type = String(activity.type || '').toUpperCase();
-      const dateStr = activity.dateTime ? new Date(activity.dateTime).toLocaleString('en-IN') : 'N/A';
+      // Use UTC-based formatActivityDateTime (same as table display) to avoid timezone shift
+      const dateStr = activity.dateTime ? formatActivityDateTime(activity.dateTime) : 'N/A';
       
       let detailsHtml = '';
       
@@ -540,7 +577,13 @@ export default function ActivityManagementNew() {
                 studentIds.map((id, index) => {
                   const studentInfo = getStudentInfo(id);
                   const slot = slots.find(s => String(s.studentId) === String(id));
-                  const slotTimeStr = slot && slot.date ? new Date(slot.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : (slot?.startTime || 'N/A');
+                  // Use formatReportTime (UTC-based) for consistent time display - same as on-screen table
+                  let slotTimeStr = 'N/A';
+                  if (slot && slot.date) {
+                    slotTimeStr = formatReportTime(slot.date);
+                  } else if (slot && slot.startTime) {
+                    slotTimeStr = formatReportTime(slot.startTime);
+                  }
                   return `
                     <tr>
                       <td>${index + 1}</td>
@@ -577,8 +620,12 @@ export default function ActivityManagementNew() {
               <td><strong>Target Group:</strong> ${groupName}</td>
             </tr>
             <tr>
-              <td><strong>Total Participants:</strong> ${gdStudents.length}</td>
+              <td><strong>Scheduled Date &amp; Time:</strong> ${activity.dateTime ? formatActivityDateTime(activity.dateTime) : 'N/A'}</td>
               <td><strong>GD Status:</strong> ${activity.status || 'Scheduled'}</td>
+            </tr>
+            <tr>
+              <td><strong>Total Participants:</strong> ${gdStudents.length}</td>
+              <td></td>
             </tr>
           </table>
           
@@ -622,7 +669,7 @@ export default function ActivityManagementNew() {
           <table class="info-table">
             <tr>
               <td><strong>Evaluator:</strong> ${interviewer}</td>
-              <td><strong>Due Date:</strong> ${dueDate} at ${dueTime}</td>
+              <td><strong>Scheduled Date &amp; Time:</strong> ${activity.dateTime ? formatActivityDateTime(activity.dateTime) : 'N/A'}</td>
             </tr>
             <tr>
               <td colspan="2"><strong>Submission Link:</strong> ${link}</td>
@@ -696,7 +743,7 @@ export default function ActivityManagementNew() {
             <div class="header">
               <div class="company">Progrentures Solution Pvt. Ltd.</div>
               <h1>Activity Evaluation & Schedule Report</h1>
-              <p>Generated on: ${new Date().toLocaleString('en-IN')}</p>
+              <p>Generated on: ${formatActivityDateTime(new Date().toISOString())}</p>
             </div>
             
             <div class="info-section">
@@ -2004,6 +2051,13 @@ export default function ActivityManagementNew() {
                   <h4>{interviewForm.mode === 'Group' ? 'Select Group & Members' : 'Select Students'}</h4>
                   <p>{interviewForm.mode === 'Group' ? 'Pick a group to expand, then choose the members you want to include.' : 'Choose the students who should be included in this schedule.'}</p>
                 </div>
+                {inactiveWarning && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+                    <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>{inactiveWarning}</span>
+                    <button type="button" onClick={() => setInactiveWarning('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>×</button>
+                  </div>
+                )}
 
                 {interviewForm.mode === 'Individual' ? (
                   <div data-interview-individual-dropdown style={{ position: 'relative' }}>
@@ -2106,45 +2160,53 @@ export default function ActivityManagementNew() {
                               .slice(0, 50)
                               .map((s) => {
                                 const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                const isInactive = String(s.status || '').toLowerCase() === 'inactive';
+                                const sid = String(s._id || s.id);
                                 return (
                                   <div
-                                    key={s._id || s.id}
+                                    key={sid}
                                     data-interview-individual-dropdown
-                                    onClick={(e) => { e.stopPropagation(); toggleInterviewStudent(String(s._id || s.id)); }}
+                                    onClick={(e) => { e.stopPropagation(); if (!isInactive) toggleInterviewStudent(sid); }}
+                                    title={isInactive ? 'This student is inactive and cannot be selected' : ''}
                                     style={{
                                       display: 'flex',
                                       alignItems: 'center',
                                       gap: '10px',
                                       padding: '10px 14px',
                                       borderBottom: '1px solid #f8fafc',
-                                      cursor: 'pointer',
+                                      cursor: isInactive ? 'not-allowed' : 'pointer',
                                       transition: 'background 0.15s',
-                                      background: interviewSelectedStudents.includes(String(s._id || s.id)) ? '#f1f5f9' : 'transparent',
+                                      background: isInactive ? '#fef2f2' : (interviewSelectedStudents.includes(sid) ? '#f1f5f9' : 'transparent'),
+                                      opacity: isInactive ? 0.65 : 1,
                                     }}
                                     onMouseEnter={e => {
-                                      if (!interviewSelectedStudents.includes(String(s._id || s.id))) {
+                                      if (!isInactive && !interviewSelectedStudents.includes(sid)) {
                                         e.currentTarget.style.background = '#f1f5f9';
                                       }
                                     }}
                                     onMouseLeave={e => {
-                                      if (!interviewSelectedStudents.includes(String(s._id || s.id))) {
+                                      if (!isInactive && !interviewSelectedStudents.includes(sid)) {
                                         e.currentTarget.style.background = 'transparent';
                                       }
                                     }}
                                   >
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: isInactive ? '#fee2e2' : '#e0e7ff', color: isInactive ? '#991b1b' : '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
                                       {initials}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name}</div>
+                                      <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{s.name}</div>
                                       <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId} • {s.email}</div>
                                     </div>
-                                    <input
-                                      type="checkbox"
-                                      checked={interviewSelectedStudents.includes(String(s._id || s.id))}
-                                      onChange={() => toggleInterviewStudent(String(s._id || s.id))}
-                                      style={{ cursor: 'pointer' }}
-                                    />
+                                    {isInactive ? (
+                                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>INACTIVE</span>
+                                    ) : (
+                                      <input
+                                        type="checkbox"
+                                        checked={interviewSelectedStudents.includes(sid)}
+                                        onChange={() => toggleInterviewStudent(sid)}
+                                        style={{ cursor: 'pointer' }}
+                                      />
+                                    )}
                                   </div>
                                 );
                               })}
@@ -2283,46 +2345,54 @@ export default function ActivityManagementNew() {
                                             .slice(0, 50)
                                             .map((member) => {
                                               const memberId = getGroupMemberId(member);
+                                              const fullStudent = students.find(s => String(s._id || s.id) === memberId);
+                                              const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : (String(member.status || '').toLowerCase() === 'inactive');
                                               const initials = (member.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                                               return (
                                                 <div
                                                   key={memberId}
                                                   data-interview-group-dropdown
-                                                  onClick={(e) => { e.stopPropagation(); toggleInterviewStudent(memberId); }}
+                                                  onClick={(e) => { e.stopPropagation(); if (!isInactive) toggleInterviewStudent(memberId); }}
+                                                  title={isInactive ? 'This student is inactive and cannot be selected' : ''}
                                                   style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     gap: '10px',
                                                     padding: '10px 14px',
                                                     borderBottom: '1px solid #f8fafc',
-                                                    cursor: 'pointer',
+                                                    cursor: isInactive ? 'not-allowed' : 'pointer',
                                                     transition: 'background 0.15s',
-                                                    background: interviewSelectedStudents.includes(memberId) ? '#f1f5f9' : 'transparent',
+                                                    background: isInactive ? '#fef2f2' : (interviewSelectedStudents.includes(memberId) ? '#f1f5f9' : 'transparent'),
+                                                    opacity: isInactive ? 0.65 : 1,
                                                   }}
                                                   onMouseEnter={e => {
-                                                    if (!interviewSelectedStudents.includes(memberId)) {
+                                                    if (!isInactive && !interviewSelectedStudents.includes(memberId)) {
                                                       e.currentTarget.style.background = '#f1f5f9';
                                                     }
                                                   }}
                                                   onMouseLeave={e => {
-                                                    if (!interviewSelectedStudents.includes(memberId)) {
+                                                    if (!isInactive && !interviewSelectedStudents.includes(memberId)) {
                                                       e.currentTarget.style.background = 'transparent';
                                                     }
                                                   }}
                                                 >
-                                                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: isInactive ? '#fee2e2' : '#e0e7ff', color: isInactive ? '#991b1b' : '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
                                                     {initials}
                                                   </div>
                                                   <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{member.name || 'Unnamed Student'}</div>
+                                                    <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{member.name || 'Unnamed Student'}</div>
                                                     <div style={{ fontSize: '12px', color: '#64748b' }}>{member.internId || member.email || memberId}</div>
                                                   </div>
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={interviewSelectedStudents.includes(memberId)}
-                                                    onChange={() => toggleInterviewStudent(memberId)}
-                                                    style={{ cursor: 'pointer' }}
-                                                  />
+                                                  {isInactive ? (
+                                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>INACTIVE</span>
+                                                  ) : (
+                                                    <input
+                                                      type="checkbox"
+                                                      checked={interviewSelectedStudents.includes(memberId)}
+                                                      onChange={() => toggleInterviewStudent(memberId)}
+                                                      style={{ cursor: 'pointer' }}
+                                                    />
+                                                  )}
                                                 </div>
                                               );
                                             })}
@@ -2506,6 +2576,13 @@ export default function ActivityManagementNew() {
                   <h4>Participants</h4>
                   <p>Select students to include. If left blank, the system uses the default group set.</p>
                 </div>
+                {inactiveWarning && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+                    <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>{inactiveWarning}</span>
+                    <button type="button" onClick={() => setInactiveWarning('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>×</button>
+                  </div>
+                )}
                 <div data-gd-dropdown style={{ position: 'relative' }}>
                   <label
                     style={{
@@ -2614,46 +2691,53 @@ export default function ActivityManagementNew() {
                               .slice(0, 50)
                               .map((s) => {
                                 const id = activeGdGroupId ? getGroupMemberId(s) : String(s._id || s.id);
+                                const isInactive = String(s.status || '').toLowerCase() === 'inactive';
                                 const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                                 return (
                                   <div
                                     key={id}
                                     data-gd-dropdown
-                                    onClick={(e) => { e.stopPropagation(); toggleStudent(id); }}
+                                    onClick={(e) => { e.stopPropagation(); if (!isInactive) toggleStudent(id); }}
+                                    title={isInactive ? 'This student is inactive and cannot be selected' : ''}
                                     style={{
                                       display: 'flex',
                                       alignItems: 'center',
                                       gap: '10px',
                                       padding: '10px 14px',
                                       borderBottom: '1px solid #f8fafc',
-                                      cursor: 'pointer',
+                                      cursor: isInactive ? 'not-allowed' : 'pointer',
                                       transition: 'background 0.15s',
-                                      background: selectedStudents.includes(id) ? '#f1f5f9' : 'transparent',
+                                      background: isInactive ? '#fef2f2' : (selectedStudents.includes(id) ? '#f1f5f9' : 'transparent'),
+                                      opacity: isInactive ? 0.65 : 1,
                                     }}
                                     onMouseEnter={e => {
-                                      if (!selectedStudents.includes(id)) {
+                                      if (!isInactive && !selectedStudents.includes(id)) {
                                         e.currentTarget.style.background = '#f1f5f9';
                                       }
                                     }}
                                     onMouseLeave={e => {
-                                      if (!selectedStudents.includes(id)) {
+                                      if (!isInactive && !selectedStudents.includes(id)) {
                                         e.currentTarget.style.background = 'transparent';
                                       }
                                     }}
                                   >
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: isInactive ? '#fee2e2' : '#e0e7ff', color: isInactive ? '#991b1b' : '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
                                       {initials}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name || 'Unnamed Student'}</div>
+                                      <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{s.name || 'Unnamed Student'}</div>
                                       <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId || s.email || id}</div>
                                     </div>
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedStudents.includes(id)}
-                                      onChange={() => toggleStudent(id)}
-                                      style={{ cursor: 'pointer' }}
-                                    />
+                                    {isInactive ? (
+                                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>INACTIVE</span>
+                                    ) : (
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedStudents.includes(id)}
+                                        onChange={() => toggleStudent(id)}
+                                        style={{ cursor: 'pointer' }}
+                                      />
+                                    )}
                                   </div>
                                 );
                               });
@@ -2841,16 +2925,36 @@ export default function ActivityManagementNew() {
                     <h4>Assign Students</h4>
                     <p>Choose who should receive this assessment invite. You may select a group to prefill members.</p>
                   </div>
+                  {inactiveWarning && (
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', marginBottom: '14px' }}>
+                      <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+                      <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>{inactiveWarning}</span>
+                      <button type="button" onClick={() => setInactiveWarning('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>×</button>
+                    </div>
+                  )}
                   <div className="am-field">
                     <label>Select Group</label>
                     <select value={activeAssessGroupId} onChange={e => {
                       const gid = e.target.value;
-                      if (!gid) { setActiveAssessGroupId(''); setAssessSelected([]); return; }
+                      if (!gid) { setActiveAssessGroupId(''); setAssessSelected([]); setInactiveWarning(''); return; }
                       const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(gid));
                       if (found) {
-                        const memberIds = getGroupMemberList(found).map(m => getGroupMemberId(m));
+                        const allMembers = getGroupMemberList(found);
+                        const activeIds = [];
+                        let inactiveCount = 0;
+                        allMembers.forEach(m => {
+                          const mid = getGroupMemberId(m);
+                          const fullStudent = students.find(s => String(s._id || s.id) === mid);
+                          const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : (String(m.status || '').toLowerCase() === 'inactive');
+                          if (isInactive) { inactiveCount++; } else { activeIds.push(mid); }
+                        });
                         setActiveAssessGroupId(String(found._id || found.id || gid));
-                        setAssessSelected(memberIds);
+                        setAssessSelected(activeIds);
+                        if (inactiveCount > 0) {
+                          setInactiveWarning(`${inactiveCount} inactive student(s) from this group were automatically excluded from selection.`);
+                        } else {
+                          setInactiveWarning('');
+                        }
                       } else setActiveAssessGroupId(gid);
                     }}>
                       <option value="">-- Select group (optional) --</option>
@@ -2968,46 +3072,54 @@ export default function ActivityManagementNew() {
                                 .slice(0, 50)
                                 .map((s) => {
                                   const id = activeAssessGroupId ? getGroupMemberId(s) : String(s._id || s.id);
+                                  const fullStudent = students.find(st => String(st._id || st.id) === id);
+                                  const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : (String(s.status || '').toLowerCase() === 'inactive');
                                   const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                                   return (
                                     <div
                                       key={id}
                                       data-assess-dropdown
-                                      onClick={(e) => { e.stopPropagation(); toggleStudent(id, setAssessSelected); }}
+                                      onClick={(e) => { e.stopPropagation(); if (!isInactive) toggleStudent(id, setAssessSelected); }}
+                                      title={isInactive ? 'This student is inactive and cannot be selected' : ''}
                                       style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '10px',
                                         padding: '10px 14px',
                                         borderBottom: '1px solid #f8fafc',
-                                        cursor: 'pointer',
+                                        cursor: isInactive ? 'not-allowed' : 'pointer',
                                         transition: 'background 0.15s',
-                                        background: assessSelected.includes(id) ? '#f1f5f9' : 'transparent',
+                                        background: isInactive ? '#fef2f2' : (assessSelected.includes(id) ? '#f1f5f9' : 'transparent'),
+                                        opacity: isInactive ? 0.65 : 1,
                                       }}
                                       onMouseEnter={e => {
-                                        if (!assessSelected.includes(id)) {
+                                        if (!isInactive && !assessSelected.includes(id)) {
                                           e.currentTarget.style.background = '#f1f5f9';
                                         }
                                       }}
                                       onMouseLeave={e => {
-                                        if (!assessSelected.includes(id)) {
+                                        if (!isInactive && !assessSelected.includes(id)) {
                                           e.currentTarget.style.background = 'transparent';
                                         }
                                       }}
                                     >
-                                      <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#e0e7ff', color: '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
+                                      <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: isInactive ? '#fee2e2' : '#e0e7ff', color: isInactive ? '#991b1b' : '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
                                         {initials}
                                       </div>
                                       <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{s.name || 'Unnamed Student'}</div>
+                                        <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{s.name || 'Unnamed Student'}</div>
                                         <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId || s.email || id}</div>
                                       </div>
-                                      <input
-                                        type="checkbox"
-                                        checked={assessSelected.includes(id)}
-                                        onChange={() => toggleStudent(id, setAssessSelected)}
-                                        style={{ cursor: 'pointer' }}
-                                      />
+                                      {isInactive ? (
+                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>INACTIVE</span>
+                                      ) : (
+                                        <input
+                                          type="checkbox"
+                                          checked={assessSelected.includes(id)}
+                                          onChange={() => toggleStudent(id, setAssessSelected)}
+                                          style={{ cursor: 'pointer' }}
+                                        />
+                                      )}
                                     </div>
                                   );
                                 });

@@ -8,6 +8,7 @@ function CreateTask({ onTaskCreated, onBack }) {
   const [selectedGroup, setSelectedGroup] = useState("");
   const [groupSearchQuery, setGroupSearchQuery] = useState("");
   const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
+  const [inactiveGroupWarning, setInactiveGroupWarning] = useState('');
   const [assignmentType, setAssignmentType] = useState("individual");
   const [individualSearchQuery, setIndividualSearchQuery] = useState("");
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
@@ -147,14 +148,28 @@ function CreateTask({ onTaskCreated, onBack }) {
 
   const handleGroupChange = (groupId) => {
     setSelectedGroup(groupId);
+    setInactiveGroupWarning('');
     if (!groupId) {
       setSelectedTeamMembers([]);
       return;
     }
     const group = groups.find((g) => g._id === groupId);
     if (group && group.students) {
-      const studentIds = group.students.map((s) => (typeof s === "object" ? s._id : s));
-      setSelectedTeamMembers(studentIds);
+      const allStudentIds = group.students.map((s) => (typeof s === "object" ? s._id : s));
+      const activeIds = [];
+      let inactiveCount = 0;
+      allStudentIds.forEach(sid => {
+        const intern = interns.find(i => i._id === sid);
+        if (intern && String(intern.status || '').toLowerCase() === 'inactive') {
+          inactiveCount++;
+        } else {
+          activeIds.push(sid);
+        }
+      });
+      setSelectedTeamMembers(activeIds);
+      if (inactiveCount > 0) {
+        setInactiveGroupWarning(`${inactiveCount} inactive student(s) from this group were automatically excluded from selection.`);
+      }
     }
   };
 
@@ -168,18 +183,20 @@ function CreateTask({ onTaskCreated, onBack }) {
   };
 
   const handleSelectAllIndividuals = () => {
-    if (selectedIndividualInterns.length === filteredIndividualInterns.length) {
+    const activeFiltered = filteredIndividualInterns.filter(i => String(i.status || '').toLowerCase() !== 'inactive');
+    if (selectedIndividualInterns.length === activeFiltered.length && activeFiltered.length > 0) {
       setSelectedIndividualInterns([]);
     } else {
-      setSelectedIndividualInterns(filteredIndividualInterns.map((intern) => intern._id));
+      setSelectedIndividualInterns(activeFiltered.map((intern) => intern._id));
     }
   };
 
   const handleSelectAllTeam = () => {
-    if (selectedTeamMembers.length === filteredTeamInterns.length) {
+    const activeFiltered = filteredTeamInterns.filter(i => String(i.status || '').toLowerCase() !== 'inactive');
+    if (selectedTeamMembers.length === activeFiltered.length && activeFiltered.length > 0) {
       setSelectedTeamMembers([]);
     } else {
-      setSelectedTeamMembers(filteredTeamInterns.map((intern) => intern._id));
+      setSelectedTeamMembers(activeFiltered.map((intern) => intern._id));
     }
   };
 
@@ -613,29 +630,34 @@ function CreateTask({ onTaskCreated, onBack }) {
                           : "No students available"}
                       </div>
                     ) : (
-                      filteredIndividualInterns.map((intern) => (
+                      filteredIndividualInterns.map((intern) => {
+                        const isInactive = String(intern.status || '').toLowerCase() === 'inactive';
+                        return (
                         <button
                           key={intern._id}
                           type="button"
-                          className={`gm-student-row ${selectedIndividualInterns.includes(intern._id) ? "is-selected" : ""}`}
-                          onClick={() => toggleIndividualIntern(intern._id)}
+                          className={`gm-student-row ${!isInactive && selectedIndividualInterns.includes(intern._id) ? "is-selected" : ""}`}
+                          onClick={() => { if (!isInactive) toggleIndividualIntern(intern._id); }}
+                          title={isInactive ? 'This student is inactive and cannot be selected' : ''}
                           style={{
                             width: "100%",
                             border: "1px solid #dbe4ef",
                             borderRadius: "10px",
-                            cursor: "pointer",
+                            cursor: isInactive ? "not-allowed" : "pointer",
                             textAlign: "left",
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
                             padding: '12px 16px',
-                            background: selectedIndividualInterns.includes(intern._id) ? '#f0fdf4' : 'transparent',
+                            background: isInactive ? '#fef2f2' : (selectedIndividualInterns.includes(intern._id) ? '#f0fdf4' : 'transparent'),
+                            opacity: isInactive ? 0.65 : 1,
                           }}
                         >
                           <input
                             type="checkbox"
-                            checked={selectedIndividualInterns.includes(intern._id)}
+                            checked={!isInactive && selectedIndividualInterns.includes(intern._id)}
                             onChange={() => {}}
+                            disabled={isInactive}
                             style={{ pointerEvents: 'none', width: '18px', height: '18px' }}
                           />
                           <div
@@ -645,8 +667,8 @@ function CreateTask({ onTaskCreated, onBack }) {
                               borderRadius: "50%",
                               display: "grid",
                               placeItems: "center",
-                              backgroundColor: selectedIndividualInterns.includes(intern._id) ? "#dbeafe" : "#f1f5f9",
-                              color: selectedIndividualInterns.includes(intern._id) ? "#2563eb" : "#475569",
+                              backgroundColor: isInactive ? "#fee2e2" : (selectedIndividualInterns.includes(intern._id) ? "#dbeafe" : "#f1f5f9"),
+                              color: isInactive ? "#991b1b" : (selectedIndividualInterns.includes(intern._id) ? "#2563eb" : "#475569"),
                               fontWeight: 700,
                               fontSize: "12px",
                               flexShrink: 0,
@@ -661,14 +683,19 @@ function CreateTask({ onTaskCreated, onBack }) {
                           </div>
 
                           <span className="gm-student-content" style={{ flex: 1 }}>
-                            <span style={{ display: 'block', fontSize: '14px', color: '#0f172a', fontWeight: 'normal' }}>{intern.name}</span>
+                            <span style={{ display: 'block', fontSize: '14px', color: isInactive ? '#9ca3af' : '#0f172a', fontWeight: 'normal', textDecoration: isInactive ? 'line-through' : 'none' }}>{intern.name}</span>
                             <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                               {intern.studentId || "No ID"} • {intern.email}
                             </small>
-                            <span className="gm-type-chip">{intern.studentType}</span>
+                            {isInactive ? (
+                              <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px', marginTop: '2px' }}>INACTIVE</span>
+                            ) : (
+                              <span className="gm-type-chip">{intern.studentType}</span>
+                            )}
                           </span>
                         </button>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -717,6 +744,13 @@ function CreateTask({ onTaskCreated, onBack }) {
                 <label style={{ fontSize: '15px', fontWeight: '500', color: '#1f2937', marginBottom: '8px', display: 'block' }}>
                   Select Group
                 </label>
+                {inactiveGroupWarning && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+                    <span style={{ fontSize: '13px', color: '#92400e', fontWeight: 500 }}>{inactiveGroupWarning}</span>
+                    <button type="button" onClick={() => setInactiveGroupWarning('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>×</button>
+                  </div>
+                )}
                 
                 <div
                   onClick={() => setIsGroupDropdownOpen(!isGroupDropdownOpen)}
@@ -936,29 +970,34 @@ function CreateTask({ onTaskCreated, onBack }) {
                           : "No students available"}
                       </div>
                     ) : (
-                      filteredTeamInterns.map((intern) => (
+                      filteredTeamInterns.map((intern) => {
+                        const isInactive = String(intern.status || '').toLowerCase() === 'inactive';
+                        return (
                         <button
                           key={intern._id}
                           type="button"
-                          className={`gm-student-row ${selectedTeamMembers.includes(intern._id) ? "is-selected" : ""}`}
-                          onClick={() => handleTeamMemberToggle(intern._id)}
+                          className={`gm-student-row ${!isInactive && selectedTeamMembers.includes(intern._id) ? "is-selected" : ""}`}
+                          onClick={() => { if (!isInactive) handleTeamMemberToggle(intern._id); }}
+                          title={isInactive ? 'This student is inactive and cannot be selected' : ''}
                           style={{
                             width: "100%",
                             border: "1px solid #dbe4ef",
                             borderRadius: "10px",
-                            cursor: "pointer",
+                            cursor: isInactive ? "not-allowed" : "pointer",
                             textAlign: "left",
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
                             padding: '12px 16px',
-                            background: selectedTeamMembers.includes(intern._id) ? '#f0fdf4' : 'transparent',
+                            background: isInactive ? '#fef2f2' : (selectedTeamMembers.includes(intern._id) ? '#f0fdf4' : 'transparent'),
+                            opacity: isInactive ? 0.65 : 1,
                           }}
                         >
                           <input
                             type="checkbox"
-                            checked={selectedTeamMembers.includes(intern._id)}
+                            checked={!isInactive && selectedTeamMembers.includes(intern._id)}
                             onChange={() => {}}
+                            disabled={isInactive}
                             style={{ pointerEvents: 'none', width: '18px', height: '18px' }}
                           />
                           <div
@@ -968,8 +1007,8 @@ function CreateTask({ onTaskCreated, onBack }) {
                               borderRadius: "50%",
                               display: "grid",
                               placeItems: "center",
-                              backgroundColor: selectedTeamMembers.includes(intern._id) ? "#dbeafe" : "#f1f5f9",
-                              color: selectedTeamMembers.includes(intern._id) ? "#2563eb" : "#475569",
+                              backgroundColor: isInactive ? "#fee2e2" : (selectedTeamMembers.includes(intern._id) ? "#dbeafe" : "#f1f5f9"),
+                              color: isInactive ? "#991b1b" : (selectedTeamMembers.includes(intern._id) ? "#2563eb" : "#475569"),
                               fontWeight: 700,
                               fontSize: "12px",
                               flexShrink: 0,
@@ -984,14 +1023,19 @@ function CreateTask({ onTaskCreated, onBack }) {
                           </div>
 
                           <span className="gm-student-content" style={{ flex: 1 }}>
-                            <span style={{ display: 'block', fontSize: '14px', color: '#0f172a', fontWeight: 'normal' }}>{intern.name}</span>
+                            <span style={{ display: 'block', fontSize: '14px', color: isInactive ? '#9ca3af' : '#0f172a', fontWeight: 'normal', textDecoration: isInactive ? 'line-through' : 'none' }}>{intern.name}</span>
                             <small style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                               {intern.studentId || "No ID"} • {intern.email}
                             </small>
-                            <span className="gm-type-chip">{intern.studentType}</span>
+                            {isInactive ? (
+                              <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '1px 6px', borderRadius: '4px', marginTop: '2px' }}>INACTIVE</span>
+                            ) : (
+                              <span className="gm-type-chip">{intern.studentType}</span>
+                            )}
                           </span>
                         </button>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
