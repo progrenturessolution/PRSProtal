@@ -2966,7 +2966,14 @@ export default function ActivityManagementNew() {
                                         {initials}
                                       </div>
                                       <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{s.name || 'Unnamed Student'}</div>
+                                        <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          {s.name || 'Unnamed Student'}
+                                          {getStudentGroupName(id) && (
+                                            <span style={{ fontSize: '11px', fontWeight: 500, color: '#4f46e5', background: '#e0e7ff', padding: '1px 6px', borderRadius: '4px' }}>
+                                              {getStudentGroupName(id)}
+                                            </span>
+                                          )}
+                                        </div>
                                         <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId || s.email || id}</div>
                                       </div>
                                       {isInactive ? (
