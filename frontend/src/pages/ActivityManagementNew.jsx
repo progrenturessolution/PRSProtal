@@ -46,15 +46,18 @@ export default function ActivityManagementNew() {
   // Interview form
   const [interviewForm, setInterviewForm] = useState({ interviewType: '', mode: 'Individual', date: '', startTime: '09:00', perGap: 15, interviewer: '', link: '' });
   const [interviewSelectedStudents, setInterviewSelectedStudents] = useState([]);
-  const [activeInterviewGroupId, setActiveInterviewGroupId] = useState('');
-  const [activeGdGroupId, setActiveGdGroupId] = useState('');
+  const [activeInterviewGroupIds, setActiveInterviewGroupIds] = useState([]);
+  const [activeGdGroupIds, setActiveGdGroupIds] = useState([]);
+  const [activeAssessGroupIds, setActiveAssessGroupIds] = useState([]);
+  const [isGdGroupDropdownOpen, setIsGdGroupDropdownOpen] = useState(false);
+  const [isAssessGroupDropdownOpen, setIsAssessGroupDropdownOpen] = useState(false);
   const [generatedSlots, setGeneratedSlots] = useState([]);
   const [editingInterviewActivityId, setEditingInterviewActivityId] = useState(null);
   // Interview Individual Mode Dropdown State
   const [isInterviewIndividualDropdownOpen, setIsInterviewIndividualDropdownOpen] = useState(false);
   const [interviewIndividualDropdownSearchText, setInterviewIndividualDropdownSearchText] = useState('');
-  // Interview Group Mode Dropdown State
   const [isInterviewGroupDropdownOpen, setIsInterviewGroupDropdownOpen] = useState(false);
+  const [openGroupDropdownId, setOpenGroupDropdownId] = useState('');
   const [interviewGroupDropdownSearchText, setInterviewGroupDropdownSearchText] = useState('');
 
   const [editingGdActivityId, setEditingGdActivityId] = useState(null);
@@ -68,7 +71,6 @@ export default function ActivityManagementNew() {
   // Assessment form
   const [assessForm, setAssessForm] = useState({ type: 'Technical', title: '', description: '', date: '', time: '09:00', duration: 60, link: '', interviewer: '' });
   const [assessSelected, setAssessSelected] = useState([]);
-  const [activeAssessGroupId, setActiveAssessGroupId] = useState('');
   const [editingAssessActivityId, setEditingAssessActivityId] = useState(null);
   const [isAssessDropdownOpen, setIsAssessDropdownOpen] = useState(false);
   const [assessDropdownSearchText, setAssessDropdownSearchText] = useState('');
@@ -189,10 +191,24 @@ export default function ActivityManagementNew() {
         }
       }
 
+      // Close GD Group Dropdown
+      if (isGdGroupDropdownOpen) {
+        if (!e.target.closest("[data-gd-group-dropdown]")) {
+          setIsGdGroupDropdownOpen(false);
+        }
+      }
+
       // Close Assessment Dropdown
       if (isAssessDropdownOpen) {
         if (!e.target.closest("[data-assess-dropdown]")) {
           setIsAssessDropdownOpen(false);
+        }
+      }
+
+      // Close Assessment Group Dropdown
+      if (isAssessGroupDropdownOpen) {
+        if (!e.target.closest("[data-assess-group-dropdown]")) {
+          setIsAssessGroupDropdownOpen(false);
         }
       }
     };
@@ -201,7 +217,7 @@ export default function ActivityManagementNew() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [openActionMenu, isInterviewIndividualDropdownOpen, isInterviewGroupDropdownOpen, isGdDropdownOpen, isAssessDropdownOpen]);
+  }, [openActionMenu, isInterviewIndividualDropdownOpen, isInterviewGroupDropdownOpen, isGdDropdownOpen, isGdGroupDropdownOpen, isAssessDropdownOpen, isAssessGroupDropdownOpen]);
 
   async function fetchActivities() {
     setLoading(true);
@@ -265,20 +281,32 @@ export default function ActivityManagementNew() {
     return group?.groupName || group?.groupNumber || 'Unnamed Group';
   }
 
+  function getStudentGroupName(studentId) {
+    const sId = String(studentId);
+    const foundGroup = groups.find(g => {
+      const members = getGroupMemberList(g);
+      return members.some(m => getGroupMemberId(m) === sId);
+    });
+    return foundGroup ? getGroupLabel(foundGroup) : '';
+  }
+
   function getInterviewGroupLabel() {
-    if (!activeInterviewGroupId) return '-';
-    const group = groups.find((item) => String(item._id || item.id || item.groupNumber || item.groupName) === String(activeInterviewGroupId));
-    return group ? getGroupLabel(group) : 'Selected Group';
+    if (!activeInterviewGroupIds || activeInterviewGroupIds.length === 0) return '-';
+    const groupLabels = activeInterviewGroupIds.map(gid => {
+      const group = groups.find((item) => String(item._id || item.id || item.groupNumber || item.groupName) === String(gid));
+      return group ? getGroupLabel(group) : '';
+    }).filter(Boolean);
+    return groupLabels.join(', ') || 'Selected Groups';
   }
 
   function handleInterviewModeChange(mode) {
     setInterviewForm((prev) => ({ ...prev, mode }));
     setInterviewSelectedStudents([]);
-    setActiveInterviewGroupId('');
+    setActiveInterviewGroupIds([]);
     setGeneratedSlots([]);
   }
 
-  function handleInterviewGroupSelect(group) {
+  function handleInterviewGroupToggle(group) {
     const groupId = String(group._id || group.id || group.groupNumber || group.groupName);
     const allMembers = getGroupMemberList(group);
     const activeMembers = [];
@@ -294,17 +322,36 @@ export default function ActivityManagementNew() {
         activeMembers.push(memberId);
       }
     });
-    setActiveInterviewGroupId(groupId);
-    setInterviewSelectedStudents(activeMembers);
+
+    const isCurrentlySelected = activeInterviewGroupIds.includes(groupId);
+    setInterviewSelectedStudents((prev) => {
+      if (isCurrentlySelected) {
+        // Remove members of this group
+        return prev.filter(id => !activeMembers.includes(id));
+      } else {
+        // Add members of this group (prevent duplicates)
+        const toAdd = activeMembers.filter(id => !prev.includes(id));
+        return [...prev, ...toAdd];
+      }
+    });
+
+    setActiveInterviewGroupIds((prev) => {
+      if (isCurrentlySelected) {
+        return prev.filter(id => id !== groupId);
+      } else {
+        return [...prev, groupId];
+      }
+    });
+
     setGeneratedSlots([]);
-    if (inactiveCount.count > 0) {
+    if (inactiveCount.count > 0 && !isCurrentlySelected) {
       setInactiveWarning(`${inactiveCount.count} inactive student(s) from this group were automatically excluded from selection.`);
     } else {
       setInactiveWarning('');
     }
   }
 
-  function handleGdGroupSelect(group) {
+  function handleGdGroupToggle(group) {
     const groupId = String(group._id || group.id || group.groupNumber || group.groupName);
     const allMembers = getGroupMemberList(group);
     const activeMembers = [];
@@ -319,10 +366,27 @@ export default function ActivityManagementNew() {
         activeMembers.push(memberId);
       }
     });
-    setActiveGdGroupId(groupId);
-    setSelectedStudents(activeMembers);
+
+    const isCurrentlySelected = activeGdGroupIds.includes(groupId);
+    setSelectedStudents((prev) => {
+      if (isCurrentlySelected) {
+        return prev.filter(id => !activeMembers.includes(id));
+      } else {
+        const toAdd = activeMembers.filter(id => !prev.includes(id));
+        return [...prev, ...toAdd];
+      }
+    });
+
+    setActiveGdGroupIds((prev) => {
+      if (isCurrentlySelected) {
+        return prev.filter(id => id !== groupId);
+      } else {
+        return [...prev, groupId];
+      }
+    });
+
     setGdGroups([]);
-    if (inactiveCount > 0) {
+    if (inactiveCount > 0 && !isCurrentlySelected) {
       setInactiveWarning(`${inactiveCount} inactive student(s) from this group were automatically excluded from selection.`);
     } else {
       setInactiveWarning('');
@@ -381,16 +445,16 @@ export default function ActivityManagementNew() {
         alert('Please select an Interview Type');
         return;
       }
-      if (interviewForm.mode === 'Group' && !activeInterviewGroupId) {
-        alert('Select a group first');
+      if (interviewForm.mode === 'Group' && activeInterviewGroupIds.length === 0) {
+        alert('Select at least one group first');
         return;
       }
       const allowedInterviewTypes = ['HR', 'PI', 'Technical'];
       const interviewTypeToSend = allowedInterviewTypes.includes(interviewForm.interviewType) ? interviewForm.interviewType : 'HR';
       const payload = { studentIds: interviewSelectedStudents, trainerId: interviewForm.interviewer || null, interviewerName: interviewForm.interviewer || '', interviewType: interviewTypeToSend, mode: interviewForm.mode, date: interviewForm.date, startTime: interviewForm.startTime, perGap: interviewForm.perGap, link: interviewForm.link || '' };
       if (interviewForm.mode === 'Group') {
-        payload.groupId = activeInterviewGroupId;
-        payload.groupIds = [activeInterviewGroupId];
+        payload.groupId = activeInterviewGroupIds[0] || '';
+        payload.groupIds = activeInterviewGroupIds;
       }
       const isEditingInterviewActivity = Boolean(editingInterviewActivityId);
       const res = isEditingInterviewActivity
@@ -411,6 +475,7 @@ export default function ActivityManagementNew() {
               startTime: payload.startTime,
               perGap: payload.perGap,
               groupId: payload.groupId || '',
+              groupIds: payload.groupIds || [],
               link: payload.link || '',
             },
           })
@@ -423,7 +488,7 @@ export default function ActivityManagementNew() {
         }
         setShowInterviewModal(false);
         setInterviewSelectedStudents([]);
-        setActiveInterviewGroupId('');
+        setActiveInterviewGroupIds([]);
         setGeneratedSlots([]);
         setEditingInterviewActivityId(null);
         fetchActivities();
@@ -442,10 +507,22 @@ export default function ActivityManagementNew() {
   }
 
   function getGdGroupsPayload() {
-    if (activeGdGroupId) {
-      const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeGdGroupId));
-      const memberList = found ? getGroupMemberList(found) : [];
-      return [memberList];
+    if (activeGdGroupIds && activeGdGroupIds.length > 0) {
+      const gdGroupsList = [];
+      activeGdGroupIds.forEach(gId => {
+        const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(gId));
+        if (found) {
+          const members = getGroupMemberList(found).filter(m => {
+            const memberId = getGroupMemberId(m);
+            const fullStudent = students.find(s => String(s._id || s.id) === memberId);
+            return !(fullStudent && String(fullStudent.status || '').toLowerCase() === 'inactive');
+          });
+          if (members.length > 0) {
+            gdGroupsList.push(members);
+          }
+        }
+      });
+      return gdGroupsList;
     }
     const list = selectedStudents.length ? students.filter(s => selectedStudents.includes(String(s._id||s.id))) : [];
     const size = Number(gdForm.groupSize) || 5;
@@ -457,12 +534,12 @@ export default function ActivityManagementNew() {
   async function saveGd() {
     try {
       // enforce group selection OR manual student selection
-      if (!activeGdGroupId && selectedStudents.length === 0) {
+      if (activeGdGroupIds.length === 0 && selectedStudents.length === 0) {
         alert('Please select a group or choose students manually before saving the GD.');
         return;
       }
       const gdGroupsToSend = getGdGroupsPayload();
-      const payloadDetails = { form: gdForm, groups: gdGroupsToSend, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupId || '', link: gdForm.link || '' };
+      const payloadDetails = { form: gdForm, groups: gdGroupsToSend, interviewerId: gdForm.interviewer || '', interviewerName: getTrainerLabel(gdForm.interviewer), assigned: selectedStudents, mode: 'Group', groupId: activeGdGroupIds[0] || '', groupIds: activeGdGroupIds, link: gdForm.link || '' };
       const activityPayload = { type: 'GD', title: gdForm.title || 'Group Discussion', dateTime: gdForm.date ? `${gdForm.date}T${gdForm.startTime||'00:00'}:00` : undefined, status: Boolean(editingGdActivityId) ? 'Rescheduled' : 'Scheduled', details: payloadDetails };
       const isEditing = Boolean(editingGdActivityId);
       const res = isEditing
@@ -474,6 +551,7 @@ export default function ActivityManagementNew() {
         setShowGDModal(false);
         setGdGroups([]);
         setSelectedStudents([]);
+        setActiveGdGroupIds([]);
         setEditingGdActivityId(null);
         if (isEditing && String(viewActivity?._id) === String(editingGdActivityId)) {
           setViewActivity(res.data.activity || null);
@@ -488,8 +566,11 @@ export default function ActivityManagementNew() {
   async function saveAssessment() {
     try {
       const details = { form: assessForm, assigned: assessSelected, trainerId: assessForm.interviewer || '', interviewerName: getTrainerLabel(assessForm.interviewer) };
-      if (activeAssessGroupId) details.mode = 'Group';
-      if (activeAssessGroupId) details.groupId = activeAssessGroupId;
+      if (activeAssessGroupIds.length > 0) {
+        details.mode = 'Group';
+        details.groupId = activeAssessGroupIds[0] || '';
+        details.groupIds = activeAssessGroupIds;
+      }
 
       const activityPayload = { type: 'Assessment', title: assessForm.title || `${assessForm.type} Assessment`, dateTime: assessForm.date ? `${assessForm.date}T${assessForm.time||'00:00'}:00` : undefined, status: Boolean(editingAssessActivityId) ? 'Rescheduled' : 'Scheduled', details };
       const isEditing = Boolean(editingAssessActivityId);
@@ -507,7 +588,7 @@ export default function ActivityManagementNew() {
           date: assessForm.date || undefined,
           time: assessForm.time || undefined,
           link: assessForm.link || undefined,
-          groupId: activeAssessGroupId || details.groupId || undefined
+          groupId: activeAssessGroupIds[0] || undefined
         };
         res = await adminAPI.createAssessment(schedPayload);
       }
@@ -516,7 +597,7 @@ export default function ActivityManagementNew() {
         alert(isEditing ? 'Activity updated' : 'Assessment scheduled');
         setShowAssessmentModal(false);
         setAssessSelected([]);
-        setActiveAssessGroupId('');
+        setActiveAssessGroupIds([]);
         setEditingAssessActivityId(null);
         if (isEditing && String(viewActivity?._id) === String(editingAssessActivityId)) setViewActivity(res.data.activity || null);
         fetchActivities();
@@ -2194,7 +2275,14 @@ export default function ActivityManagementNew() {
                                       {initials}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                      <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{s.name}</div>
+                                      <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {s.name}
+                                        {getStudentGroupName(sid) && (
+                                          <span style={{ fontSize: '11px', fontWeight: 500, color: '#4f46e5', background: '#e0e7ff', padding: '1px 6px', borderRadius: '4px' }}>
+                                            {getStudentGroupName(sid)}
+                                          </span>
+                                        )}
+                                      </div>
                                       <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId} • {s.email}</div>
                                     </div>
                                     {isInactive ? (
@@ -2228,192 +2316,131 @@ export default function ActivityManagementNew() {
                     {groups.length === 0 ? (
                       <div className="am-empty">No groups found</div>
                     ) : (
-                      groups.map((group) => {
-                        const groupId = String(group._id || group.id || group.groupNumber || group.groupName);
-                        const memberList = getGroupMemberList(group);
-                        const isActive = activeInterviewGroupId === groupId;
-                        return (
-                          <div key={groupId} className={`am-group-card ${isActive ? 'active' : ''}`}>
-                            <button
-                              type="button"
-                              className="am-group-card-header"
-                              onClick={() => handleInterviewGroupSelect(group)}
+                    groups.map((group) => {
+                      const groupId = String(group._id || group.id || group.groupNumber || group.groupName);
+                      const memberList = getGroupMemberList(group);
+                      const isActive = activeInterviewGroupIds.includes(groupId);
+                      const isDropdownOpen = openGroupDropdownId === groupId;
+                      return (
+                        <div key={groupId} className={`am-group-card ${isActive ? 'active' : ''}`}>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: '10px 14px',
+                              background: isActive ? '#f1f5f9' : 'transparent',
+                              borderBottom: '1px solid #f8fafc',
+                              gap: '10px',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isActive}
+                              onChange={() => handleInterviewGroupToggle(group)}
+                              style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+                            />
+                            <div
+                              onClick={() => handleInterviewGroupToggle(group)}
+                              style={{ cursor: 'pointer', flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                             >
                               <div>
                                 <strong>{getGroupLabel(group)}</strong>
-                                <span>{group.groupNumber || ''}</span>
+                                <span style={{ marginLeft: '8px', color: '#64748b', fontSize: '12px' }}>{group.groupNumber || ''}</span>
                               </div>
-                              <div className="am-group-count">{memberList.length} members</div>
-                            </button>
-
+                              <div style={{ fontSize: '13px', color: '#64748b' }}>{memberList.length} members</div>
+                            </div>
                             {isActive && (
-                              <div className="am-group-members-panel">
-                                <div className="am-group-toolbar">
-                                  <label className="am-group-toggle-all">
-                                    <input
-                                      type="checkbox"
-                                      checked={memberList.length > 0 && memberList.every((member) => interviewSelectedStudents.includes(getGroupMemberId(member)))}
-                                      onChange={(event) => {
-                                        if (event.target.checked) {
-                                          setInterviewSelectedStudents(memberList.map((member) => getGroupMemberId(member)));
-                                        } else {
-                                          setInterviewSelectedStudents([]);
-                                        }
-                                      }}
-                                    />
-                                    Select full group
-                                  </label>
-                                  <span className="am-group-help">Uncheck any member to schedule a partial group. The group remains the same.</span>
-                                </div>
-                                <div data-interview-group-dropdown style={{ position: 'relative' }}>
-                                  <div style={{ position: 'relative', marginTop: '10px' }} data-interview-group-dropdown>
-                                    <div
-                                      data-interview-group-dropdown
-                                      onClick={() => setIsInterviewGroupDropdownOpen(!isInterviewGroupDropdownOpen)}
-                                      style={{
-                                        width: '100%',
-                                        padding: '12px 14px',
-                                        border: `2px solid ${isInterviewGroupDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
-                                        borderRadius: '10px',
-                                        background: 'white',
-                                        cursor: 'pointer',
-                                        fontSize: '14px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        transition: 'all 0.2s',
-                                        color: interviewSelectedStudents.length > 0 ? '#0f172a' : '#94a3b8',
-                                        userSelect: 'none',
-                                      }}
-                                    >
-                                      <span>{interviewSelectedStudents.length > 0 ? `${interviewSelectedStudents.length} member(s) selected` : 'Search & select group members...'}</span>
-                                      <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isInterviewGroupDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
-                                    </div>
-                                    {isInterviewGroupDropdownOpen && (
-                                      <div
-                          data-interview-group-dropdown
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            left: 0,
-                            right: 0,
-                            marginTop: '6px',
-                            background: 'white',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '10px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
-                            zIndex: 99999,
-                            overflow: 'hidden',
-                          }}
-                        >
-                                        <div style={{ padding: '10px', borderBottom: '1px solid #f1f5f9' }}>
-                                          <input
-                                            autoFocus
-                                            type="text"
-                                            value={interviewGroupDropdownSearchText}
-                                            onChange={(e) => setInterviewGroupDropdownSearchText(e.target.value)}
-                                            placeholder="Type to search by name, ID, email..."
-                                            style={{
-                                              width: '100%',
-                                              padding: '9px 12px',
-                                              borderRadius: '8px',
-                                              border: '1px solid #e2e8f0',
-                                              fontSize: '13px',
-                                              background: '#f8fafc',
-                                              outline: 'none',
-                                              boxSizing: 'border-box',
-                                            }}
-                                          />
-                                        </div>
-                                        {interviewGroupDropdownSearchText && (
-                                          <div
-                                            data-interview-group-dropdown
-                                            onClick={() => { setInterviewGroupDropdownSearchText(''); }}
-                                            style={{ padding: '10px 14px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontWeight: 600 }}
-                                          >
-                                            ✕ Clear search
-                                          </div>
-                                        )}
-                                        <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
-                                          {memberList
-                                            .filter(member =>
-                                              !interviewGroupDropdownSearchText ||
-                                              member.name?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
-                                              member.internId?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
-                                              member.email?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase())
-                                            )
-                                            .slice(0, 50)
-                                            .map((member) => {
-                                              const memberId = getGroupMemberId(member);
-                                              const fullStudent = students.find(s => String(s._id || s.id) === memberId);
-                                              const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : (String(member.status || '').toLowerCase() === 'inactive');
-                                              const initials = (member.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                                              return (
-                                                <div
-                                                  key={memberId}
-                                                  data-interview-group-dropdown
-                                                  onClick={(e) => { e.stopPropagation(); if (!isInactive) toggleInterviewStudent(memberId); }}
-                                                  title={isInactive ? 'This student is inactive and cannot be selected' : ''}
-                                                  style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '10px',
-                                                    padding: '10px 14px',
-                                                    borderBottom: '1px solid #f8fafc',
-                                                    cursor: isInactive ? 'not-allowed' : 'pointer',
-                                                    transition: 'background 0.15s',
-                                                    background: isInactive ? '#fef2f2' : (interviewSelectedStudents.includes(memberId) ? '#f1f5f9' : 'transparent'),
-                                                    opacity: isInactive ? 0.65 : 1,
-                                                  }}
-                                                  onMouseEnter={e => {
-                                                    if (!isInactive && !interviewSelectedStudents.includes(memberId)) {
-                                                      e.currentTarget.style.background = '#f1f5f9';
-                                                    }
-                                                  }}
-                                                  onMouseLeave={e => {
-                                                    if (!isInactive && !interviewSelectedStudents.includes(memberId)) {
-                                                      e.currentTarget.style.background = 'transparent';
-                                                    }
-                                                  }}
-                                                >
-                                                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: isInactive ? '#fee2e2' : '#e0e7ff', color: isInactive ? '#991b1b' : '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>
-                                                    {initials}
-                                                  </div>
-                                                  <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{member.name || 'Unnamed Student'}</div>
-                                                    <div style={{ fontSize: '12px', color: '#64748b' }}>{member.internId || member.email || memberId}</div>
-                                                  </div>
-                                                  {isInactive ? (
-                                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 }}>INACTIVE</span>
-                                                  ) : (
-                                                    <input
-                                                      type="checkbox"
-                                                      checked={interviewSelectedStudents.includes(memberId)}
-                                                      onChange={() => toggleInterviewStudent(memberId)}
-                                                      style={{ cursor: 'pointer' }}
-                                                    />
-                                                  )}
-                                                </div>
-                                              );
-                                            })}
-                                          {memberList.filter(member =>
-                                            !interviewGroupDropdownSearchText ||
-                                            member.name?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
-                                            member.internId?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase()) ||
-                                            member.email?.toLowerCase().includes(interviewGroupDropdownSearchText.toLowerCase())
-                                          ).length === 0 && (
-                                            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No members found</div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setOpenGroupDropdownId(isDropdownOpen ? '' : groupId)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: '#344158',
+                                  fontSize: '12px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontWeight: 600
+                                }}
+                              >
+                                Members
+                                <span style={{ fontSize: '10px', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }}>▼</span>
+                              </button>
                             )}
                           </div>
-                        );
-                      })
+
+                          {isActive && isDropdownOpen && (
+                            <div className="am-group-members-panel" style={{ borderTop: '1px solid #e2e8f0', padding: '12px 14px' }}>
+                              <div className="am-group-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <label className="am-group-toggle-all" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={memberList.length > 0 && memberList.every((member) => interviewSelectedStudents.includes(getGroupMemberId(member)))}
+                                    onChange={(event) => {
+                                      const memberIds = memberList.map((member) => getGroupMemberId(member));
+                                      if (event.target.checked) {
+                                        setInterviewSelectedStudents(prev => {
+                                          const toAdd = memberIds.filter(id => !prev.includes(id));
+                                          return [...prev, ...toAdd];
+                                        });
+                                      } else {
+                                        setInterviewSelectedStudents(prev => prev.filter(id => !memberIds.includes(id)));
+                                      }
+                                    }}
+                                  />
+                                  Select full group
+                                </label>
+                              </div>
+                              <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                {memberList.map((member) => {
+                                  const memberId = getGroupMemberId(member);
+                                  const fullStudent = students.find(s => String(s._id || s.id) === memberId);
+                                  const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : (String(member.status || '').toLowerCase() === 'inactive');
+                                  const initials = (member.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                  return (
+                                    <div
+                                      key={memberId}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        padding: '8px 10px',
+                                        borderBottom: '1px solid #f8fafc',
+                                        cursor: isInactive ? 'not-allowed' : 'pointer',
+                                        background: isInactive ? '#fef2f2' : (interviewSelectedStudents.includes(memberId) ? '#f8fafc' : 'transparent'),
+                                        opacity: isInactive ? 0.65 : 1,
+                                      }}
+                                      onClick={() => { if (!isInactive) toggleInterviewStudent(memberId); }}
+                                    >
+                                      <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: isInactive ? '#fee2e2' : '#e0e7ff', color: isInactive ? '#991b1b' : '#3730a3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700 }}>
+                                        {initials}
+                                      </div>
+                                      <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>
+                                          {member.name || 'Unnamed Student'}
+                                        </div>
+                                      </div>
+                                      {isInactive ? (
+                                        <span style={{ fontSize: '9px', fontWeight: 700, color: '#dc2626', background: '#fee2e2', padding: '1px 4px', borderRadius: '4px' }}>INACTIVE</span>
+                                      ) : (
+                                        <input
+                                          type="checkbox"
+                                          checked={interviewSelectedStudents.includes(memberId)}
+                                          onChange={() => toggleInterviewStudent(memberId)}
+                                          style={{ cursor: 'pointer' }}
+                                        />
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                     )}
                   </div>
                 )}
@@ -2488,7 +2515,7 @@ export default function ActivityManagementNew() {
               <button
                 type="button"
                 className="am-modal-close-btn"
-                onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); setSelectedStudents([]); setActiveGdGroupId(''); setGdGroups([]); }}
+                onClick={() => { setShowGDModal(false); setEditingGdActivityId(null); setSelectedStudents([]); setActiveGdGroupIds([]); setGdGroups([]); }}
                 aria-label="Close GD schedule form"
               >
                 ×
@@ -2543,20 +2570,88 @@ export default function ActivityManagementNew() {
                     e => setGdForm(f => ({ ...f, interviewer: e.target.value }))
                   )}
 
-                  <div className="am-field">
-                    <label>Select Group</label>
-                    <select value={activeGdGroupId} onChange={e => {
-                      const gid = e.target.value;
-                      if (!gid) { setActiveGdGroupId(''); setSelectedStudents([]); return; }
-                      const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(gid));
-                      if (found) handleGdGroupSelect(found);
-                      else setActiveGdGroupId(gid);
-                    }}>
-                      <option value="">-- Select group (Optional) --</option>
-                      {groups.map(g => (
-                        <option key={g._id||g.id} value={g._id||g.id||g.groupNumber||g.groupName}>{getGroupLabel(g)}</option>
-                      ))}
-                    </select>
+                  <div data-gd-group-dropdown style={{ position: 'relative' }}>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
+                      Select Groups
+                    </label>
+                    <div style={{ position: 'relative' }} data-gd-group-dropdown>
+                      <div
+                        data-gd-group-dropdown
+                        onClick={() => setIsGdGroupDropdownOpen(!isGdGroupDropdownOpen)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          border: `2px solid ${isGdGroupDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                          borderRadius: '10px',
+                          background: 'white',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          transition: 'all 0.2s',
+                          color: activeGdGroupIds.length > 0 ? '#0f172a' : '#94a3b8',
+                          userSelect: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <span>{activeGdGroupIds.length > 0 ? `${activeGdGroupIds.length} group(s) selected` : 'Select groups...'}</span>
+                        <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isGdGroupDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                      </div>
+                      {isGdGroupDropdownOpen && (
+                        <div
+                          data-gd-group-dropdown
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            marginTop: '6px',
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                            zIndex: 99999,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                            {groups.map((group) => {
+                              const gid = String(group._id || group.id || group.groupNumber || group.groupName);
+                              const isSelected = activeGdGroupIds.includes(gid);
+                              return (
+                                <div
+                                  key={gid}
+                                  data-gd-group-dropdown
+                                  onClick={(e) => { e.stopPropagation(); handleGdGroupToggle(group); }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 14px',
+                                    borderBottom: '1px solid #f8fafc',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.15s',
+                                    background: isSelected ? '#f1f5f9' : 'transparent',
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{getGroupLabel(group)}</div>
+                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{getGroupMemberList(group).length} members</div>
+                                  </div>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleGdGroupToggle(group)}
+                                    style={{ cursor: 'pointer' }}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="am-field">
@@ -2932,36 +3027,88 @@ export default function ActivityManagementNew() {
                       <button type="button" onClick={() => setInactiveWarning('')} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#92400e', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>×</button>
                     </div>
                   )}
-                  <div className="am-field">
-                    <label>Select Group</label>
-                    <select value={activeAssessGroupId} onChange={e => {
-                      const gid = e.target.value;
-                      if (!gid) { setActiveAssessGroupId(''); setAssessSelected([]); setInactiveWarning(''); return; }
-                      const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(gid));
-                      if (found) {
-                        const allMembers = getGroupMemberList(found);
-                        const activeIds = [];
-                        let inactiveCount = 0;
-                        allMembers.forEach(m => {
-                          const mid = getGroupMemberId(m);
-                          const fullStudent = students.find(s => String(s._id || s.id) === mid);
-                          const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : (String(m.status || '').toLowerCase() === 'inactive');
-                          if (isInactive) { inactiveCount++; } else { activeIds.push(mid); }
-                        });
-                        setActiveAssessGroupId(String(found._id || found.id || gid));
-                        setAssessSelected(activeIds);
-                        if (inactiveCount > 0) {
-                          setInactiveWarning(`${inactiveCount} inactive student(s) from this group were automatically excluded from selection.`);
-                        } else {
-                          setInactiveWarning('');
-                        }
-                      } else setActiveAssessGroupId(gid);
-                    }}>
-                      <option value="">-- Select group (optional) --</option>
-                      {groups.map(g => (
-                        <option key={g._id||g.id} value={g._id||g.id||g.groupNumber||g.groupName}>{getGroupLabel(g)}</option>
-                      ))}
-                    </select>
+                  <div data-assess-group-dropdown style={{ position: 'relative' }} className="am-field">
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
+                      Select Groups
+                    </label>
+                    <div style={{ position: 'relative' }} data-assess-group-dropdown>
+                      <div
+                        data-assess-group-dropdown
+                        onClick={() => setIsAssessGroupDropdownOpen(!isAssessGroupDropdownOpen)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 14px',
+                          border: `2px solid ${isAssessGroupDropdownOpen ? '#3b82f6' : '#cbd5e1'}`,
+                          borderRadius: '10px',
+                          background: 'white',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          transition: 'all 0.2s',
+                          color: activeAssessGroupIds.length > 0 ? '#0f172a' : '#94a3b8',
+                          userSelect: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <span>{activeAssessGroupIds.length > 0 ? `${activeAssessGroupIds.length} group(s) selected` : 'Select groups...'}</span>
+                        <span style={{ fontSize: '11px', transition: 'transform 0.2s', transform: isAssessGroupDropdownOpen ? 'rotate(180deg)' : 'rotate(0)' }}>▼</span>
+                      </div>
+                      {isAssessGroupDropdownOpen && (
+                        <div
+                          data-assess-group-dropdown
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            marginTop: '6px',
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                            zIndex: 99999,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                            {groups.map((group) => {
+                              const gid = String(group._id || group.id || group.groupNumber || group.groupName);
+                              const isSelected = activeAssessGroupIds.includes(gid);
+                              return (
+                                <div
+                                  key={gid}
+                                  data-assess-group-dropdown
+                                  onClick={(e) => { e.stopPropagation(); handleAssessGroupToggle(group); }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 14px',
+                                    borderBottom: '1px solid #f8fafc',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.15s',
+                                    background: isSelected ? '#f1f5f9' : 'transparent',
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{getGroupLabel(group)}</div>
+                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{getGroupMemberList(group).length} members</div>
+                                  </div>
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleAssessGroupToggle(group)}
+                                    style={{ cursor: 'pointer' }}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div data-assess-dropdown style={{ position: 'relative' }}>
@@ -3056,9 +3203,20 @@ export default function ActivityManagementNew() {
                           <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
                             {(function() {
                               let studentsList = [];
-                              if (activeAssessGroupId) {
-                                const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeAssessGroupId));
-                                studentsList = found ? getGroupMemberList(found) : [];
+                              if (activeAssessGroupIds && activeAssessGroupIds.length > 0) {
+                                activeAssessGroupIds.forEach(gId => {
+                                  const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(gId));
+                                  if (found) {
+                                    studentsList.push(...getGroupMemberList(found));
+                                  }
+                                });
+                                const seen = new Set();
+                                studentsList = studentsList.filter(s => {
+                                  const sid = getGroupMemberId(s);
+                                  if (seen.has(sid)) return false;
+                                  seen.add(sid);
+                                  return true;
+                                });
                               } else {
                                 studentsList = students;
                               }
@@ -3071,7 +3229,7 @@ export default function ActivityManagementNew() {
                                 )
                                 .slice(0, 50)
                                 .map((s) => {
-                                  const id = activeAssessGroupId ? getGroupMemberId(s) : String(s._id || s.id);
+                                  const id = activeAssessGroupIds.length > 0 ? getGroupMemberId(s) : String(s._id || s.id);
                                   const fullStudent = students.find(st => String(st._id || st.id) === id);
                                   const isInactive = fullStudent ? String(fullStudent.status || '').toLowerCase() === 'inactive' : (String(s.status || '').toLowerCase() === 'inactive');
                                   const initials = (s.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -3107,7 +3265,14 @@ export default function ActivityManagementNew() {
                                         {initials}
                                       </div>
                                       <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none' }}>{s.name || 'Unnamed Student'}</div>
+                                        <div style={{ fontSize: '13px', fontWeight: 600, color: isInactive ? '#9ca3af' : '#0f172a', textDecoration: isInactive ? 'line-through' : 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          {s.name || 'Unnamed Student'}
+                                          {getStudentGroupName(id) && (
+                                            <span style={{ fontSize: '11px', fontWeight: 500, color: '#4f46e5', background: '#e0e7ff', padding: '1px 6px', borderRadius: '4px' }}>
+                                              {getStudentGroupName(id)}
+                                            </span>
+                                          )}
+                                        </div>
                                         <div style={{ fontSize: '12px', color: '#64748b' }}>{s.internId || s.email || id}</div>
                                       </div>
                                       {isInactive ? (
@@ -3126,9 +3291,20 @@ export default function ActivityManagementNew() {
                             })()}
                             {(function() {
                               let studentsList = [];
-                              if (activeAssessGroupId) {
-                                const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(activeAssessGroupId));
-                                studentsList = found ? getGroupMemberList(found) : [];
+                              if (activeAssessGroupIds && activeAssessGroupIds.length > 0) {
+                                activeAssessGroupIds.forEach(gId => {
+                                  const found = groups.find(g => String(g._id || g.id || g.groupNumber || g.groupName) === String(gId));
+                                  if (found) {
+                                    studentsList.push(...getGroupMemberList(found));
+                                  }
+                                });
+                                const seen = new Set();
+                                studentsList = studentsList.filter(s => {
+                                  const sid = getGroupMemberId(s);
+                                  if (seen.has(sid)) return false;
+                                  seen.add(sid);
+                                  return true;
+                                });
                               } else {
                                 studentsList = students;
                               }

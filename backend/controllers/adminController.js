@@ -2580,16 +2580,33 @@ exports.scheduleInterview = async (req, res) => {
         link: link || ''
       };
 
-      // If this scheduling call provided a groupId (group mode), attach it to the interview
-      if (groupId) {
+      // Resolve group details for this student in Group mode
+      if (mode === 'Group') {
+        try {
+          const studentGroup = await StudentGroup.findOne({ students: studentId }).select('_id groupName groupNumber');
+          if (studentGroup) {
+            interviewData.groupId = studentGroup._id;
+            interviewData.groupName = studentGroup.groupName || studentGroup.groupNumber || '';
+          } else if (groupId) {
+            interviewData.groupId = groupId;
+            const group = await StudentGroup.findById(groupId).select('groupName groupNumber');
+            if (group) interviewData.groupName = group.groupName || group.groupNumber || '';
+          }
+        } catch (err) {
+          if (groupId) {
+            interviewData.groupId = groupId;
+            try {
+              const group = await StudentGroup.findById(groupId).select('groupName groupNumber');
+              if (group) interviewData.groupName = group.groupName || group.groupNumber || '';
+            } catch (e) {}
+          }
+        }
+      } else if (groupId) {
         interviewData.groupId = groupId;
-        // Try to attach a human-readable groupName to make trainer UI clearer
         try {
           const group = await StudentGroup.findById(groupId).select('groupName groupNumber');
           if (group) interviewData.groupName = group.groupName || group.groupNumber || '';
-        } catch (err) {
-          // ignore group lookup errors; groupName is optional
-        }
+        } catch (err) {}
       }
 
       const interview = new Interview(interviewData);
