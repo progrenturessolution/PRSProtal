@@ -4,6 +4,20 @@ import { trainerAPI } from "../services/api";
 import StudentRecordsSidebar from "../components/StudentRecordsSidebar";
 import LoadingSpinner from "../components/LoadingSpinner";
 
+
+const formatUTCDateString = (value) => {
+  if (!value) return '-';
+  const cleanStr = String(value).trim();
+  const dateOnlyMatch = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnlyMatch) {
+    return `${dateOnlyMatch[3]}/${dateOnlyMatch[2]}/${dateOnlyMatch[1]}`;
+  }
+  const parsed = new Date(cleanStr);
+  if (Number.isNaN(parsed.getTime())) return '-';
+  const pad = (num) => String(num).padStart(2, '0');
+  return `${pad(parsed.getUTCDate())}/${pad(parsed.getUTCMonth() + 1)}/${parsed.getUTCFullYear()}`;
+};
+
 function AssessmentForm() {
   const { studentId } = useParams();
   const navigate = useNavigate();
@@ -349,7 +363,7 @@ function AssessmentForm() {
                         </td>
                         <td>{assessment.feedback || "-"}</td>
                         <td>
-                          {assessment.date ? new Date(assessment.date).toLocaleDateString() : new Date(assessment.createdAt).toLocaleDateString()}
+                          {formatUTCDateString(assessment.date || assessment.createdAt)}
                         </td>
                       </tr>
                     ))

@@ -13,6 +13,51 @@ import {
   NOTIFICATION_TYPE_GROUPS,
   markNotificationsReadLocally,
 } from "../utils/notificationBadges";
+const formatUTCDateString = (value) => {
+  if (!value) return '-';
+  const cleanStr = String(value).trim();
+  const dateOnlyMatch = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnlyMatch) {
+    return `${dateOnlyMatch[3]}/${dateOnlyMatch[2]}/${dateOnlyMatch[1]}`;
+  }
+  const parsed = new Date(cleanStr);
+  if (Number.isNaN(parsed.getTime())) return '-';
+  const pad = (num) => String(num).padStart(2, '0');
+  return `${pad(parsed.getUTCDate())}/${pad(parsed.getUTCMonth() + 1)}/${parsed.getUTCFullYear()}`;
+};
+
+const formatUTCDateTimeString = (value) => {
+  if (!value) return '-';
+  const cleanStr = String(value).trim();
+  const parsed = new Date(cleanStr);
+  if (Number.isNaN(parsed.getTime())) return '-';
+  const pad = (num) => String(num).padStart(2, '0');
+  const day = pad(parsed.getUTCDate());
+  const month = pad(parsed.getUTCMonth() + 1);
+  const year = parsed.getUTCFullYear();
+  let hours = parsed.getUTCHours();
+  const minutes = pad(parsed.getUTCMinutes());
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  return `${day}/${month}/${year}, ${pad(hours)}:${minutes} ${ampm}`;
+};
+
+const formatAssignmentDueDateTime = (a) => {
+  if (!a) return '-';
+  if (a.details?.form?.dueDate) {
+    const dateParts = String(a.details.form.dueDate).trim().split('-');
+    const timeStr = a.details.form.dueTime || '00:00';
+    if (dateParts.length === 3) {
+      const [h, m] = timeStr.split(':');
+      const hourNum = Number(h) || 0;
+      const ampm = hourNum >= 12 ? 'PM' : 'AM';
+      const formattedHour = hourNum % 12 || 12;
+      return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}, ${String(formattedHour).padStart(2, '0')}:${String(m || '00').padStart(2, '0')} ${ampm}`;
+    }
+  }
+  return formatUTCDateTimeString(a.dateTime);
+};
 
 function TrainerDashboard() {
   const navigate = useNavigate();
@@ -1497,7 +1542,7 @@ function TrainerDashboard() {
                                   ? (interview.title || interview.groupName || 'Group Discussion')
                                   : (interview.studentId?.name || '-')}
                               </td>
-                              <td>{(interview.date || interview.dateTime || interview.details?.form?.date) ? new Date(interview.date || interview.dateTime || interview.details?.form?.date).toLocaleDateString() : '-'}</td>
+                              <td>{formatUTCDateString(interview.date || interview.dateTime || interview.details?.form?.date)}</td>
                               <td>{interview.startTime || interview.details?.form?.startTime || '-'}</td>
                               <td>{interview.interviewType || (interview.type === 'GD' ? 'GD' : '-')}</td>
                               <td>{interview.mode || (interview.type === 'GD' ? 'Group' : 'Individual')}</td>
@@ -1862,7 +1907,7 @@ function TrainerDashboard() {
                                               <td>{isStudentObject ? student.name || "-" : "-"}</td>
                                               <td><span style={{ wordBreak: "break-word" }}>{isStudentObject ? student.email || "-" : "-"}</span></td>
                                               <td>{isStudentObject ? student.mobile || "-" : "-"}</td>
-                                              <td>{interview.date ? new Date(interview.date).toLocaleDateString() : interview.dateTime ? new Date(interview.dateTime).toLocaleDateString() : "-"}</td>
+                                              <td>{formatUTCDateString(interview.date || interview.dateTime)}</td>
                                               <td>{interview.startTime || interview.details?.form?.startTime || "-"}</td>
                                               <td>{interview.interviewType || "-"}</td>
                                               <td>
@@ -1985,8 +2030,8 @@ function TrainerDashboard() {
                           {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Individual").map((a, idx) => (
                             <tr key={a._id || a.title || idx}>
                               <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                              <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
-                              <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                              <td>{formatUTCDateString(a.dateTime || a.details?.form?.date)}</td>
+                              <td>{formatAssignmentDueDateTime(a)}</td>
                               <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
                               <td><span className={`status-badge ${
                                 String(a.status).toLowerCase() === 'completed'
@@ -2099,8 +2144,8 @@ function TrainerDashboard() {
                           {scheduledAssignments.filter((a) => getScheduledAssessmentMode(a) === "Group").map((a, idx) => (
                             <tr key={a._id || a.title || idx}>
                               <td>{a.title || a.details?.form?.title || 'Assignment'}</td>
-                              <td>{(a.dateTime || a.details?.form?.date) ? new Date(a.dateTime || a.details?.form?.date).toLocaleDateString() : '-'}</td>
-                              <td>{(a.details?.form?.dueDate) ? new Date(a.details.form.dueDate + ' ' + (a.details.form.dueTime || '00:00')).toLocaleString() : (a.dateTime ? new Date(a.dateTime).toLocaleString() : '-')}</td>
+                              <td>{formatUTCDateString(a.dateTime || a.details?.form?.date)}</td>
+                              <td>{formatAssignmentDueDateTime(a)}</td>
                               <td>{a.details?.notification?.assessmentMeta?.assignedLabels?.join(', ') || a.details?.form?.groupName || (Array.isArray(a.details?.assigned) ? a.details.assigned.join(', ') : '-')}</td>
                               <td><span className={`status-badge ${
                                 String(a.status).toLowerCase() === 'completed'

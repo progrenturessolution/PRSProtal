@@ -27,18 +27,37 @@ function InternDashboard() {
 
   const formatDate = (dateVal) => {
     if (!dateVal) return "-";
-    const d = new Date(dateVal);
+    const cleanStr = String(dateVal).trim();
+    const dateOnlyMatch = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateOnlyMatch) {
+      return `${dateOnlyMatch[3]}-${dateOnlyMatch[2]}-${dateOnlyMatch[1]}`;
+    }
+    const d = new Date(cleanStr);
     if (isNaN(d.getTime())) return "-";
-    return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+    const pad = (num) => String(num).padStart(2, '0');
+    return `${pad(d.getUTCDate())}-${pad(d.getUTCMonth() + 1)}-${d.getUTCFullYear()}`;
   };
 
   const formatDateTime = (dateVal) => {
     if (!dateVal) return "-";
-    const d = new Date(dateVal);
+    const cleanStr = String(dateVal).trim();
+    const localMatch = cleanStr.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/);
+    if (localMatch) {
+      const hourNum = Number(localMatch[4]) || 0;
+      const ampm = hourNum >= 12 ? "PM" : "AM";
+      const formattedHour = hourNum % 12 || 12;
+      return `${localMatch[3]}-${localMatch[2]}-${localMatch[1]}, ${String(formattedHour).padStart(2, '0')}:${localMatch[5]} ${ampm}`;
+    }
+    const d = new Date(cleanStr);
     if (isNaN(d.getTime())) return "-";
-    const datePart = `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
-    const timePart = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    return `${datePart}, ${timePart}`;
+    const pad = (num) => String(num).padStart(2, '0');
+    const datePart = `${pad(d.getUTCDate())}-${pad(d.getUTCMonth() + 1)}-${d.getUTCFullYear()}`;
+    let hours = d.getUTCHours();
+    const minutes = pad(d.getUTCMinutes());
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${datePart}, ${pad(hours)}:${minutes} ${ampm}`;
   };
 
   const [user, setUser] = useState(null);
