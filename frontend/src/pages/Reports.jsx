@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminAPI, taskAPI } from "../services/api";
 
-function Reports({ initialReportType = "tasks" }) {
+function Reports({ initialReportType = "assessments" }) {
   const navigate = useNavigate();
   const [reportType, setReportType] = useState(initialReportType);
   const [loading, setLoading] = useState(false);
@@ -1520,22 +1520,7 @@ function Reports({ initialReportType = "tasks" }) {
             gap: "4px",
           }}
         >
-          <button
-            onClick={() => setReportType("tasks")}
-            style={{
-              padding: "10px 22px",
-              borderRadius: "8px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 600,
-              transition: "all 0.2s",
-              background: reportType === "tasks" ? "#344158" : "transparent",
-              color: reportType === "tasks" ? "white" : "#64748b",
-            }}
-          >
-            Tasks
-          </button>
+
           <button
             onClick={() => setReportType("assessments")}
             style={{
@@ -1580,7 +1565,6 @@ function Reports({ initialReportType = "tasks" }) {
         <>
           {reportType === "overview" && renderOverviewReport()}
           {reportType === "students" && renderStudentReport()}
-          {reportType === "tasks" && renderTaskReport()}
           {reportType === "assessments" && renderAssessmentRecordsReport()}
           {reportType === "custom" && renderCustomReport()}
         </>
