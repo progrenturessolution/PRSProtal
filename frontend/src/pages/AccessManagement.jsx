@@ -116,6 +116,7 @@ function AccessManagement() {
     // Type filter
     if (filterType !== "All") {
       filtered = filtered.filter(
+        (student) => (student.studentType || "") === filterType
       );
     }
 
@@ -1112,34 +1113,77 @@ function AccessManagement() {
 
             <div className="form-group">
               <label>Select Groups *</label>
-              <div className="selection-list-shell" style={{ marginTop: "10px", maxHeight: "280px" }}>
-                {groups.length === 0 ? (
-                  <div style={{ color: "#64748b", fontSize: "14px" }}>No groups available</div>
-                ) : (
-                  groups.map((group) => (
-                    <button
-                      key={group._id}
-                      type="button"
-                      className={`selection-check-row ${selectedGroups.includes(group._id) ? "is-selected" : ""}`}
-                      onClick={() => {
-                        setSelectedGroups((prev) =>
-                          prev.includes(group._id)
-                            ? prev.filter((id) => id !== group._id)
-                            : [...prev, group._id],
-                        );
-                      }}
-                      aria-pressed={selectedGroups.includes(group._id)}
-                    >
-                      <div className="selection-check-content">
-                        <strong>{group.groupName || `Group ${group.groupNumber || ""}`}</strong>
-                        <small>
-                          {group.students?.length || 0} students
-                        </small>
+              {(() => {
+                const selectedTrainerObj = trainers.find(t => t._id === selectedTrainer);
+                const alreadyAssignedGroupIds = (selectedTrainerObj?.assignedGroups || []).map(g =>
+                  typeof g === 'object' ? (g._id || g.id) : g
+                ).filter(Boolean).map(String);
+
+                return (
+                  <>
+                    {selectedTrainer && alreadyAssignedGroupIds.length > 0 && (
+                      <div style={{
+                        padding: '10px 14px',
+                        background: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '8px',
+                        marginBottom: '12px',
+                        fontSize: '13px',
+                        color: '#1e40af',
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}>
+                        <span style={{ fontSize: '16px' }}>ℹ️</span>
+                        <span>This employee already has <strong>{alreadyAssignedGroupIds.length}</strong> group(s) assigned. They are highlighted below.</span>
                       </div>
-                    </button>
-                  ))
-                )}
-              </div>
+                    )}
+                    <div className="selection-list-shell" style={{ marginTop: '10px', maxHeight: '280px' }}>
+                      {groups.length === 0 ? (
+                        <div style={{ color: '#64748b', fontSize: '14px' }}>No groups available</div>
+                      ) : (
+                        groups.map((group) => {
+                          const isAlreadyAssigned = alreadyAssignedGroupIds.includes(String(group._id));
+                          return (
+                            <button
+                              key={group._id}
+                              type="button"
+                              className={`selection-check-row ${selectedGroups.includes(group._id) ? 'is-selected' : ''}`}
+                              onClick={() => {
+                                setSelectedGroups((prev) =>
+                                  prev.includes(group._id)
+                                    ? prev.filter((id) => id !== group._id)
+                                    : [...prev, group._id],
+                                );
+                              }}
+                              aria-pressed={selectedGroups.includes(group._id)}
+                              style={isAlreadyAssigned ? { background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', marginBottom: '4px' } : {}}
+                            >
+                              <div className="selection-check-content">
+                                <strong>{group.groupName || `Group ${group.groupNumber || ''}`}</strong>
+                                <small>{group.students?.length || 0} students</small>
+                              </div>
+                              {isAlreadyAssigned && (
+                                <span style={{
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  color: '#16a34a',
+                                  background: '#dcfce7',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  flexShrink: 0,
+                                  marginLeft: 'auto',
+                                }}>✓ Already Assigned</span>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             <div style={{ marginTop: "24px", display: "flex", gap: "12px" }}>
