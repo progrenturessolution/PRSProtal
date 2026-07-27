@@ -211,7 +211,9 @@ const createPayment = async (req, res) => {
     const sPay = Number(secondPayment) || 0;
     const lPay = Number(finalPayment) || 0;
     const paidSum = fPay + sPay + lPay;
-    const pendPay = totPay - paidSum;
+    // For Send payments: pending is always 0 (unsent balance is not a debt owed to us)
+    const isSendType = (paymentType || 'Receive').toLowerCase() === 'send';
+    const pendPay = isSendType ? 0 : Math.max(0, totPay - paidSum);
 
     const newPayment = new AdminPayment({
       name,
@@ -304,7 +306,9 @@ const updatePayment = async (req, res) => {
     const sPayVal = paymentRecord.secondPayment || 0;
     const lPayVal = paymentRecord.finalPayment || 0;
     paymentRecord.payment = fPayVal + sPayVal + lPayVal;
-    paymentRecord.pendingPayment = (paymentRecord.totalPayment || 0) - paymentRecord.payment;
+    // For Send payments: pending is always 0 (unsent balance is not a debt owed to us)
+    const isSendTypeUpd = (paymentRecord.paymentType || 'Receive').toLowerCase() === 'send';
+    paymentRecord.pendingPayment = isSendTypeUpd ? 0 : Math.max(0, (paymentRecord.totalPayment || 0) - paymentRecord.payment);
 
     // Backward-compatible receiveDate / sendDate fallback matching 1st payment
     paymentRecord.receiveDate = paymentRecord.firstPaymentReceiveDate || null;

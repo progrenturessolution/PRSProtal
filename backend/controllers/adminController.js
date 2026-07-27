@@ -2985,9 +2985,31 @@ exports.updateActivity = async (req, res) => {
     }
 
     const isCompletedNow = updates.status === 'Completed' && originalActivity.status !== 'Completed';
-    const isRescheduled = updates.dateTime && originalActivity.dateTime && new Date(updates.dateTime).getTime() !== new Date(originalActivity.dateTime).getTime();
+    // Detect reschedule: either the datetime changed OR status is explicitly set to 'Rescheduled'
+    const isRescheduled = (updates.status === 'Rescheduled' && originalActivity.status !== 'Rescheduled') ||
+      (updates.dateTime && originalActivity.dateTime && new Date(updates.dateTime).getTime() !== new Date(originalActivity.dateTime).getTime());
 
     const activity = await Activity.findByIdAndUpdate(id, updates, { new: true }).lean();
+
+    // ─── Propagate status to linked Interview records ─────────────────────────
+    // When admin marks an Interview activity as Completed or Rescheduled,
+    // update every Interview slot linked to this activity so that students
+    // and interviewers see the correct status in their own tables.
+    if (updates.status && activityType.includes('interview')) {
+      const targetInterviewStatus = updates.status; // 'Completed', 'Rescheduled', 'Cancelled', 'Scheduled'
+      const allowedInterviewStatuses = ['Scheduled', 'Rescheduled', 'Completed', 'Cancelled'];
+      if (allowedInterviewStatuses.includes(targetInterviewStatus)) {
+        try {
+          await Interview.updateMany(
+            { activityId: id },
+            { $set: { status: targetInterviewStatus } }
+          );
+        } catch (err) {
+          console.error('Failed to propagate status to Interview records:', err);
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Send notifications to students and trainer on reschedule or completion
     try {

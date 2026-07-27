@@ -321,6 +321,7 @@ function PaymentManagement() {
   const [maxAmountFilter, setMaxAmountFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState("all");
   const [paymentTypeFilter, setPaymentTypeFilter] = useState("all");
+  const [sendRemainingFilter, setSendRemainingFilter] = useState(false);
   const [selectedPaymentDetails, setSelectedPaymentDetails] = useState(null);
   const [isCustomPayType, setIsCustomPayType] = useState(false);
 
@@ -440,13 +441,16 @@ function PaymentManagement() {
     const first = Number(formData.firstPayment) || 0;
     const second = Number(formData.secondPayment) || 0;
     const final = Number(formData.finalPayment) || 0;
-    const pending = total - (first + second + final);
+    const paidSum = first + second + final;
+    // For Send payments: pending is always 0 (unsent balance is not a debt)
+    const isSend = (formData.paymentType || "Receive").toLowerCase() === "send";
+    const pending = isSend ? 0 : Math.max(0, total - paidSum);
     setFormData((prev) => ({
       ...prev,
       pendingPayment: String(pending),
-      payment: String(first + second + final)
+      payment: String(paidSum)
     }));
-  }, [formData.totalPayment, formData.firstPayment, formData.secondPayment, formData.finalPayment]);
+  }, [formData.totalPayment, formData.firstPayment, formData.secondPayment, formData.finalPayment, formData.paymentType]);
 
   const getUniquePaymentMonths = () => {
     const months = {};
@@ -642,12 +646,14 @@ function PaymentManagement() {
       });
 
       // Attribute pending to the month of the most recent instalment date
+      // Only for Receive type — Send type has no pending (unsent balance is not a debt)
       const pendingAmount = Number(item.pendingPayment) || 0;
       if (
         pendingAmount > 0 &&
         instalments.length > 0 &&
         item.paymentGoal !== "Cancel" &&
-        item.paymentGoal !== "Completed"
+        item.paymentGoal !== "Completed" &&
+        normalizedPaymentType !== "send"
       ) {
         const latestInstalment = instalments.reduce((latest, inst) => {
           const d = parseDateLocal(inst.dateStr);
@@ -1373,6 +1379,15 @@ function PaymentManagement() {
       filtered = filtered.filter((item) => item.paymentType === paymentTypeFilter);
     }
 
+    // 6. Send Remaining Amount Filter — only Send payments with unsent balance > 0
+    if (sendRemainingFilter) {
+      filtered = filtered.filter((item) => {
+        const isSend = normalizePaymentType(item.paymentType) === "send";
+        const balance = (item.totalPayment || 0) - (item.payment || 0);
+        return isSend && balance > 0;
+      });
+    }
+
     return sortPaymentsByDateNewestFirst(filtered);
   };
 
@@ -2069,8 +2084,10 @@ function PaymentManagement() {
                         <td>{relevantDate ? parseDateLocal(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
                         <td>₹{item.totalPayment || 0}</td>
                         <td>₹{item.payment || 0}</td>
-                        <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
-                          ₹{(item.paymentGoal === "Cancel" || item.paymentGoal === "Completed") ? 0 : (item.pendingPayment || 0)}
+                        <td style={{ textAlign: "center", color: "#10b981", fontWeight: "600" }}>
+                          {(item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || normalizePaymentType(item.paymentType) === "send")
+                            ? "₹0"
+                            : `₹${item.pendingPayment || 0}`}
                         </td>
                         <td style={{ textAlign: "center" }}>
                           <span style={{
@@ -2283,10 +2300,53 @@ function PaymentManagement() {
                   <option value="Send">Send</option>
                 </select>
               </div>
+
+              {/* Send Remaining Amount Filter */}
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ fontSize: "11px", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Send Remaining</label>
+                <button
+                  type="button"
+                  onClick={() => setSendRemainingFilter((prev) => !prev)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: `1px solid ${sendRemainingFilter ? "#324158" : "#cbd5e1"}`,
+                    background: sendRemainingFilter ? "#eef1f6" : "white",
+                    color: sendRemainingFilter ? "#324158" : "#64748b",
+                    fontWeight: sendRemainingFilter ? 700 : 500,
+                    fontSize: "13px",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <span style={{
+                    width: "16px", height: "16px",
+                    borderRadius: "4px",
+                    border: `2px solid ${sendRemainingFilter ? "#324158" : "#cbd5e1"}`,
+                    background: sendRemainingFilter ? "#324158" : "white",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
+                    transition: "all 0.2s",
+                  }}>
+                    {sendRemainingFilter && <span style={{ color: "white", fontSize: "10px", fontWeight: 900 }}>✓</span>}
+                  </span>
+                  {sendRemainingFilter ? "Showing Unsent Balance" : "Show Send Remaining"}
+                </button>
+              </div>
             </div>
             
             {/* Reset Filters button */}
-            <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end" }}>
+            <div style={{ marginTop: "12px", display: "flex", justifyContent: "flex-end", gap: "10px", alignItems: "center" }}>
+              {sendRemainingFilter && (
+                <span style={{ fontSize: "12px", color: "#324158", fontWeight: 600, background: "#eef1f6", padding: "4px 10px", borderRadius: "20px", border: "1px solid #324158" }}>
+                  Showing Send payments with remaining balance
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -2296,6 +2356,7 @@ function PaymentManagement() {
                   setMaxAmountFilter("");
                   setMonthFilter("all");
                   setPaymentTypeFilter("all");
+                  setSendRemainingFilter(false);
                 }}
                 style={{ padding: "6px 14px", border: "1px solid #324158", borderRadius: "6px", background: "transparent", color: "#324158", fontWeight: "600", fontSize: "12px", cursor: "pointer" }}
               >
@@ -2318,12 +2379,35 @@ function PaymentManagement() {
                       <th>Date</th>
                       <th>Total Payment</th>
                       <th>Total Paid</th>
-                      <th style={{ textAlign: "center" }}>Pending Payment</th>
+                      <th style={{ textAlign: "center" }}>
+                        {sendRemainingFilter ? "Balance (Unsent)" : "Pending Payment"}
+                      </th>
                       <th style={{ textAlign: "center" }}>Status</th>
                       <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
+                    {/* Summary bar when sendRemainingFilter is active */}
+                    {sendRemainingFilter && getFilteredPayments().length > 0 && (() => {
+                      const totalBalance = getFilteredPayments().reduce((sum, item) => {
+                        return sum + Math.max(0, (item.totalPayment || 0) - (item.payment || 0));
+                      }, 0);
+                      return (
+                        <tr>
+                          <td colSpan={9} style={{ padding: "10px 16px", background: "#eef1f6", borderBottom: "2px solid #324158" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                              <span style={{ fontSize: "12px", color: "#324158", fontWeight: 700 }}>Summary:</span>
+                              <span style={{ fontSize: "13px", color: "#324158", fontWeight: 700 }}>
+                                {getFilteredPayments().length} payment{getFilteredPayments().length !== 1 ? "s" : ""} with unsent balance
+                              </span>
+                              <span style={{ fontSize: "13px", color: "#ffffff", fontWeight: 800, background: "#324158", padding: "3px 10px", borderRadius: "20px", border: "1px solid #324158" }}>
+                                Total Remaining: ₹{totalBalance.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })()}
                     {getFilteredPayments().length === 0 ? (
                       <tr>
                         <td colSpan={9} style={{ textAlign: "center" }}>No payment records found</td>
@@ -2350,9 +2434,33 @@ function PaymentManagement() {
                           <td>{relevantDate ? parseDateLocal(relevantDate).toLocaleDateString("en-IN") : "-"}</td>
                           <td>₹{item.totalPayment || 0}</td>
                           <td>₹{item.payment || 0}</td>
-                          <td style={{ textAlign: "center", color: (item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || item.pendingPayment <= 0) ? "#10b981" : "#ef4444", fontWeight: "600" }}>
-                    ₹{(item.paymentGoal === "Cancel" || item.paymentGoal === "Completed") ? 0 : (item.pendingPayment || 0)}
-                  </td>
+                          {sendRemainingFilter ? (
+                            <td style={{ textAlign: "center" }}>
+                              {(() => {
+                                const bal = Math.max(0, (item.totalPayment || 0) - (item.payment || 0));
+                                return (
+                                  <span style={{
+                                    display: "inline-block",
+                                    padding: "4px 12px",
+                                    borderRadius: "20px",
+                                    background: bal > 0 ? "#eef1f6" : "#dcfce7",
+                                    color: bal > 0 ? "#324158" : "#166534",
+                                    fontWeight: 700,
+                                    fontSize: "13px",
+                                    border: `1px solid ${bal > 0 ? "#324158" : "#86efac"}`,
+                                  }}>
+                                    {bal > 0 ? `₹${bal.toLocaleString("en-IN")}` : "Fully Sent"}
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                          ) : (
+                            <td style={{ textAlign: "center", color: "#10b981", fontWeight: "600" }}>
+                              {(item.paymentGoal === "Cancel" || item.paymentGoal === "Completed" || normalizePaymentType(item.paymentType) === "send")
+                                ? "₹0"
+                                : `₹${item.pendingPayment || 0}`}
+                            </td>
+                          )}
                           <td style={{ textAlign: "center" }}>
                             <span style={{
                               display: "inline-flex",
@@ -2573,13 +2681,22 @@ function PaymentManagement() {
                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#324158", marginTop: "4px" }}>₹{selectedPaymentDetails.totalPayment || 0}</div>
                  </div>
                  <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: "4px solid #16a34a" }}>
-                   <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Total Paid</div>
+                   <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Total {normalizePaymentType(selectedPaymentDetails.paymentType) === "send" ? "Sent" : "Paid"}</div>
                    <div style={{ fontSize: "18px", fontWeight: 800, color: "#16a34a", marginTop: "4px" }}>₹{selectedPaymentDetails.payment || 0}</div>
                  </div>
-                 <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: `4px solid ${(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? "#16a34a" : "#dc2626"}` }}>
-                   <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Pending Amount</div>
-                   <div style={{ fontSize: "18px", fontWeight: 800, color: `${(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? "#16a34a" : "#dc2626"}`, marginTop: "4px" }}>₹{(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? 0 : (selectedPaymentDetails.pendingPayment || 0)}</div>
-                 </div>
+                 {normalizePaymentType(selectedPaymentDetails.paymentType) === "send" ? (
+                   <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: "4px solid #f59e0b" }}>
+                     <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Balance (Unsent)</div>
+                     <div style={{ fontSize: "18px", fontWeight: 800, color: "#d97706", marginTop: "4px" }}>
+                       ₹{Math.max(0, (selectedPaymentDetails.totalPayment || 0) - (selectedPaymentDetails.payment || 0))}
+                     </div>
+                   </div>
+                 ) : (
+                   <div style={{ background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", borderLeft: `4px solid ${(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? "#16a34a" : "#dc2626"}` }}>
+                     <div style={{ fontSize: "10px", color: "#64748b", fontWeight: 700 }}>Pending Amount</div>
+                     <div style={{ fontSize: "18px", fontWeight: 800, color: `${(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? "#16a34a" : "#dc2626"}`, marginTop: "4px" }}>₹{(selectedPaymentDetails.paymentGoal === "Cancel" || selectedPaymentDetails.paymentGoal === "Completed") ? 0 : (selectedPaymentDetails.pendingPayment || 0)}</div>
+                   </div>
+                 )}
                </div>
 
                {/* Installment Timeline */}

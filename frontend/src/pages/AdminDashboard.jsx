@@ -27,7 +27,7 @@ function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeMenu, setActiveMenu] = useState("dashboard");
-  const [reportsInitialTab, setReportsInitialTab] = useState("tasks");
+  const [reportsInitialTab, setReportsInitialTab] = useState("assessments");
   const [addInternDefaultType, setAddInternDefaultType] = useState("Internship");
   const [addInternBackMenu, setAddInternBackMenu] = useState("view-interns");
   const [user, setUser] = useState(null);
