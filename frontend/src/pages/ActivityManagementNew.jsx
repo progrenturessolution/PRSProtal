@@ -983,7 +983,7 @@ export default function ActivityManagementNew() {
                 padding: 11px 14px;
                 text-align: left;
                 font-size: 13px;
-                border: 1px solid #ffffff !important;
+                border: 1px solid #cbd5e1;
               }
               .data-table th {
                 background-color: #324158 !important;
@@ -992,12 +992,11 @@ export default function ActivityManagementNew() {
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 font-size: 12px;
-                border: 1px solid #ffffff !important;
+                border: 1px solid #4a5a73;
               }
               .data-table td {
                 background-color: #ffffff !important;
                 color: #324158 !important;
-                border: 1px solid #ffffff !important;
               }
               .data-table tr:nth-child(even) td {
                 background-color: #f8fafc !important;
