@@ -942,8 +942,8 @@ export default function ActivityManagementNew() {
                 letter-spacing: 0.5px;
               }
               .meta-card {
-                background-color: #273448;
-                border: 1px solid #4a5a73;
+                background-color: #ffffff !important;
+                border: 1px solid #cbd5e1;
                 border-radius: 8px;
                 padding: 16px 20px;
                 margin-bottom: 24px;
@@ -954,13 +954,13 @@ export default function ActivityManagementNew() {
                 gap: 12px 24px;
               }
               .meta-item {
-                font-size: 13px;
-                color: #ffffff;
-                line-height: 1.4;
+                font-size: 13.5px;
+                color: #324158 !important;
+                line-height: 1.5;
               }
               .meta-item strong {
-                font-weight: 700;
-                color: #94a3b8;
+                font-weight: 800;
+                color: #324158 !important;
                 margin-right: 6px;
               }
               .section-title {
