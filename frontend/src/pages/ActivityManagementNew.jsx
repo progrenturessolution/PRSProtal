@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { adminAPI, taskAPI } from '../services/api';
+import logo from '../assets/logo.png';
 import './ActivityManagementNew.css';
 
 function IconCard({ title, onClick, hasBadge }) {
@@ -674,10 +675,16 @@ export default function ActivityManagementNew() {
     if (!activity) return;
     try {
       const type = String(activity.type || '').toUpperCase();
-      // Use UTC-based formatActivityDateTime (same as table display) to avoid timezone shift
       const dateStr = activity.dateTime ? formatActivityDateTime(activity.dateTime) : 'N/A';
+      const docHeaderBadge = `${type} SCHEDULE - SMS PROGRAM`;
       
       let detailsHtml = '';
+      let metaItemsHtml = `
+        <div class="meta-item"><strong>Activity Title:</strong> ${activity.title || 'N/A'}</div>
+        <div class="meta-item"><strong>Activity Type:</strong> ${activity.type || 'N/A'}</div>
+        <div class="meta-item"><strong>Scheduled Date &amp; Time:</strong> ${dateStr}</div>
+        <div class="meta-item"><strong>Status:</strong> ${activity.status || 'Scheduled'}</div>
+      `;
       
       if (type.includes('INTERVIEW')) {
         const studentIds = activity.details?.studentIds || [];
@@ -686,36 +693,31 @@ export default function ActivityManagementNew() {
         const mode = activity.details?.mode || 'Individual';
         const intType = activity.details?.interviewType || 'N/A';
         
+        metaItemsHtml = `
+          <div class="meta-item"><strong>Interview Type:</strong> ${intType} Interview</div>
+          <div class="meta-item"><strong>Interviewer:</strong> ${interviewer}</div>
+          <div class="meta-item"><strong>Interview Date &amp; Time:</strong> ${dateStr}</div>
+          <div class="meta-item"><strong>Mode:</strong> ${mode}</div>
+          <div class="meta-item"><strong>Total Students:</strong> ${studentIds.length}</div>
+          <div class="meta-item"><strong>Status:</strong> ${activity.status || 'Scheduled'}</div>
+        `;
+        
         detailsHtml = `
-          <div class="section-title">Interview Configuration</div>
-          <table class="info-table">
-            <tr>
-              <td><strong>Interviewer:</strong> ${interviewer}</td>
-              <td><strong>Interview Type:</strong> ${intType}</td>
-            </tr>
-            <tr>
-              <td><strong>Mode:</strong> ${mode}</td>
-              <td><strong>Total Students:</strong> ${studentIds.length}</td>
-            </tr>
-          </table>
-          
-          <div class="section-title">Assigned Students & Slots</div>
+          <div class="section-title">Interview Slots &amp; Students</div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>PSMS ID</th>
-                <th>Student Name</th>
-                <th>Email</th>
-                <th>Slot Time</th>
+                <th style="width: 10%; text-align: center;">Slot No.</th>
+                <th style="width: 25%;">Time Slot</th>
+                <th style="width: 35%;">Student Name</th>
+                <th style="width: 30%;">PSMS ID</th>
               </tr>
             </thead>
             <tbody>
-              ${studentIds.length === 0 ? '<tr><td colspan="5" style="text-align:center;">No students assigned</td></tr>' : 
+              ${studentIds.length === 0 ? '<tr><td colspan="4" style="text-align:center;">No students assigned</td></tr>' : 
                 studentIds.map((id, index) => {
                   const studentInfo = getStudentInfo(id);
                   const slot = slots.find(s => String(s.studentId) === String(id));
-                  // Use formatReportTime (UTC-based) for consistent time display - same as on-screen table
                   let slotTimeStr = 'N/A';
                   if (slot && slot.date) {
                     slotTimeStr = formatReportTime(slot.date);
@@ -724,11 +726,10 @@ export default function ActivityManagementNew() {
                   }
                   return `
                     <tr>
-                      <td>${index + 1}</td>
-                      <td>${studentInfo.internId}</td>
-                      <td>${studentInfo.name}</td>
-                      <td>${studentInfo.email}</td>
+                      <td style="text-align: center;">Slot ${index + 1}</td>
                       <td>${slotTimeStr}</td>
+                      <td style="font-weight: 600;">${studentInfo.name}</td>
+                      <td>${studentInfo.internId}</td>
                     </tr>
                   `;
                 }).join('')
@@ -750,31 +751,23 @@ export default function ActivityManagementNew() {
           });
         });
         
+        metaItemsHtml = `
+          <div class="meta-item"><strong>Moderator / Trainer:</strong> ${interviewer}</div>
+          <div class="meta-item"><strong>Target Group:</strong> ${groupName}</div>
+          <div class="meta-item"><strong>Scheduled Date &amp; Time:</strong> ${dateStr}</div>
+          <div class="meta-item"><strong>GD Status:</strong> ${activity.status || 'Scheduled'}</div>
+          <div class="meta-item"><strong>Total Participants:</strong> ${gdStudents.length}</div>
+        `;
+        
         detailsHtml = `
-          <div class="section-title">GD Configuration</div>
-          <table class="info-table">
-            <tr>
-              <td><strong>Moderator / Trainer:</strong> ${interviewer}</td>
-              <td><strong>Target Group:</strong> ${groupName}</td>
-            </tr>
-            <tr>
-              <td><strong>Scheduled Date &amp; Time:</strong> ${activity.dateTime ? formatActivityDateTime(activity.dateTime) : 'N/A'}</td>
-              <td><strong>GD Status:</strong> ${activity.status || 'Scheduled'}</td>
-            </tr>
-            <tr>
-              <td><strong>Total Participants:</strong> ${gdStudents.length}</td>
-              <td></td>
-            </tr>
-          </table>
-          
           <div class="section-title">GD Participants</div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>PSMS ID</th>
-                <th>Student Name</th>
-                <th>Email</th>
+                <th style="width: 10%; text-align: center;">#</th>
+                <th style="width: 30%;">PSMS ID</th>
+                <th style="width: 35%;">Student Name</th>
+                <th style="width: 25%;">Email</th>
               </tr>
             </thead>
             <tbody>
@@ -783,9 +776,9 @@ export default function ActivityManagementNew() {
                   const studentInfo = getStudentInfo(id);
                   return `
                     <tr>
-                      <td>${index + 1}</td>
+                      <td style="text-align: center;">${index + 1}</td>
                       <td>${studentInfo.internId}</td>
-                      <td>${studentInfo.name}</td>
+                      <td style="font-weight: 600;">${studentInfo.name}</td>
                       <td>${studentInfo.email}</td>
                     </tr>
                   `;
@@ -798,33 +791,26 @@ export default function ActivityManagementNew() {
         const interviewer = activity.details?.interviewerName || 'N/A';
         const assigned = activity.details?.assigned || [];
         const description = activity.details?.form?.description || 'N/A';
-        const dueDate = activity.details?.form?.dueDate || 'N/A';
-        const dueTime = activity.details?.form?.dueTime || 'N/A';
         const link = activity.details?.form?.link || 'N/A';
         
+        metaItemsHtml = `
+          <div class="meta-item"><strong>Evaluator:</strong> ${interviewer}</div>
+          <div class="meta-item"><strong>Scheduled Date &amp; Time:</strong> ${dateStr}</div>
+          <div class="meta-item"><strong>Total Assigned:</strong> ${assigned.length}</div>
+          <div class="meta-item"><strong>Status:</strong> ${activity.status || 'Scheduled'}</div>
+          ${link !== 'N/A' ? `<div class="meta-item" style="grid-column: span 2;"><strong>Submission Link:</strong> ${link}</div>` : ''}
+          ${description !== 'N/A' ? `<div class="meta-item" style="grid-column: span 2;"><strong>Description:</strong> ${description}</div>` : ''}
+        `;
+        
         detailsHtml = `
-          <div class="section-title">Assessment Configuration</div>
-          <table class="info-table">
-            <tr>
-              <td><strong>Evaluator:</strong> ${interviewer}</td>
-              <td><strong>Scheduled Date &amp; Time:</strong> ${activity.dateTime ? formatActivityDateTime(activity.dateTime) : 'N/A'}</td>
-            </tr>
-            <tr>
-              <td colspan="2"><strong>Submission Link:</strong> ${link}</td>
-            </tr>
-            <tr>
-              <td colspan="2"><strong>Description:</strong> ${description}</td>
-            </tr>
-          </table>
-          
           <div class="section-title">Assigned Students</div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>PSMS ID</th>
-                <th>Student Name</th>
-                <th>Email</th>
+                <th style="width: 10%; text-align: center;">#</th>
+                <th style="width: 30%;">PSMS ID</th>
+                <th style="width: 35%;">Student Name</th>
+                <th style="width: 25%;">Email</th>
               </tr>
             </thead>
             <tbody>
@@ -833,9 +819,9 @@ export default function ActivityManagementNew() {
                   const studentInfo = getStudentInfo(id);
                   return `
                     <tr>
-                      <td>${index + 1}</td>
+                      <td style="text-align: center;">${index + 1}</td>
                       <td>${studentInfo.internId}</td>
-                      <td>${studentInfo.name}</td>
+                      <td style="font-weight: 600;">${studentInfo.name}</td>
                       <td>${studentInfo.email}</td>
                     </tr>
                   `;
@@ -847,67 +833,215 @@ export default function ActivityManagementNew() {
       } else {
         const assigned = activity.details?.assigned || [];
         detailsHtml = `
-          <div class="section-title">Activity Configuration</div>
-          <table class="info-table">
-            <tr>
-              <td><strong>Total Assigned:</strong> ${assigned.length}</td>
-              <td><strong>Activity Status:</strong> ${activity.status || 'Scheduled'}</td>
-            </tr>
+          <div class="section-title">Assigned Participants</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 10%; text-align: center;">#</th>
+                <th style="width: 30%;">PSMS ID</th>
+                <th style="width: 35%;">Student Name</th>
+                <th style="width: 25%;">Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${assigned.length === 0 ? '<tr><td colspan="4" style="text-align:center;">No participants assigned</td></tr>' : 
+                assigned.map((id, index) => {
+                  const studentInfo = getStudentInfo(id);
+                  return `
+                    <tr>
+                      <td style="text-align: center;">${index + 1}</td>
+                      <td>${studentInfo.internId}</td>
+                      <td style="font-weight: 600;">${studentInfo.name}</td>
+                      <td>${studentInfo.email}</td>
+                    </tr>
+                  `;
+                }).join('')
+              }
+            </tbody>
           </table>
         `;
       }
       
       const htmlContent = `
+        <!DOCTYPE html>
         <html>
           <head>
-            <title>Activity Report - ${activity.title}</title>
+            <title>Activity Schedule - ${activity.title || 'Report'}</title>
             <style>
-              body { font-family: Arial, sans-serif; color: #000000; background-color: #ffffff; line-height: 1.5; padding: 20px; }
-              .header { text-align: center; border-bottom: 2px solid #000000; padding-bottom: 10px; margin-bottom: 20px; }
-              .header .company { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-              .header h1 { font-size: 22px; margin: 5px 0 0 0; text-transform: uppercase; }
-              .info-section { margin-bottom: 25px; }
-              .info-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-              .info-table th, .info-table td { padding: 8px; border: 1px solid #000000; text-align: left; font-size: 14px; }
-              .info-table th { background-color: #000000; color: #ffffff; font-weight: bold; }
-              .section-title { font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000000; padding-bottom: 4px; margin-bottom: 10px; margin-top: 20px; }
-              .data-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-              .data-table th, .data-table td { padding: 8px; border: 1px solid #000000; text-align: left; font-size: 13px; }
-              .data-table th { background-color: #f2f2f2; color: #000000; font-weight: bold; border-bottom: 2px solid #000000; }
-              .footer { margin-top: 50px; text-align: center; border-top: 1px solid #000000; padding-top: 10px; font-size: 11px; }
+              @page {
+                size: A4;
+                margin: 12mm 15mm;
+              }
+              * {
+                box-sizing: border-box;
+              }
+              html, body {
+                background-color: #324158 !important;
+                color: #ffffff !important;
+                font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              .pdf-container {
+                background-color: #324158;
+                color: #ffffff;
+                padding: 24px;
+                min-height: 100vh;
+              }
+              .header-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #4a5a73;
+                padding-bottom: 16px;
+                margin-bottom: 24px;
+              }
+              .brand-box {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+              }
+              .brand-logo {
+                max-height: 52px;
+                max-width: 180px;
+                object-fit: contain;
+                background: #ffffff;
+                padding: 4px 8px;
+                border-radius: 6px;
+              }
+              .brand-name {
+                font-size: 16px;
+                font-weight: 800;
+                color: #ffffff;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+              }
+              .doc-meta-right {
+                text-align: right;
+              }
+              .doc-badge {
+                font-size: 14px;
+                font-weight: 800;
+                color: #ffffff;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+              }
+              .doc-sub {
+                font-size: 11px;
+                color: #cbd5e1;
+                margin-top: 3px;
+              }
+              .main-title {
+                text-align: center;
+                font-size: 22px;
+                font-weight: 800;
+                color: #ffffff;
+                margin: 10px 0 24px 0;
+                letter-spacing: 0.5px;
+              }
+              .meta-card {
+                background-color: #273448;
+                border: 1px solid #4a5a73;
+                border-radius: 8px;
+                padding: 16px 20px;
+                margin-bottom: 24px;
+              }
+              .meta-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px 24px;
+              }
+              .meta-item {
+                font-size: 13px;
+                color: #ffffff;
+                line-height: 1.4;
+              }
+              .meta-item strong {
+                font-weight: 700;
+                color: #94a3b8;
+                margin-right: 6px;
+              }
+              .section-title {
+                font-size: 15px;
+                font-weight: 700;
+                color: #ffffff;
+                margin: 24px 0 12px 0;
+                padding-bottom: 6px;
+                border-bottom: 1px solid #4a5a73;
+              }
+              .data-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+                background-color: #273448;
+                border-radius: 6px;
+                overflow: hidden;
+              }
+              .data-table th, .data-table td {
+                padding: 11px 14px;
+                text-align: left;
+                font-size: 13px;
+                border: 1px solid #4a5a73;
+                color: #ffffff !important;
+              }
+              .data-table th {
+                background-color: #1e2838;
+                color: #ffffff !important;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                font-size: 12px;
+              }
+              .data-table tr:nth-child(even) {
+                background-color: #2c394e;
+              }
+              .data-table tr:nth-child(odd) {
+                background-color: #232f41;
+              }
+              .footer {
+                margin-top: 40px;
+                text-align: center;
+                border-top: 1px solid #4a5a73;
+                padding-top: 14px;
+                font-size: 11px;
+                color: #94a3b8;
+              }
             </style>
           </head>
           <body>
-            <div class="header">
-              <div class="company">Progrentures Solution Pvt. Ltd.</div>
-              <h1>Activity Evaluation & Schedule Report</h1>
-              <p>Generated on: ${formatActivityDateTime(new Date().toISOString())}</p>
-            </div>
-            
-            <div class="info-section">
-              <div class="section-title">General Details</div>
-              <table class="info-table">
-                <tr>
-                  <td><strong>Activity Title:</strong> ${activity.title || 'N/A'}</td>
-                  <td><strong>Activity Type:</strong> ${activity.type || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td><strong>Scheduled Date & Time:</strong> ${dateStr}</td>
-                  <td><strong>Status:</strong> ${activity.status || 'Scheduled'}</td>
-                </tr>
-              </table>
+            <div class="pdf-container">
+              <div class="header-bar">
+                <div class="brand-box">
+                  <img src="${logo}" alt="Progrentures Logo" class="brand-logo" onerror="this.style.display='none'" />
+                  <div class="brand-name">Progrentures Solution</div>
+                </div>
+                <div class="doc-meta-right">
+                  <div class="doc-badge">${docHeaderBadge}</div>
+                  <div class="doc-sub">Generated: ${formatActivityDateTime(new Date().toISOString())}</div>
+                </div>
+              </div>
+              
+              <h1 class="main-title">${activity.title || 'Activity Schedule'}</h1>
+              
+              <div class="meta-card">
+                <div class="meta-grid">
+                  ${metaItemsHtml}
+                </div>
+              </div>
               
               ${detailsHtml}
-            </div>
-            
-            <div class="footer">
-              <p>This document is generated by PRS Portal. Confirmed and verified by Progrentures Solution Pvt. Ltd.</p>
+              
+              <div class="footer">
+                This document is generated by PRS Portal. Confirmed and verified by Progrentures Solution Pvt. Ltd.
+              </div>
             </div>
           </body>
         </html>
       `;
       
-      const printWindow = window.open("", "", "height=600,width=800");
+      const printWindow = window.open("", "", "height=750,width=950");
       printWindow.document.write(htmlContent);
       printWindow.document.close();
       
