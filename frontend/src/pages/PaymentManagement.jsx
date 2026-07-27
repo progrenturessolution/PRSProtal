@@ -1379,12 +1379,14 @@ function PaymentManagement() {
       filtered = filtered.filter((item) => item.paymentType === paymentTypeFilter);
     }
 
-    // 6. Send Remaining Amount Filter — only Send payments with unsent balance > 0
+    // 6. Send Remaining Amount Filter — only Send payments with unsent balance > 0 and status not Completed/Cancel
     if (sendRemainingFilter) {
       filtered = filtered.filter((item) => {
         const isSend = normalizePaymentType(item.paymentType) === "send";
         const balance = (item.totalPayment || 0) - (item.payment || 0);
-        return isSend && balance > 0;
+        const goal = item.paymentGoal || "Pending";
+        const isCompletedOrCancel = goal === "Completed" || goal === "Cancel";
+        return isSend && balance > 0 && !isCompletedOrCancel;
       });
     }
 
