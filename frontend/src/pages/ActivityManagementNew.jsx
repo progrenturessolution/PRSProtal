@@ -968,8 +968,8 @@ export default function ActivityManagementNew() {
                 font-weight: 700;
                 color: #ffffff;
                 margin: 24px 0 12px 0;
-                padding-bottom: 6px;
-                border-bottom: 1px solid #4a5a73;
+                padding-bottom: 0;
+                border-bottom: none;
               }
               .data-table {
                 width: 100%;
@@ -983,7 +983,7 @@ export default function ActivityManagementNew() {
                 padding: 11px 14px;
                 text-align: left;
                 font-size: 13px;
-                border: 1px solid #cbd5e1;
+                border: 1px solid #ffffff !important;
               }
               .data-table th {
                 background-color: #324158 !important;
@@ -992,11 +992,12 @@ export default function ActivityManagementNew() {
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 font-size: 12px;
-                border: 1px solid #4a5a73;
+                border: 1px solid #ffffff !important;
               }
               .data-table td {
                 background-color: #ffffff !important;
                 color: #324158 !important;
+                border: 1px solid #ffffff !important;
               }
               .data-table tr:nth-child(even) td {
                 background-color: #f8fafc !important;
