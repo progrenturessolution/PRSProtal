@@ -959,7 +959,7 @@ export default function ActivityManagementNew() {
                 line-height: 1.5;
               }
               .meta-item strong {
-                font-weight: 800;
+                font-weight: 500;
                 color: #324158 !important;
                 margin-right: 6px;
               }
@@ -984,15 +984,18 @@ export default function ActivityManagementNew() {
                 text-align: left;
                 font-size: 13px;
                 border: 1px solid #4a5a73;
-                color: #ffffff !important;
               }
               .data-table th {
-                background-color: #1e2838;
-                color: #ffffff !important;
+                background-color: #ffffff !important;
+                color: #324158 !important;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 font-size: 12px;
+                border: 1px solid #cbd5e1;
+              }
+              .data-table td {
+                color: #ffffff !important;
               }
               .data-table tr:nth-child(even) {
                 background-color: #2c394e;
