@@ -975,7 +975,7 @@ export default function ActivityManagementNew() {
                 width: 100%;
                 border-collapse: collapse;
                 margin-top: 10px;
-                background-color: #273448;
+                background-color: #ffffff;
                 border-radius: 6px;
                 overflow: hidden;
               }
@@ -983,25 +983,26 @@ export default function ActivityManagementNew() {
                 padding: 11px 14px;
                 text-align: left;
                 font-size: 13px;
-                border: 1px solid #4a5a73;
+                border: 1px solid #cbd5e1;
               }
               .data-table th {
-                background-color: #ffffff !important;
-                color: #324158 !important;
+                background-color: #324158 !important;
+                color: #ffffff !important;
                 font-weight: 700;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 font-size: 12px;
-                border: 1px solid #cbd5e1;
+                border: 1px solid #4a5a73;
               }
               .data-table td {
-                color: #ffffff !important;
+                background-color: #ffffff !important;
+                color: #324158 !important;
               }
-              .data-table tr:nth-child(even) {
-                background-color: #2c394e;
+              .data-table tr:nth-child(even) td {
+                background-color: #f8fafc !important;
               }
-              .data-table tr:nth-child(odd) {
-                background-color: #232f41;
+              .data-table tr:nth-child(odd) td {
+                background-color: #ffffff !important;
               }
               .footer {
                 margin-top: 40px;
